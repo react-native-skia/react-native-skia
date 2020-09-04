@@ -1,0 +1,26 @@
+component("glog") {
+  sources = [
+    "src/demangle.cc",
+    "src/logging.cc",
+    "src/raw_logging.cc",
+    "src/signalhandler.cc",
+    "src/symbolize.cc",
+    "src/utilities.cc",
+    "src/vlog_is_on.cc",
+  ]
+
+  include_dirs = [
+    "gen",
+    "src",
+    "src/glog",
+  ]
+
+  public_configs = [ ":glog-config" ]
+}
+
+config("glog-config") {
+  include_dirs = [
+    "gen",
+    "src",
+  ]
+}

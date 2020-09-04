@@ -1,0 +1,35 @@
+prebuilt_cxx_library(
+  name = 'skia',
+
+  static_lib = 'lib/libskia.a',
+
+  header_namespace = "",
+  exported_headers = subdir_glob(
+    [
+      ('', 'include/**/*.h'),
+    ],
+    prefix = "",
+  ),
+
+  visibility = [ 'PUBLIC' ],
+)
+
+prebuilt_cxx_library(
+  name = 'sk_app',
+
+  static_lib = 'lib/libsk_app.a',
+
+  header_namespace = "",
+  exported_headers = subdir_glob(
+    [
+      ('', 'sk_app/**/*.h'),
+      ('', 'skui/**/*.h'),
+    ],
+    prefix = "skia",
+  ),
+
+  deps = [
+    ":skia",
+  ],
+  visibility = [ 'PUBLIC' ],
+)

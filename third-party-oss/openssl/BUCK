@@ -1,0 +1,39 @@
+prebuilt_cxx_library(
+  name = 'crypto',
+
+  soname = 'libcrypto.so',
+  static_lib = 'lib/libcrypto.a',
+  platform_shared_lib = [
+    ('macosx', 'lib/libcrypto.dylib'),
+  ],
+
+  header_namespace = "",
+  exported_headers = subdir_glob(
+    [
+      ('include/openssl', '**/*.h'),
+    ],
+    prefix = "openssl",
+  ),
+
+  visibility = [ 'PUBLIC' ],
+)
+
+prebuilt_cxx_library(
+  name = 'ssl',
+
+  soname = 'libssl.so',
+  static_lib = 'lib/libssl.a',
+  platform_shared_lib = [
+    ('macosx', 'lib/libssl.dylib'),
+  ],
+
+  header_namespace = "",
+  exported_headers = subdir_glob(
+    [
+      ('include/openssl', '**/*.h'),
+    ],
+    prefix = "openssl",
+  ),
+
+  visibility = [ 'PUBLIC' ],
+)

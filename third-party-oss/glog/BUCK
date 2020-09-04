@@ -1,0 +1,37 @@
+cxx_library(
+  name = 'glog',
+
+  srcs = [
+    'src/demangle.cc',
+    'src/logging.cc',
+    'src/raw_logging.cc',
+    'src/signalhandler.cc',
+    'src/symbolize.cc',
+    'src/utilities.cc',
+    'src/vlog_is_on.cc',
+  ],
+
+  headers = subdir_glob(
+    [
+      ('gen', '**/*.h'),
+      ('src', '**/*.h'),
+    ],
+  ),
+
+  header_namespace = "",
+  exported_headers = subdir_glob(
+    [
+      ('gen/glog', '**/*.h'),
+      ('src', '**/*.h'),
+    ],
+    prefix = "glog",
+  ),
+
+  compiler_flags = [
+    '-Wwrite-strings',
+    '-Woverloaded-virtual',
+    '-Wno-sign-compare',
+  ],
+
+  visibility = [ 'PUBLIC' ],
+)

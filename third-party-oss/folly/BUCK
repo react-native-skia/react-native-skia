@@ -1,0 +1,152 @@
+load(
+    "//tools/build_defs/oss:rn_defs.bzl",
+    "react_native_xplat_target",
+    "rn_xplat_cxx_library",
+    "subdir_glob",
+)
+
+rn_xplat_cxx_library(
+  name = 'rn_oss',
+
+  srcs = [
+    "folly/dynamic.cpp",
+    "folly/json.cpp",
+    "folly/json_pointer.cpp",
+    "folly/Conv.cpp",
+    "folly/Demangle.cpp",
+    "folly/FileUtil.cpp",
+    "folly/Format.cpp",
+    "folly/Unicode.cpp",
+    "folly/ScopeGuard.cpp",
+    "folly/String.cpp",
+
+    "folly/container/detail/F14Table.cpp",
+    "folly/hash/SpookyHashV2.cpp",
+    "folly/lang/Assume.cpp",
+    "folly/lang/SafeAssert.cpp",
+    "folly/memory/detail/MallocImpl.cpp",
+    "folly/net/NetOps.cpp",
+    "folly/portability/SysUio.cpp",
+
+    "folly/portability/Malloc.cpp",
+
+    "folly/detail/Demangle.cpp",
+
+    # Added for async_io
+    "folly/SharedMutex.cpp",
+    "folly/Executor.cpp",
+    "folly/concurrency/CacheLocality.cpp",
+    "folly/executors/QueuedImmediateExecutor.cpp",
+    "folly/detail/AtFork.cpp",
+    "folly/detail/Futex.cpp",
+    "folly/detail/UniqueInstance.cpp",
+    "folly/detail/MemoryIdler.cpp",
+    "folly/detail/ThreadLocalDetail.cpp",
+    "folly/detail/StaticSingletonManager.cpp",
+    "folly/lang/CString.cpp",
+    "folly/memory/MallctlHelper.cpp",
+    "folly/system/ThreadName.cpp",
+  ],
+
+  compiler_flags = [
+    '-std=c++14',
+  ],
+
+  header_namespace = "",
+  exported_headers = subdir_glob(
+    [
+      ('folly', '**/*.h'),
+    ],
+    prefix = "folly",
+  ),
+  exported_header_style = "system",
+
+  exported_preprocessor_flags = [
+    '-DFOLLY_NO_CONFIG=1',
+    '-DFOLLY_HAVE_CLOCK_GETTIME=1',
+    # '-DFOLLY_HAVE_MEMRCHR=1',
+    '-DFOLLY_USE_LIBCPP=1',
+    '-DFOLLY_MOBILE=1',
+    '-DFOLLY_HAVE_PTHREAD=1',
+  ],
+
+  deps = [
+    '//third-party/glog:glog',
+    '//third-party/double-conversion:double-conversion',
+    '//third-party/boost:headers_only',
+  ],
+
+  visibility = [ 'PUBLIC' ],
+)
+
+rn_xplat_cxx_library(
+  name = 'async',
+
+  srcs = glob(
+      ["folly/io/async/**/*.cpp"],
+      exclude = glob(["folly/io/async/test/**/*.cpp", "folly/io/async/ssl/test/**/*.cpp"]),
+  ),
+
+  compiler_flags = [
+    '-std=c++14',
+  ],
+
+  header_namespace = "",
+  exported_headers = subdir_glob(
+    [
+      ('folly/io/async', '**/*.h'),
+    ],
+    prefix = "folly",
+  ),
+
+  deps = [
+    '//third-party/glog:glog',
+    '//third-party/double-conversion:double-conversion',
+    '//third-party/boost:headers_only',
+    '//third-party/openssl:crypto',
+  ],
+
+  exported_deps = [
+    ":rn_oss",
+    "//third-party/libevent:libevent",
+  ],
+  exported_header_style = "system",
+
+  visibility = [ 'PUBLIC' ],
+)
+
+rn_xplat_cxx_library(
+  name = 'synchronization',
+
+  srcs = glob(
+      ["folly/synchronization/**/*.cpp"],
+      exclude = glob(["folly/synchronization/test/**/*.cpp", "folly/synchronization/detail/test/**/*.cpp"]),
+  ),
+
+  compiler_flags = [
+    '-std=c++14',
+  ],
+
+  header_namespace = "",
+  exported_headers = subdir_glob(
+    [
+      ('folly', '**/*.h'),
+    ],
+    prefix = "folly",
+  ),
+
+  deps = [
+    ":rn_oss",
+    # '//third-party/glog:glog',
+    # '//third-party/double-conversion:double-conversion',
+    # '//third-party/boost:headers_only',
+    # '//third-party/openssl:crypto',
+  ],
+
+  exported_deps = [
+    ":rn_oss",
+  ],
+  exported_header_style = "system",
+
+  visibility = [ 'PUBLIC' ],
+)

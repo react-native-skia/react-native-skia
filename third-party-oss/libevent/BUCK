@@ -1,0 +1,54 @@
+cxx_library(
+  name = 'libevent',
+
+  srcs = [
+    "buffer.c",
+    "evbuffer.c",
+    "evdns.c",
+    "event.c",
+    "event_tagging.c",
+    "evrpc.c",
+    "evutil.c",
+    "http.c",
+    "log.c",
+    "poll.c",
+    "select.c",
+    "signal.c",
+    "strlcpy.c",
+  ],
+
+  platform_srcs = [
+    ('macosx', ['kqueue.c']),
+  ],
+  exported_platform_headers = [
+    ('macosx', subdir_glob(
+      [
+        ('mac', '*.h'),
+      ],
+      prefix = "",
+    )),
+  ],
+
+  header_namespace = "",
+  exported_headers = subdir_glob(
+    [
+      ('', '*.h'),
+    ],
+    excludes = [
+      "event-config.h",
+    ],
+    prefix = "",
+  ),
+
+  exported_header_style = "system",
+
+  preprocessor_flags = [
+    '-DHAVE_CONFIG_H',
+  ],
+
+  compiler_flags = [
+    '-Wall',
+  ],
+
+  visibility = [ 'PUBLIC' ],
+)

@@ -1,0 +1,9 @@
+group("boost") {
+  public_configs = [ ":boost-config" ]
+}
+
+config("boost-config") {
+  include_dirs = [
+    ".",
+  ]
+}
