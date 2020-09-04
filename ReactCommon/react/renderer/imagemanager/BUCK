@@ -38,6 +38,25 @@ rn_xplat_cxx_library(
         "-Wall",
     ],
     contacts = ["oncall+react_native@xmail.facebook.com"],
+    cxx_srcs = glob(
+        [
+            "platform/cxx/**/*.cpp",
+        ],
+    ),
+    cxx_exported_headers = subdir_glob(
+        [
+            ("", "*.h"),
+            ("platform/cxx", "**/*.h"),
+        ],
+        prefix = "react/renderer/imagemanager",
+    ),
+    cxx_headers = subdir_glob(
+        [
+            ("", "*.h"),
+            ("platform/cxx", "**/*.h"),
+        ],
+        prefix = "",
+    ),
     fbandroid_exported_headers = subdir_glob(
         [
             ("", "*.h"),

@@ -91,4 +91,7 @@ rn_xplat_cxx_library(
     exported_deps = [
         react_native_xplat_dep("jsi:jsi"),
     ],
+    preprocessor_flags = [
+        "-DRN_FABRIC_ENABLED",
+    ],
 )

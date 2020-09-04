@@ -169,7 +169,7 @@ void ParagraphShadowNode::layout(LayoutContext layoutContext) {
       content.paragraphAttributes,
       layoutConstraints);
 
-#ifndef ANDROID
+#if TARGET_OS_IPHONE
   if (getConcreteProps().onTextLayout) {
     auto linesMeasurements = textLayoutManager_->measureLines(
         content.attributedString,

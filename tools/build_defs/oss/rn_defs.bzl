@@ -31,6 +31,12 @@ ANDROID = "Android"
 
 APPLE = ""
 
+IOS = "IOS"
+
+MACOSX = "MACOSX"
+
+CXX = "CXX"
+
 YOGA_TARGET = "//ReactAndroid/src/main/java/com/facebook:yoga"
 
 YOGA_CXX_TARGET = "//ReactCommon/yoga:yoga"
@@ -51,15 +57,124 @@ def get_android_inspector_flags():
 
 # Building is not supported in OSS right now
 def rn_xplat_cxx_library(name, **kwargs):
+    KEYS = (
+        # `rn_xplat_cxx_library` special keys
+        "fbobjc_compiler_flags",
+        "fbobjc_preprocessor_flags",
+        "fbobjc_force_static",
+        "fbobjc_target_sdk_version",
+        "fbobjc_inherited_buck_flags",
+        "apple_sdks",
+        "ios_headers",
+        "ios_deps",
+        "ios_exported_headers",
+        "ios_frameworks",
+        "ios_srcs",
+        "macosx_tests_override",
+        "fbandroid_headers",
+        "fbandroid_deps",
+        "fbandroid_preprocessor_flags",
+        "fbandroid_exported_headers",
+        "fbandroid_srcs",
+        "fbandroid_preferred_linkage",
+        "cxx_tests",
+        "platforms",
+        "xplat_mangled_args",
+        "contacts",
+
+        # keys that we will handle later
+        "preprocessor_flags",
+        "deps",
+        "exported_deps",
+        "cxx_headers",
+        "cxx_exported_headers",
+        "cxx_srcs",
+        "cxx_compiler_flags",
+        "fbobjc_frameworks",
+    )
     new_kwargs = {
         k: v
         for k, v in kwargs.items()
-        if k.startswith("exported_")
+        if k not in KEYS
     }
+
+    deps = kwargs.get("deps", [])
+    exported_deps = kwargs.get("exported_deps", [])
+
+    # Filter fbsystrace
+    preprocessor_flags = [flag for flag in kwargs.get("preprocessor_flags", [])
+                          if flag != "-DWITH_FBSYSTRACE=1"]
+    deps = [dep for dep in deps
+            if dep != "//xplat/fbsystrace:fbsystrace"]
+
+    # Transform third-party deps
+    new_deps = []
+    for dep in deps:
+      if dep.startswith("//third-party/"):
+        new_dep = "//third-party-oss/" + dep[14:]
+      elif dep == GLOG_DEP:
+        new_dep = "//third-party-oss/glog:glog"
+      else:
+        new_dep = dep
+      new_deps.append(new_dep)
+    deps = new_deps
+
+    # Transform third-party exported_deps
+    exported_deps = [exported_dep.replace("//third-party/", "//third-party-oss/")
+                     for exported_dep in exported_deps]
+
+    # folly OSS
+    new_deps = [dep for dep in deps if not dep.startswith("//xplat/folly:")]
+    has_folly = len(deps) != len(new_deps)
+    if has_folly:
+      new_deps.append("//third-party-oss/folly:rn_oss")
+    deps = new_deps
+
+    # jsi relocation
+    deps = [dep.replace("//xplat/jsi:", "//ReactCommon/jsi:")
+            for dep in deps]
+    exported_deps = [exported_dep.replace("//xplat/jsi:", "//ReactCommon/jsi:")
+                     for exported_dep in exported_deps]
+
+    # cxx special flags
+    if "cxx_headers" in kwargs:
+      headers = new_kwargs.get("headers", {})
+      for (k, v) in kwargs["cxx_headers"].items():
+        headers[k] = v
+      new_kwargs["headers"] = headers
+    if "cxx_exported_headers" in kwargs:
+      exported_headers = new_kwargs.get("exported_headers", {})
+      for (k, v) in kwargs["cxx_exported_headers"].items():
+        exported_headers[k] = v
+      new_kwargs["exported_headers"] = exported_headers
+    if "cxx_srcs" in kwargs:
+      srcs = new_kwargs.get("srcs", [])
+      new_kwargs["srcs"] = srcs + kwargs["cxx_srcs"]
+    if "cxx_compiler_flags" in kwargs:
+      compiler_flags = new_kwargs.get("compiler_flags", [])
+      new_kwargs["compiler_flags"] = compiler_flags + kwargs["cxx_compiler_flags"]
+
+    # make sure c++14 if not specified
+    new_compiler_flags = new_kwargs.get("compiler_flags", [])
+    if not any(flag.startswith("-std=") for flag in new_compiler_flags):
+      new_compiler_flags.append("-std=c++14")
+    new_kwargs["compiler_flags"] = new_compiler_flags
+
+    # fbobjc_frameworks
+    if "fbobjc_frameworks" in kwargs:
+      frameworks = new_kwargs.get("frameworks", [])
+      new_frameworks = ["$SDKROOT/System/Library/Frameworks/{}.framework".format(framework)
+                        if not framework.startswith("$SDKROOT") else framework
+                        for framework in kwargs["fbobjc_frameworks"]]
+      new_kwargs["frameworks"] = frameworks + new_frameworks
+
 
     native.cxx_library(
         name = name,
-        visibility = kwargs.get("visibility", []),
+        # visibility = kwargs.get("visibility", []),
+        preprocessor_flags = preprocessor_flags,
+        deps = deps,
+        exported_deps = exported_deps,
         **new_kwargs
     )
 
@@ -229,7 +344,8 @@ def cxx_library(allow_jni_merging = None, **kwargs):
         for k, v in kwargs.items()
         if not (k.startswith("fbandroid_") or k.startswith("fbobjc_"))
     }
-    native.cxx_library(**args)
+    # native.cxx_library(**args)
+    rn_xplat_cxx_library(**args)
 
 def _paths_join(path, *others):
     """Joins one or more path components."""

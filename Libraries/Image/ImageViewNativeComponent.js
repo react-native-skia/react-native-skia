@@ -41,7 +41,9 @@ type NativeProps = $ReadOnly<{|
 |}>;
 
 let ImageViewNativeComponent;
-if (global.RN$Bridgeless) {
+// if (global.RN$Bridgeless) {
+// NOTE(kudo): Leverage ImageViewViewConfig directly even we are not in true bridgeless mode
+if (global.RN$Bridgeless || true) {
   ReactNativeViewConfigRegistry.register('RCTImageView', () => {
     return ImageViewViewConfig;
   });

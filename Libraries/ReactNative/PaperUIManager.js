@@ -86,7 +86,7 @@ const UIManagerJS = {
 // instead of `UIManager.getViewManagerConfig()` off UIManager.js.
 // This is a workaround for now.
 // $FlowFixMe
-NativeUIManager.getViewManagerConfig = UIManagerJS.getViewManagerConfig;
+// NativeUIManager.getViewManagerConfig = UIManagerJS.getViewManagerConfig;
 
 function lazifyViewManagerConfig(viewName) {
   const viewConfig = getConstants()[viewName];
