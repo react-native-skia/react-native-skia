@@ -102,6 +102,11 @@ void RNInstance::Start(RSkSurfaceWindow *surface) {
   surface->AddComponent(provider->CreateComponent({}));
 }
 
+void RNInstance::Stop() {
+  SurfaceId surfaceId = 1;
+  fabricScheduler_->stopSurface(surfaceId);
+}
+
 void RNInstance::InitializeJSCore() {
   instance_ = std::make_unique<Instance>();
   turboModuleManager_ =

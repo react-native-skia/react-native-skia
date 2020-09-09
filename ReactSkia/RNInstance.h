@@ -18,6 +18,7 @@ class RNInstance {
   RNInstance(RNInstance &&) = default;
 
   void Start(RSkSurfaceWindow *surface);
+  void Stop();
 
  private:
   void InitializeJSCore();
