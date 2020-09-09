@@ -19,7 +19,9 @@ ReactSkiaApp::ReactSkiaApp(int argc, char **argv, void *platformData) {
   rnInstance_->Start(surface_.get());
 }
 
-ReactSkiaApp::~ReactSkiaApp() {}
+ReactSkiaApp::~ReactSkiaApp() {
+  rnInstance_->Stop();
+}
 
 void ReactSkiaApp::onIdle() {
   // Just re-paint continously
