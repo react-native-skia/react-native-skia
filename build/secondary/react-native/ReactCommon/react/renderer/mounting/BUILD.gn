@@ -1,0 +1,42 @@
+import("//react-native/common.gni")
+
+rn_cxx_component("mounting") {
+  sources = [
+    "Differentiator.cpp",
+    "MountingCoordinator.cpp",
+    "MountingTransaction.cpp",
+    "MountingTransactionMetadata.cpp",
+    "ShadowTree.cpp",
+    "ShadowTreeRegistry.cpp",
+    "ShadowTreeRevision.cpp",
+    "ShadowView.cpp",
+    "ShadowViewMutation.cpp",
+    "StubView.cpp",
+    "StubViewTree.cpp",
+    "SurfaceTelemetry.cpp",
+    "TelemetryController.cpp",
+    "TransactionTelemetry.cpp",
+    "stubs.cpp",
+  ]
+
+  defines = [
+    "LOG_TAG=ReactNative",
+  ]
+
+  deps = [
+    "//folly",
+    "//react-native/ReactCommon/better:better",
+    "//react-native/ReactCommon/react/renderer/core:core",
+    "//react-native/ReactCommon/react/renderer/debug:debug",
+    "//react-native/ReactCommon/react/utils:utils",
+    "//third_party/glog:glog",
+  ]
+
+  public_deps = [
+    "//react-native/ReactCommon/react/renderer/components/root:root",
+    "//react-native/ReactCommon/react/renderer/components/view:view",
+  ]
+
+  with_exceptions = true
+  with_rtti = true
+}

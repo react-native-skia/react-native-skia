@@ -1,0 +1,27 @@
+import("//react-native/common.gni")
+
+config("better_config") {
+  include_dirs = [
+    ".",
+    "//react-native/ReactCommon",
+  ]
+}
+
+rn_cxx_component("better") {
+  sources = [
+  ]
+
+  defines = [
+    "LOG_TAG=ReactNative",
+  ]
+
+  deps = [
+    "//folly",
+    "//third_party/glog:glog",
+  ]
+
+  with_exceptions = true
+  with_rtti = true
+
+  public_configs = [ ":better_config" ]
+}

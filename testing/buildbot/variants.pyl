@@ -1,0 +1,325 @@
+# Copyright 2020 The Chromium Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+# This is a .pyl, or "Python Literal", file. You can treat it just like a
+# .json file, with the following exceptions:
+# * all keys must be quoted (use single quotes, please);
+# * comments are allowed, using '#' syntax; and
+# * trailing commas are allowed.
+
+{
+    'OZONE_HEADLESS': {
+        'args': [
+            '--no-xvfb',
+            '--ozone-platform=headless',
+        ],
+        'identifier': 'headless',
+    },
+    'OZONE_WAYLAND': {
+        'args': [
+            '--no-xvfb',
+            '--use-weston',
+            '--ozone-platform=wayland'
+        ],
+        'identifier': 'wayland',
+    },
+    'OZONE_X11': {
+        'args': [
+            '--ozone-platform=x11',
+        ],
+        'identifier': 'x11',
+    },
+    'IPHONE_6S_12_3_1': {
+        'swarming': {
+            'dimension_sets': [
+                {
+                    'os': 'iOS-12.3.1',
+                    'device': 'iPhone8,1'
+                }
+            ]
+        },
+        'identifier': 'iPhone 6S 12.3.1'
+    },
+    'SIM_IPAD_AIR_2_12_4': {
+        'args': [
+            '--platform',
+            'iPad Air 2',
+            '--version',
+            '12.4'
+        ],
+        'identifier': 'iPad Air 2 12.4'
+    },
+    'SIM_IPAD_AIR_2_13_4': {
+        'args': [
+            '--platform',
+            'iPad Air 2',
+            '--version',
+            '13.4'
+        ],
+        'identifier': 'iPad Air 2 13.4'
+    },
+    'SIM_IPAD_AIR_2_13_5': {
+        'args': [
+            '--platform',
+            'iPad Air 2',
+            '--version',
+            '13.5'
+        ],
+        'identifier': 'iPad Air 2 13.5'
+    },
+    'SIM_IPAD_AIR_2_13_6': {
+        'args': [
+            '--platform',
+            'iPad Air 2',
+            '--version',
+            '13.6'
+        ],
+        'identifier': 'iPad Air 2 13.6'
+    },
+    'SIM_IPAD_AIR_2_14_0': {
+        'args': [
+            '--platform',
+            'iPad Air 2',
+            '--version',
+            '14.0'
+        ],
+        'identifier': 'iPad Air 2 14.0'
+    },
+    'SIM_IPAD_AIR_3RD_GEN_12_4': {
+        'args': [
+            '--platform',
+            'iPad Air (3rd generation)',
+            '--version',
+            '12.4'
+        ],
+        'identifier': 'iPad Air (3rd generation) 12.4'
+    },
+    'SIM_IPAD_AIR_3RD_GEN_13_6': {
+        'args': [
+            '--platform',
+            'iPad Air (3rd generation)',
+            '--version',
+            '13.6'
+        ],
+        'identifier': 'iPad Air (3rd generation) 13.6'
+    },
+    'SIM_IPAD_AIR_3RD_GEN_14_0': {
+        'args': [
+            '--platform',
+            'iPad Air (3rd generation)',
+            '--version',
+            '14.0'
+        ],
+        'identifier': 'iPad Air (3rd generation) 14.0'
+    },
+    'SIM_IPAD_PRO_12_4': {
+        'args': [
+          '--platform',
+          'iPad Pro (12.9-inch)',
+          '--version',
+          '12.4',
+        ],
+        'identifier': 'iPad Pro (12.9-inch) 12.4'
+    },
+    'SIM_IPAD_PRO_13_6': {
+        'args': [
+          '--platform',
+          'iPad Pro (12.9-inch)',
+          '--version',
+          '13.6',
+        ],
+        'identifier': 'iPad Pro (12.9-inch) 13.6'
+    },
+    # In Xcode 12, "iPad Pro (12.9-inch)" requires a generation suffix in
+    # "platform" arg.
+    'SIM_IPAD_PRO_2ND_GEN_14_0': {
+        'args': [
+          '--platform',
+          'iPad Pro (12.9-inch) (2nd generation)',
+          '--version',
+          '14.0',
+        ],
+        'identifier': 'iPad Pro (12.9-inch) (2nd generation) 14.0'
+    },
+    'SIM_IPAD_6_GEN_12_4': {
+        'args': [
+          '--platform',
+          'iPad (6th generation)',
+          '--version',
+          '12.4',
+        ],
+        'identifier': 'iPad (6th generation) 12.4'
+    },
+    'SIM_IPAD_6_GEN_13_6': {
+        'args': [
+          '--platform',
+          'iPad (6th generation)',
+          '--version',
+          '13.6',
+        ],
+        'identifier': 'iPad (6th generation) 13.6'
+    },
+    'SIM_IPAD_6_GEN_14_0': {
+        'args': [
+          '--platform',
+          'iPad (6th generation)',
+          '--version',
+          '14.0',
+        ],
+        'identifier': 'iPad (6th generation) 14.0'
+    },
+    'SIM_IPHONE_6S_12_4': {
+        'args': [
+            '--platform',
+            'iPhone 6s',
+            '--version',
+            '12.4',
+        ],
+        'identifier': 'iPhone 6s 12.4'
+    },
+    'SIM_IPHONE_6S_13_4': {
+        'args': [
+            '--platform',
+            'iPhone 6s',
+            '--version',
+            '13.4',
+        ],
+        'identifier': 'iPhone 6s 13.4'
+    },
+    'SIM_IPHONE_6S_13_6': {
+        'args': [
+            '--platform',
+            'iPhone 6s',
+            '--version',
+            '13.6',
+        ],
+        'identifier': 'iPhone 6s 13.6'
+    },
+    'SIM_IPHONE_6S_14_0': {
+        'args': [
+            '--platform',
+            'iPhone 6s',
+            '--version',
+            '14.0',
+        ],
+        'identifier': 'iPhone 6s 14.0'
+    },
+    'SIM_IPHONE_6S_PLUS_12_4': {
+        'args': [
+            '--platform',
+            'iPhone 6s Plus',
+            '--version',
+            '12.4',
+        ],
+        'identifier': 'iPhone 6s Plus 12.4'
+    },
+    'SIM_IPHONE_6S_PLUS_13_4': {
+        'args': [
+            '--platform',
+            'iPhone 6s Plus',
+            '--version',
+            '13.4',
+        ],
+        'identifier': 'iPhone 6s Plus 13.4'
+    },
+    'SIM_IPHONE_6S_PLUS_13_6': {
+        'args': [
+            '--platform',
+            'iPhone 6s Plus',
+            '--version',
+            '13.6',
+        ],
+        'identifier': 'iPhone 6s Plus 13.6'
+    },
+    'SIM_IPHONE_6S_PLUS_14_0': {
+        'args': [
+            '--platform',
+            'iPhone 6s Plus',
+            '--version',
+            '14.0',
+        ],
+        'identifier': 'iPhone 6s Plus 14.0'
+    },
+    'SIM_IPHONE_7_13_4': {
+        'args': [
+            '--platform',
+            'iPhone 7',
+            '--version',
+            '13.4',
+        ],
+        'identifier': 'iPhone 7 13.4'
+    },
+    'SIM_IPHONE_7_13_6': {
+        'args': [
+            '--platform',
+            'iPhone 7',
+            '--version',
+            '13.6',
+        ],
+        'identifier': 'iPhone 7 13.6'
+    },
+    'SIM_IPHONE_7_14_0': {
+        'args': [
+            '--platform',
+            'iPhone 7',
+            '--version',
+            '14.0',
+        ],
+        'identifier': 'iPhone 7 14.0'
+    },
+    'SIM_IPHONE_SE_13_4': {
+        'args': [
+            '--platform',
+            'iPhone SE',
+            '--version',
+            '13.4',
+        ],
+        'identifier': 'iPhone SE 13.4'
+    },
+    'SIM_IPHONE_X_12_4': {
+        'args': [
+            '--platform',
+            'iPhone X',
+            '--version',
+            '12.4',
+        ],
+        'identifier': 'iPhone X 12.4'
+    },
+    'SIM_IPHONE_X_13_4': {
+        'args': [
+            '--platform',
+            'iPhone X',
+            '--version',
+            '13.4',
+        ],
+        'identifier': 'iPhone X 13.4'
+    },
+    'SIM_IPHONE_X_13_5': {
+        'args': [
+            '--platform',
+            'iPhone X',
+            '--version',
+            '13.5',
+        ],
+        'identifier': 'iPhone X 13.5'
+    },
+    'SIM_IPHONE_X_13_6': {
+        'args': [
+            '--platform',
+            'iPhone X',
+            '--version',
+            '13.6',
+        ],
+        'identifier': 'iPhone X 13.6'
+    },
+    'SIM_IPHONE_X_14_0': {
+        'args': [
+            '--platform',
+            'iPhone X',
+            '--version',
+            '14.0',
+        ],
+        'identifier': 'iPhone X 14.0'
+    },
+}

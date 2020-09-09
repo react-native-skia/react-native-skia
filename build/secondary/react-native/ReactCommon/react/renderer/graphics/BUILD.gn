@@ -1,0 +1,34 @@
+import("//react-native/common.gni")
+
+config("graphics_config") {
+  include_dirs = [
+    ".",
+    "./platform/cxx",
+  ]
+}
+
+rn_cxx_component("graphics") {
+  sources = [
+    "Transform.cpp",
+    "platform/cxx/react/renderer/graphics/Color.cpp",
+  ]
+
+  defines = [
+    "LOG_TAG=ReactNative",
+  ]
+
+  deps = [
+    "//folly",
+    "//third_party/glog:glog",
+  ]
+
+  with_exceptions = true
+  with_rtti = true
+
+  extra_configs = [ "//react-native/ReactCommon:fabric_config" ]
+  public_configs = [ ":graphics_config" ]
+
+  cflags_cc = [
+    "-Wno-sign-compare",
+  ]
+}

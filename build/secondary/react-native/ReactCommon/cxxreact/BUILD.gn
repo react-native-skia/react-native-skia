@@ -1,0 +1,102 @@
+import("//react-native/common.gni")
+
+config("cxxreact_config") {
+  include_dirs = [
+    "//react-native/ReactCommon",
+  ]
+}
+
+rn_cxx_component("module") {
+  sources = [
+  ]
+
+  deps = [
+    "//folly",
+  ]
+
+  extra_configs = [ ":cxxreact_config" ]
+}
+
+rn_cxx_component("jsbigstring") {
+  sources = [
+    "JSBigString.cpp",
+  ]
+
+  defines = [
+    "WITH_FBREMAP=1",
+  ]
+
+  deps = [
+    "//folly",
+  ]
+
+  with_exceptions = true
+  with_rtti = true
+
+  extra_configs = [ ":cxxreact_config" ]
+
+  cflags_cc = [
+    "-Wno-sign-compare",
+  ]
+}
+
+rn_cxx_component("samplemodule") {
+  sources = [
+    "SampleCxxModule.cpp",
+  ]
+
+  deps = [
+    "//folly",
+    "//third_party/glog:glog",
+    ":module",
+  ]
+
+  with_exceptions = true
+
+  extra_configs = [ ":cxxreact_config" ]
+}
+
+rn_cxx_component("bridge") {
+  sources = [
+    "CxxNativeModule.cpp",
+    "Instance.cpp",
+    "JSBundleType.cpp",
+    "JSExecutor.cpp",
+    "JSIndexedRAMBundle.cpp",
+    "MethodCall.cpp",
+    "ModuleRegistry.cpp",
+    "NativeToJsBridge.cpp",
+    "RAMBundleRegistry.cpp",
+    "ReactMarker.cpp",
+  ]
+
+  defines = [
+    "LOG_TAG=ReactNative",
+  ]
+
+  deps = [
+    "//folly",
+    "//react-native/ReactCommon/callinvoker:callinvoker",
+    "//react-native/ReactCommon/jsi:jsi",
+    "//react-native/ReactCommon/jsinspector:jsinspector",
+    "//react-native/ReactCommon/microprofiler:microprofiler",
+    "//react-native/ReactCommon/reactperflogger:reactperflogger",
+    "//third_party/glog:glog",
+    ":jsbigstring",
+    ":module",
+  ]
+
+  public_deps = [
+    "//react-native/ReactCommon/runtimeexecutor:runtimeexecutor",
+  ]
+
+  with_exceptions = true
+  with_rtti = true
+
+  public_configs = [ ":cxxreact_config" ]
+
+  cflags_cc = [
+    "-Wno-header-hygiene",
+    "-Wno-sign-compare",
+  ]
+}

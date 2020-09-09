@@ -1,0 +1,163 @@
+# File that lists fields that should be ignored when running the
+# rewrite_raw_ptr_fields tool on Chromium sources.
+#
+# Each non-comment, non-empty line should specify a fully-namespace qualified
+# field like:
+#     my_namespace::my_subnamespace::MyStruct::my_field_
+#
+# There is no need to specify template arguments:
+#     my_namespace::my_subnamespace::MyTemplate::my_field_
+
+# Populated manually - need to keep it constexpr:
+base::BasicStringPiece::ptr_
+base::CheckedContiguousIterator::current_
+base::CheckedContiguousIterator::end_
+base::CheckedContiguousIterator::start_
+base::CheckedContiguousRange::container_
+base::FeatureParam<bool, false>::feature
+base::FeatureParam<double, false>::feature
+base::FeatureParam<int, false>::feature
+base::FeatureParam<std::__Cr::basic_string<char, std::__Cr::char_traits<char>, std::__Cr::allocator<char>>, false>::feature
+base::FeatureParam<type-parameter-0-0, true>::feature
+base::FeatureParam<type-parameter-0-0, true>::options
+base::span::data_
+crash_reporter::internal::CrashKeyStringCombinedImpl::breakpad_key_
+crash_reporter::internal::CrashKeyStringCombinedImpl::crashpad_key_
+crash_reporter::internal::CrashKeyStringImpl::index_array_
+crash_reporter::internal::CrashKeyStringImpl::index_array_
+flags_ui::FeatureEntry::FeatureVariation::params
+gfx::VectorIcon::reps
+gfx::VectorIconRep::path
+safe_browsing::(anonymous namespace)::(anonymous struct)::feature
+tracing::MessageInfo::accepted_field_ids
+tracing::MessageInfo::sub_messages
+ui::(anonymous namespace)::I18nTestParam::test
+
+# Populated manually - double implicit-cast required.
+PaintManager::instance_
+
+# Populated manually - needed to avoid global constructors
+base::(anonymous namespace)::Provider::next
+
+# Populated manually - needed for lock annotations
+base::trace_event::TraceLog::OptionalAutoLock::lock_
+
+# Populated manually to avoid hitting tokens limit explicitly
+# enforced in check.cc:
+# // check.h is a widely included header and its size has significant impact on
+# // build time. Try not to raise this limit unless absolutely necessary. See
+# // https://chromium.googlesource.com/chromium/src/+/HEAD/docs/wmax_tokens.md
+# #pragma clang max_tokens_here 17000
+logging::CheckError::log_message_
+
+# Populated manually - templates make it difficult for the rewriter to see that
+# |.get()| needs to be appended.
+blink::xpath::EvaluationContext::node
+WTF::HashTableAddResult::container_
+WTF::HashTableAddResult::stored_value
+
+# Populated manually - conflicting types in an initializer list
+WebUITabStripContainerView::tab_counter_
+
+# Populated manually to avoid returning a reference to a temporary T* (result of
+# implicitly casting CheckedPtr<T> to T*).  This covers functions that return
+# |SomeClass*&| and local variables with that type.
+AllTabContentsesList::Iterator::cur_
+blink::NormalPage::CompactionContext::current_page_
+blink::Worklist::PrivateSegmentHolder::private_pop_segment
+blink::Worklist::PrivateSegmentHolder::private_push_segment
+content::(anonymous namespace)::AudioStreamMonitorTest::monitor_
+content::AudioStreamMonitor::clock_
+remoting::ChromotingHostTest::client1_
+remoting::ChromotingHostTest::client2_
+WTF::ICUConverterWrapper::converter
+
+# Populated manually - always holds a pointer to an OilPan-allocated memory.
+blink::PersistentBase::raw_
+blink::SVGFilterBuilder::last_effect_
+
+# Populated manually - the rewriter has trouble appending |.get()| inside macros
+# that work with |XDisplay*|.
+extensions::GlobalShortcutListenerX11::x_display_
+gl::GLVisualPickerGLX::display_
+media::(anonymous namespace)::UserInputMonitorLinuxCore::x_record_display_
+media::cast::test::LinuxOutputWindow::display_
+remoting::(anonymous namespace)::InputInjectorX11::Core::display_
+remoting::(anonymous namespace)::LocalHotkeyInputMonitorX11::Core::x_record_display_
+remoting::(anonymous namespace)::LocalMouseInputMonitorX11::Core::x_record_display_
+remoting::ClipboardX11::display_
+remoting::XServerClipboard::display_
+Simulator::display_
+ui::ClipboardX11::X11Details::x_display_
+ui::SelectionRequestorTest::x_display_
+ui::X11EventSource::display_
+ui::X11MenuRegistrar::xdisplay_
+ui::X11WorkspaceHandler::xdisplay_
+ui::XDisplayManager::xdisplay_
+ui::XOSExchangeDataProvider::x_display_
+ui::XVisualManager::display_
+ui::XWindow::xdisplay_
+views::test::(anonymous namespace)::UIControlsDesktopX11::x_display_
+viz::SkiaOutputDeviceX11::display_
+x11::Connection::display_
+
+# Populated manually - static_cast not related by inheritance.
+gtk::GtkKeyBindingsHandler::fake_window_
+gtk::GtkKeyBindingsHandler::handler_
+gtk::SelectFileDialogImplGTK::preview_
+net::(anonymous namespace)::SettingGetterImplGSettings::client_
+net::(anonymous namespace)::SettingGetterImplGSettings::http_client_
+net::(anonymous namespace)::SettingGetterImplGSettings::https_client_
+net::(anonymous namespace)::SettingGetterImplGSettings::ftp_client_
+net::(anonymous namespace)::SettingGetterImplGSettings::socks_client_
+remoting::(anonymous namespace)::DisconnectWindowGtk::disconnect_window_
+remoting::(anonymous namespace)::DisconnectWindowGtk::message_
+remoting::(anonymous namespace)::GtkFileChooserOnUiThread::file_dialog_
+remoting::(anonymous namespace)::It2MeConfirmationDialogLinux::confirmation_window_
+remoting::ContinueWindowGtk::continue_window_
+ui::AXPlatformNodeAuraLinux::atk_hyperlink_
+PrintDialogGtk::dialog_
+
+# Populated manually - using nmap or base::AllocPages directly
+blink::GCInfoTable::table_
+disk_cache::MappedFile::buffer_
+
+# Populated manually:
+# 1. This guarantees that both fields of the union are skipped
+#    (otherwise, |characters8| might be skipped because of anyCharType
+#     heuristic, but |characters16| might be rewritte)
+# 2. Note that this is one of the cases where the code may write one
+#    field of the union and then read another.  According to the spec
+#    this may result in undefined behavior.
+#    https://en.cppreference.com/w/cpp/language/union: "It's undefined behavior
+#    to read from the member of the union that wasn't most recently written."
+blink::VTTScanner::(anonymous union)::characters8
+blink::VTTScanner::(anonymous union)::characters16
+
+# Populated manually, because of in-out-arg usage.
+blink::PaintController::IdAsHashKey::client
+ui::AXPlatformNodeAuraLinux::document_parent_
+ui::AXPlatformNodeAuraLinux::atk_object_
+
+# Populated manually - problems related to passing to a templated && parameter,
+# which is later forwarded to something that doesn't vibe with CheckedPtr. The
+# rewriter has no visibility into where the parameter is forwarded to.
+ProfileDestroyer::profile_
+(anonymous namespace)::BluetoothLowEnergyApiTest::mock_adapter_
+base::trace_event::TraceValue::as_convertable
+content::RenderProcessHostImpl::browser_context_
+device::BluetoothDevice::adapter_
+
+# Populated manually - problems related to lambdas with no return type, where
+# the return value is CheckedPtr, but variable/parameter receiving the lambda
+# expects the raw pointer type.
+vr::LocationBarState::vector_icon
+vr::OmniboxSuggestion::icon
+
+# Populated manually - these pointers are assigned invalid address (with top
+# bits sets), which CheckedPtr is unable to handle, leading to run-time crashes.
+(anonymous namespace)::TlsVectorEntry::data
+blink::(anonymous namespace)::ThreadMarker::creating_thread_
+blink::ControlKey::name_
+performance_manager::frame_priority::BoostingVoteAggregator::Edge::src_
+performance_manager::frame_priority::BoostingVoteAggregator::Edge::dst_

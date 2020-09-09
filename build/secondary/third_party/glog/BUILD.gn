@@ -1,0 +1,34 @@
+component("glog") {
+  sources = [
+    "src/demangle.cc",
+    "src/logging.cc",
+    "src/raw_logging.cc",
+    "src/signalhandler.cc",
+    "src/symbolize.cc",
+    "src/utilities.cc",
+    "src/vlog_is_on.cc",
+  ]
+
+  include_dirs = [
+    "//build/secondary/third_party/glog/include",
+    "src",
+    "src/glog",
+  ]
+
+  cflags_cc = [
+    "-Wno-header-hygiene",
+    "-Wno-c++98-compat-extra-semi",
+  ]
+
+  configs -= [ "//build/config/gcc:symbol_visibility_hidden" ]
+  configs += [ "//build/config/gcc:symbol_visibility_default" ]
+
+  public_configs = [ ":glog-config" ]
+}
+
+config("glog-config") {
+  include_dirs = [
+    "//build/secondary/third_party/glog/include",
+    # "src",
+  ]
+}

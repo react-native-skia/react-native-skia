@@ -1,0 +1,2 @@
+# crbug.com/1061988: Overdraw feedback isn't supported using Skia Dawn Vulkan
+-SkiaRendererPixelTestWithOverdrawFeedback/2.TranslucentRectangles

@@ -1,0 +1,64 @@
+import("//react-native/common.gni")
+
+config("jsi_config") {
+  include_dirs = [
+    ".",
+    "//react-native/ReactCommon",
+  ]
+
+  cflags_cc = [
+    "-Wno-extra-semi",
+  ]
+}
+
+rn_cxx_component("jsi") {
+  sources = [
+    "jsi/jsi.cpp",
+  ]
+
+  with_exceptions = true
+  with_rtti = true
+
+  public_configs = [ ":jsi_config" ]
+}
+
+rn_cxx_component("JSIDynamic") {
+  sources = [
+    "jsi/JSIDynamic.cpp",
+  ]
+
+  deps = [
+    "//folly",
+  ]
+
+  public_deps = [
+    ":jsi",
+  ]
+
+  with_exceptions = true
+  with_rtti = true
+
+  public_configs = [ ":jsi_config" ]
+}
+
+rn_cxx_component("JSCRuntime") {
+  sources = [
+    "JSCRuntime.cpp",
+  ]
+
+  public_deps = [
+    ":jsi",
+  ]
+
+  with_exceptions = true
+  with_rtti = true
+
+  public_configs = [ ":jsi_config" ]
+  defines = [
+    "RN_FABRIC_ENABLED",
+  ]
+
+  frameworks = [
+    "JavaScriptCore.framework",
+  ]
+}

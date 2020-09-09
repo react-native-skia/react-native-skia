@@ -1,0 +1,1 @@
+--tool-arg=--exclude-fields=fields-to-ignore.txt

@@ -1,0 +1,10 @@
+# FreeType and HarfBuzz libraries are dependent on each other. This component
+# will depend on the appropriate source sets or export the system packages
+# for both FreeType and HarfBuzz.
+component("freetype_harfbuzz") {
+  public_configs = []
+  public_deps = [
+    "//third_party/freetype:freetype_source",
+    "//third_party/harfbuzz:harfbuzz_source",
+  ]
+}

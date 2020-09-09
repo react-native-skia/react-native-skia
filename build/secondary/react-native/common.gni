@@ -1,0 +1,38 @@
+template("rn_cxx_component") {
+  with_exceptions = false
+  if (defined(invoker.with_exceptions)) {
+    with_exceptions = invoker.with_exceptions
+  }
+
+  with_rtti = false
+  if (defined(invoker.with_rtti)) {
+    with_rtti = invoker.with_rtti
+  }
+
+  target("source_set", target_name) {
+    if (with_exceptions) {
+      configs -= [ "//build/config/compiler:no_exceptions" ]
+      configs += [ "//build/config/compiler:exceptions" ]
+    }
+    if (with_rtti) {
+      configs -= [ "//build/config/compiler:no_rtti" ]
+      configs += [ "//build/config/compiler:rtti" ]
+    }
+
+    if (is_clang) {
+      configs -= [ "//build/config/clang:find_bad_constructs" ]
+    }
+
+    if (defined(invoker.extra_configs)) {
+      configs += invoker.extra_configs
+    }
+
+    forward_variables_from(invoker,
+                           "*",
+                           [
+                             "with_exceptions",
+                             "with_rtti",
+                             "extra_configs",
+                           ])
+  }
+}

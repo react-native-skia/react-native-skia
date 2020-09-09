@@ -1,0 +1,16 @@
+==== BEGIN EDITS ====
+include-user-header:::/usr/local/google/home/lukasza/src/chromium4/src/tools/clang/rewrite_raw_ptr_fields/tests/gen-in-out-arg-actual.cc:::-1:::-1:::base/memory/checked_ptr.h
+r:::/usr/local/google/home/lukasza/src/chromium4/src/tools/clang/rewrite_raw_ptr_fields/tests/gen-in-out-arg-actual.cc:::1090:::3:::CheckedPtr<T> 
+r:::/usr/local/google/home/lukasza/src/chromium4/src/tools/clang/rewrite_raw_ptr_fields/tests/gen-in-out-arg-actual.cc:::2875:::3:::CheckedPtr<T> 
+r:::/usr/local/google/home/lukasza/src/chromium4/src/tools/clang/rewrite_raw_ptr_fields/tests/gen-in-out-arg-actual.cc:::789:::11:::CheckedPtr<SomeClass> 
+r:::/usr/local/google/home/lukasza/src/chromium4/src/tools/clang/rewrite_raw_ptr_fields/tests/gen-in-out-arg-actual.cc:::813:::11:::CheckedPtr<SomeClass> 
+r:::/usr/local/google/home/lukasza/src/chromium4/src/tools/clang/rewrite_raw_ptr_fields/tests/gen-in-out-arg-actual.cc:::842:::11:::CheckedPtr<SomeClass> 
+r:::/usr/local/google/home/lukasza/src/chromium4/src/tools/clang/rewrite_raw_ptr_fields/tests/gen-in-out-arg-actual.cc:::871:::11:::CheckedPtr<SomeClass> 
+r:::/usr/local/google/home/lukasza/src/chromium4/src/tools/clang/rewrite_raw_ptr_fields/tests/gen-in-out-arg-actual.cc:::907:::11:::CheckedPtr<SomeClass> 
+==== END EDITS ====
+==== BEGIN FIELD FILTERS ====
+my_namespace::MyStruct::in_out_via_auto_reset  # addr-of
+my_namespace::MyStruct::in_out_via_ptr  # addr-of
+my_namespace::MyStruct::in_out_via_ref  # in-out-param-ref
+my_namespace::MyTemplateBase::ptr_  # addr-of
+==== END FIELD FILTERS ====

@@ -1,0 +1,41 @@
+import("//react-native/common.gni")
+
+config("react_nativemodule_config") {
+  include_dirs = [ "." ]
+}
+
+rn_cxx_component("core") {
+  output_name = "react_nativemodule_core"
+
+  sources = [
+    "ReactCommon/LongLivedObject.cpp",
+    "ReactCommon/TurboCxxModule.cpp",
+    "ReactCommon/TurboModule.cpp",
+    "ReactCommon/TurboModuleBinding.cpp",
+    "ReactCommon/TurboModulePerfLogger.cpp",
+    "ReactCommon/TurboModuleUtils.cpp",
+  ]
+
+  defines = [
+    "LOG_TAG=ReactNative",
+  ]
+
+  deps = [
+    "//folly",
+    "//react-native/ReactCommon/callinvoker:callinvoker",
+    "//react-native/ReactCommon/cxxreact:bridge",
+    "//react-native/ReactCommon/cxxreact:module",
+    "//react-native/ReactCommon/jsi:JSIDynamic",
+    "//react-native/ReactCommon/reactperflogger:reactperflogger",
+    "//third_party/glog:glog",
+  ]
+
+  with_exceptions = true
+  with_rtti = true
+
+  public_configs = [ ":react_nativemodule_config" ]
+
+  cflags_cc = [
+    "-Wno-header-hygiene",
+  ]
+}

@@ -1,0 +1,5 @@
+config("fabric_config") {
+  include_dirs = [
+    "//react-native/ReactCommon",
+  ]
+}

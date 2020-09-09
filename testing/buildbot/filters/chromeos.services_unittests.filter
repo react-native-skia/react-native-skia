@@ -1,0 +1,9 @@
+# TODO(crbug.com/852590): Enable this.
+-UDPSocketTest.JoinMulticastGroup
+
+# TODO(crbug.com/868060): Enable this.
+-GeolocationChromeOsWifiDataProviderTest.*
+-GeolocationServiceUnitTest.GeolocationConfig
+
+# TODO(crbug.com/866114): Enable this.
+-ScreenManagerOzoneInternalTest.*

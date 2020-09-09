@@ -1,0 +1,32 @@
+import("//react-native/common.gni")
+
+rn_cxx_component("uimanager") {
+  sources = [
+    "UIManager.cpp",
+    "UIManagerBinding.cpp",
+  ]
+
+  defines = [
+    "LOG_TAG=ReactNative",
+  ]
+
+  deps = [
+    "//folly",
+    "//react-native/ReactCommon/jsi:JSIDynamic",
+    "//react-native/ReactCommon/jsi:jsi",
+    "//react-native/ReactCommon/react/config:config",
+    "//react-native/ReactCommon/react/renderer/componentregistry:componentregistry",
+    "//react-native/ReactCommon/react/renderer/components/view:view",
+    "//react-native/ReactCommon/react/renderer/core:core",
+    "//react-native/ReactCommon/react/renderer/debug:debug",
+    "//react-native/ReactCommon/runtimeexecutor:runtimeexecutor",
+    "//third_party/glog:glog",
+  ]
+
+  with_exceptions = true
+  with_rtti = true
+
+  public_deps = [
+    "//react-native/ReactCommon/react/renderer/mounting:mounting",
+  ]
+}

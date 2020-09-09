@@ -1,0 +1,20 @@
+import("//react-native/common.gni")
+
+rn_cxx_component("mapbuffer") {
+  sources = [
+    "MapBuffer.cpp",
+  ]
+
+  defines = [
+    "LOG_TAG=ReactNative",
+  ]
+
+  deps = [
+    "//folly",
+    "//react-native/ReactCommon/react/utils:utils",
+    "//third_party/glog:glog",
+  ]
+
+  with_exceptions = true
+  with_rtti = true
+}

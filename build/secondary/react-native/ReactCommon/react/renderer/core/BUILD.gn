@@ -1,0 +1,63 @@
+import("//react-native/common.gni")
+
+config("core_config") {
+  cflags_cc = [
+    "-Wno-sign-compare",
+  ]
+}
+
+rn_cxx_component("core") {
+  output_name = "react_renderer_core"
+
+  sources = [
+    "BatchedEventQueue.cpp",
+    "ComponentDescriptor.cpp",
+    "EventBeat.cpp",
+    "EventDispatcher.cpp",
+    "EventEmitter.cpp",
+    "EventQueue.cpp",
+    "EventTarget.cpp",
+    "LayoutConstraints.cpp",
+    "LayoutableShadowNode.cpp",
+    "Props.cpp",
+    "RawEvent.cpp",
+    "RawProps.cpp",
+    "RawPropsKey.cpp",
+    "RawPropsKeyMap.cpp",
+    "RawPropsParser.cpp",
+    "RawValue.cpp",
+    "Sealable.cpp",
+    "ShadowNode.cpp",
+    "ShadowNodeFamily.cpp",
+    "ShadowNodeFamilyFragment.cpp",
+    "ShadowNodeFragment.cpp",
+    "ShadowNodeTraits.cpp",
+    "State.cpp",
+    "StateUpdate.cpp",
+    "UnbatchedEventQueue.cpp",
+  ]
+
+  defines = [
+    "LOG_TAG=ReactNative",
+  ]
+
+  deps = [
+    "//folly",
+    "//react-native/ReactCommon/react/renderer/debug:debug",
+    "//react-native/ReactCommon/react/utils:utils",
+    "//third_party/glog:glog",
+  ]
+
+  public_deps = [
+    "//react-native/ReactCommon/jsi:JSIDynamic",
+    "//react-native/ReactCommon/jsi:jsi",
+    "//react-native/ReactCommon/react/renderer/graphics:graphics",
+  ]
+
+  with_exceptions = true
+  with_rtti = true
+
+  extra_configs = [ "//react-native/ReactCommon:fabric_config" ]
+
+  public_configs = [ ":core_config" ]
+}

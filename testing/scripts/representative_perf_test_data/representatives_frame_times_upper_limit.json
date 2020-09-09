@@ -1,0 +1,165 @@
+{
+  "win": {
+    "canvas_to_blob": {
+      "ci_095": 10.292,
+      "avg": 30.009
+    },
+    "filter_terrain_svg": {
+      "ci_095": 0.377,
+      "avg": 31.486,
+      "experimental": true,
+      "_comment": "crbug.com/1053614"
+    },
+    "web_animation_value_type_transform_complex": {
+      "ci_095": 1.783,
+      "avg": 50.441
+    },
+    "runway_2019": {
+      "ci_095": 4.167,
+      "avg": 18.19
+    },
+    "css_transitions_inline_style": {
+      "ci_095": 4.32,
+      "avg": 19.553
+    },
+    "many_planets_deep": {
+      "ci_095": 0.095,
+      "avg": 16.678
+    },
+    "aquarium_20k": {
+      "ci_095": 3.516,
+      "avg": 127.253
+    },
+    "balls_css_transition_2_properties": {
+      "ci_095": 14.949,
+      "avg": 78.445
+    },
+    "cc_poster_circle": {
+      "ci_095": 0.061,
+      "avg": 16.678
+    },
+    "js_poster_circle": {
+      "ci_095": 0.113,
+      "avg": 16.68
+    },
+    "web_animations_staggered_triggering_page": {
+      "ci_095": 0.612,
+      "avg": 16.97
+    },
+    "aquarium": {
+      "ci_095": 0.178,
+      "avg": 16.687
+    },
+    "main_30fps_impl_60fps": {
+      "control": true,
+      "ci_095": 0.215,
+      "avg": 16.683
+    },
+    "css_value_type_shadow": {
+      "ci_095": 1.284,
+      "avg": 49.386,
+      "experimental": true,
+      "_comment": "crbug.com/1093313"
+    },
+    "nvidia_vertex_buffer_object": {
+      "ci_095": 3.37,
+      "avg": 17.43
+    }
+  },
+  "mac": {
+    "twitch_2018": {
+      "ci_095": 10.011,
+      "avg": 24.005
+    },
+    "balls_javascript_canvas": {
+      "ci_095": 1.259,
+      "avg": 41.264
+    },
+    "transform_transitions_js_block": {
+      "ci_095": 0.367,
+      "avg": 16.752
+    },
+    "web_animations_staggered_infinite_iterations": {
+      "ci_095": 0.36,
+      "avg": 16.691
+    },
+    "fill_shapes": {
+      "ci_095": 1.101,
+      "avg": 33.944
+    },
+    "css_value_type_shadow": {
+      "ci_095": 13.611,
+      "avg": 61.261,
+      "experimental": true,
+      "_comment": "crbug.com/1093313"
+    },
+    "animometer_webgl_attrib_arrays": {
+      "ci_095": 0.495,
+      "avg": 17.006
+    },
+    "canvas_05000_pixels_per_second": {
+      "ci_095": 0.31,
+      "avg": 16.685
+    },
+    "main_30fps_impl_60fps": {
+      "control": true,
+      "ci_095": 0.175,
+      "avg": 16.692
+    },
+    "ie_chalkboard": {
+      "ci_095": 45.199,
+      "avg": 67.864
+    },
+    "new_tilings": {
+      "ci_095": 0.363,
+      "avg": 17.505
+    },
+    "chip_tune": {
+      "ci_095": 0.379,
+      "avg": 16.725
+    }
+  },
+  "android": {
+    "text_10000_pixels_per_second": {
+      "ci_095": 0.789,
+      "avg": 16.921
+    },
+    "balls_javascript_canvas": {
+      "ci_095": 21.544,
+      "avg": 203.779
+    },
+    "transform_transitions_js_block": {
+      "ci_095": 0.063,
+      "avg": 16.661
+    },
+    "web_animations_staggered_infinite_iterations": {
+      "ci_095": 5.731,
+      "avg": 52.514
+    },
+    "motion_mark_canvas_fill_shapes": {
+      "ci_095": 44.335,
+      "avg": 167.291
+    },
+    "css_value_type_shadow": {
+      "ci_095": 36.589,
+      "avg": 273.462
+    },
+    "canvas_05000_pixels_per_second": {
+      "ci_095": 0.614,
+      "avg": 16.887
+    },
+    "main_30fps_impl_60fps": {
+      "control": true,
+      "ci_095": 0.39,
+      "avg": 17.34
+    },
+    "new_tilings": {
+      "ci_095": 0.712,
+      "avg": 18.074
+    },
+    "extra_large_texture_uploads": {
+      "ci_095": 27.799,
+      "avg": 232.815
+    }
+  }
+}

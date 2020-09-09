@@ -1,0 +1,27 @@
+import("//react-native/common.gni")
+
+rn_cxx_component("scrollview") {
+  sources = [
+    "ScrollViewEventEmitter.cpp",
+    "ScrollViewProps.cpp",
+    "ScrollViewShadowNode.cpp",
+    "ScrollViewState.cpp",
+  ]
+
+  defines = [
+    "LOG_TAG=ReactNative",
+  ]
+
+  deps = [
+    "//folly",
+    "//react-native/ReactCommon/react/renderer/components/view:view",
+    "//react-native/ReactCommon/react/renderer/core:core",
+    "//react-native/ReactCommon/react/renderer/debug:debug",
+    "//react-native/ReactCommon/react/renderer/graphics:graphics",
+    "//react-native/ReactCommon/yoga:yoga",
+    "//third_party/glog:glog",
+  ]
+
+  with_exceptions = true
+  with_rtti = true
+}

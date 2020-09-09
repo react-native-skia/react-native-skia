@@ -1,0 +1,19 @@
+import("//react-native/common.gni")
+
+rn_cxx_component("config") {
+  sources = [
+    "ReactNativeConfig.cpp",
+  ]
+
+  defines = [
+    "LOG_TAG=ReactNative",
+  ]
+
+  deps = [
+    "//folly",
+    "//third_party/glog:glog",
+  ]
+
+  with_exceptions = true
+  with_rtti = true
+}

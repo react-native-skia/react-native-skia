@@ -1,0 +1,79 @@
+# crbug/1036413
+-org.chromium.chrome.browser.banners.AppBannerManagerTest.testBlockedAmbientBadgeDoesNotAppearAgainForMonths
+
+# crbug/1036417
+-org.chromium.chrome.browser.dom_distiller.DistilledPagePrefsTest.testSingleObserverFontFamily
+-org.chromium.chrome.browser.dom_distiller.DistilledPagePrefsTest.testSingleObserverFontScaling
+-org.chromium.chrome.browser.dom_distiller.DistilledPagePrefsTest.testSingleObserverTheme
+
+# crbug/963898
+-org.chromium.chrome.browser.download.DownloadMediaParserTest.testParseVideoH264
+
+# crbug/1018181
+-org.chromium.chrome.browser.download.home.DownloadActivityV2Test.testLaunchingActivity
+
+# crbug/1032118
+-org.chromium.chrome.browser.notifications.channels.ChannelsInitializerTest.testEnsureInitialized_permissionRequests
+-org.chromium.chrome.browser.notifications.channels.ChannelsInitializerTest.testEnsureInitialized_permissionRequestsHigh
+-org.chromium.chrome.browser.notifications.StandardNotificationBuilderTest.testSetAll
+
+# crbug/1036459
+-org.chromium.chrome.browser.ntp.cards.NewTabPageRecyclerViewTest.testDismissArticleWithContextMenu
+-org.chromium.chrome.browser.ntp.NewTabPageTest.testFocusFakebox
+-org.chromium.chrome.browser.ntp.NewTabPageTest.testOpenMostVisitedItemInIncognitoTab
+-org.chromium.chrome.browser.ntp.NewTabPageTest.testRemoveMostVisitedItem
+-org.chromium.chrome.browser.ntp.RecentTabsPageTest.testRecentlyClosedTabs
+
+# crbug/1040088
+-org.chromium.chrome.browser.payments.PaymentRequestRetryTest.testRetryWithShippingAddressErrorsAndPayerErrors
+
+# crbug/707528
+-org.chromium.chrome.browser.push_messaging.PushMessagingTest.testPushAndShowNotification
+
+# crbug/836460
+-org.chromium.chrome.browser.autofill.settings.AutofillProfilesFragmentTest.testKeyboardShownOnDpadCenter
+
+# crbug/1036545
+-org.chromium.chrome.browser.suggestions.tile.TileGroupTest.testDismissTileUndo
+-org.chromium.chrome.browser.suggestions.tile.TileGroupTest.testDismissTileWithContextMenu
+
+# crbug/1036552
+-org.chromium.chrome.browser.tasks.tab_management.TabGridDialogViewTest.testDialog_ZoomInFadeOut
+-org.chromium.chrome.browser.tasks.tab_management.TabGridDialogViewTest.testDialog_ZoomInZoomOut
+
+# crbug/1036553
+-org.chromium.chrome.browser.translate.TranslateCompactInfoBarTest.testTabMenuDismissedOnOrientationChange
+-org.chromium.chrome.browser.translate.TranslateCompactInfoBarTest.testTranslateCompactInfoBarAppears
+-org.chromium.chrome.browser.translate.TranslateCompactInfoBarTest.testTranslateCompactInfoBarOverflowMenus
+-org.chromium.chrome.browser.translate.TranslateCompactInfoBarTest.testTranslateCompactInfoBarReopenOnTarget
+
+# crbug/1036556
+-org.chromium.chrome.browser.usage_stats.TabSuspensionTest.testMediaSuspension
+-org.chromium.chrome.browser.usage_stats.TabSuspensionTest.testMultiWindow
+-org.chromium.chrome.browser.usage_stats.TabSuspensionTest.testTabAddedFromCustomTab
+-org.chromium.chrome.browser.usage_stats.TabSuspensionTest.testEagerSuspension
+-org.chromium.chrome.browser.usage_stats.TabSuspensionTest.testNavigateToSuspended
+-org.chromium.chrome.browser.usage_stats.TabSuspensionTest.testNavigateToSuspendedDomain_differentPage
+-org.chromium.chrome.browser.usage_stats.TabSuspensionTest.testNavigationFromSuspendedTabToInterstitial
+-org.chromium.chrome.browser.usage_stats.TabSuspensionTest.testNewTabSuspended
+-org.chromium.chrome.browser.usage_stats.TabSuspensionTest.testRendererCrashOnSuspendedTab
+-org.chromium.chrome.browser.usage_stats.TabSuspensionTest.testTabAddedInBackground
+-org.chromium.chrome.browser.usage_stats.TabSuspensionTest.testTabSwitchBackToSuspended
+-org.chromium.chrome.browser.usage_stats.TabSuspensionTest.testTabUnsuspendedInBackground
+
+# crbug/1036571
+-org.chromium.shape_detection.BarcodeDetectionImplTest.testDetectBarcodeWithHint
+-org.chromium.shape_detection.BarcodeDetectionImplTest.testDetectBarcodeWithoutHint
+-org.chromium.shape_detection.FaceDetectionImplTest.testDetectFacesInProfileWithGmsCore
+-org.chromium.shape_detection.FaceDetectionImplTest.testDetectRotatedFaceWithGmsCore
+-org.chromium.shape_detection.FaceDetectionImplTest.testDetectValidImageWithGmsCore
+-org.chromium.shape_detection.TextDetectionImplTest.testDetectSucceedsOnValidBitmap
+-org.chromium.chrome.browser.shape_detection.ShapeDetectionTest.testBarcodeDetection
+-org.chromium.chrome.browser.shape_detection.ShapeDetectionTest.testTextDetection
+
+# crbug/1034412
+-org.chromium.chrome.browser.media.ui.PictureInPictureControllerTest.testEnterPip
+-org.chromium.chrome.browser.media.ui.PictureInPictureControllerTest.testReenterPip
+
+# crbug/1039522
+-org.chromium.chrome.browser.settings.privacy.BrowsingDataBridgeTest.testClearingSiteSettingsAndCacheWithImportantSites

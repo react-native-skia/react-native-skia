@@ -1,0 +1,30 @@
+import("//react-native/common.gni")
+
+rn_cxx_component("element") {
+  sources = [
+    "ComponentBuilder.cpp",
+    "Element.cpp",
+    "ElementFragment.cpp",
+  ]
+
+  defines = [
+    "LOG_TAG=ReactNative",
+  ]
+
+  deps = [
+    "//react-native/ReactCommon/react/renderer/componentregistry:componentregistry",
+    "//react-native/ReactCommon/react/renderer/components/modal:modal",
+    "//react-native/ReactCommon/react/renderer/components/root:root",
+    "//react-native/ReactCommon/react/renderer/components/scrollview:scrollview",
+    "//react-native/ReactCommon/react/renderer/components/text:text",
+    "//react-native/ReactCommon/react/renderer/components/view:view",
+    "//react-native/ReactCommon/react/renderer/components/view:view",
+    "//react-native/ReactCommon/react/renderer/core:core",
+    "//react-native/ReactCommon/react/renderer/debug:debug",
+    "//react-native/ReactCommon/react/renderer/uimanager:uimanager",
+    "//react-native/ReactCommon/react/utils:utils",
+  ]
+
+  with_exceptions = true
+  with_rtti = true
+}

@@ -1,0 +1,35 @@
+import("//react-native/common.gni")
+
+config("yoga_config") {
+  include_dirs = [ "." ]
+
+  cflags_cc = [
+    "-Wno-header-hygiene",
+  ]
+}
+
+rn_cxx_component("yoga") {
+  sources = [
+    "yoga/Utils.cpp",
+    "yoga/YGConfig.cpp",
+    "yoga/YGEnums.cpp",
+    "yoga/YGLayout.cpp",
+    "yoga/YGNode.cpp",
+    "yoga/YGNodePrint.cpp",
+    "yoga/YGStyle.cpp",
+    "yoga/YGValue.cpp",
+    "yoga/Yoga.cpp",
+    "yoga/event/event.cpp",
+    "yoga/internal/experiments.cpp",
+    "yoga/log.cpp",
+  ]
+
+  with_exceptions = true
+
+  cflags_cc = [
+    "-Wno-c++98-compat-extra-semi",
+    "-Wno-extra-semi",
+  ]
+
+  public_configs = [ ":yoga_config" ]
+}

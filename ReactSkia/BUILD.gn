@@ -1,0 +1,110 @@
+config("ReactSkia_config") {
+  include_dirs = [
+    # "//react-native",
+  ]
+}
+
+source_set("ReactSkia") {
+  sources = [
+    "ComponentViewRegistry.cpp",
+    "ComponentViewRegistry.h",
+    "JSITurboModuleManager.cpp",
+    "JSITurboModuleManager.h",
+    "MountingManager.cpp",
+    "MountingManager.h",
+    "RNInstance.cpp",
+    "RNInstance.h",
+    "RSkSurfaceWindow.cpp",
+    "RSkSurfaceWindow.h",
+    "UIManagerModule.cpp",
+    "UIManagerModule.h",
+    "components/RSkComponent.cpp",
+    "components/RSkComponent.h",
+    "components/RSkComponentImage.cpp",
+    "components/RSkComponentImage.h",
+    "components/RSkComponentProvider.h",
+    "components/RSkComponentProviderImage.cpp",
+    "components/RSkComponentProviderImage.h",
+    "components/RSkComponentProviderRootView.cpp",
+    "components/RSkComponentProviderRootView.h",
+    "components/RSkComponentProviderText.cpp",
+    "components/RSkComponentProviderText.h",
+    "components/RSkComponentProviderView.cpp",
+    "components/RSkComponentProviderView.h",
+    "components/RSkComponentRootView.cpp",
+    "components/RSkComponentRootView.h",
+    "components/RSkComponentText.cpp",
+    "components/RSkComponentText.h",
+    "components/RSkComponentView.cpp",
+    "components/RSkComponentView.h",
+  ]
+
+  if (is_mac) {
+    sources += [
+      "platform/macosx/MainRunLoopEventBeat.h",
+      "platform/macosx/MainRunLoopEventBeat.mm",
+      "platform/macosx/RCTUtils.h",
+      "platform/macosx/RCTUtils.mm",
+      "platform/macosx/RuntimeEventBeat.h",
+      "platform/macosx/RuntimeEventBeat.mm",
+    ]
+  }
+
+  public_deps = [
+    "//third_party/glog:glog",
+    "//third_party/libevent",
+    "//folly",
+    "//folly:async",
+    "//folly:synchronization",
+    "//react-native/ReactCommon/jsi:jsi",
+    "//react-native/ReactCommon/jsi:JSIDynamic",
+    "//react-native/ReactCommon/jsi:JSCRuntime",
+    "//react-native/ReactCommon/jsiexecutor",
+    "//react-native/ReactCommon/callinvoker",
+    "//react-native/ReactCommon/runtimeexecutor",
+    "//react-native/ReactCommon/yoga",
+    "//react-native/ReactCommon/react/nativemodule/core",
+    "//react-native/ReactCommon/react/config",
+    "//react-native/ReactCommon/react/utils",
+    "//react-native/ReactCommon/react/renderer/scheduler",
+    "//react-native/ReactCommon/react/renderer/graphics",
+    "//react-native/ReactCommon/react/renderer/components/image",
+    "//react-native/ReactCommon/react/renderer/components/text",
+    "//react-native/ReactCommon/react/renderer/textlayoutmanager",
+    "//sk_app",
+    "//skia",
+  ]
+
+  configs -= [ "//build/config/compiler:chromium_code" ]
+  configs += [ "//build/config/compiler:no_chromium_code" ]
+  configs -= [ "//build/config/compiler:no_rtti" ]
+  configs += [ "//build/config/compiler:rtti" ]
+  configs -= [ "//build/config/compiler:no_exceptions" ]
+  configs += [ "//build/config/compiler:exceptions" ]
+
+  if (is_clang) {
+    configs -= [ "//build/config/clang:find_bad_constructs" ]
+  }
+
+  configs += [
+    ":ReactSkia_config",
+  ]
+}
+
+executable("ReactSkiaApp") {
+  sources = [
+    "ReactSkiaApp.cpp",
+    "ReactSkiaApp.h",
+  ]
+
+  deps = [
+    ":ReactSkia",
+  ]
+
+  configs -= [ "//build/config/compiler:chromium_code" ]
+  configs += [ "//build/config/compiler:no_chromium_code" ]
+
+  if (is_clang) {
+    configs -= [ "//build/config/clang:find_bad_constructs" ]
+  }
+}

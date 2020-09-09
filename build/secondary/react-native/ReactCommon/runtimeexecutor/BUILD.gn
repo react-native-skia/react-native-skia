@@ -1,0 +1,25 @@
+import("//react-native/common.gni")
+
+config("runtimeexecutor_config") {
+  include_dirs = [
+    ".",
+  ]
+}
+
+rn_cxx_component("runtimeexecutor") {
+  sources = [
+  ]
+
+  defines = [
+    "LOG_TAG=ReactNative",
+  ]
+
+  deps = [
+    "//react-native/ReactCommon/jsi:jsi",
+  ]
+
+  with_exceptions = true
+  with_rtti = true
+
+  public_configs = [ ":runtimeexecutor_config" ]
+}

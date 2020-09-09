@@ -1,0 +1,24 @@
+# This is reserved for people that are familiar with how Chromium builders
+# run tests and understand the implications of changing these files.
+
+# If you're making changes that affect CQ builders (like adding new tests or
+# compile targets) please get a review from someone in //infra/OWNERS.
+file://infra/OWNERS
+
+bsheedy@chromium.org
+jam@chromium.org
+jochen@chromium.org
+machenbach@chromium.org
+sky@chromium.org
+
+per-file *chromium.perf*.json=johnchen@chromium.org
+per-file *chromium.perf*.json=wenbinzhang@google.com
+per-file *chromium.perf*.json=hypan@google.com
+per-file chromium.webrtc.json=mbonadei@chromium.org
+per-file chromium.webrtc.fyi.json=mbonadei@chromium.org
+
+# For OOBE-related test filters.
+per-file *oobe*=file://chrome/browser/ui/webui/chromeos/login/OWNERS
+
+# TEAM: infra-dev@chromium.org
+# COMPONENT: Infra>Client>Chrome

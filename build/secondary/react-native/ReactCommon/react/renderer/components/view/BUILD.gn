@@ -1,0 +1,34 @@
+import("//react-native/common.gni")
+
+rn_cxx_component("view") {
+  sources = [
+    "AccessibilityProps.cpp",
+    "Touch.cpp",
+    "TouchEvent.cpp",
+    "TouchEventEmitter.cpp",
+    "ViewEventEmitter.cpp",
+    "ViewProps.cpp",
+    "ViewShadowNode.cpp",
+    "YogaLayoutableShadowNode.cpp",
+    "YogaStylableProps.cpp",
+  ]
+
+  defines = [
+    "LOG_TAG=ReactNative",
+  ]
+
+  deps = [
+    "//folly",
+    "//react-native/ReactCommon/react/renderer/core:core",
+    "//react-native/ReactCommon/react/renderer/debug:debug",
+    "//third_party/glog:glog",
+  ]
+
+  public_deps = [
+    "//react-native/ReactCommon/react/renderer/graphics:graphics",
+    "//react-native/ReactCommon/yoga:yoga",
+  ]
+
+  with_exceptions = true
+  with_rtti = true
+}

@@ -1,0 +1,25 @@
+import("//react-native/common.gni")
+
+rn_cxx_component("componentregistry") {
+  sources = [
+    "ComponentDescriptorProviderRegistry.cpp",
+    "ComponentDescriptorRegistry.cpp",
+  ]
+
+  defines = [
+    "LOG_TAG=ReactNative",
+  ]
+
+  deps = [
+    "//folly",
+    "//react-native/ReactCommon/jsi:JSIDynamic",
+    "//react-native/ReactCommon/jsi:jsi",
+    "//react-native/ReactCommon/react/renderer/core:core",
+    "//react-native/ReactCommon/react/renderer/debug:debug",
+    "//react-native/ReactCommon/react/utils:utils",
+    "//third_party/glog:glog",
+  ]
+
+  with_exceptions = true
+  with_rtti = true
+}

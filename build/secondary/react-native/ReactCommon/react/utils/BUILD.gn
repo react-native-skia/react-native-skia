@@ -1,0 +1,23 @@
+import("//react-native/common.gni")
+
+rn_cxx_component("utils") {
+  sources = [
+    "RunLoopObserver.cpp",
+  ]
+
+  defines = [
+    "LOG_TAG=ReactNative",
+  ]
+
+  deps = [
+    "//folly",
+    "//react-native/ReactCommon/jsi:jsi",
+  ]
+
+  with_exceptions = true
+  with_rtti = true
+
+  public_deps = [
+    "//react-native/ReactCommon/better:better",
+  ]
+}

@@ -1,0 +1,30 @@
+import("//react-native/common.gni")
+
+config("debug_config") {
+  include_dirs = [
+    ".",
+    "//react-native/ReactCommon",
+  ]
+}
+
+rn_cxx_component("debug") {
+  sources = [
+    "DebugStringConvertible.cpp",
+    "DebugStringConvertibleItem.cpp",
+  ]
+
+  defines = [
+    "LOG_TAG=ReactNative",
+  ]
+
+  deps = [
+    "//folly",
+    "//react-native/ReactCommon/better:better",
+  ]
+
+  with_exceptions = true
+  with_rtti = true
+
+  extra_configs = [ "//react-native/ReactCommon:fabric_config" ]
+  public_configs = [ ":debug_config" ]
+}

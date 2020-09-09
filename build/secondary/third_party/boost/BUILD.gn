@@ -1,0 +1,15 @@
+group("headers_only") {
+  public_configs = [ ":boost-config" ]
+}
+
+config("boost-config") {
+  include_dirs = [
+    ".",
+  ]
+
+  cflags_cc = [
+    "-Wno-extra-semi",
+  ]
+
+  cflags = [ "-fno-complete-member-pointers" ]
+}

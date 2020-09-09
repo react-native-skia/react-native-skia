@@ -1,0 +1,35 @@
+import("//react-native/common.gni")
+
+config("imagemanager_config") {
+  include_dirs = [
+    ".",
+  ]
+}
+
+rn_cxx_component("imagemanager") {
+  sources = [
+    "ImageResponse.cpp",
+    "ImageResponseObserverCoordinator.cpp",
+    "platform/cxx/react/renderer/imagemanager/ImageRequest.cpp",
+    "platform/cxx/react/renderer/imagemanager/ImageManager.cpp",
+  ]
+
+  defines = [
+    "LOG_TAG=ReactNative",
+  ]
+
+  deps = [
+    "//folly",
+    "//react-native/ReactCommon/react/renderer/core:core",
+    "//react-native/ReactCommon/react/renderer/debug:debug",
+    "//react-native/ReactCommon/react/renderer/graphics:graphics",
+    "//react-native/ReactCommon/react/renderer/mounting:mounting",
+    "//react-native/ReactCommon/yoga:yoga",
+    "//third_party/glog:glog",
+  ]
+
+  with_exceptions = true
+  with_rtti = true
+
+  extra_configs = [ ":imagemanager_config" ]
+}

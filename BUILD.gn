@@ -1,0 +1,22 @@
+group("gn_all") {
+  testonly = true
+
+  deps = [
+    "//react-native/ReactCommon/jsiexecutor",
+    "//react-native/ReactCommon/react/nativemodule/core",
+    "//react-native/ReactCommon/react/config",
+    "//react-native/ReactCommon/react/utils",
+    "//react-native/ReactCommon/cxxreact:bridge",
+    "//react-native/ReactCommon/react/renderer/core",
+    "//react-native/ReactCommon/react/renderer/scheduler",
+    "//react-native/ReactCommon/react/renderer/components/image:image",
+    "//react-native/ReactCommon/react/renderer/components/text:text",
+    "//folly",
+    # "//flutter/fml",
+    # "//flutter/shell/common",
+    "//skia",
+    "//ReactSkia",
+    "//third_party/boringssl",
+    "//third_party/libevent",
+  ]
+}

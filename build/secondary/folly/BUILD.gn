@@ -1,0 +1,245 @@
+config("folly_config") {
+  include_dirs = [ "." ]
+
+  defines = [
+    "FOLLY_NO_CONFIG=1",
+    "FOLLY_HAVE_CLOCK_GETTIME=1",
+    # "FOLLY_HAVE_MEMRCHR=1",
+    "FOLLY_USE_LIBCPP=1",
+    "FOLLY_MOBILE=1",
+    "FOLLY_HAVE_PTHREAD=1",
+  ]
+}
+
+group("folly") {
+  public_deps = [
+    ":rn_oss",
+  ]
+}
+
+source_set("rn_oss") {
+  sources = [
+    "folly/dynamic.cpp",
+    "folly/json.cpp",
+    "folly/json_pointer.cpp",
+    "folly/Conv.cpp",
+    "folly/Demangle.cpp",
+    "folly/FileUtil.cpp",
+    "folly/Format.cpp",
+    "folly/Unicode.cpp",
+    "folly/ScopeGuard.cpp",
+    "folly/String.cpp",
+
+    "folly/hash/SpookyHashV2.cpp",
+    "folly/lang/Assume.cpp",
+    "folly/lang/SafeAssert.cpp",
+    "folly/net/NetOps.cpp",
+    "folly/portability/SysUio.cpp",
+
+    "folly/portability/Malloc.cpp",
+
+    "folly/synchronization/ParkingLot.cpp",
+
+    # Added for async_io
+    "folly/SharedMutex.cpp",
+    "folly/Executor.cpp",
+    "folly/concurrency/CacheLocality.cpp",
+    "folly/lang/CString.cpp",
+    "folly/memory/MallctlHelper.cpp",
+    "folly/system/ThreadName.cpp",
+  ]
+
+  deps = [
+    ":folly_detail",
+  ]
+
+  public_deps = [
+    "//third_party/glog:glog",
+    "//third_party/double-conversion:double-conversion",
+    "//third_party/boost:headers_only",
+  ]
+
+  configs -= [ "//build/config/compiler:no_exceptions" ]
+  configs += [ "//build/config/compiler:exceptions" ]
+  configs -= [ "//build/config/compiler:no_rtti" ]
+  configs += [ "//build/config/compiler:rtti" ]
+  # configs -= [ "//build/config/gcc:symbol_visibility_hidden" ]
+  # configs += [ "//build/config/gcc:symbol_visibility_default" ]
+
+  if (is_clang) {
+    configs -= [ "//build/config/clang:find_bad_constructs" ]
+  }
+
+  configs += [ ":internal_configs" ]
+  public_configs = [ ":folly_config" ]
+}
+
+source_set("folly_detail") {
+  sources = [
+    "folly/detail/Demangle.cpp",
+    "folly/container/detail/F14Table.cpp",
+    "folly/memory/detail/MallocImpl.cpp",
+
+    # Added for async_io
+    "folly/detail/AtFork.cpp",
+    "folly/detail/Futex.cpp",
+    "folly/detail/UniqueInstance.cpp",
+    "folly/detail/MemoryIdler.cpp",
+    "folly/detail/ThreadLocalDetail.cpp",
+    "folly/detail/StaticSingletonManager.cpp",
+    "folly/detail/IPAddress.cpp",
+    "folly/detail/SingletonStackTrace.cpp",
+    "folly/detail/SocketFastOpen.cpp",
+  ]
+
+  visibility = [ ":*" ]
+
+  deps = [
+    "//third_party/glog:glog",
+    "//third_party/double-conversion:double-conversion",
+    "//third_party/boost:headers_only",
+  ]
+
+  configs += [
+    ":internal_configs",
+    ":folly_config",
+  ]
+  configs -= [ "//build/config/compiler:no_exceptions" ]
+  configs += [ "//build/config/compiler:exceptions" ]
+  configs -= [ "//build/config/compiler:no_rtti" ]
+  configs += [ "//build/config/compiler:rtti" ]
+  # configs -= [ "//build/config/gcc:symbol_visibility_hidden" ]
+  # configs += [ "//build/config/gcc:symbol_visibility_default" ]
+
+  if (is_clang) {
+    configs -= [ "//build/config/clang:find_bad_constructs" ]
+  }
+}
+
+config("internal_configs") {
+  visibility = [ ":*" ]
+
+  cflags_cc = [
+    "-Wno-sign-compare",
+    "-Wno-unreachable-code",
+    "-Wno-#warnings",
+    "-Wno-unused-local-typedef",
+  ]
+}
+
+source_set("async") {
+  sources = [
+    "folly/File.cpp",
+    "folly/Random.cpp",
+    "folly/Singleton.cpp",
+    "folly/SocketAddress.cpp",
+    "folly/IPAddress.cpp",
+    "folly/IPAddressV4.cpp",
+    "folly/IPAddressV6.cpp",
+    "folly/MacAddress.cpp",
+    "folly/io/IOBuf.cpp",
+    "folly/io/IOBufQueue.cpp",
+    "folly/io/ShutdownSocketSet.cpp",
+    "folly/executors/ThreadPoolExecutor.cpp",
+    "folly/executors/GlobalThreadPoolList.cpp",
+    "folly/executors/CPUThreadPoolExecutor.cpp",
+    "folly/executors/QueuedImmediateExecutor.cpp",
+    "folly/ssl/Init.cpp",
+    "folly/ssl/detail/OpenSSLThreading.cpp",
+
+    "folly/io/async/AsyncPipe.cpp",
+    "folly/io/async/AsyncSSLSocket.cpp",
+    "folly/io/async/AsyncServerSocket.cpp",
+    "folly/io/async/AsyncSignalHandler.cpp",
+    "folly/io/async/AsyncSocket.cpp",
+    "folly/io/async/AsyncSocketException.cpp",
+    "folly/io/async/AsyncTimeout.cpp",
+    "folly/io/async/AsyncUDPSocket.cpp",
+    "folly/io/async/EventBase.cpp",
+    "folly/io/async/EventBaseBackendBase.cpp",
+    "folly/io/async/EventBaseLocal.cpp",
+    "folly/io/async/EventBaseManager.cpp",
+    "folly/io/async/EventBaseThread.cpp",
+    "folly/io/async/EventHandler.cpp",
+    "folly/io/async/HHWheelTimer.cpp",
+    "folly/io/async/PasswordInFile.cpp",
+    "folly/io/async/Request.cpp",
+    "folly/io/async/SSLContext.cpp",
+    "folly/io/async/SSLOptions.cpp",
+    "folly/io/async/ScopedEventBaseThread.cpp",
+    "folly/io/async/TimeoutManager.cpp",
+    "folly/io/async/VirtualEventBase.cpp",
+
+    "folly/io/async/ssl/OpenSSLUtils.cpp",
+    "folly/io/async/ssl/SSLErrors.cpp",
+  ]
+
+  deps = [
+    ":folly_detail",
+  ]
+
+  public_deps = [
+    ":rn_oss",
+    ":synchronization",
+    "//third_party/glog:glog",
+    "//third_party/double-conversion:double-conversion",
+    "//third_party/boost:headers_only",
+    "//third_party/libevent",
+    "//third_party/boringssl",
+  ]
+
+  configs -= [ "//build/config/compiler:no_exceptions" ]
+  configs += [ "//build/config/compiler:exceptions" ]
+  configs -= [ "//build/config/compiler:no_rtti" ]
+  configs += [ "//build/config/compiler:rtti" ]
+  # configs -= [ "//build/config/gcc:symbol_visibility_hidden" ]
+  # configs += [ "//build/config/gcc:symbol_visibility_default" ]
+
+  if (is_clang) {
+    configs -= [ "//build/config/clang:find_bad_constructs" ]
+  }
+
+  configs += [ ":internal_configs" ]
+  public_configs = [ ":folly_config" ]
+}
+
+source_set("synchronization") {
+  sources = [
+    "folly/synchronization/AsymmetricMemoryBarrier.cpp",
+    "folly/synchronization/AtomicNotification.cpp",
+    "folly/synchronization/DistributedMutex.cpp",
+    "folly/synchronization/Hazptr.cpp",
+    "folly/synchronization/HazptrThreadPoolExecutor.cpp",
+    "folly/synchronization/Rcu.cpp",
+    "folly/synchronization/SanitizeThread.cpp",
+    "folly/synchronization/WaitOptions.cpp",
+    "folly/synchronization/detail/Hardware.cpp",
+  ]
+
+  deps = [
+    ":folly_detail",
+  ]
+
+  public_deps = [
+    ":rn_oss",
+    "//third_party/glog:glog",
+    "//third_party/double-conversion:double-conversion",
+    "//third_party/boost:headers_only",
+    "//third_party/libevent",
+    "//third_party/boringssl",
+  ]
+
+  configs -= [ "//build/config/compiler:no_exceptions" ]
+  configs += [ "//build/config/compiler:exceptions" ]
+  configs -= [ "//build/config/compiler:no_rtti" ]
+  configs += [ "//build/config/compiler:rtti" ]
+  # configs -= [ "//build/config/gcc:symbol_visibility_hidden" ]
+  # configs += [ "//build/config/gcc:symbol_visibility_default" ]
+
+  if (is_clang) {
+    configs -= [ "//build/config/clang:find_bad_constructs" ]
+  }
+
+  configs += [ ":internal_configs" ]
+  public_configs = [ ":folly_config" ]
+}

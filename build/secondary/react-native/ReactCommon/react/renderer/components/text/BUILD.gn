@@ -1,0 +1,47 @@
+import("//react-native/common.gni")
+
+config("text_config") {
+  include_dirs = [
+    ".",
+  ]
+}
+
+rn_cxx_component("text") {
+  sources = [
+    "BaseTextProps.cpp",
+    "BaseTextShadowNode.cpp",
+    "ParagraphEventEmitter.cpp",
+    "ParagraphProps.cpp",
+    "ParagraphShadowNode.cpp",
+    "ParagraphState.cpp",
+    "RawTextProps.cpp",
+    "RawTextShadowNode.cpp",
+    "TextProps.cpp",
+    "TextShadowNode.cpp",
+  ]
+
+  defines = [
+    "LOG_TAG=ReactNative",
+  ]
+
+  deps = [
+    "//folly",
+    "//react-native/ReactCommon/react/renderer/attributedstring:attributedstring",
+    "//react-native/ReactCommon/react/renderer/componentregistry:componentregistry",
+    "//react-native/ReactCommon/react/renderer/components/view:view",
+    "//react-native/ReactCommon/react/renderer/core:core",
+    "//react-native/ReactCommon/react/renderer/debug:debug",
+    "//react-native/ReactCommon/react/renderer/graphics:graphics",
+    "//react-native/ReactCommon/react/renderer/mounting:mounting",
+    "//react-native/ReactCommon/react/renderer/textlayoutmanager:textlayoutmanager",
+    "//react-native/ReactCommon/react/renderer/uimanager:uimanager",
+    "//react-native/ReactCommon/react/utils:utils",
+    "//react-native/ReactCommon/yoga:yoga",
+    "//third_party/glog:glog",
+  ]
+
+  with_exceptions = true
+  with_rtti = true
+
+  extra_configs = [ ":text_config" ]
+}

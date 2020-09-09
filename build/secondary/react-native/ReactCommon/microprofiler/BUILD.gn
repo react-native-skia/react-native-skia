@@ -1,0 +1,13 @@
+import("//react-native/common.gni")
+
+rn_cxx_component("microprofiler") {
+  sources = [
+    "MicroProfiler.cpp",
+  ]
+
+  deps = [
+    "//third_party/glog",
+  ]
+
+  with_exceptions = true
+}

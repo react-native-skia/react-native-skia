@@ -1,0 +1,27 @@
+component("double-conversion") {
+  sources = [
+    "src/bignum.cc",
+    "src/bignum-dtoa.cc",
+    "src/cached-powers.cc",
+    "src/diy-fp.cc",
+    "src/double-conversion.cc",
+    "src/fast-dtoa.cc",
+    "src/fixed-dtoa.cc",
+    "src/strtod.cc",
+  ]
+
+  configs -= [ "//build/config/gcc:symbol_visibility_hidden" ]
+  configs += [ "//build/config/gcc:symbol_visibility_default" ]
+
+  public_configs = [ ":double-conversion-config" ]
+
+  cflags_cc = [
+    "-Wno-unused-const-variable",
+  ]
+}
+
+config("double-conversion-config") {
+  include_dirs = [
+    "//build/secondary/third_party/double-conversion/include",
+  ]
+}

@@ -1,0 +1,54 @@
+config("sk_app_config") {
+  cflags_cc = [ "-std=c++17" ]
+  cflags_objcc = [ "-std=c++17" ]
+  include_dirs = [ "." ]
+}
+
+source_set("sk_app") {
+  sources = [
+    "Application.h",
+    "Window.h",
+    "Window.cpp",
+    "WindowContext.h",
+    "WindowContext.cpp",
+    "GLWindowContext.h",
+    "GLWindowContext.cpp",
+    "GrGLUtil.h",
+    "GrGLUtil.cpp",
+  ]
+
+  public_deps = [
+    "//skia",
+  ]
+
+  frameworks = []
+
+  if (is_mac) {
+    sources += [
+      "mac/RasterWindowContext_mac.mm",
+      "mac/WindowContextFactory_mac.h",
+      "mac/Window_mac.h",
+      "mac/Window_mac.mm",
+      "mac/main_mac.mm",
+      "mac/GLWindowContext_mac.mm",
+      "mac/GrGLMakeNativeInterface_mac.cpp",
+    ]
+    frameworks += [
+      "QuartzCore.framework",
+      "Cocoa.framework",
+      "Foundation.framework",
+      "OpenGL.framework",
+    ]
+  }
+
+  configs += [
+    ":sk_app_config",
+  ]
+
+  configs -= [ "//build/config/compiler:chromium_code" ]
+  configs += [ "//build/config/compiler:no_chromium_code" ]
+
+  if (is_clang) {
+    configs -= [ "//build/config/clang:find_bad_constructs" ]
+  }
+}

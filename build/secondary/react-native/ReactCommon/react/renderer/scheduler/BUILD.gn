@@ -1,0 +1,34 @@
+import("//react-native/common.gni")
+
+rn_cxx_component("scheduler") {
+  sources = [
+    "AsynchronousEventBeat.cpp",
+    "Scheduler.cpp",
+    "SchedulerToolbox.cpp",
+    "SynchronousEventBeat.cpp",
+  ]
+
+  defines = [
+    "LOG_TAG=ReactNative",
+  ]
+
+  deps = [
+    "//folly",
+    "//react-native/ReactCommon/jsi:JSIDynamic",
+    "//react-native/ReactCommon/jsi:jsi",
+    "//react-native/ReactCommon/react/config:config",
+    "//react-native/ReactCommon/react/renderer/componentregistry:componentregistry",
+    "//react-native/ReactCommon/react/renderer/components/root:root",
+    "//react-native/ReactCommon/react/renderer/core:core",
+    "//react-native/ReactCommon/react/renderer/debug:debug",
+    "//react-native/ReactCommon/react/renderer/mounting:mounting",
+    "//react-native/ReactCommon/react/renderer/templateprocessor:templateprocessor",
+    "//react-native/ReactCommon/react/renderer/uimanager:uimanager",
+    "//react-native/ReactCommon/react/utils:utils",
+    "//react-native/ReactCommon/runtimeexecutor:runtimeexecutor",
+    "//third_party/glog:glog",
+  ]
+
+  with_exceptions = true
+  with_rtti = true
+}

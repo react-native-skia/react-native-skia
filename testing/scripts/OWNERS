@@ -1,0 +1,24 @@
+# This is reserved for people that are comfortably with buildbot recipes
+# and understand the implications of changing these files.
+
+dpranke@chromium.org
+dpranke@google.com
+kbr@chromium.org
+martiniss@chromium.org
+
+per-file check_static_initializers.py=thakis@chromium.org
+per-file check_static_initializers.py=thomasanderson@chromium.org
+
+per-file run_wpt_tests.py=lpz@chromium.org
+per-file run_wpt_tests.py=robertma@chromium.org
+per-file wpt_common.py=lpz@chromium.org
+per-file wpt_common.py=robertma@chromium.org
+per-file wpt_common.py=rmhasan@chromium.org
+
+per-file run_performance_tests.py=johnchen@chromium.org
+per-file run_performance_tests.py=wenbinzhang@google.com
+
+per-file run_chromedriver_tests.py=johnchen@chromium.org
+
+# TEAM: infra-dev@chromium.org
+# COMPONENT: Infra>Client>Chrome

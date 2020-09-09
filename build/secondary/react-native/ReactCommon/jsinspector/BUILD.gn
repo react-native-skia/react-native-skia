@@ -1,0 +1,9 @@
+import("//react-native/common.gni")
+
+rn_cxx_component("jsinspector") {
+  sources = [
+    "InspectorInterfaces.cpp",
+  ]
+
+  with_exceptions = true
+}

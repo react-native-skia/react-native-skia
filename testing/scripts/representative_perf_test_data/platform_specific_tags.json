@@ -1,0 +1,37 @@
+{
+  "mac": {
+    "benchmark": "desktop",
+    "tags": [
+      {
+        "os": "mac-intel-stable",
+        "buildername": "Mac FYI Release (Intel)"
+      },
+      {
+        "os": "mac-amd-stable",
+        "buildername": "Mac FYI Retina Release (AMD)"
+      }
+    ]
+  },
+  "win": {
+    "benchmark": "desktop",
+    "tags": [
+      {
+        "os": "Windows-10",
+        "buildername": "Win10 FYI x64 Release (NVIDIA)"
+      },
+      {
+        "os": "Windows-10",
+        "buildername": "Win10 FYI x64 Release (Intel HD 630)"
+      }
+    ]
+  },
+  "android": {
+    "benchmark": "mobile",
+    "tags": [
+      {
+        "os": "Android",
+        "buildername": "Android FYI Release (Nexus 5X)"
+      }
+    ]
+  }
+}

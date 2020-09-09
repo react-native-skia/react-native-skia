@@ -1,0 +1,27 @@
+import("//react-native/common.gni")
+
+rn_cxx_component("attributedstring") {
+  sources = [
+    "AttributedString.cpp",
+    "AttributedStringBox.cpp",
+    "ParagraphAttributes.cpp",
+    "TextAttributes.cpp",
+  ]
+
+  defines = [
+    "LOG_TAG=ReactNative",
+  ]
+
+  deps = [
+    "//folly",
+    "//react-native/ReactCommon/react/renderer/core:core",
+    "//react-native/ReactCommon/react/renderer/debug:debug",
+    "//react-native/ReactCommon/react/renderer/graphics:graphics",
+    "//react-native/ReactCommon/react/renderer/mounting:mounting",
+    "//react-native/ReactCommon/react/utils:utils",
+    "//third_party/glog:glog",
+  ]
+
+  with_exceptions = true
+  with_rtti = true
+}

@@ -1,0 +1,10 @@
+# Fix these failures: https://crbug.com/1040382
+
+# Failing tests
+-OutOfProcessPPAPITest.TrueTypeFont
+
+# Crashing tests
+-TouchSelectionForCrossProcessFramesTests/TouchSelectionControllerClientAuraSiteIsolationTest.BasicSelectionIsolatedIframe/0
+-TouchSelectionForCrossProcessFramesTests/TouchSelectionControllerClientAuraSiteIsolationTest.BasicSelectionIsolatedIframe/1
+-TouchSelectionForCrossProcessFramesTests/TouchSelectionControllerClientAuraSiteIsolationTest.BasicSelectionIsolatedScrollMainframe/0
+-TouchSelectionForCrossProcessFramesTests/TouchSelectionControllerClientAuraSiteIsolationTest.BasicSelectionIsolatedScrollMainframe/1

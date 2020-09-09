@@ -1,0 +1,28 @@
+import("//react-native/common.gni")
+
+rn_cxx_component("image") {
+  sources = [
+    "ImageEventEmitter.cpp",
+    "ImageProps.cpp",
+    "ImageShadowNode.cpp",
+    "ImageState.cpp",
+  ]
+
+  defines = [
+    "LOG_TAG=ReactNative",
+  ]
+
+  deps = [
+    "//folly",
+    "//react-native/ReactCommon/react/renderer/components/view:view",
+    "//react-native/ReactCommon/react/renderer/core:core",
+    "//react-native/ReactCommon/react/renderer/debug:debug",
+    "//react-native/ReactCommon/react/renderer/graphics:graphics",
+    "//react-native/ReactCommon/react/renderer/imagemanager:imagemanager",
+    "//react-native/ReactCommon/yoga:yoga",
+    "//third_party/glog:glog",
+  ]
+
+  with_exceptions = true
+  with_rtti = true
+}
