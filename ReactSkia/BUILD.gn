@@ -8,6 +8,8 @@ source_set("ReactSkia") {
   sources = [
     "ComponentViewRegistry.cpp",
     "ComponentViewRegistry.h",
+    "LegacyNativeModuleRegistry.cpp",
+    "LegacyNativeModuleRegistry.h",
     "JSITurboModuleManager.cpp",
     "JSITurboModuleManager.h",
     "MountingManager.cpp",
@@ -16,8 +18,6 @@ source_set("ReactSkia") {
     "RNInstance.h",
     "RSkSurfaceWindow.cpp",
     "RSkSurfaceWindow.h",
-    "UIManagerModule.cpp",
-    "UIManagerModule.h",
     "components/RSkComponent.cpp",
     "components/RSkComponent.h",
     "components/RSkComponentImage.cpp",

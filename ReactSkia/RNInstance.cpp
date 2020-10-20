@@ -2,6 +2,7 @@
 
 #include "ReactSkia/ComponentViewRegistry.h"
 #include "ReactSkia/JSITurboModuleManager.h"
+#include "ReactSkia/LegacyNativeModuleRegistry.h"
 #include "ReactSkia/MountingManager.h"
 #include "ReactSkia/RSkSurfaceWindow.h"
 #include "ReactSkia/components/RSkComponentProviderImage.h"
@@ -119,8 +120,7 @@ void RNInstance::InitializeJSCore() {
       std::make_unique<InstanceCallback>(),
       std::make_shared<JSCExecutorFactory>(turboModuleManager_.get()),
       std::make_shared<MessageQueueThreadImpl>(),
-      std::make_shared<ModuleRegistry>(
-          std::vector<std::unique_ptr<NativeModule>>(), nullptr));
+      std::make_shared<LegacyNativeModuleRegistry>());
 
   // NOTE(kudo): Workaround for TurboModules being fully initialized
   std::this_thread::sleep_for(std::chrono::milliseconds(500));

@@ -1,7 +1,5 @@
 #include "ReactSkia/JSITurboModuleManager.h"
 
-#include "ReactSkia/UIManagerModule.h"
-
 #include "cxxreact/Instance.h"
 #include "jsi/JSIDynamic.h"
 
@@ -273,9 +271,6 @@ JSITurboModuleManager::JSITurboModuleManager(Instance *bridgeInstance)
   staticModule->SetConstants(
       folly::dynamic::object("Dimensions", std::move(dimension)));
   modules_["DeviceInfo"] = std::move(staticModule);
-
-  modules_["UIManager"] =
-      std::make_shared<UIManagerModule>("UIManager", jsInvoker);
 }
 
 TurboModuleProviderFunctionType JSITurboModuleManager::GetProvider() {
