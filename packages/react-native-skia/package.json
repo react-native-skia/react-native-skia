@@ -1,0 +1,15 @@
+{
+  "name": "react-native-skia",
+  "version": "1000.0.0",
+  "description": "React Native renderer based on Skia",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Kudo/react-native-skia.git",
+    "directory": "packages/react-native-skia"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "react-native": "1000.0.0"
+  }
+}

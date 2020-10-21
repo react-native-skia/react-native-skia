@@ -11,7 +11,7 @@ const SimpleViewApp = React.Node = () => {
                backgroundColor: '#444' }}>
       <Image
         style={{ width: 512, height: 512 }}
-        source={require('../Libraries/NewAppScreen/components/logo.png')}
+        source={require('react-native/Libraries/NewAppScreen/components/logo.png')}
       />
       <Text style={{ color: '#fff', fontSize: 36,
                      textAlign: 'center', marginTop: 32 }}>

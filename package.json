@@ -1,0 +1,7 @@
+{
+  "private": true,
+  "workspaces": [
+    "react-native",
+    "packages/*"
+  ]
+}
