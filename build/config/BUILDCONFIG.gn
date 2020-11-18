@@ -14,8 +14,6 @@
 # every other file in the build. So variables declared here (that don't start
 # with an underscore) will be implicitly global.
 
-use_glib = false
-
 # =============================================================================
 # PLATFORM SELECTION
 # =============================================================================

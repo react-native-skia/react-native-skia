@@ -1,0 +1,71 @@
+# Copyright 2014 The Chromium Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+import("//build/config/buildflags_paint_preview.gni")
+import("//build/config/chrome_build.gni")
+import("//build/config/features.gni")
+import("//build/config/ui.gni")
+import("//third_party/expat/expat.gni")
+
+if (use_system_expat) {
+  import("//build/config/linux/pkg_config.gni")
+  packages = [
+    "expat",
+  ]
+} else {
+
+  config("expat_config") {
+    include_dirs = [ "src/expat/lib" ]
+  }
+
+  source_set("expat") {
+    visibility = [ "//third_party:skia","//skia" ]
+    public = [
+      "src/expat/lib/ascii.h",
+      "src/expat/lib/asciitab.h",
+      "src/expat/lib/expat_external.h",
+      "src/expat/lib/expat.h",
+      "src/expat/lib/iasciitab.h",
+      "src/expat/lib/latin1tab.h",
+      "src/expat/lib/nametab.h",
+      "src/expat/lib/siphash.h",
+      "src/expat/lib/utf8tab.h",
+      "src/expat/lib/xmltok.h",
+      "src/expat/lib/xmlrole.h",
+    ]
+
+    sources = [
+      "src/expat/lib/expat.h",
+      "src/expat/lib/xmlparse.c",
+      "src/expat/lib/xmlrole.c",
+      "src/expat/lib/xmltok.c",
+    ]
+
+    defines = [
+      "HAVE_MEMMOVE",
+      "XML_DEV_URANDOM",
+      "XML_STATIC",
+    ]
+
+
+    configs -= [ "//build/config/compiler:chromium_code" ]
+    configs += [
+      "//build/config/compiler:no_chromium_code",
+
+    ]
+
+    # This allows the compiler to do further optimizations in the code.
+    if (!is_debug) {
+      configs -= [ "//build/config/compiler:default_optimization" ]
+      configs += [ "//build/config/compiler:optimize_speed" ]
+    }
+
+    public_configs = [ ":expat_config" ]
+
+
+    if (use_glib) {
+      configs += [ "//build/config/linux:glib" ]
+    }
+  }
+}

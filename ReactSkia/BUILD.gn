@@ -48,6 +48,16 @@ source_set("ReactSkia") {
       "platform/macosx/RuntimeEventBeat.h",
       "platform/macosx/RuntimeEventBeat.mm",
     ]
+    defines = ["OS_MACOSX"]
+  }
+  if (is_linux) {
+    sources += [
+      "platform/linux/MainRunLoopEventBeat.h",
+      "platform/linux/MainRunLoopEventBeat.cpp",
+      "platform/linux/RuntimeEventBeat.h",
+      "platform/linux/RuntimeEventBeat.cpp",
+    ]
+    defines = ["OS_LINUX"]
   }
 
   public_deps = [

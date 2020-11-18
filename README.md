@@ -48,6 +48,9 @@ $ gn gen --args='mac_deployment_target="10.11.0" mac_min_system_version="10.11.0
 
 # Or release build
 # $ gn gen --args='mac_deployment_target="10.11.0" mac_min_system_version="10.11.0" is_debug=false' out/Release
+
+# For Linux (Ubuntu 18)
+$ gn gen --args='use_sysroot=false enable_vulkan=false' out/Debug
 ```
 
 3. Sync JavaScript packages
