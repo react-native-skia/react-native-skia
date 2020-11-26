@@ -13,22 +13,17 @@ namespace react {
 RuntimeEventBeat::RuntimeEventBeat(EventBeat::SharedOwnerBox const &ownerBox, RuntimeExecutor runtimeExecutor)
     : EventBeat(ownerBox), runtimeExecutor_(std::move(runtimeExecutor))
 {
-
-  printf("\033[22;35m [WARN  ] RuntimeEventBeat !!!!!!!!!! NOT IMPLEMENTED !!!!!!!!!! \033[22;0m \n");
+  printf("\033[22;35m [WARN  ] %s %d: %s() !!!!!!!!!! NOT IMPLEMENTED !!!!!!!!!! \033[22;0m \n", __FILE__, __LINE__, __func__);
 }
 
 RuntimeEventBeat::~RuntimeEventBeat()
 {
-
-  printf("\033[22;35m [WARN  ] ~RuntimeEventBeat !!!!!!!!!! NOT IMPLEMENTED !!!!!!!!!! \033[22;0m \n");
-
+  printf("\033[22;35m [WARN  ] %s %d: %s() !!!!!!!!!! NOT IMPLEMENTED !!!!!!!!!! \033[22;0m \n", __FILE__, __LINE__, __func__);
 }
 
 void RuntimeEventBeat::induce() const
 {
-
-  printf("\033[22;35m [WARN  ] RuntimeEventBeat::induce !!!!!!!!!! NOT IMPLEMENTED !!!!!!!!!! \033[22;0m \n");
-
+  printf("\033[22;35m [WARN  ] %s %d: %s() !!!!!!!!!! NOT IMPLEMENTED !!!!!!!!!! \033[22;0m \n", __FILE__, __LINE__, __func__);
 }
 
 } // namespace react

@@ -27,6 +27,8 @@ template("rn_cxx_component") {
       configs += invoker.extra_configs
     }
 
+    configs += [ "//react-native/ReactCommon:react_native_config"]
+
     forward_variables_from(invoker,
                            "*",
                            [

@@ -96,6 +96,8 @@ source_set("ReactSkia") {
     configs -= [ "//build/config/clang:find_bad_constructs" ]
   }
 
+  configs += [ "//react-native/ReactCommon:react_native_config"]
+
   configs += [
     ":ReactSkia_config",
   ]
@@ -117,4 +119,6 @@ executable("ReactSkiaApp") {
   if (is_clang) {
     configs -= [ "//build/config/clang:find_bad_constructs" ]
   }
+
+  configs += [ "//react-native/ReactCommon:react_native_config"]
 }

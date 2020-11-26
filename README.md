@@ -14,10 +14,12 @@ If you have interesting for this project, please JOIN US to make it come true!
 
 ## Supported platforms
 
-Only macOS is supported in the mean time, but the most implementation is cross platform.
+Only macOS and Linux (Ubuntu 18) is supported in the mean time, but the most implementation is cross platform.
 It should be easy to extend for other Skia supported platforms.
 
-### macOS setup instructions
+### Setup instructions
+
+Setup instruction is common for both macOS and Linux except at step 2, where different arguments will be used for gn configuration.
 
 #### Prerequisites
 
