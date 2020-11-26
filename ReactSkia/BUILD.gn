@@ -48,6 +48,16 @@ source_set("ReactSkia") {
       "platform/macosx/RuntimeEventBeat.h",
       "platform/macosx/RuntimeEventBeat.mm",
     ]
+    defines = ["OS_MACOSX"]
+  }
+  if (is_linux) {
+    sources += [
+      "platform/linux/MainRunLoopEventBeat.h",
+      "platform/linux/MainRunLoopEventBeat.cpp",
+      "platform/linux/RuntimeEventBeat.h",
+      "platform/linux/RuntimeEventBeat.cpp",
+    ]
+    defines = ["OS_LINUX"]
   }
 
   public_deps = [
@@ -86,6 +96,8 @@ source_set("ReactSkia") {
     configs -= [ "//build/config/clang:find_bad_constructs" ]
   }
 
+  configs += [ "//react-native/ReactCommon:react_native_config"]
+
   configs += [
     ":ReactSkia_config",
   ]
@@ -107,4 +119,6 @@ executable("ReactSkiaApp") {
   if (is_clang) {
     configs -= [ "//build/config/clang:find_bad_constructs" ]
   }
+
+  configs += [ "//react-native/ReactCommon:react_native_config"]
 }

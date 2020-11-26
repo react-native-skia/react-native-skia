@@ -75,6 +75,7 @@ deps = {
   'src/third_party/wuffs'                 : Var('skia_git') + '/external/github.com/google/wuffs.git' + '@' + '00cc8a50aa0c86b6bcb37e9ece8fb100047cc17b',
   'src/third_party/zlib'                  : Var('chromium_git') + '/chromium/src/third_party/zlib.git' + '@' + 'eaf99a4e2009b0e5759e6070ad1760ac1dd75461',
   'src/third_party/swiftshader'           : 'https://swiftshader.googlesource.com/SwiftShader.git' + '@' + 'cb58662302c8e73845116fc5f14acaa08c037cb2',
+  'src/third_party/expat/src'           : 'https://chromium.googlesource.com/external/github.com/libexpat/libexpat.git' + '@' + 'e976867fb57a0cd87e3b0fe05d59e0ed63c6febb',
 
   # boringssl
   'src/third_party/boringssl/src'         : 'https://boringssl.googlesource.com/boringssl.git' + '@' + Var('boringssl_revision'),

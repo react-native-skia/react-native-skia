@@ -41,6 +41,14 @@ rn_cxx_component("JSIDynamic") {
   public_configs = [ ":jsi_config" ]
 }
 
+import("//build/config/linux/pkg_config.gni")
+pkg_config("system_javascriptcore") {
+    packages = [
+     "javascriptcoregtk-4.0",
+    ]
+
+}
+
 rn_cxx_component("JSCRuntime") {
   sources = [
     "JSCRuntime.cpp",
@@ -58,7 +66,11 @@ rn_cxx_component("JSCRuntime") {
     "RN_FABRIC_ENABLED",
   ]
 
-  frameworks = [
-    "JavaScriptCore.framework",
-  ]
+  if(is_linux) {
+    public_configs += [":system_javascriptcore"]
+  } else if (is_mac) {
+    frameworks = [
+      "JavaScriptCore.framework",
+    ]
+  }
 }

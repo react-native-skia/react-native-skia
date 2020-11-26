@@ -465,10 +465,13 @@ component("skia") {
 
   if (is_linux) {
     sources += [
+      "//third_party/skia/include/ports/SkFontMgr_fontconfig.h",
       "//third_party/skia/src/ports/SkFontConfigInterface.cpp",
       "//third_party/skia/src/ports/SkFontConfigInterface_direct.cpp",
       "//third_party/skia/src/ports/SkFontConfigInterface_direct_factory.cpp",
       "//third_party/skia/src/ports/SkFontMgr_FontConfigInterface.cpp",
+      "//third_party/skia/src/ports/SkFontMgr_fontconfig_factory.cpp",
+      "//third_party/skia/src/ports/SkFontMgr_fontconfig.cpp",
     ]
   }
 

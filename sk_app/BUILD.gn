@@ -41,7 +41,25 @@ source_set("sk_app") {
     ]
   }
 
-  configs += [
+  if (is_linux) {
+     sources += [
+        "unix/RasterWindowContext_unix.cpp",
+        "unix/WindowContextFactory_unix.h",
+        "unix/Window_unix.cpp",
+        "unix/Window_unix.h",
+        "unix/keysym2ucs.c",
+        "unix/keysym2ucs.h",
+        "unix/main_unix.cpp",
+        "unix/GLWindowContext_unix.cpp",
+        "unix/GrGLMakeNativeInterface_glx.cpp",
+      ]
+      libs = [
+        "GL",  # Used by raster window context, so cannot be behind skia_use_gl.
+        "X11",
+      ]
+   }
+
+   configs += [
     ":sk_app_config",
   ]
 

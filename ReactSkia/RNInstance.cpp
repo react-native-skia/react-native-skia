@@ -10,8 +10,13 @@
 #include "ReactSkia/components/RSkComponentProviderText.h"
 #include "ReactSkia/components/RSkComponentProviderView.h"
 
+#if defined (OS_MACOSX)
 #include "ReactSkia/platform/macosx/MainRunLoopEventBeat.h"
 #include "ReactSkia/platform/macosx/RuntimeEventBeat.h"
+#elif defined (OS_LINUX)
+#include "ReactSkia/platform/linux/MainRunLoopEventBeat.h"
+#include "ReactSkia/platform/linux/RuntimeEventBeat.h"
+#endif
 
 #include "ReactCommon/TurboModuleBinding.h"
 #include "cxxreact/JSBigString.h"
