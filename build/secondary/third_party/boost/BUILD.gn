@@ -11,5 +11,9 @@ config("boost-config") {
     "-Wno-extra-semi",
   ]
 
-  cflags = [ "-fno-complete-member-pointers" ]
+  if(is_clang) {
+    cflags = [ "-fno-complete-member-pointers" ]
+  } else {
+    cflags_cc += [ "-Wno-parentheses" ]
+  }
 }

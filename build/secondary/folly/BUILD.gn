@@ -122,9 +122,20 @@ config("internal_configs") {
   cflags_cc = [
     "-Wno-sign-compare",
     "-Wno-unreachable-code",
-    "-Wno-#warnings",
     "-Wno-unused-local-typedef",
   ]
+
+  if (is_clang) {
+    cflags_cc += [
+      "-Wno-#warnings",
+    ]
+  } else {
+    cflags_cc += [
+      "-faligned-new",
+      "-Wno-cpp",
+      "-Wno-unused-result",
+    ]
+  }
 }
 
 source_set("async") {

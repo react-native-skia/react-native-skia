@@ -54,9 +54,11 @@ rn_cxx_component("samplemodule") {
   with_exceptions = true
 
   extra_configs = [ ":cxxreact_config" ]
-  cflags_cc = [
-    "-Wno-header-hygiene",
-  ]
+  if(is_clang) {
+    cflags_cc = [
+      "-Wno-header-hygiene",
+    ]
+  }
 }
 
 rn_cxx_component("bridge") {

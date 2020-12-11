@@ -69,7 +69,7 @@ class JSCExecutorFactory : public JSExecutorFactory {
 
 class MessageQueueThreadImpl : public MessageQueueThread {
  public:
-  MessageQueueThreadImpl() : thread_({"JSThread"}) {}
+  MessageQueueThreadImpl() : thread_("JSThread") {}
 
   void runOnQueue(std::function<void()> &&task) override {
     thread_.getEventBase()->runInEventBaseThread(std::move(task));
