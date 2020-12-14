@@ -8,4 +8,14 @@ config("react_native_config") {
   if(is_linux) {
     defines = ["__unused=__attribute__((unused))"]
   }
+
+  if(!is_clang) {
+    cflags_cc = [
+      "-Wno-unknown-pragmas",
+      "-Wno-return-type",
+      "-Wno-sequence-point",
+      "-Wno-sizeof-pointer-div",
+      "-Wno-unused-result",
+    ]
+  }
 }

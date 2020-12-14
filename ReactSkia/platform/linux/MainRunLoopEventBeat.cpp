@@ -5,10 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#import "MainRunLoopEventBeat.h"
+#include "MainRunLoopEventBeat.h"
 
-#import "RCTUtils.h"
-#import <mutex>
+#include "RCTUtils.h"
+#include <mutex>
 
 namespace facebook {
 namespace react {

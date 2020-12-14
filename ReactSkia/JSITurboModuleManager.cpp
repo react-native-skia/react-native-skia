@@ -87,7 +87,7 @@ class TimingModule : public TurboModule {
       Instance *bridgeInstance)
       : TurboModule(name, jsInvoker),
         bridgeInstance_(bridgeInstance),
-        timerThread_({"TimerThread"}) {
+        timerThread_("TimerThread") {
     methodMap_["createTimer"] = MethodMetadata{4, CreateTimerWrapper};
   }
 

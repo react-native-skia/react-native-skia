@@ -31,7 +31,7 @@ void RSkComponentParagraph::OnPaint(
     const ShadowView &shadowView,
     SkCanvas *canvas) {
   auto state =
-      std::static_pointer_cast<ParagraphShadowNode::ConcreteState const>(
+      std::static_pointer_cast<ParagraphShadowNode::ConcreteStateT const>(
           shadowView.state);
   auto const &props =
       *std::static_pointer_cast<ParagraphProps const>(shadowView.props);

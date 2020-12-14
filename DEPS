@@ -48,7 +48,7 @@ vars = {
 deps = {
   # 'src/react-native'                      : Var('react_native_git') + '@' + Var('react_native_revision'),
   # react-native patch to fix cxx textlayoutmanager build break
-  'src/react-native'                      : 'https://github.com/Kudo/react-native.git' + '@' + 'b11c10371dec70ae6607286f23581585a401da09',
+  'src/react-native'                      : 'https://github.com/Kudo/react-native.git' + '@' + 'deb66012fe550d536420931e47f5573e798e048a',
 
   # 'src/folly'                             : 'https://github.com/facebook/folly.git' + '@' + 'v2020.01.13.00',
   # folly custom patch to support boringssl, might not be necessary after we replace folly/async with flutter/fml
