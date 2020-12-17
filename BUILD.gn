@@ -12,11 +12,14 @@ group("gn_all") {
     "//react-native/ReactCommon/react/renderer/components/image:image",
     "//react-native/ReactCommon/react/renderer/components/text:text",
     "//folly",
-    # "//flutter/fml",
-    # "//flutter/shell/common",
+    "//flutter/fml",
+    "//flutter/flow",
+    # "//flutter/runtime",
+    "//flutter/shell/common",
     "//skia",
     "//ReactSkia",
     "//third_party/boringssl",
+    "//third_party:freetype_harfbuzz",
     "//third_party/libevent",
   ]
 }

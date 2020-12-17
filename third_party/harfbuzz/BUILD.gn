@@ -35,7 +35,10 @@ if (use_system_harfbuzz) {
   }
 
   source_set("harfbuzz_source") {
-    visibility = [ "//third_party:freetype_harfbuzz" ]
+    visibility = [
+      ":harfbuzz",
+      "//third_party:freetype_harfbuzz",
+    ]
 
     public = [
       "src/src/hb-blob.h",
@@ -311,6 +314,12 @@ if (use_system_harfbuzz) {
       public += [ "src/src/hb-glib.h" ]
       sources += [ "src/src/hb-glib.cc" ]
     }
+  }
+
+  component("harfbuzz") {
+    public_deps = [
+      "//third_party/harfbuzz:harfbuzz_source",
+    ]
   }
 }
 

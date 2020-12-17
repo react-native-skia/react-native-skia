@@ -59,8 +59,11 @@ deps = {
   'src/third_party/double-conversion'     : 'https://github.com/google/double-conversion.git' + '@' + 'v1.1.6',
 
   # flutter
-  # 'src/flutter'                           : Var('chromium_git') + '/external/github.com/flutter/engine' + '@' + 'd1bc06f032f9d6c148ea6b96b48261d6f545004f',
+  # 'src/flutter'                           : Var('chromium_git') + '/external/github.com/flutter/engine' + '@' + 'b8752bbfff0419c8bf616b602bc59fd28f6a3d1b',
+  'src/flutter'                           : 'https://github.com/Kudo/flutter_engine.git' + '@' + 'a0f27830b66581db7b7fe9898816a5b944fb71cb',
   'src/third_party/rapidjson'             : Var('fuchsia_git') + '/third_party/rapidjson' + '@' + 'ef3564c5c8824989393b87df25355baf35ff544b',
+
+  'src/third_party/googletest/src'        : Var('chromium_git') + '/external/github.com/google/googletest.git' + '@' + '4fe018038f87675c083d0cfb6a6b57c274fb1753',
 
   # skia
   'src/third_party/skia'                  : Var('skia_git') + '/skia.git' + '@' + Var('skia_revision'),
