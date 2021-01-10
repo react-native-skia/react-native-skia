@@ -38,7 +38,7 @@ void RSkComponentParagraph::OnPaint(
   auto data = state->getData();
   auto text = data.attributedString.getString();
   auto fontSize = !std::isnan(props.textAttributes.fontSize) ? props.textAttributes.fontSize : TextAttributes::defaultTextAttributes().fontSize;
-  float ratio = 256.0;
+  float ratio = 255.9999;
   auto color = colorComponentsFromColor(props.textAttributes.foregroundColor ? props.textAttributes.foregroundColor : TextAttributes::defaultTextAttributes().foregroundColor);
   auto frame = shadowView.layoutMetrics.frame;
 
