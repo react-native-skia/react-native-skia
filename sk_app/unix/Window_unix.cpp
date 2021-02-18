@@ -12,16 +12,16 @@
 
 //#include <tchar.h>
 
-#include "unix/WindowContextFactory_unix.h"
+#include "WindowContextFactory.h"
 
 #include "src/utils/SkUTF.h"
 #include "GLWindowContext.h"
-#include "unix/Window_unix.h"
+#include "x11/WindowX11.h"
 //#include "tools/skui/ModifierKey.h"
 //#include "tools/timer/Timer.h"
 
 extern "C" {
-    #include "unix/keysym2ucs.h"
+    #include "x11/keysym2ucs.h"
 }
 #include <X11/Xutil.h>
 #include <X11/XKBlib.h>

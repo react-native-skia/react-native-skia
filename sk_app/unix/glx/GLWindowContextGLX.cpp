@@ -8,7 +8,7 @@
 
 #include "include/gpu/gl/GrGLInterface.h"
 #include "GLWindowContext.h"
-#include "unix/WindowContextFactory_unix.h"
+#include "WindowContextFactory.h"
 
 #include <GL/gl.h>
 

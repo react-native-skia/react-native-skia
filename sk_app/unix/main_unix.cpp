@@ -9,8 +9,9 @@
 #include "include/core/SkTypes.h"
 #include "include/private/SkTHash.h"
 #include "Application.h"
-#include "unix/Window_unix.h"
 #include "tools/timer/Timer.h"
+
+#include "x11/WindowX11.h"
 
 int main(int argc, char**argv) {
     XInitThreads();

@@ -2,6 +2,22 @@ config("sk_app_config") {
   cflags_cc = [ "-std=c++17" ]
   cflags_objcc = [ "-std=c++17" ]
   include_dirs = [ "." ]
+
+  if(is_linux) {
+    include_dirs += [
+      "unix/",
+      "unix/platform/window/"
+    ]
+  }
+}
+
+#X11 Platform sources and dependenices
+if(is_linux) {
+
+  x11_platform_source = [
+    "unix/platform/window/x11/keysym2ucs.c",
+    "unix/platform/window/x11/keysym2ucs.h",
+  ]
 }
 
 source_set("sk_app") {
@@ -43,16 +59,16 @@ source_set("sk_app") {
 
   if (is_linux) {
      sources += [
-        "unix/RasterWindowContext_unix.cpp",
+        "unix/raster/RasterWindowContext_unix.cpp",
         "unix/WindowContextFactory_unix.h",
         "unix/Window_unix.cpp",
         "unix/Window_unix.h",
-        "unix/keysym2ucs.c",
-        "unix/keysym2ucs.h",
         "unix/main_unix.cpp",
-        "unix/GLWindowContext_unix.cpp",
-        "unix/GrGLMakeNativeInterface_glx.cpp",
+        "unix/glx/GLWindowContextGLX.cpp",
+        "unix/glx/GrGLMakeNativeInterfaceGLX.cpp",
       ]
+      sources += x11_platform_source
+
       libs = [
         "GL",  # Used by raster window context, so cannot be behind skia_use_gl.
         "X11",
