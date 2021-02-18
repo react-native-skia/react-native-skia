@@ -1,38 +1,22 @@
 /*
  * Copyright 2016 Google Inc.
+ * Copyright (C) 1994-2021 OpenTV, Inc. and Nagravision S.A.
  *
  * Use of this source code is governed by a BSD-style license that can be
  * found in the LICENSE file.
  */
 
-#include "include/core/SkSurface.h"
-#include "RasterWindowContext.h"
-#include "WindowContextFactory.h"
+#include "RasterWindowContext_unix.h"
 
 using sk_app::RasterWindowContext;
 using sk_app::DisplayParams;
+#if !PLATFORM(X11)
+typedef int XWindow;
+#endif
 
-namespace {
+namespace sk_app {
 
-class RasterWindowContext_xlib : public RasterWindowContext {
-public:
-    RasterWindowContext_xlib(Display*, XWindow, int width, int height, const DisplayParams&);
-
-    sk_sp<SkSurface> getBackbufferSurface() override;
-    void swapBuffers() override;
-    bool isValid() override { return SkToBool(fWindow); }
-    void resize(int  w, int h) override;
-    void setDisplayParams(const DisplayParams& params) override;
-
-protected:
-    sk_sp<SkSurface> fBackbufferSurface;
-    Display* fDisplay;
-    XWindow  fWindow;
-    GC       fGC;
-
-    typedef RasterWindowContext INHERITED;
-};
-
+#if PLATFORM(X11)
 RasterWindowContext_xlib::RasterWindowContext_xlib(Display* display, XWindow window, int width,
                                                    int height, const DisplayParams& params)
         : INHERITED(params)
@@ -84,21 +68,6 @@ void RasterWindowContext_xlib::swapBuffers() {
     }
     XPutImage(fDisplay, fWindow, fGC, &image, 0, 0, 0, 0, pm.width(), pm.height());
 }
+#endif
 
-}  // anonymous namespace
-
-namespace sk_app {
-namespace window_context_factory {
-
-std::unique_ptr<WindowContext> MakeRasterForXlib(const XlibWindowInfo& info,
-                                                 const DisplayParams& params) {
-    std::unique_ptr<WindowContext> ctx(new RasterWindowContext_xlib(
-            info.fDisplay, info.fWindow, info.fWidth, info.fHeight, params));
-    if (!ctx->isValid()) {
-        ctx = nullptr;
-    }
-    return ctx;
-}
-
-}  // namespace window_context_factory
 }  // namespace sk_app

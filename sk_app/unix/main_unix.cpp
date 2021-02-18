@@ -1,6 +1,6 @@
 /*
-
 * Copyright 2016 Google Inc.
+* Copyright (C) 1994-2021 OpenTV, Inc. and Nagravision S.A.
 *
 * Use of this source code is governed by a BSD-style license that can be
 * found in the LICENSE file.
@@ -9,15 +9,21 @@
 #include "include/core/SkTypes.h"
 #include "include/private/SkTHash.h"
 #include "Application.h"
+#include "PlatformDisplay.h"
+
+#if PLATFORM(X11)
+#include "x11/PlatformDisplayX11.h"
+#include "x11/WindowX11.h"
+#endif //PLATFORM(X11)
+
 #include "tools/timer/Timer.h"
 
-#include "x11/WindowX11.h"
+bool done = false;
 
-int main(int argc, char**argv) {
-    XInitThreads();
-    Display* display = XOpenDisplay(nullptr);
-
-    sk_app::Application* app = sk_app::Application::Create(argc, argv, (void*)display);
+#if PLATFORM(X11)
+void xlib_runloop(sk_app::PlatformDisplay& pDisplay, sk_app::Application *app)
+{
+    Display* display = dynamic_cast<sk_app::PlatformDisplayX11&>(pDisplay).native();
 
     // Get the file descriptor for the X display
     const int x11_fd = ConnectionNumber(display);
@@ -40,17 +46,16 @@ int main(int argc, char**argv) {
             // Wait for an event on the file descriptor or for timer expiration
             (void)select(1, &in_fds, nullptr, nullptr, &tv);
         }
-
         // Handle all pending XEvents (if any) and flush the input
         // Only handle a finite number of events before finishing resize and paint..
         if (int count = XPending(display)) {
             // collapse any Expose and Resize events.
-            SkTHashSet<sk_app::Window_unix*> pendingWindows;
+            SkTHashSet<sk_app::WindowX11*> pendingWindows;
             while (count-- && !done) {
                 XEvent event;
                 XNextEvent(display, &event);
 
-                sk_app::Window_unix* win = sk_app::Window_unix::gWindowMap.find(event.xany.window);
+                sk_app::WindowX11* win = sk_app::WindowX11::gWindowMap.find(event.xany.window);
                 if (!win) {
                     continue;
                 }
@@ -73,7 +78,7 @@ int main(int argc, char**argv) {
                     break;
                 }
             }
-            pendingWindows.foreach([](sk_app::Window_unix* win) {
+            pendingWindows.foreach([](sk_app::WindowX11* win) {
                 win->finishResize();
                 win->finishPaint();
             });
@@ -85,9 +90,20 @@ int main(int argc, char**argv) {
         XFlush(display);
     }
 
-    delete app;
+}
+#endif //PLATFORM(X11)
 
-    XCloseDisplay(display);
+int main(int argc, char**argv) {
+
+    sk_app::PlatformDisplay& pDisplay = sk_app::PlatformDisplay::sharedDisplayForCompositing();
+
+    sk_app::Application* app = sk_app::Application::Create(argc, argv, reinterpret_cast<void*>(&pDisplay));
+
+#if PLATFORM(X11)
+    xlib_runloop(pDisplay, app);
+#endif
+
+    delete app;
 
     return 0;
 }

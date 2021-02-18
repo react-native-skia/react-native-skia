@@ -10,6 +10,9 @@
 #include "include/core/SkCanvas.h"
 #include "include/core/SkSurface.h"
 #include "WindowContext.h"
+#ifdef OS_LINUX
+#include "SkAppUtil.h"
+#endif
 
 namespace sk_app {
 
@@ -64,6 +67,7 @@ void Window::onPaint() {
     backbuffer->flushAndSubmit();
 
     fWindowContext->swapBuffers();
+    didRenderFrame();
 }
 
 void Window::onResize(int w, int h) {
