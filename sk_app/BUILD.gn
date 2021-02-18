@@ -70,6 +70,26 @@ if(is_linux && gl_backend_type == "x11") {
   ]
 }
 
+#Libwpe Platform sources and dependenices
+if(is_linux && gl_backend_type == "libwpe") {
+
+  pkg_config("use_system_libwpe") {
+    wpe_interface_version="1.0"
+    packages = [
+      "wpe-${wpe_interface_version}",
+      "glib-2.0",
+    ]
+    visibility = [ ":sk_app" ]
+  }
+
+  libwpe_platform_source = [
+    "unix/platform/display/libwpe/PlatformDisplayLibWPE.cpp",
+    "unix/platform/display/libwpe/PlatformDisplayLibWPE.h",
+    "unix/platform/window/libwpe/WindowLibWPE.cpp",
+    "unix/egl/GLWindowContextEGLLibWPE.cpp",
+  ]
+}
+
 source_set("sk_app") {
   sources = [
     "Application.h",
@@ -125,6 +145,13 @@ source_set("sk_app") {
         sources += x11_platform_source
         configs += [ ":use_system_x11" ]
         defines += [ "SKA_PLATFORM_X11" ]
+      } else if (gl_backend_type == "libwpe") { #Libwpe interface based backend. supports only EGL.
+        sources += libwpe_platform_source
+        configs += [ ":use_system_libwpe" ]
+        defines += [
+          "SKA_PLATFORM_LIBWPE",
+          "USE_WPE_RENDERER",
+        ]
       }
 
       if(gl_use_glx) { # Use GLX interface. Only for x11 backend

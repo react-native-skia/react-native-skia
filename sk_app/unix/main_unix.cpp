@@ -14,6 +14,11 @@
 #if PLATFORM(X11)
 #include "x11/PlatformDisplayX11.h"
 #include "x11/WindowX11.h"
+#elif PLATFORM(LIBWPE)
+#include <wpe/wpe.h>
+#include <glib.h>
+#include "libwpe/PlatformDisplayLibWPE.h"
+#include "libwpe/WindowLibWPE.h"
 #endif //PLATFORM(X11)
 
 #include "tools/timer/Timer.h"
@@ -91,16 +96,68 @@ void xlib_runloop(sk_app::PlatformDisplay& pDisplay, sk_app::Application *app)
     }
 
 }
-#endif //PLATFORM(X11)
+#elif PLATFORM(LIBWPE)
+static void* libwpe_loop_thread_function(gpointer loop)
+{
+    GMainLoop *pMainLoop = (GMainLoop*)loop;
+    g_main_loop_run(pMainLoop);
+    return (void *)0;
+}
+
+void libwpe_runloop(sk_app::PlatformDisplay& pDisplay, sk_app::Application *app)
+{
+    auto* loop = g_main_loop_new(g_main_context_get_thread_default(), FALSE);
+    void* display = dynamic_cast<sk_app::PlatformDisplayLibWPE&>(pDisplay).native();
+    SK_APP_UNUSED(display);
+
+    if(g_thread_new("LibWpeLoop", libwpe_loop_thread_function, loop) == NULL)
+    {
+        SK_APP_LOG_ERROR("xxxxxxxxxx g_thread_new Failed xxxxxxxxxx g_main_loop_run will not work\n");
+        return;
+    }
+
+    while (!done) {
+
+        SkTHashSet<sk_app::WindowLibWPE*> pendingWindows;
+        sk_app::WindowLibWPE* win = sk_app::WindowLibWPE::gWindowMap.find(LIBWPE_DEFAULT_WINID);
+        if (!win) {
+            SK_APP_LOG_ERROR("Invalide Pending Window\n");
+            continue;
+        }
+        win->markPendingPaint();
+        pendingWindows.add(win);
+        if(true) {  // FIXME decide when we need to paint
+            pendingWindows.foreach([](sk_app::WindowLibWPE* win) {
+                win->finishResize();
+                win->finishPaint();
+            });
+        } else {
+            // We are only really "idle" when the timer went off with zero events.
+            app->onIdle();
+        }
+        usleep(100000);
+    }
+}
+#endif
 
 int main(int argc, char**argv) {
 
     sk_app::PlatformDisplay& pDisplay = sk_app::PlatformDisplay::sharedDisplayForCompositing();
 
+#if PLATFORM(LIBWPE) || USE(WEP_RENDERER)
+    int hostClientFileDescriptor = wpe_renderer_host_create_client();
+    const char *implementationLibraryName = wpe_loader_get_loaded_implementation_library_name();
+
+    wpe_loader_init(implementationLibraryName);
+    dynamic_cast<sk_app::PlatformDisplayLibWPE&>(pDisplay).initialize(hostClientFileDescriptor);
+#endif
+
     sk_app::Application* app = sk_app::Application::Create(argc, argv, reinterpret_cast<void*>(&pDisplay));
 
 #if PLATFORM(X11)
     xlib_runloop(pDisplay, app);
+#elif PLATFORM(LIBWPE)
+    libwpe_runloop(pDisplay, app);
 #endif
 
     delete app;

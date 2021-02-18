@@ -11,6 +11,8 @@
 
 #if PLATFORM(X11)
 #include "x11/WindowX11.h"
+#elif PLATFORM(LIBWPE)
+#include "libwpe/WindowLibWPE.h"
 #endif
 
 namespace sk_app {
@@ -22,6 +24,8 @@ Window* Window::CreateNativeWindow(void* platformData) {
 
 #if PLATFORM(X11)
     WindowX11* window = new WindowX11();
+#elif PLATFORM(LIBWPE)
+    WindowLibWPE* window = new WindowLibWPE();
 #endif
 
     if (!window->initWindow(pDisplay)) {

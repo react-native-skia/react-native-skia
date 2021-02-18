@@ -17,6 +17,10 @@
 #include "x11/PlatformDisplayX11.h"
 #endif
 
+#if PLATFORM(LIBWPE) || USE(WPE_RENDERER)
+#include "libwpe/PlatformDisplayLibWPE.h"
+#endif
+
 namespace sk_app {
 
 static PlatformDisplay* s_sharedDisplayForCompositing;
@@ -135,6 +139,8 @@ std::unique_ptr<PlatformDisplay> PlatformDisplay::createPlatformDisplay()
 
 #if PLATFORM(WIN)
     return PlatformDisplayWin::create();
+#elif USE(WPE_RENDERER)
+    return PlatformDisplayLibWPE::create();
 #endif
 
     return nullptr;
@@ -142,7 +148,7 @@ std::unique_ptr<PlatformDisplay> PlatformDisplay::createPlatformDisplay()
 
 PlatformDisplay& PlatformDisplay::sharedDisplay()
 {
-#if PLATFORM(X11)
+#if PLATFORM(X11) || PLATFORM(LIBWPE) || USE(WPE_RENDERER)
     static std::once_flag onceFlag;
     static std::unique_ptr<PlatformDisplay> display;
     std::call_once(onceFlag, []{

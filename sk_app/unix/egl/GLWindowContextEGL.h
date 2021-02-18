@@ -15,6 +15,10 @@
 #include "PlatformDisplay.h"
 #include "WindowContextFactory.h"
 
+#if USE(WPE_RENDERER)
+struct wpe_renderer_backend_egl_offscreen_target;
+#endif
+
 using sk_app::window_context_factory::UnixWindowInfo;
 using sk_app::DisplayParams;
 using sk_app::GLWindowContext;
@@ -45,6 +49,11 @@ private:
 
     enum EGLSurfaceType { PbufferSurface, WindowSurface, PixmapSurface, Surfaceless };
 
+#if USE(WPE_RENDERER)
+    GLWindowContextEGL(PlatformDisplay&, EGLContext, EGLSurface, struct wpe_renderer_backend_egl_offscreen_target*);
+    void destroyWPETarget();
+#endif
+
     EGLContext createWindowContext(GLNativeWindowType window, PlatformDisplay& platformDisplay, EGLContext sharingContext);
     EGLContext createSharingContext(PlatformDisplay& platformDisplay);
     bool createContext(GLNativeWindowType window, PlatformDisplay& platformDisplay);
@@ -53,9 +62,15 @@ private:
 
 #if PLATFORM(X11)
     static EGLSurface createWindowSurfaceX11(EGLDisplay, EGLConfig, GLNativeWindowType);
+#elif PLATFORM(LIBWPE) || USE(WPE_RENDERER)
+    static EGLSurface createWindowSurfaceWPE(EGLDisplay, EGLConfig, GLNativeWindowType);
 #endif
 
     static bool getEGLConfig(EGLDisplay, EGLConfig*, EGLSurfaceType);
+
+#if USE(WPE_RENDERER)
+    struct wpe_renderer_backend_egl_offscreen_target* fWpeTarget { nullptr };
+#endif
 
     GLNativeWindowType      fWindow;
 

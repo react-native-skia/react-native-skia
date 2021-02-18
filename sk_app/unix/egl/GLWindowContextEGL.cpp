@@ -218,6 +218,11 @@ EGLContext GLWindowContextEGL::createWindowContext(GLNativeWindowType window, Pl
         surface = createWindowSurfaceX11(display, config, window);
         break;
 #endif
+#if PLATFORM(LIBWPE) || USE(WPE_RENDERER)
+    case PlatformDisplay::Type::WPE:
+        surface = createWindowSurfaceWPE(display, config, window);
+        break;
+#endif // USE(WPE_RENDERER)
     }
 
     if (surface == EGL_NO_SURFACE) {
@@ -351,6 +356,7 @@ GLWindowContextEGL::~GLWindowContextEGL() {
 }
 
 void GLWindowContextEGL::onDestroyContext() {
+
     if (fGLContext) {
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         eglMakeCurrent(fPlatformDisplay.eglDisplay(), nullptr, nullptr, nullptr);
@@ -361,6 +367,11 @@ void GLWindowContextEGL::onDestroyContext() {
         eglDestroySurface(fPlatformDisplay.eglDisplay(), fGLsurface);
         fGLsurface = nullptr;
     }
+
+#if USE(WPE_RENDERER)
+    destroyWPETarget();
+#endif
+
 }
 
 void GLWindowContextEGL::onSwapBuffers() {

@@ -20,6 +20,8 @@
 #if PLATFORM(X11)
 #include <X11/Xlib.h>
 #include "x11/PlatformDisplayX11.h"
+#elif PLATFORM(LIBWPE) || USE(WPE_RENDERER)
+#include "libwpe/PlatformDisplayLibWPE.h"
 #endif
 
 #include <memory>
