@@ -142,7 +142,7 @@ class TimingModule : public TurboModule {
     // LOG(INFO) << "TimingModule::OnTimeout - callbackId=" << callbackId
     //           << ", repeat=" << repeats << ", duration=" << duration;
     bridge->callJSFunction(
-        "JSTimers", "callTimers", folly::dynamic::array(callbackId));
+        "JSTimers", "callTimers", folly::dynamic::array(folly::dynamic::array(callbackId)));
     if (repeats) {
       timerThread_.getEventBase()->scheduleAt(
           std::bind(
