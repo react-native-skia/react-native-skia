@@ -16,6 +16,33 @@ class RSkComponentProvider {
   virtual ComponentDescriptorProvider GetDescriptorProvider() = 0;
   virtual std::shared_ptr<RSkComponent> CreateComponent(
       const ShadowView &shadowView) = 0;
+
+  std::shared_ptr<RSkComponent> CreateAddComponent(const ShadowView &shadowView) {
+      auto component = this->CreateComponent(shadowView);
+      registry_[shadowView.tag] = component;
+      return component;
+  }
+
+  std::shared_ptr<RSkComponent> GetComponent(Tag tag) {
+      auto it = registry_.find(tag);
+      if (it != registry_.end()) {
+           return it->second;
+      }
+      return nullptr;
+  }
+
+  void DeleteComponent(Tag tag) {
+      auto it = registry_.find(tag);
+      if (it != registry_.end()) {
+           auto component = it->second;
+           registry_.erase(tag);
+           component.reset();
+      }
+  }
+
+ private:
+  better::map<Tag, std::shared_ptr<RSkComponent>> registry_;
+
 };
 
 } // namespace react

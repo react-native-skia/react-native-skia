@@ -32,6 +32,7 @@ class RSkSurfaceWindow {
 
   // Components management
   void AddComponent(std::shared_ptr<RSkComponent> component);
+  void DeleteComponent(std::shared_ptr<RSkComponent> component);
 
  private:
   void RecreateWindowBackend();
@@ -39,7 +40,9 @@ class RSkSurfaceWindow {
  private:
   std::unique_ptr<sk_app::Window> window_;
   sk_app::Window::BackendType backendType_;
-  std::list<std::shared_ptr<RSkComponent>> components_;
+  /* FIXME: components list is not been used as of now*/
+  /* To be checked if this list needs to be maintained here*/
+  // std::list<std::shared_ptr<RSkComponent>> components_;
 };
 
 } // namespace react
