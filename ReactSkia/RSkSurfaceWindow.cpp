@@ -37,8 +37,13 @@ LayoutConstraints RSkSurfaceWindow::GetLayoutConstraints() {
 }
 
 void RSkSurfaceWindow::AddComponent(std::shared_ptr<RSkComponent> component) {
-  components_.push_back(component);
+  /* FIXME: components_ list is not been used as of now */
+  // components_.push_back(component);
   window_->pushLayer(component.get());
+}
+
+void RSkSurfaceWindow::DeleteComponent(std::shared_ptr<RSkComponent> component) {
+  window_->popLayer(window_->findLayer(component.get()));
 }
 
 void RSkSurfaceWindow::RecreateWindowBackend() {

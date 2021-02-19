@@ -71,8 +71,7 @@ void MountingManager::ProcessMutations(
         break;
       }
       case ShadowViewMutation::Delete: {
-        // DeleteMountInstruction(mutation, registry, observerCoordinator,
-        // surfaceId);
+        DeleteMountInstruction(mutation, surfaceId);
         break;
       }
       case ShadowViewMutation::Insert: {
@@ -133,12 +132,29 @@ void MountingManager::CreateMountInstruction(
       componentViewRegistry_->GetProvider(componentHandle);
   if (provider) {
     std::shared_ptr<RSkComponent> component =
-        provider->CreateComponent(mutation.newChildShadowView);
+        provider->CreateAddComponent(mutation.newChildShadowView);
     if (component) {
       surface_->AddComponent(component);
     }
   }
 }
+
+void MountingManager::DeleteMountInstruction(
+    ShadowViewMutation const &mutation,
+    SurfaceId surfaceId) {
+  auto componentHandle = mutation.oldChildShadowView.componentHandle;
+  auto tag = mutation.oldChildShadowView.tag;
+  RSkComponentProvider *provider =
+      componentViewRegistry_->GetProvider(componentHandle);
+  if (provider) {
+    std::shared_ptr<RSkComponent> component = provider->GetComponent(tag);
+    if (component) {
+      surface_->DeleteComponent(component);
+      provider->DeleteComponent(tag);
+    }
+  }
+}
+
 
 } // namespace react
 } // namespace facebook

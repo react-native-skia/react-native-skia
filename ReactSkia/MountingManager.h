@@ -48,6 +48,11 @@ class MountingManager : public SchedulerDelegate {
       ShadowViewMutation const &mutation,
       SurfaceId surfaceId);
 
+  // `Delete` instruction
+  void DeleteMountInstruction(
+      ShadowViewMutation const &mutation,
+      SurfaceId surfaceId);
+
  private:
   ComponentViewRegistry *componentViewRegistry_;
   RSkSurfaceWindow *surface_;

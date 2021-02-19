@@ -83,6 +83,15 @@ public:
         fLayers.push_back(layer);
     }
 
+    int findLayer(Layer * layer) {
+         return fLayers.find(layer);
+    }
+
+    void popLayer(int layerIndex) {
+	if(layerIndex != -1)
+	   fLayers.remove(layerIndex);
+    }
+
     void onBackendCreated();
     void onUIStateChanged(const SkString& stateName, const SkString& stateValue);
     void onPaint();
