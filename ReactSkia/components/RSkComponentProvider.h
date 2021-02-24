@@ -17,7 +17,7 @@ class RSkComponentProvider {
   virtual std::shared_ptr<RSkComponent> CreateComponent(
       const ShadowView &shadowView) = 0;
 
-  std::shared_ptr<RSkComponent> CreateAddComponent(const ShadowView &shadowView) {
+  std::shared_ptr<RSkComponent> CreateAndAddComponent(const ShadowView &shadowView) {
       auto component = this->CreateComponent(shadowView);
       registry_[shadowView.tag] = component;
       return component;
