@@ -132,7 +132,7 @@ void MountingManager::CreateMountInstruction(
       componentViewRegistry_->GetProvider(componentHandle);
   if (provider) {
     std::shared_ptr<RSkComponent> component =
-        provider->CreateAddComponent(mutation.newChildShadowView);
+        provider->CreateAndAddComponent(mutation.newChildShadowView);
     if (component) {
       surface_->AddComponent(component);
     }
