@@ -7,7 +7,10 @@
 */
 
 #include "src/utils/SkUTF.h"
+#include "SkAppUtil.h"
+#ifdef SKA_HAS_GPU_SUPPORT
 #include "GLWindowContext.h"
+#endif
 #include "WindowLibWPE.h"
 #include "WindowContextFactory.h"
 
@@ -153,10 +156,10 @@ bool WindowLibWPE::initWindow(PlatformDisplay *platformDisplay) {
     if(false == initRenderTarget(viewBackend, renderBackend)) {
         return false;
     }
+    fWindow = (reinterpret_cast<GLNativeWindowType>(wpe_renderer_backend_egl_target_get_native_window(fRendererTarget)));
 
     fDisplay = display;
     fPlatformDisplay = platformDisplay;
-    fWindow = (reinterpret_cast<GLNativeWindowType>(wpe_renderer_backend_egl_target_get_native_window(fRendererTarget)));
     fMSAASampleCount = fRequestedDisplayParams.fMSAASampleCount;
 
     // add to hashtable of windows
@@ -215,8 +218,12 @@ bool WindowLibWPE::attach(BackendType attachType) {
 
     switch (attachType) {
         case kNativeGL_BackendType:
+#ifdef SKA_HAS_GPU_SUPPORT
             fWindowContext =
                     window_context_factory::MakeGLForUnix(winInfo, fRequestedDisplayParams);
+#else
+            SK_APP_LOG_ERROR("Cannot create kNativeGL_BackendType context : GPU SUPPORT IS NOT ENABLED \n");
+#endif
             break;
         case kRaster_BackendType:
             fWindowContext =

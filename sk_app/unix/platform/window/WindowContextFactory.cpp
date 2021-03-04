@@ -17,6 +17,7 @@ namespace sk_app {
 
 namespace window_context_factory {
 
+#ifdef SKA_HAS_GPU_SUPPORT
 std::unique_ptr<WindowContext> MakeGLForUnix(const UnixWindowInfo& winInfo,
                                              const DisplayParams& params) {
 
@@ -32,20 +33,22 @@ std::unique_ptr<WindowContext> MakeGLForUnix(const UnixWindowInfo& winInfo,
     }
     return ctx;
 }
+#endif
 
-std::unique_ptr<WindowContext> MakeRasterForUnix(const UnixWindowInfo& info,
+std::unique_ptr<WindowContext> MakeRasterForUnix(const UnixWindowInfo& winInfo,
                                                  const DisplayParams& params) {
-    SK_APP_NOT_IMPL
 #if PLATFORM(X11)
-    std::unique_ptr<WindowContext> ctx(new RasterWindowContext_xlib(
-            info.native.fDisplay, info.fWindow, info.fWidth, info.fHeight, params));
+    std::unique_ptr<WindowContext> ctx(new RasterWindowContextX11(winInfo, params));
+#elif PLATFORM(LIBWPE)
+    std::unique_ptr<WindowContext> ctx(new RasterWindowContextLibWPE(winInfo, params));
+#else
+    SK_APP_NOT_IMPL
+    std::unique_ptr<WindowContext> ctx(nullptr);
+#endif
     if (!ctx->isValid()) {
         ctx = nullptr;
     }
     return ctx;
-#else
-    return nullptr;
-#endif
 }
 
 

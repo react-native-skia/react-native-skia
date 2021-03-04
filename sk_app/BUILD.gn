@@ -7,13 +7,16 @@ if(is_linux) {
 declare_args() {
   if(is_linux) {
     # x11, wayland, direcftb, libwpe
-    gl_backend_type = "x11"
+    gl_display_backend = "x11"
 
     # Can be true only for X11 backend, others will use egl
     gl_use_glx = true
 
     # For Embedded systems we will use OpenGL ES
     gl_use_opengl_es = false
+
+    # For platform which doesnt have gpu have to set this to false
+    gl_has_gpu = true
   }
 }
 
@@ -25,6 +28,7 @@ config("sk_app_config") {
   if(is_linux) {
     include_dirs += [
       "unix/",
+      "unix/raster/",
       "unix/platform/display/",
       "unix/platform/window/"
     ]
@@ -36,7 +40,7 @@ config("sk_app_config") {
   }
 }
 
-if(is_linux) {
+if(is_linux && gl_has_gpu ) {
   pkg_config("use_system_gl") {
     if(gl_use_glx) {
       packages = [ "glx" ]
@@ -54,7 +58,7 @@ if(is_linux) {
 }
 
 #X11 Platform sources and dependenices
-if(is_linux && gl_backend_type == "x11") {
+if(is_linux && gl_display_backend == "x11") {
 
   pkg_config("use_system_x11") {
     packages = [ "x11" ]
@@ -68,10 +72,11 @@ if(is_linux && gl_backend_type == "x11") {
     "unix/platform/display/x11/PlatformDisplayX11.h",
     "unix/platform/window/x11/WindowX11.cpp",
   ]
+  x11_platform_source += [ "unix/raster/x11/RasterWindowContextX11.cpp"] # X11 Raster
 }
 
 #Libwpe Platform sources and dependenices
-if(is_linux && gl_backend_type == "libwpe") {
+if(is_linux && gl_display_backend == "libwpe") {
 
   pkg_config("use_system_libwpe") {
     wpe_interface_version="1.0"
@@ -86,8 +91,11 @@ if(is_linux && gl_backend_type == "libwpe") {
     "unix/platform/display/libwpe/PlatformDisplayLibWPE.cpp",
     "unix/platform/display/libwpe/PlatformDisplayLibWPE.h",
     "unix/platform/window/libwpe/WindowLibWPE.cpp",
-    "unix/egl/GLWindowContextEGLLibWPE.cpp",
   ]
+  if(gl_has_gpu) {
+    libwpe_platform_source += [ "unix/egl/GLWindowContextEGLLibWPE.cpp" ]
+  }
+  libwpe_platform_source += [ "unix/raster/libwpe/RasterWindowContextLibWPE.cpp"] # LibWPE Raster
 }
 
 source_set("sk_app") {
@@ -97,11 +105,16 @@ source_set("sk_app") {
     "Window.cpp",
     "WindowContext.h",
     "WindowContext.cpp",
-    "GLWindowContext.h",
-    "GLWindowContext.cpp",
     "GrGLUtil.h",
     "GrGLUtil.cpp",
   ]
+
+  if(gl_has_gpu) {
+    sources += [
+      "GLWindowContext.h",
+      "GLWindowContext.cpp",
+    ]
+  }
 
   public_deps = [
     "//skia",
@@ -129,7 +142,6 @@ source_set("sk_app") {
 
   if (is_linux) {
      sources += [
-        "unix/raster/RasterWindowContext_unix.cpp",
         "unix/platform/display/PlatformDisplay.cpp",
         "unix/platform/window/WindowContextFactory.cpp",
         "unix/platform/window/WindowContextFactory.h",
@@ -141,11 +153,11 @@ source_set("sk_app") {
       defines = [ "OS_LINUX" ]
 
       # Backend type is x11. It can use either GLX or EGL interface for opengl
-      if (gl_backend_type == "x11") {
+      if (gl_display_backend == "x11") {
         sources += x11_platform_source
         configs += [ ":use_system_x11" ]
         defines += [ "SKA_PLATFORM_X11" ]
-      } else if (gl_backend_type == "libwpe") { #Libwpe interface based backend. supports only EGL.
+      } else if (gl_display_backend == "libwpe") { #Libwpe interface based backend. supports only EGL.
         sources += libwpe_platform_source
         configs += [ ":use_system_libwpe" ]
         defines += [
@@ -154,31 +166,34 @@ source_set("sk_app") {
         ]
       }
 
-      if(gl_use_glx) { # Use GLX interface. Only for x11 backend
-        sources += [
-          "unix/glx/GLWindowContextGLX.cpp",
-          "unix/glx/GrGLMakeNativeInterfaceGLX.cpp",
-        ]
-        defines += [ "USE_GLX" ]
-      } else { # Using EGL interface
-        sources += [
-          "unix/egl/GLWindowContextEGL.cpp",
-          "unix/egl/GrGLMakeNativeInterfaceEGL.cpp",
-        ]
-        if (gl_backend_type == "x11") {
-          sources += [ "unix/egl/GLWindowContextEGLX11.cpp"]
+      if(gl_has_gpu) {
+        if(gl_use_glx && gl_display_backend == "x11") { # Use GLX interface. Only for x11 backend
+          sources += [
+            "unix/glx/GLWindowContextGLX.cpp",
+            "unix/glx/GrGLMakeNativeInterfaceGLX.cpp",
+          ]
+          defines += [ "USE_GLX" ]
+        } else { # Using EGL interface
+          sources += [
+            "unix/egl/GLWindowContextEGL.cpp",
+            "unix/egl/GrGLMakeNativeInterfaceEGL.cpp",
+          ]
+          if (gl_display_backend == "x11") {
+            sources += [ "unix/egl/GLWindowContextEGLX11.cpp"]
+          }
+          defines += [ "USE_EGL" ]
         }
-        defines += [ "USE_EGL" ]
-      }
-      configs += [ ":use_system_gl" ]
+        configs += [ ":use_system_gl" ]
 
-      # Special flag for OpenGL ES
-      if(gl_use_opengl_es) {
-        defines += [ "USE_OPENGL_ES" ]
-      } else {
-        defines += [ "USE_OPENGL" ]
-      }
-   }
+        # Flag for OpenGL ES
+        if(gl_use_opengl_es) {
+          defines += [ "USE_OPENGL_ES" ]
+        } else {
+          defines += [ "USE_OPENGL" ]
+        }
+        defines += [ "SKA_HAS_GPU_SUPPORT" ]
+     }
+  }
 
   configs += [
     ":sk_app_config",

@@ -8,7 +8,9 @@
 
 
 #include "src/utils/SkUTF.h"
+#ifdef SKA_HAS_GPU_SUPPORT
 #include "GLWindowContext.h"
+#endif
 #include "WindowX11.h"
 #include "WindowContextFactory.h"
 
@@ -165,6 +167,7 @@ void WindowX11::closeWindow() {
         gWindowMap.remove(fWindow);
         XDestroyWindow(fDisplay, fWindow);
         fWindow = 0;
+#if USE(GLX)
         if (fFBConfig) {
             XFree(fFBConfig);
             fFBConfig = nullptr;
@@ -173,6 +176,7 @@ void WindowX11::closeWindow() {
             XFree(fVisualInfo);
             fVisualInfo = nullptr;
         }
+#endif
         fDisplay = nullptr;
     }
 }
@@ -340,8 +344,8 @@ bool WindowX11::attach(BackendType attachType) {
     winInfo.native.fDisplay = fDisplay;
 #if USE(GLX)
     winInfo.native.fFBConfig = fFBConfig;
-#endif
     winInfo.native.fVisualInfo = fVisualInfo;
+#endif
 
     XWindowAttributes attrs;
     if (XGetWindowAttributes(fDisplay, fWindow, &attrs)) {
@@ -353,8 +357,12 @@ bool WindowX11::attach(BackendType attachType) {
 
     switch (attachType) {
         case kNativeGL_BackendType:
+#ifdef SKA_HAS_GPU_SUPPORT
             fWindowContext =
                     window_context_factory::MakeGLForUnix(winInfo, fRequestedDisplayParams);
+#else
+            SK_APP_LOG_ERROR("Cannot create kNativeGL_BackendType context : GPU SUPPORT IS NOT ENABLED \n");
+#endif
             break;
         case kRaster_BackendType:
             fWindowContext =

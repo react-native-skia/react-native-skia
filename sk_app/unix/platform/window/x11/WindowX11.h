@@ -29,8 +29,10 @@ public:
             , fDisplay(nullptr)
             , fWindow(0)
             , fGC(nullptr)
+#if USE(GLX)
             , fFBConfig(nullptr)
             , fVisualInfo(nullptr)
+#endif
             , fMSAASampleCount(1) {}
     ~WindowX11() override { this->closeWindow(); }
 
@@ -86,8 +88,10 @@ private:
     Display*     fDisplay;
     XWindow      fWindow;
     GC           fGC;
+#if USE(GLX)
     GLXFBConfig* fFBConfig;
     XVisualInfo* fVisualInfo;
+#endif
     int          fMSAASampleCount;
 
     Atom     fWmDeleteMessage;

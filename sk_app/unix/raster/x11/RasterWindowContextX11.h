@@ -6,19 +6,21 @@
  * found in the LICENSE file.
  */
 
-#ifndef RasterWindowContext_unix_DEFINED
-#define RasterWindowContext_unix_DEFINED
+#ifndef RasterWindowContextX11_DEFINED
+#define RasterWindowContextX11_DEFINED
 
 #include "include/core/SkSurface.h"
 #include "WindowContextFactory.h"
 #include "RasterWindowContext.h"
 
+typedef Window XWindow;
+using sk_app::window_context_factory::UnixWindowInfo;
+
 namespace sk_app {
 
-#if PLATFORM(X11)
-class RasterWindowContext_xlib : public RasterWindowContext {
+class RasterWindowContextX11 : public RasterWindowContext {
 public:
-    RasterWindowContext_xlib(Display*, XWindow, int width, int height, const DisplayParams&);
+    RasterWindowContextX11(const UnixWindowInfo&, const DisplayParams&);
 
     sk_sp<SkSurface> getBackbufferSurface() override;
     void swapBuffers() override;
@@ -33,8 +35,7 @@ protected:
     GC       fGC;
     typedef RasterWindowContext INHERITED;
 };
-#endif
 
 }   // namespace sk_app
 
-#endif //RasterWindowContext_unix_DEFINED
+#endif //RasterWindowContextX11_DEFINED

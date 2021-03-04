@@ -7,18 +7,20 @@
 
 #include "PlatformDisplayLibWPE.h"
 
-#if USE(WPE_RENDERER) && USE(EGL)
+#if USE(WPE_RENDERER)
 
+#include <wpe/wpe.h>
+
+#if USE(EGL)
 #include "egl/GLWindowContextEGL.h"
 
 #if PLATFORM(WAYLAND)
-// wayland-egl.h defines WL_EGL_PLATFORM
-#include <wayland-egl.h>
+#include <wayland-egl.h> // wayland-egl.h defines WL_EGL_PLATFORM
 #endif
 
 #include <EGL/egl.h>
+#endif // USE(EGL)
 
-#include <wpe/wpe.h>
 #include <wpe/wpe-egl.h>
 
 namespace sk_app {
@@ -60,6 +62,7 @@ PlatformDisplayLibWPE::~PlatformDisplayLibWPE()
 bool PlatformDisplayLibWPE::initialize(int hostFd)
 {
     fRendererBackend = wpe_renderer_backend_egl_create(hostFd);
+#if USE(EGL)
     fEglDisplay = eglGetDisplay(wpe_renderer_backend_egl_get_native_display(fRendererBackend));
     if (fEglDisplay == EGL_NO_DISPLAY) {
         SK_APP_LOG_ERROR("PlatformDisplayLibWPE - Couldn't create the EGL display %s\n", GLWindowContextEGL::eglErrorString());
@@ -68,6 +71,9 @@ bool PlatformDisplayLibWPE::initialize(int hostFd)
 
     PlatformDisplay::initializeEGLDisplay();
     return fEglDisplay != EGL_NO_DISPLAY;
+#else
+    return true;
+#endif
 }
 
 } // namespace sk_app

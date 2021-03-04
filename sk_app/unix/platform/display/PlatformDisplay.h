@@ -11,10 +11,10 @@
 #include <iostream>
 #include "SkAppUtil.h"
 
+#ifdef SKA_HAS_GPU_SUPPORT
 #include "GLWindowContext.h"
-
-#if PLATFORM(X11)
-//#include "x11/XUniqueResource.h"
+#else
+typedef uint64_t GLNativeWindowType;
 #endif
 
 namespace sk_app {

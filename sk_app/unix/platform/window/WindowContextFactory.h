@@ -26,12 +26,6 @@
 
 #include <memory>
 
-#if PLATFORM(X11)
-typedef Window XWindow;
-#endif
-
-#include "raster/RasterWindowContext_unix.h"
-
 namespace sk_app {
 
 class WindowContext;
@@ -44,8 +38,8 @@ struct XlibWindowInfo {
     Display*     fDisplay;
 #if USE(GLX)
     GLXFBConfig* fFBConfig;
-#endif
     XVisualInfo* fVisualInfo;
+#endif
 };
 #endif
 
@@ -71,5 +65,11 @@ std::unique_ptr<WindowContext> MakeRasterForUnix(const UnixWindowInfo&, const Di
 }  // namespace window_context_factory
 
 }  // namespace sk_app
+
+#if PLATFORM(X11)
+#include "x11/RasterWindowContextX11.h"
+#elif PLATFORM(LIBWPE) || USE(WPE_RENDERER)
+#include "libwpe/RasterWindowContextLibWPE.h"
+#endif
 
 #endif

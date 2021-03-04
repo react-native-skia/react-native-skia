@@ -6,8 +6,11 @@
 * found in the LICENSE file.
 */
 
+#include "SkAppUtil.h"
 
+#ifdef SKA_HAS_GPU_SUPPORT
 #include "GLWindowContext.h"
+#endif
 
 #if PLATFORM(X11)
 #include "x11/WindowX11.h"

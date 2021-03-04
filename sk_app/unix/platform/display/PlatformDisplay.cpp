@@ -7,8 +7,6 @@
 
 #include "PlatformDisplay.h"
 
-#include "GLWindowContext.h"
-
 #if USE(EGL)
 #include "egl/GLWindowContextEGL.h"
 #endif
