@@ -13,7 +13,6 @@ namespace facebook {
 namespace react {
 
 namespace {
-
 std::unique_ptr<SkBitmap> GetAsset(const char *path) {
   sk_sp<SkData> data = SkData::MakeFromFileName(path);
   if (!data) {
@@ -46,10 +45,10 @@ RSkComponentImage::RSkComponentImage(const ShadowView &shadowView)
     : RSkComponent(shadowView) {}
 
 void RSkComponentImage::OnPaint(
-    const ShadowView &shadowView,
     SkCanvas *canvas) {
+  auto component = getComponentData();
   auto const &imageProps =
-      *std::static_pointer_cast<ImageProps const>(shadowView.props);
+      *std::static_pointer_cast<ImageProps const>(component.props);
   if (imageProps.sources.empty()) {
     return;
   }
@@ -61,9 +60,10 @@ void RSkComponentImage::OnPaint(
     auto bitmap = GetAsset(path.c_str());
     assert(bitmap);
 
-    auto frame = shadowView.layoutMetrics.frame;
+    auto framePoint = getFrameOrigin();
+    auto frameSize = getFrameSize();
     SkRect rect = SkRect::MakeXYWH(
-        frame.origin.x, frame.origin.y, frame.size.width, frame.size.height);
+        framePoint.x, framePoint.y, frameSize.width, frameSize.height);
 
     canvas->drawBitmapRect(*bitmap, rect, nullptr);
   }

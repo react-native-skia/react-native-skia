@@ -1,9 +1,7 @@
 #include "ReactSkia/MountingManager.h"
-#include "ReactSkia/ComponentViewRegistry.h"
 #include "ReactSkia/RSkSurfaceWindow.h"
 
 #include "react/renderer/scheduler/Scheduler.h"
-
 #include <glog/logging.h>
 
 namespace facebook {
@@ -64,6 +62,7 @@ void MountingManager::schedulerDidClearJSResponder() {
 void MountingManager::ProcessMutations(
     ShadowViewMutationList const &mutations,
     SurfaceId surfaceId) {
+
   for (auto const &mutation : mutations) {
     switch (mutation.type) {
       case ShadowViewMutation::Create: {
@@ -75,61 +74,27 @@ void MountingManager::ProcessMutations(
         break;
       }
       case ShadowViewMutation::Insert: {
-        // RNUpdatePropsMountInstruction(mutation, registry);
-        // RNUpdateEventEmitterMountInstruction(mutation, registry);
-        // RNUpdateStateMountInstruction(mutation, registry);
-        // RNUpdateLayoutMetricsMountInstruction(mutation, registry);
-        // RNFinalizeUpdatesMountInstruction(mutation,
-        // RNComponentViewUpdateMaskAll, registry);
-        // RNInsertMountInstruction(mutation, registry);
+        InsertMountInstruction(mutation, surfaceId);
         break;
       }
       case ShadowViewMutation::Remove: {
-        // RNRemoveMountInstruction(mutation, registry);
+        RemoveMountInstruction(mutation, surfaceId);
         break;
       }
       case ShadowViewMutation::Update: {
-        // auto const &oldChildShadowView = mutation.oldChildShadowView;
-        // auto const &newChildShadowView = mutation.newChildShadowView;
-        //
-        // auto mask = RNComponentViewUpdateMask{};
-        //
-        // if (oldChildShadowView.props != newChildShadowView.props) {
-        //   RNUpdatePropsMountInstruction(mutation, registry);
-        //   mask |= RNComponentViewUpdateMaskProps;
-        // }
-        // if (oldChildShadowView.eventEmitter !=
-        // newChildShadowView.eventEmitter) {
-        //   RNUpdateEventEmitterMountInstruction(mutation, registry);
-        //   mask |= RNComponentViewUpdateMaskEventEmitter;
-        // }
-        // if (oldChildShadowView.state != newChildShadowView.state) {
-        //   RNUpdateStateMountInstruction(mutation, registry);
-        //   mask |= RNComponentViewUpdateMaskState;
-        // }
-        // if (oldChildShadowView.layoutMetrics !=
-        // newChildShadowView.layoutMetrics) {
-        //   RNUpdateLayoutMetricsMountInstruction(mutation, registry);
-        //   mask |= RNComponentViewUpdateMaskLayoutMetrics;
-        // }
-        //
-        // if (mask != RNComponentViewUpdateMaskNone) {
-        //   RNFinalizeUpdatesMountInstruction(mutation, mask, registry);
-        // }
-
+        UpdateMountInstruction(mutation, surfaceId);
         break;
       }
     }
   }
 }
 
+
 void MountingManager::CreateMountInstruction(
     ShadowViewMutation const &mutation,
     SurfaceId surfaceId) {
-  auto componentHandle = mutation.newChildShadowView.componentHandle;
-  // auto tag = mutation.newChildShadowView.tag;
-  RSkComponentProvider *provider =
-      componentViewRegistry_->GetProvider(componentHandle);
+
+  auto provider = GetProvider(mutation.newChildShadowView);
   if (provider) {
     std::shared_ptr<RSkComponent> component =
         provider->CreateAndAddComponent(mutation.newChildShadowView);
@@ -142,19 +107,68 @@ void MountingManager::CreateMountInstruction(
 void MountingManager::DeleteMountInstruction(
     ShadowViewMutation const &mutation,
     SurfaceId surfaceId) {
-  auto componentHandle = mutation.oldChildShadowView.componentHandle;
-  auto tag = mutation.oldChildShadowView.tag;
-  RSkComponentProvider *provider =
-      componentViewRegistry_->GetProvider(componentHandle);
+
+  auto provider = GetProvider(mutation.oldChildShadowView);
   if (provider) {
-    std::shared_ptr<RSkComponent> component = provider->GetComponent(tag);
-    if (component) {
-      surface_->DeleteComponent(component);
-      provider->DeleteComponent(tag);
-    }
+      std::shared_ptr<RSkComponent> component = provider->GetComponent(mutation.oldChildShadowView.tag);
+      if (component) {
+          surface_->DeleteComponent(component);
+          provider->DeleteComponent(mutation.oldChildShadowView.tag);
+      }
   }
 }
 
+void MountingManager::InsertMountInstruction(
+    ShadowViewMutation const &mutation,
+    SurfaceId surfaceId) {
+
+  std::shared_ptr<RSkComponent> newChildComponent = GetComponent(mutation.newChildShadowView);
+  std::shared_ptr<RSkComponent> parentComponent = GetComponent(mutation.parentShadowView);
+  if (newChildComponent) {
+      newChildComponent->updateComponentData(mutation.newChildShadowView,ComponentUpdateMaskAll);
+  }
+
+  if (parentComponent) {
+      parentComponent->mountChildComponent(newChildComponent,mutation.index);
+  }
+
+}
+
+void MountingManager::RemoveMountInstruction(
+    ShadowViewMutation const &mutation,
+    SurfaceId surfaceId) {
+
+  std::shared_ptr<RSkComponent> oldChildComponent = GetComponent(mutation.oldChildShadowView);
+  std::shared_ptr<RSkComponent> parentComponent = GetComponent(mutation.parentShadowView);
+
+  if (parentComponent) {
+      parentComponent->unmountChildComponent(oldChildComponent,mutation.index);
+  }
+
+}
+
+void MountingManager::UpdateMountInstruction(
+    ShadowViewMutation const &mutation,
+    SurfaceId surfaceId) {
+
+  auto &oldChildShadowView = mutation.oldChildShadowView;
+  auto &newChildShadowView = mutation.newChildShadowView;
+
+  std::shared_ptr<RSkComponent> newChildComponent = GetComponent(mutation.newChildShadowView);
+  if(newChildComponent)
+  {
+       if(oldChildShadowView.props != newChildShadowView.props)
+           newChildComponent->updateComponentData(mutation.newChildShadowView,ComponentUpdateMaskProps);
+       if(oldChildShadowView.state != newChildShadowView.state)
+           newChildComponent->updateComponentData(mutation.newChildShadowView,ComponentUpdateMaskState);
+       if(oldChildShadowView.eventEmitter != newChildShadowView.eventEmitter)
+           newChildComponent->updateComponentData(mutation.newChildShadowView,ComponentUpdateMaskEventEmitter);
+       if(oldChildShadowView.layoutMetrics != newChildShadowView.layoutMetrics)
+           newChildComponent->updateComponentData(mutation.newChildShadowView,ComponentUpdateMaskLayoutMetrics);
+  }
+
+}
 
 } // namespace react
+
 } // namespace facebook

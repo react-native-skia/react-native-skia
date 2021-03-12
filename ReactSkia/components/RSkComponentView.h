@@ -10,7 +10,7 @@ class RSkComponentView final : public RSkComponent {
   RSkComponentView(const ShadowView &shadowView);
 
  protected:
-  void OnPaint(const ShadowView &shadowView, SkCanvas *canvas) override;
+  void OnPaint(SkCanvas *canvas) override;
 };
 
 } // namespace react

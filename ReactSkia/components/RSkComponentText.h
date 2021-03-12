@@ -10,7 +10,7 @@ class RSkComponentText final : public RSkComponent {
   RSkComponentText(const ShadowView &shadowView);
 
  protected:
-  void OnPaint(const ShadowView &shadowView, SkCanvas *canvas) override;
+  void OnPaint(SkCanvas *canvas) override;
 };
 
 class RSkComponentRawText final : public RSkComponent {
@@ -18,7 +18,7 @@ class RSkComponentRawText final : public RSkComponent {
   RSkComponentRawText(const ShadowView &shadowView);
 
  protected:
-  void OnPaint(const ShadowView &shadowView, SkCanvas *canvas) override;
+  void OnPaint(SkCanvas *canvas) override;
 };
 
 class RSkComponentParagraph final : public RSkComponent {
@@ -26,7 +26,7 @@ class RSkComponentParagraph final : public RSkComponent {
   RSkComponentParagraph(const ShadowView &shadowView);
 
  protected:
-  void OnPaint(const ShadowView &shadowView, SkCanvas *canvas) override;
+  void OnPaint(SkCanvas *canvas) override;
 };
 
 } // namespace react
