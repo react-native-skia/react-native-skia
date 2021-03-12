@@ -2,6 +2,7 @@
 
 #include "react/renderer/mounting/ShadowViewMutation.h"
 #include "react/renderer/scheduler/SchedulerDelegate.h"
+#include "ReactSkia/ComponentViewRegistry.h"
 
 namespace facebook {
 namespace react {
@@ -52,6 +53,34 @@ class MountingManager : public SchedulerDelegate {
   void DeleteMountInstruction(
       ShadowViewMutation const &mutation,
       SurfaceId surfaceId);
+
+  // `Insert` instruction
+  void InsertMountInstruction(
+      ShadowViewMutation const &mutation,
+      SurfaceId surfaceId);
+
+  // `Remove` instruction
+  void RemoveMountInstruction(
+      ShadowViewMutation const &mutation,
+      SurfaceId surfaceId);
+
+  // `Update` instruction
+  void UpdateMountInstruction(
+      ShadowViewMutation const &mutation,
+      SurfaceId surfaceId);
+
+  RSkComponentProvider *GetProvider (const ShadowView &shadowView) {
+      return componentViewRegistry_->GetProvider(shadowView.componentHandle);
+  }
+
+  std::shared_ptr<RSkComponent> GetComponent (const ShadowView &shadowView) {
+      auto provider = GetProvider(shadowView);
+      if (provider) {
+          return provider->GetComponent(shadowView.tag);
+      }
+      return nullptr;
+  }
+
 
  private:
   ComponentViewRegistry *componentViewRegistry_;

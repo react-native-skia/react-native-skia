@@ -11,12 +11,11 @@ namespace react {
 RSkComponentView::RSkComponentView(const ShadowView &shadowView)
     : RSkComponent(shadowView) {}
 
-void RSkComponentView::OnPaint(const ShadowView &shadowView, SkCanvas *canvas) {
-  auto const &viewProps =
-      *std::static_pointer_cast<ViewProps const>(shadowView.props);
+void RSkComponentView::OnPaint(SkCanvas *canvas) {
+  auto component = getComponentData();
+  auto const &viewProps = *std::static_pointer_cast<ViewProps const>(component.props);
   auto bgcolor = colorComponentsFromColor(viewProps.backgroundColor);
   float ratio = 255.9999;
-
   SkPaint paint;
   paint.setColor(SkColorSetARGB(
       bgcolor.alpha * ratio,
@@ -24,9 +23,9 @@ void RSkComponentView::OnPaint(const ShadowView &shadowView, SkCanvas *canvas) {
       bgcolor.green * ratio,
       bgcolor.blue * ratio));
 
-  auto frame = shadowView.layoutMetrics.frame;
-  SkRect rect = SkRect::MakeXYWH(
-      frame.origin.x, frame.origin.y, frame.size.width, frame.size.height);
+  auto framePoint = getFrameOrigin();
+  auto frameSize = getFrameSize();
+  SkRect rect = SkRect::MakeXYWH(framePoint.x,framePoint.y,frameSize.width,frameSize.height);
   canvas->drawRect(rect, paint);
 }
 

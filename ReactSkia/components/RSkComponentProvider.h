@@ -17,18 +17,18 @@ class RSkComponentProvider {
   virtual std::shared_ptr<RSkComponent> CreateComponent(
       const ShadowView &shadowView) = 0;
 
-  std::shared_ptr<RSkComponent> CreateAndAddComponent(const ShadowView &shadowView) {
-      auto component = this->CreateComponent(shadowView);
-      registry_[shadowView.tag] = component;
-      return component;
-  }
-
-  std::shared_ptr<RSkComponent> GetComponent(Tag tag) {
+  virtual std::shared_ptr<RSkComponent> GetComponent(Tag tag) {
       auto it = registry_.find(tag);
       if (it != registry_.end()) {
            return it->second;
       }
       return nullptr;
+  }
+
+  std::shared_ptr<RSkComponent> CreateAndAddComponent(const ShadowView &shadowView) {
+      auto component = this->CreateComponent(shadowView);
+      registry_[shadowView.tag] = component;
+      return component;
   }
 
   void DeleteComponent(Tag tag) {

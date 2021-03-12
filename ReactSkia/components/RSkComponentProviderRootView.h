@@ -13,6 +13,11 @@ class RSkComponentProviderRootView : public RSkComponentProvider {
   ComponentDescriptorProvider GetDescriptorProvider() override;
   std::shared_ptr<RSkComponent> CreateComponent(
       const ShadowView &shadowView) override;
+
+  std::shared_ptr<RSkComponent> GetComponent(Tag tag) override;
+
+ private:
+  std::shared_ptr<RSkComponent> component_;
 };
 
 } // namespace react

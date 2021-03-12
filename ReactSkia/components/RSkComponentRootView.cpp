@@ -10,7 +10,6 @@ RSkComponentRootView::RSkComponentRootView(const ShadowView &shadowView)
     : RSkComponent(shadowView) {}
 
 void RSkComponentRootView::OnPaint(
-    const ShadowView &shadowView,
     SkCanvas *canvas) {
   canvas->clear(SK_ColorWHITE);
 }

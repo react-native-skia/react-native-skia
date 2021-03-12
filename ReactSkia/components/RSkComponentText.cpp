@@ -14,33 +14,30 @@ namespace react {
 RSkComponentText::RSkComponentText(const ShadowView &shadowView)
     : RSkComponent(shadowView) {}
 
-void RSkComponentText::OnPaint(const ShadowView &shadowView, SkCanvas *canvas) {
+void RSkComponentText::OnPaint(SkCanvas *canvas) {
 }
 
 RSkComponentRawText::RSkComponentRawText(const ShadowView &shadowView)
     : RSkComponent(shadowView) {}
 
-void RSkComponentRawText::OnPaint(
-    const ShadowView &shadowView,
-    SkCanvas *canvas) {}
+void RSkComponentRawText::OnPaint(SkCanvas *canvas) {}
 
 RSkComponentParagraph::RSkComponentParagraph(const ShadowView &shadowView)
     : RSkComponent(shadowView) {}
 
-void RSkComponentParagraph::OnPaint(
-    const ShadowView &shadowView,
-    SkCanvas *canvas) {
+void RSkComponentParagraph::OnPaint(SkCanvas *canvas) {
+  auto component = getComponentData();
   auto state =
       std::static_pointer_cast<ParagraphShadowNode::ConcreteStateT const>(
-          shadowView.state);
+          component.state);
   auto const &props =
-      *std::static_pointer_cast<ParagraphProps const>(shadowView.props);
+      *std::static_pointer_cast<ParagraphProps const>(component.props);
   auto data = state->getData();
   auto text = data.attributedString.getString();
   auto fontSize = !std::isnan(props.textAttributes.fontSize) ? props.textAttributes.fontSize : TextAttributes::defaultTextAttributes().fontSize;
   float ratio = 255.9999;
   auto color = colorComponentsFromColor(props.textAttributes.foregroundColor ? props.textAttributes.foregroundColor : TextAttributes::defaultTextAttributes().foregroundColor);
-  auto frame = shadowView.layoutMetrics.frame;
+
 
   SkFont font;
   font.setSubpixel(true);
@@ -52,17 +49,14 @@ void RSkComponentParagraph::OnPaint(
       color.green * ratio,
       color.blue * ratio));
 
-  // NOTE(kudo): Since cxx TextLayoutManager is not ready yet, try to adjust
-  // some magic offset here.
-  int drawPosX = frame.origin.x - 200;
-  int drawPosY = frame.origin.y;
+  auto framePoint = getFrameOrigin();
 
   canvas->drawSimpleText(
       text.c_str(),
       text.length(),
       SkTextEncoding::kUTF8,
-      drawPosX,
-      drawPosY,
+      framePoint.x,
+      framePoint.y,
       font,
       paint);
 }

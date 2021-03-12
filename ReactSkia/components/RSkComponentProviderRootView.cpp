@@ -15,8 +15,13 @@ RSkComponentProviderRootView::GetDescriptorProvider() {
 
 std::shared_ptr<RSkComponent> RSkComponentProviderRootView::CreateComponent(
     const ShadowView &shadowView) {
-  return std::static_pointer_cast<RSkComponent>(
+  component_ = std::static_pointer_cast<RSkComponent>(
       std::make_shared<RSkComponentRootView>(shadowView));
+  return component_;
+}
+
+std::shared_ptr<RSkComponent> RSkComponentProviderRootView::GetComponent(Tag tag) {
+  return component_;
 }
 
 } // namespace react
