@@ -1,6 +1,7 @@
 
 /*
  * Copyright 2016 Google Inc.
+ * Copyright (C) 1994-2021 OpenTV, Inc. and Nagravision S.A.
  *
  * Use of this source code is governed by a BSD-style license that can be
  * found in the LICENSE file.
@@ -8,15 +9,17 @@
 
 #include "include/gpu/gl/GrGLInterface.h"
 #include "GLWindowContext.h"
-#include "unix/WindowContextFactory_unix.h"
+#include "glx/GLWindowContextGLX.h"
+
+#if USE(GLX)
 
 #include <GL/gl.h>
 
-using sk_app::window_context_factory::XlibWindowInfo;
+using sk_app::window_context_factory::UnixWindowInfo;
 using sk_app::DisplayParams;
 using sk_app::GLWindowContext;
 
-namespace {
+namespace sk_app {
 
 static bool gCtxErrorOccurred = false;
 static int ctxErrorHandler(Display *dpy, XErrorEvent *ev) {
@@ -24,61 +27,66 @@ static int ctxErrorHandler(Display *dpy, XErrorEvent *ev) {
     return 0;
 }
 
-class GLWindowContext_xlib : public GLWindowContext {
-public:
-    GLWindowContext_xlib(const XlibWindowInfo&, const DisplayParams&);
-    ~GLWindowContext_xlib() override;
+static PFNGLXSWAPINTERVALEXTPROC glXSwapIntervalEXT;
 
-    void onSwapBuffers() override;
+static bool hasEXTSwapControlExtension(Display* display)
+{
+    static bool initialized = false;
+    if (initialized)
+        return !!glXSwapIntervalEXT;
 
-    void onDestroyContext() override;
+    initialized = true;
 
-protected:
-    sk_sp<const GrGLInterface> onInitializeContext() override;
+    const char* glxExtensions = glXQueryExtensionsString(display, DefaultScreen(display));
+    if (glxExtensions) {
+        if (strstr(glxExtensions, "GLX_EXT_swap_control")) {
+            glXSwapIntervalEXT = (PFNGLXSWAPINTERVALEXTPROC)glXGetProcAddressARB((const GLubyte*)"glXSwapIntervalEXT");
+            return !!glXSwapIntervalEXT;
+        } else
+            return false;
+    }
 
-private:
-    GLWindowContext_xlib(void*, const DisplayParams&);
+    return false;
+}
 
-    Display*     fDisplay;
-    XWindow      fWindow;
-    GLXFBConfig* fFBConfig;
-    XVisualInfo* fVisualInfo;
-    GLXContext   fGLContext;
-
-    typedef GLWindowContext INHERITED;
-};
-
-GLWindowContext_xlib::GLWindowContext_xlib(const XlibWindowInfo& winInfo, const DisplayParams& params)
+GLWindowContextGLX::GLWindowContextGLX(const UnixWindowInfo& winInfo, const DisplayParams& params)
         : INHERITED(params)
-        , fDisplay(winInfo.fDisplay)
+        , fDisplay(winInfo.native.fDisplay)
+        , fFBConfig(winInfo.native.fFBConfig)
+        , fVisualInfo(winInfo.native.fVisualInfo)
         , fWindow(winInfo.fWindow)
-        , fFBConfig(winInfo.fFBConfig)
-        , fVisualInfo(winInfo.fVisualInfo)
         , fGLContext() {
     fWidth = winInfo.fWidth;
     fHeight = winInfo.fHeight;
+
     this->initializeContext();
 }
 
 using CreateContextAttribsFn = GLXContext(Display*, GLXFBConfig, GLXContext, Bool, const int*);
 
-sk_sp<const GrGLInterface> GLWindowContext_xlib::onInitializeContext() {
-    SkASSERT(fDisplay);
-    SkASSERT(!fGLContext);
+bool GLWindowContextGLX::createWindowContext(XWindow window, PlatformDisplay& platformDisplay, GLXContext sharingContext)
+{
     sk_sp<const GrGLInterface> interface;
+    Display* display = (dynamic_cast<PlatformDisplayX11&>(platformDisplay)).native();
     bool current = false;
+
+    SK_APP_UNUSED(display);
+    SK_APP_UNUSED(window);
+
+    GLXContext glxcontext = nullptr;
 
     // We attempt to use glXCreateContextAttribsARB as RenderDoc requires that the context be
     // created with this rather than glXCreateContext.
     CreateContextAttribsFn* createContextAttribs = (CreateContextAttribsFn*)glXGetProcAddressARB(
             (const GLubyte*)"glXCreateContextAttribsARB");
+
     if (createContextAttribs && fFBConfig) {
         // Install Xlib error handler that will set gCtxErrorOccurred
         int (*oldHandler)(Display*, XErrorEvent*) = XSetErrorHandler(&ctxErrorHandler);
 
         // Specifying 3.2 allows an arbitrarily high context version (so long as no 3.2 features
         // have been removed).
-        for (int minor = 2; minor >= 0 && !fGLContext; --minor) {
+        for (int minor = 2; minor >= 0 && !glxcontext; --minor) {
             // Ganesh prefers a compatibility profile for possible NVPR support. However, RenderDoc
             // requires a core profile. Edit this code to use RenderDoc.
             for (int profile : {GLX_CONTEXT_COMPATIBILITY_PROFILE_BIT_ARB,
@@ -89,14 +97,15 @@ sk_sp<const GrGLInterface> GLWindowContext_xlib::onInitializeContext() {
                         GLX_CONTEXT_PROFILE_MASK_ARB, profile,
                         0
                 };
-                fGLContext = createContextAttribs(fDisplay, *fFBConfig, nullptr, True, attribs);
+                glxcontext = createContextAttribs(fDisplay, *fFBConfig, sharingContext, True, attribs);
 
                 // Sync to ensure any errors generated are processed.
                 XSync(fDisplay, False);
                 if (gCtxErrorOccurred) { continue; }
 
-                if (fGLContext && profile == GLX_CONTEXT_COMPATIBILITY_PROFILE_BIT_ARB &&
-                    glXMakeCurrent(fDisplay, fWindow, fGLContext)) {
+                fGLContext = glxcontext;
+                if (glxcontext && profile == GLX_CONTEXT_COMPATIBILITY_PROFILE_BIT_ARB &&
+                    makeContextCurrent()) {
                     current = true;
                     // Look to see if RenderDoc is attached. If so, re-create the context with a
                     // core profile.
@@ -104,12 +113,12 @@ sk_sp<const GrGLInterface> GLWindowContext_xlib::onInitializeContext() {
                     if (interface && interface->fExtensions.has("GL_EXT_debug_tool")) {
                         interface.reset();
                         glXMakeCurrent(fDisplay, None, nullptr);
-                        glXDestroyContext(fDisplay, fGLContext);
+                        glXDestroyContext(fDisplay, glxcontext);
                         current = false;
-                        fGLContext = nullptr;
+                        fGLContext = glxcontext = nullptr;
                     }
                 }
-                if (fGLContext) {
+                if (glxcontext) {
                     break;
                 }
             }
@@ -117,6 +126,33 @@ sk_sp<const GrGLInterface> GLWindowContext_xlib::onInitializeContext() {
         // Restore the original error handler
         XSetErrorHandler(oldHandler);
     }
+
+    glXGetConfig(fDisplay, fVisualInfo, GLX_STENCIL_SIZE, &fStencilBits);
+    glXGetConfig(fDisplay, fVisualInfo, GLX_SAMPLES_ARB, &fSampleCount);
+    fSampleCount = std::max(fSampleCount, 1);
+
+    return current;
+}
+
+bool GLWindowContextGLX::createContext(XWindow window, PlatformDisplay& platformDisplay)
+{
+    GLXContext glxSharingContext = nullptr;
+    auto currentSet = window ? createWindowContext(window, platformDisplay, glxSharingContext) : false;
+    return currentSet;
+}
+
+
+sk_sp<const GrGLInterface> GLWindowContextGLX::onInitializeContext() {
+    SkASSERT(fDisplay);
+    SkASSERT(!fGLContext);
+    sk_sp<const GrGLInterface> interface;
+    bool current = false;
+
+    PlatformDisplay& pDisplay = PlatformDisplay::sharedDisplay();
+    Display* display = dynamic_cast<sk_app::PlatformDisplayX11&>(pDisplay).native();
+
+    current = createContext(fWindow, pDisplay);
+
     if (!fGLContext) {
         fGLContext = glXCreateContext(fDisplay, fVisualInfo, nullptr, GL_TRUE);
     }
@@ -124,28 +160,14 @@ sk_sp<const GrGLInterface> GLWindowContext_xlib::onInitializeContext() {
         return nullptr;
     }
 
-    if (!current && !glXMakeCurrent(fDisplay, fWindow, fGLContext)) {
+    if (!current && !makeContextCurrent()) {
         return nullptr;
-    }
-
-    const char* glxExtensions = glXQueryExtensionsString(fDisplay, DefaultScreen(fDisplay));
-    if (glxExtensions) {
-        if (strstr(glxExtensions, "GLX_EXT_swap_control")) {
-            PFNGLXSWAPINTERVALEXTPROC glXSwapIntervalEXT =
-                    (PFNGLXSWAPINTERVALEXTPROC)glXGetProcAddressARB(
-                            (const GLubyte*)"glXSwapIntervalEXT");
-            glXSwapIntervalEXT(fDisplay, fWindow, fDisplayParams.fDisableVsync ? 0 : 1);
-        }
     }
 
     glClearStencil(0);
     glClearColor(0, 0, 0, 0);
     glStencilMask(0xffffffff);
     glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
-
-    glXGetConfig(fDisplay, fVisualInfo, GLX_STENCIL_SIZE, &fStencilBits);
-    glXGetConfig(fDisplay, fVisualInfo, GLX_SAMPLES_ARB, &fSampleCount);
-    fSampleCount = std::max(fSampleCount, 1);
 
     XWindow root;
     int x, y;
@@ -154,14 +176,15 @@ sk_sp<const GrGLInterface> GLWindowContext_xlib::onInitializeContext() {
                  &border_width, &depth);
     glViewport(0, 0, fWidth, fHeight);
 
+    swapInterval();
     return interface ? interface : GrGLMakeNativeInterface();
 }
 
-GLWindowContext_xlib::~GLWindowContext_xlib() {
+GLWindowContextGLX::~GLWindowContextGLX() {
     this->destroyContext();
 }
 
-void GLWindowContext_xlib::onDestroyContext() {
+void GLWindowContextGLX::onDestroyContext() {
     if (!fDisplay || !fGLContext) {
         return;
     }
@@ -170,27 +193,33 @@ void GLWindowContext_xlib::onDestroyContext() {
     fGLContext = nullptr;
 }
 
-void GLWindowContext_xlib::onSwapBuffers() {
+bool GLWindowContextGLX::makeContextCurrent()
+{
+    SkASSERT(fGLContext && fWindow);
+
+    if (glXGetCurrentContext() == fGLContext)
+        return true;
+
+    if (fWindow)
+        return glXMakeCurrent(fDisplay, fWindow, fGLContext);
+
+    return false;
+}
+
+
+void GLWindowContextGLX::onSwapBuffers() {
     if (fDisplay && fGLContext) {
         glXSwapBuffers(fDisplay, fWindow);
     }
 }
 
-}  // anonymous namespace
-
-namespace sk_app {
-
-namespace window_context_factory {
-
-std::unique_ptr<WindowContext> MakeGLForXlib(const XlibWindowInfo& winInfo,
-                                             const DisplayParams& params) {
-    std::unique_ptr<WindowContext> ctx(new GLWindowContext_xlib(winInfo, params));
-    if (!ctx->isValid()) {
-        return nullptr;
-    }
-    return ctx;
+void GLWindowContextGLX::swapInterval()
+{
+    if (!hasEXTSwapControlExtension(fDisplay))
+        return;
+    glXSwapIntervalEXT(fDisplay, fWindow, fDisplayParams.fDisableVsync ? 0 : 1);
 }
 
-}  // namespace window_context_factory
+}  // anonymous namespace
 
-}  // namespace sk_app
+#endif // USE(GLX)

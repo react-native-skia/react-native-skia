@@ -118,6 +118,7 @@ protected:
 
     std::unique_ptr<WindowContext> fWindowContext;
 
+    virtual void didRenderFrame() {};
     virtual void onInval() = 0;
 
     // Uncheck fIsContentInvalided to allow future inval/onInval.

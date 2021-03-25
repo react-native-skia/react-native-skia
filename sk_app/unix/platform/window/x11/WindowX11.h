@@ -1,16 +1,18 @@
 /*
 * Copyright 2016 Google Inc.
+* Copyright (C) 1994-2021 OpenTV, Inc. and Nagravision S.A.
 *
 * Use of this source code is governed by a BSD-style license that can be
 * found in the LICENSE file.
 */
 
-#ifndef Window_unix_DEFINED
-#define Window_unix_DEFINED
+#ifndef WindowX11_DEFINED
+#define WindowX11_DEFINED
 
 #include "include/private/SkChecksum.h"
 #include "src/core/SkTDynamicHash.h"
-#include "tools/sk_app/Window.h"
+#include "Window.h"
+#include "PlatformDisplay.h"
 
 #include <GL/glx.h>
 #include <X11/Xlib.h>
@@ -19,19 +21,22 @@ typedef Window XWindow;
 
 namespace sk_app {
 
-class Window_unix : public Window {
+class WindowX11 : public Window {
 public:
-    Window_unix()
+    WindowX11()
             : Window()
+            , fPlatformDisplay(nullptr)
             , fDisplay(nullptr)
             , fWindow(0)
             , fGC(nullptr)
+#if USE(GLX)
             , fFBConfig(nullptr)
             , fVisualInfo(nullptr)
+#endif
             , fMSAASampleCount(1) {}
-    ~Window_unix() override { this->closeWindow(); }
+    ~WindowX11() override { this->closeWindow(); }
 
-    bool initWindow(Display* display);
+    bool initWindow(PlatformDisplay* display);
 
     void setTitle(const char*) override;
     void show() override;
@@ -42,7 +47,7 @@ public:
 
     bool handleEvent(const XEvent& event);
 
-    static const XWindow& GetKey(const Window_unix& w) {
+    static const XWindow& GetKey(const WindowX11& w) {
         return w.fWindow;
     }
 
@@ -50,7 +55,7 @@ public:
         return SkChecksum::Mix(w);
     }
 
-    static SkTDynamicHash<Window_unix, XWindow> gWindowMap;
+    static SkTDynamicHash<WindowX11, XWindow> gWindowMap;
 
     void markPendingPaint() { fPendingPaint = true; }
     void finishPaint() {
@@ -79,11 +84,14 @@ public:
 private:
     void closeWindow();
 
+    PlatformDisplay *fPlatformDisplay;
     Display*     fDisplay;
     XWindow      fWindow;
     GC           fGC;
+#if USE(GLX)
     GLXFBConfig* fFBConfig;
     XVisualInfo* fVisualInfo;
+#endif
     int          fMSAASampleCount;
 
     Atom     fWmDeleteMessage;

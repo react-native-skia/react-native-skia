@@ -1,6 +1,7 @@
 
 /*
  * Copyright 2016 Google Inc.
+ * Copyright (C) 1994-2021 OpenTV, Inc. and Nagravision S.A.
  *
  * Use of this source code is governed by a BSD-style license that can be
  * found in the LICENSE file.
@@ -15,6 +16,28 @@
 #include "include/core/SkSurface.h"
 
 #include "WindowContext.h"
+#ifdef OS_LINUX
+#include "SkAppUtil.h"
+#if USE(OPENGL_ES)
+#include <GLES2/gl2.h>
+#include <GLES2/gl2ext.h>
+#else
+#define GL_GLEXT_PROTOTYPES 1
+#include <GL/gl.h>
+#endif // USE(OPENGL_ES)
+
+#if USE(EGL)
+#include <EGL/egl.h>
+#include <EGL/eglext.h>
+#include <EGL/eglplatform.h>
+typedef EGLNativeWindowType GLNativeWindowType;
+#elif USE(GLX)
+#include <GL/glx.h>
+typedef uint64_t GLNativeWindowType;
+#else
+typedef uint64_t GLNativeWindowType;
+#endif // USE(EGL)
+#endif // OS_LINUX
 
 namespace sk_app {
 
