@@ -113,3 +113,11 @@ https://github.com/Kudo/react-native/commit/b11c10371dec70ae6607286f23581585a401
 
 2. folly to support boringssl
 https://github.com/Kudo/folly/commit/2b9b7144fdafcc7c78d09465449f1c3a72386ac5
+
+## Credits
+
+Check [the list of contributors here](https://github.com/Kudo/react-native-skia/graphs/contributors). This project is supported by:
+
+
+[<img src="https://user-images.githubusercontent.com/46429/113642371-3d328c00-96b2-11eb-9feb-550d003ca7b0.png" width="200" alt="NAGRA">](https://www.nagra.com/)
+[NAGRA](https://www.nagra.com/)
