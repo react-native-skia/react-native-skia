@@ -1,23 +1,7 @@
 #SK App Build GN
 
 if(is_linux) {
-  import("//build/config/linux/pkg_config.gni")
-}
-
-declare_args() {
-  if(is_linux) {
-    # x11, wayland, direcftb, libwpe
-    gl_display_backend = "x11"
-
-    # Can be true only for X11 backend, others will use egl
-    gl_use_glx = true
-
-    # For Embedded systems we will use OpenGL ES
-    gl_use_opengl_es = false
-
-    # For platform which doesnt have gpu have to set this to false
-    gl_has_gpu = true
-  }
+  import("//sk_app/sk_app.gni")
 }
 
 config("sk_app_config") {
@@ -79,7 +63,6 @@ if(is_linux && gl_display_backend == "x11") {
 if(is_linux && gl_display_backend == "libwpe") {
 
   pkg_config("use_system_libwpe") {
-    wpe_interface_version="1.0"
     packages = [
       "wpe-${wpe_interface_version}",
       "glib-2.0",

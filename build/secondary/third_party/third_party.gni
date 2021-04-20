@@ -1,0 +1,13 @@
+# Copyright 2016 Google Inc.
+#
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+template("system") {
+  config(target_name + "_public") {
+    forward_variables_from(invoker, "*", [])
+  }
+  group(target_name) {
+    public_configs = [ ":" + target_name + "_public" ]
+  }
+}

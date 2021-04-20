@@ -7,12 +7,12 @@ import("//build/config/chrome_build.gni")
 import("//build/config/features.gni")
 import("//build/config/ui.gni")
 import("//third_party/expat/expat.gni")
+import("//third_party/third_party.gni")
 
-if (use_system_expat) {
-  import("//build/config/linux/pkg_config.gni")
-  packages = [
-    "expat",
-  ]
+if (skia_use_system_expat) {
+  system("expat") {
+    libs = [ "expat" ]
+  }
 } else {
 
   config("expat_config") {
