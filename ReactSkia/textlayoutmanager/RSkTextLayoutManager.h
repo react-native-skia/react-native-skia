@@ -15,7 +15,6 @@ class RSkTextLayoutManager {
 
 public:
    RSkTextLayoutManager();
-   
    ~RSkTextLayoutManager(){};
 
    /* Measures attributedString layout using skia's skparagraph module */ 
@@ -28,10 +27,10 @@ public:
    std::unique_ptr<skia::textlayout::Paragraph> buildParagraph (AttributedString attributedString,
                                                                   ParagraphAttributes paragraphAttributes,
                                                                   Size size,
-		                                                  bool fontDecorationRequired=false) const;
+                                                                  bool fontDecorationRequired=false) const;
    /* Font collection manager */
    sk_sp<skia::textlayout::FontCollection> collection_;
-};	
+};
 
-} // namespace react 
+} // namespace react
 } // namespace facebook
