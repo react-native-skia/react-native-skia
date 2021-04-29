@@ -1,13 +1,16 @@
+/*
+* Copyright 2016 Google Inc.
+* Copyright (C) 1994-2021 OpenTV, Inc. and Nagravision S.A.
+*
+* Use of this source code is governed by a BSD-style license that can be
+* found in the LICENSE file.
+*/
+
 #include "ReactSkia/views/view/RSkLayoutHelper.h"
 
 #include "include/core/SkPaint.h"
 
-#include <glog/logging.h>
-#include <iostream>
 #include <math.h>
-
-using namespace std;
-
 
 namespace facebook {
 namespace react {
@@ -297,13 +300,13 @@ void RSkLayoutHelper::SetColor(SharedColor Color,Float opacity,SkPaint *paint)
 {
     float ratio = 255.9999;
     paint->setAntiAlias(true);
-    paint->setAlphaf((opacity/100));
     auto colorValue=colorComponentsFromColor(Color);
     paint->setColor(SkColorSetARGB(
         colorValue.alpha * ratio,
         colorValue.red * ratio,
         colorValue.green * ratio,
         colorValue.blue * ratio));
+    paint->setAlphaf((opacity/100));
 }
 void RSkLayoutHelper::SetPathEffect(BorderStyle borderStyle,int strokeWidth,SkPaint *paint)
 {

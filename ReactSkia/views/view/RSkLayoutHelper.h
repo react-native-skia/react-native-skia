@@ -1,9 +1,15 @@
+/*
+* Copyright 2016 Google Inc.
+* Copyright (C) 1994-2021 OpenTV, Inc. and Nagravision S.A.
+*
+* Use of this source code is governed by a BSD-style license that can be
+* found in the LICENSE file.
+*/
+
 #pragma once
 
 #include "include/core/SkPaint.h"
 #include "include/core/SkCanvas.h"
-
-
 #include "include/effects/SkDashPathEffect.h"
 
 #include <react/renderer/components/view/ViewProps.h>

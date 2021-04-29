@@ -65,7 +65,20 @@ void RSkComponentImage::OnPaint(
     SkRect rect = SkRect::MakeXYWH(
         framePoint.x, framePoint.y, frameSize.width, frameSize.height);
 
+    /* apply view style props 
+     * Draw order 1. Background 2. Image 3. Border
+    */
+
+    auto const &imageBorderMetrics=imageProps.resolveBorderMetrics(component.layoutMetrics);
+
+    RSkDrawBackGround(canvas,component.layoutMetrics,imageBorderMetrics,
+               imageProps.backgroundColor,imageProps.opacity);
+
     canvas->drawBitmapRect(*bitmap, rect, nullptr);
+
+   RSkDrawBorder(canvas,component.layoutMetrics,imageBorderMetrics,
+               imageProps.backgroundColor,imageProps.opacity);
+
   }
 }
 
