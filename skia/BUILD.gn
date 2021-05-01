@@ -36,7 +36,6 @@ skia_support_gpu = !is_ios
 skia_support_pdf = false
 skia_support_skottie = false
 enable_skia_wuffs_gif = true
-skia_support_skparagraph = true
 
 declare_args() {
   skia_whitelist_serialized_typefaces = false
@@ -700,19 +699,18 @@ skia_source_set("skia_core_and_effects") {
   visibility = [ ":skia" ]
 }
 
-if (skia_support_skparagraph) {
-  skia_source_set("skparagraph") {
-      import("//third_party/skia/modules/skparagraph/skparagraph.gni")
-      import("//third_party/skia/modules/skshaper/skshaper.gni")
-      sources = skparagraph_sources + skparagraph_public
-      sources += skia_shaper_primitive_sources + skia_shaper_public
-      sources += skia_shaper_harfbuzz_sources + skia_shaper_icu_sources
-      deps = ["//third_party:freetype_harfbuzz",
+skia_source_set("skparagraph") {
+  import("//third_party/skia/modules/skparagraph/skparagraph.gni")
+  import("//third_party/skia/modules/skshaper/skshaper.gni")
+  sources = skparagraph_sources + skparagraph_public
+  sources += skia_shaper_primitive_sources + skia_shaper_public
+  sources += skia_shaper_harfbuzz_sources + skia_shaper_icu_sources
+  deps = ["//third_party:freetype_harfbuzz",
          "//third_party/icu",
-      ]
-      defines = [ "SK_SHAPER_HARFBUZZ_AVAILABLE" ]
-      defines += [ "SK_UNICODE_AVAILABLE" ]
-  }
+  ]
+  #Skshaper shapes text using these packages.If not enabled,fallbacks on SkPaint
+  defines = [ "SK_SHAPER_HARFBUZZ_AVAILABLE" ]
+  defines += [ "SK_UNICODE_AVAILABLE" ]
 }
 
 # Bits that involve special vector-y hardware.
