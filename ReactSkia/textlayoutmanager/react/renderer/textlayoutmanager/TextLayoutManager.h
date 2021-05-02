@@ -21,7 +21,7 @@
 #include <glog/logging.h>
 
 /* Enable to print values of text & paragraph attributes for text computation */
-#define RNS_DEBUG_TEXT_ATTRIBUTES
+/*#define RNS_DEBUG_TEXT_ATTRIBUTES*/
 
 namespace facebook {
 namespace react {
