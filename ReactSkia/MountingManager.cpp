@@ -32,6 +32,7 @@ void MountingManager::schedulerDidFinishTransaction(
   // auto number = transaction->getNumber();
 
   ProcessMutations(mutations, surfaceId);
+  surface_->SetNeedPainting();
 }
 
 void MountingManager::schedulerDidRequestPreliminaryViewAllocation(
@@ -125,7 +126,11 @@ void MountingManager::InsertMountInstruction(
   std::shared_ptr<RSkComponent> newChildComponent = GetComponent(mutation.newChildShadowView);
   std::shared_ptr<RSkComponent> parentComponent = GetComponent(mutation.parentShadowView);
   if (newChildComponent) {
-      newChildComponent->updateComponentData(mutation.newChildShadowView,ComponentUpdateMaskAll);
+    newChildComponent->updateComponentData(
+        surface_->width(),
+        surface_->height(),
+        mutation.newChildShadowView,
+        ComponentUpdateMaskAll);
   }
 
   if (parentComponent) {
@@ -155,18 +160,32 @@ void MountingManager::UpdateMountInstruction(
   auto &newChildShadowView = mutation.newChildShadowView;
 
   std::shared_ptr<RSkComponent> newChildComponent = GetComponent(mutation.newChildShadowView);
-  if(newChildComponent)
-  {
-       if(oldChildShadowView.props != newChildShadowView.props)
-           newChildComponent->updateComponentData(mutation.newChildShadowView,ComponentUpdateMaskProps);
-       if(oldChildShadowView.state != newChildShadowView.state)
-           newChildComponent->updateComponentData(mutation.newChildShadowView,ComponentUpdateMaskState);
-       if(oldChildShadowView.eventEmitter != newChildShadowView.eventEmitter)
-           newChildComponent->updateComponentData(mutation.newChildShadowView,ComponentUpdateMaskEventEmitter);
-       if(oldChildShadowView.layoutMetrics != newChildShadowView.layoutMetrics)
-           newChildComponent->updateComponentData(mutation.newChildShadowView,ComponentUpdateMaskLayoutMetrics);
+  if (newChildComponent) {
+    if (oldChildShadowView.props != newChildShadowView.props)
+      newChildComponent->updateComponentData(
+          surface_->width(),
+          surface_->height(),
+          mutation.newChildShadowView,
+          ComponentUpdateMaskProps);
+    if (oldChildShadowView.state != newChildShadowView.state)
+      newChildComponent->updateComponentData(
+          surface_->width(),
+          surface_->height(),
+          mutation.newChildShadowView,
+          ComponentUpdateMaskState);
+    if (oldChildShadowView.eventEmitter != newChildShadowView.eventEmitter)
+      newChildComponent->updateComponentData(
+          surface_->width(),
+          surface_->height(),
+          mutation.newChildShadowView,
+          ComponentUpdateMaskEventEmitter);
+    if (oldChildShadowView.layoutMetrics != newChildShadowView.layoutMetrics)
+      newChildComponent->updateComponentData(
+          surface_->width(),
+          surface_->height(),
+          mutation.newChildShadowView,
+          ComponentUpdateMaskLayoutMetrics);
   }
-
 }
 
 } // namespace react

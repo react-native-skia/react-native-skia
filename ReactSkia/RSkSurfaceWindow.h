@@ -30,9 +30,14 @@ class RSkSurfaceWindow {
 
   LayoutConstraints GetLayoutConstraints();
 
+  int width() const;
+  int height() const;
+
   // Components management
   void AddComponent(std::shared_ptr<RSkComponent> component);
   void DeleteComponent(std::shared_ptr<RSkComponent> component);
+
+  void SetNeedPainting();
 
  private:
   void RecreateWindowBackend();

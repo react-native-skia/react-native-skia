@@ -36,6 +36,14 @@ LayoutConstraints RSkSurfaceWindow::GetLayoutConstraints() {
   return {windowSize, windowSize};
 }
 
+int RSkSurfaceWindow::width() const {
+  return window_->width();
+}
+
+int RSkSurfaceWindow::height() const {
+  return window_->height();
+}
+
 void RSkSurfaceWindow::AddComponent(std::shared_ptr<RSkComponent> component) {
   /* FIXME: components_ list is not been used as of now */
   // components_.push_back(component);
@@ -44,6 +52,10 @@ void RSkSurfaceWindow::AddComponent(std::shared_ptr<RSkComponent> component) {
 
 void RSkSurfaceWindow::DeleteComponent(std::shared_ptr<RSkComponent> component) {
   window_->popLayer(window_->findLayer(component.get()));
+}
+
+void RSkSurfaceWindow::SetNeedPainting() {
+  window_->SetNeedPainting();
 }
 
 void RSkSurfaceWindow::RecreateWindowBackend() {

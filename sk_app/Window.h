@@ -110,6 +110,8 @@ public:
     // Returns null if there is not a GPU backend or if the backend is not yet created.
     GrDirectContext* directContext() const;
 
+    void SetNeedPainting();
+
 protected:
     Window();
 
@@ -128,6 +130,8 @@ protected:
 
     void visitLayers(std::function<void(Layer*)> visitor);
     bool signalLayers(std::function<bool(Layer*)> visitor);
+
+    bool needPainting_ = false;
 };
 
 }   // namespace sk_app

@@ -60,6 +60,10 @@ void Window::onPaint() {
 
     markInvalProcessed();
 
+    if (!needPainting_) {
+      return;
+    }
+
     // draw into the canvas of this surface
     this->visitLayers([](Layer* layer) { layer->onPrePaint(); });
     this->visitLayers([=](Layer* layer) { layer->onPaint(backbuffer.get()); });
@@ -68,6 +72,7 @@ void Window::onPaint() {
 
     fWindowContext->swapBuffers();
     didRenderFrame();
+    needPainting_ = false;
 }
 
 void Window::onResize(int w, int h) {
@@ -118,6 +123,11 @@ GrDirectContext* Window::directContext() const {
         return nullptr;
     }
     return fWindowContext->directContext();
+}
+
+void Window::SetNeedPainting() {
+  needPainting_ = true;
+  inval();
 }
 
 void Window::inval() {

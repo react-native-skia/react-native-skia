@@ -4,6 +4,7 @@
 #include "include/core/SkData.h"
 #include "include/core/SkImageGenerator.h"
 #include "include/core/SkPaint.h"
+#include "include/core/SkPictureRecorder.h"
 
 #include "react/renderer/components/image/ImageShadowNode.h"
 
@@ -44,13 +45,20 @@ std::unique_ptr<SkBitmap> GetAsset(const char *path) {
 RSkComponentImage::RSkComponentImage(const ShadowView &shadowView)
     : RSkComponent(shadowView) {}
 
-void RSkComponentImage::OnPaint(
-    SkCanvas *canvas) {
+sk_sp<SkPicture> RSkComponentImage::CreatePicture(
+    int surfaceWidth,
+    int surfaceHeight) {
+  SkPictureRecorder recorder;
+  auto *canvas = recorder.beginRecording(
+      SkRect::MakeXYWH(0, 0, surfaceWidth, surfaceHeight));
+  if (!canvas) {
+    return nullptr;
+  }
   auto component = getComponentData();
   auto const &imageProps =
       *std::static_pointer_cast<ImageProps const>(component.props);
   if (imageProps.sources.empty()) {
-    return;
+    return nullptr;
   }
   const auto source = imageProps.sources[0];
 
@@ -67,6 +75,8 @@ void RSkComponentImage::OnPaint(
 
     canvas->drawBitmapRect(*bitmap, rect, nullptr);
   }
+
+  return recorder.finishRecordingAsPicture();
 }
 
 } // namespace react

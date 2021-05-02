@@ -1,6 +1,7 @@
 #pragma once
 
 #include "include/core/SkCanvas.h"
+#include "include/core/SkPicture.h"
 #include "react/renderer/mounting/ShadowView.h"
 #include "sk_app/Window.h"
 #include <glog/logging.h>
@@ -43,21 +44,27 @@ class RSkComponent : public sk_app::Window::Layer {
 
   virtual ~RSkComponent();
 
-  virtual void mountChildComponent(
-    std::shared_ptr<RSkComponent> newChildComponent,
-    const int index);
+  void mountChildComponent(
+      std::shared_ptr<RSkComponent> newChildComponent,
+      const int index);
 
-  virtual void unmountChildComponent(
-    std::shared_ptr<RSkComponent> oldChildComponent,
-    const int index);
+  void unmountChildComponent(
+      std::shared_ptr<RSkComponent> oldChildComponent,
+      const int index);
 
-  virtual void updateComponentData(const ShadowView &newShadowView , const uint32_t updateMask);
+  void updateComponentData(
+      int surfaceWidth,
+      int surfaceHeight,
+      const ShadowView &newShadowView,
+      const uint32_t updateMask);
   Component getComponentData() { return component_;};
   Point getFrameOrigin() { return absOrigin_;};
   Size getFrameSize() { return component_.layoutMetrics.frame.size;};
 
  protected:
-  virtual void OnPaint(SkCanvas *canvas) = 0;
+  virtual sk_sp<SkPicture> CreatePicture(
+      int surfaceWidth,
+      int surfaceHeight) = 0;
 
  private:
   // sk_app::Window::Layer implementations
@@ -67,6 +74,7 @@ class RSkComponent : public sk_app::Window::Layer {
   RSkComponent *parent_;
   Point absOrigin_;
   Component component_;
+  sk_sp<SkPicture> picture_;
 };
 
 } // namespace react

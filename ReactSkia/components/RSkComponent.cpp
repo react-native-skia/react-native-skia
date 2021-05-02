@@ -15,19 +15,27 @@ RSkComponent::RSkComponent(const ShadowView &shadowView)
 RSkComponent::~RSkComponent() {}
 
 void RSkComponent::onPaint(SkSurface *surface) {
-  auto canvas = surface->getCanvas();
-  OnPaint(canvas);
+  if (picture_) {
+    auto canvas = surface->getCanvas();
+    canvas->drawPicture(picture_);
+  }
 }
 
-void RSkComponent::updateComponentData(const ShadowView &newShadowView , const uint32_t updateMask) {
-   if(updateMask & ComponentUpdateMaskProps)
-      component_.props = newShadowView.props;
-   if(updateMask & ComponentUpdateMaskState)
-      component_.state = newShadowView.state;
-   if(updateMask & ComponentUpdateMaskEventEmitter)
-      component_.eventEmitter = newShadowView.eventEmitter;
-   if(updateMask & ComponentUpdateMaskLayoutMetrics)
-      component_.layoutMetrics = newShadowView.layoutMetrics;
+void RSkComponent::updateComponentData(
+    int surfaceWidth,
+    int surfaceHeight,
+    const ShadowView &newShadowView,
+    const uint32_t updateMask) {
+  if (updateMask & ComponentUpdateMaskProps)
+    component_.props = newShadowView.props;
+  if (updateMask & ComponentUpdateMaskState)
+    component_.state = newShadowView.state;
+  if (updateMask & ComponentUpdateMaskEventEmitter)
+    component_.eventEmitter = newShadowView.eventEmitter;
+  if (updateMask & ComponentUpdateMaskLayoutMetrics)
+    component_.layoutMetrics = newShadowView.layoutMetrics;
+
+  picture_ = CreatePicture(surfaceWidth, surfaceHeight);
 }
 
 void RSkComponent::mountChildComponent(
