@@ -80,6 +80,7 @@ void Window::onResize(int w, int h) {
         return;
     }
     fWindowContext->resize(w, h);
+    SetNeedPainting();
     this->visitLayers([=](Layer* layer) { layer->onResize(w, h); });
 }
 
