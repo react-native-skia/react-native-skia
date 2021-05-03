@@ -17,12 +17,11 @@ void RSkComponentView::OnPaint(SkCanvas *canvas) {
  
   /* apply view style props */
   auto borderMetrics=viewProps.resolveBorderMetrics(component.layoutMetrics);
-
-  RSkDrawBackGround(canvas,component.layoutMetrics,borderMetrics,
-               viewProps.backgroundColor,viewProps.opacity);
-
-  RSkDrawBorder(canvas,component.layoutMetrics,borderMetrics,
-               viewProps.backgroundColor,viewProps.opacity);
+  Rect frame;
+  frame.origin=getFrameOrigin();
+  frame.size=getFrameSize();
+  drawBackground(canvas,frame,borderMetrics,viewProps.backgroundColor,viewProps.opacity);
+  drawBorder(canvas,frame,borderMetrics,viewProps.backgroundColor,viewProps.opacity);
 
 }
 
