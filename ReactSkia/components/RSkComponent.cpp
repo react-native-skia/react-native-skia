@@ -3,6 +3,8 @@
 #include "include/core/SkPaint.h"
 #include "include/core/SkSurface.h"
 
+#include <glog/logging.h>
+
 namespace facebook {
 namespace react {
 
@@ -15,10 +17,10 @@ RSkComponent::RSkComponent(const ShadowView &shadowView)
 RSkComponent::~RSkComponent() {}
 
 void RSkComponent::onPaint(SkSurface *surface) {
-  if (picture_) {
-    auto canvas = surface->getCanvas();
-    canvas->drawPicture(picture_);
-  }
+  DCHECK(picture_);
+
+  auto canvas = surface->getCanvas();
+  canvas->drawPicture(picture_);
 }
 
 void RSkComponent::updateComponentData(
