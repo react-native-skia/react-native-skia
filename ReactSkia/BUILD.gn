@@ -66,9 +66,10 @@ source_set("ReactSkia") {
     "components/RSkComponentText.h",
     "components/RSkComponentView.cpp",
     "components/RSkComponentView.h",
+    "modules/RSkWebSocketModuleBase.h",
+    "modules/RSkWebSocketModuleBase.cpp",
     "views/common/RSkDrawUtils.h",
     "views/common/RSkDrawUtils.cpp",
-
   ]
 
   if (is_mac) {
@@ -88,6 +89,8 @@ source_set("ReactSkia") {
       "platform/linux/MainRunLoopEventBeat.cpp",
       "platform/linux/RuntimeEventBeat.h",
       "platform/linux/RuntimeEventBeat.cpp",
+      "modules/platform/nopoll/RSkWebSocketModule.cpp",
+      "modules/platform/nopoll/RSkWebSocketModule.h",
     ]
     defines = ["OS_LINUX"]
   }
@@ -133,6 +136,11 @@ source_set("ReactSkia") {
   configs += [
     ":ReactSkia_config",
   ]
+
+  if (is_linux) {
+    configs += ["//third_party/nopoll:nopoll_from_pkgconfig"]
+  }
+
 }
 
 executable("ReactSkiaApp") {

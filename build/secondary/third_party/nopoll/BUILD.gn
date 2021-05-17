@@ -1,0 +1,21 @@
+# Copyright (C) 1994-2021 OpenTV, Inc. and Nagravision S.A.  
+# This source code is licensed under the MIT license found in the  
+# LICENSE file in the root directory of this source tree.
+
+declare_args() {
+  skia_use_system_nopoll = is_official_build
+}
+
+if (skia_use_system_nopoll) {
+  import("//build/config/linux/pkg_config.gni")
+  pkg_config("nopoll_from_pkgconfig") {
+    defines = [ "NOPOLL_ENABLED" ]
+    visibility = [ "*" ]
+    packages = [ "nopoll" ]
+
+  }
+} else {
+  print("[ ERROR ] Building nopoll from Source is not supported yet. Please set skia_use_system_nopoll=true while configuring")
+}
+
+

@@ -44,7 +44,7 @@ config("no_asm_config") {
   defines = [ "OPENSSL_NO_ASM" ]
 }
 
-all_sources = crypto_sources + ssl_sources
+all_sources = crypto_sources + ssl_sources + decrepit
 all_headers = crypto_headers + ssl_headers
 
 # Windows' assembly is built with NASM. The other platforms use the platform
