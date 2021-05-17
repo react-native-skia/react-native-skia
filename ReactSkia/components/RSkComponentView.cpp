@@ -14,19 +14,15 @@ RSkComponentView::RSkComponentView(const ShadowView &shadowView)
 void RSkComponentView::OnPaint(SkCanvas *canvas) {
   auto component = getComponentData();
   auto const &viewProps = *std::static_pointer_cast<ViewProps const>(component.props);
-  auto bgcolor = colorComponentsFromColor(viewProps.backgroundColor);
-  float ratio = 255.9999;
-  SkPaint paint;
-  paint.setColor(SkColorSetARGB(
-      bgcolor.alpha * ratio,
-      bgcolor.red * ratio,
-      bgcolor.green * ratio,
-      bgcolor.blue * ratio));
+ 
+  /* apply view style props */
+  auto borderMetrics=viewProps.resolveBorderMetrics(component.layoutMetrics);
+  Rect frame;
+  frame.origin=getFrameOrigin();
+  frame.size=getFrameSize();
+  drawBackground(canvas,frame,borderMetrics,viewProps.backgroundColor,viewProps.opacity);
+  drawBorder(canvas,frame,borderMetrics,viewProps.backgroundColor,viewProps.opacity);
 
-  auto framePoint = getFrameOrigin();
-  auto frameSize = getFrameSize();
-  SkRect rect = SkRect::MakeXYWH(framePoint.x,framePoint.y,frameSize.width,frameSize.height);
-  canvas->drawRect(rect, paint);
 }
 
 } // namespace react
