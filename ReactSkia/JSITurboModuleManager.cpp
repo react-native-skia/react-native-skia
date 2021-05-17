@@ -198,22 +198,6 @@ class AppStateModule : public TurboModule {
   }
 };
 
-class WebSocketModule : public TurboModule {
- public:
-  WebSocketModule(
-      const std::string &name,
-      std::shared_ptr<CallInvoker> jsInvoker)
-      : TurboModule(name, jsInvoker) {
-    methodMap_["connect"] = MethodMetadata{4, NoOp};
-    methodMap_["send"] = MethodMetadata{2, NoOp};
-    methodMap_["sendBinary"] = MethodMetadata{2, NoOp};
-    methodMap_["ping"] = MethodMetadata{1, NoOp};
-    methodMap_["close"] = MethodMetadata{3, NoOp};
-    methodMap_["addListener"] = MethodMetadata{1, NoOp};
-    methodMap_["removeListeners"] = MethodMetadata{1, NoOp};
-  }
-};
-
 class UnimplementedTurboModule : public TurboModule {
  public:
   UnimplementedTurboModule(
@@ -255,7 +239,7 @@ JSITurboModuleManager::JSITurboModuleManager(Instance *bridgeInstance)
       std::make_shared<AppStateModule>("AppState", jsInvoker);
 
   modules_["WebSocketModule"] =
-      std::make_shared<WebSocketModule>("WebSocketModule", jsInvoker);
+      std::make_shared<RSkWebSocketModule>("WebSocketModule", jsInvoker, bridgeInstance);
 
   modules_["Networking"] =
       std::make_shared<UnimplementedTurboModule>("Networking", jsInvoker);
