@@ -1,4 +1,5 @@
 #include "ReactSkia/JSITurboModuleManager.h"
+#include "ReactSkia/version.h"
 
 #include "cxxreact/Instance.h"
 #include "jsi/JSIDynamic.h"
@@ -216,7 +217,7 @@ JSITurboModuleManager::JSITurboModuleManager(Instance *bridgeInstance)
       std::make_shared<StaticTurboModule>("PlatformConstants", jsInvoker);
   auto rnVersion = folly::dynamic::object("major", 0)("minor", 0)("patch", 0);
   staticModule->SetConstants(folly::dynamic::object("isTesting", true)(
-      "reactNativeVersion", std::move(rnVersion)));
+      "reactNativeVersion", std::move(rnVersion)) ("osVersion",STRINGIFY(RNS_OS_VERSION)));
   modules_["PlatformConstants"] = std::move(staticModule);
 
   modules_["ExceptionsManager"] =
