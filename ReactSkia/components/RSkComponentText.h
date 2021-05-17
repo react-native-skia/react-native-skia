@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ReactSkia/components/RSkComponent.h"
+#include "ReactSkia/textlayoutmanager/RSkTextLayoutManager.h"
 
 namespace facebook {
 namespace react {
@@ -21,7 +22,7 @@ class RSkComponentRawText final : public RSkComponent {
   void OnPaint(SkCanvas *canvas) override;
 };
 
-class RSkComponentParagraph final : public RSkComponent {
+class RSkComponentParagraph final : public RSkComponent ,public RSkTextLayoutManager{
  public:
   RSkComponentParagraph(const ShadowView &shadowView);
 
