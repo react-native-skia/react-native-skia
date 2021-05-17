@@ -1,3 +1,4 @@
+
 #include "ReactSkia/components/RSkComponentImage.h"
 #include "include/core/SkBitmap.h"
 #include "include/core/SkData.h"

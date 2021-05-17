@@ -7,6 +7,7 @@
 
 #include "ReactSkia/views/common/RSkDrawUtils.h"
 #include "include/core/SkPaint.h"
+<<<<<<< HEAD
 #include "include/core/SkMaskFilter.h"
 #include <math.h>
 
@@ -144,24 +145,106 @@ void drawRect(DrawMethod drawMethod,SkCanvas *canvas,
 {
     if(canvas == NULL) return;
 /*Case DrawRect assumes same width for all the sides.So referring left */
+=======
+#include <math.h>
+
+namespace facebook {
+namespace react {
+
+RSkDrawUtils::RSkDrawUtils() {}
+
+
+void RSkDrawUtils::drawBackground(SkCanvas *canvas, 
+                               Rect frame,
+                               BorderMetrics borderProps,
+                               SharedColor backgroundColor,
+                               Float opacity)
+{
+
+    if(isDrawVisible(backgroundColor,opacity)){
+         drawRect(DrawFillRect,canvas,frame,borderProps,backgroundColor,opacity);
+    }
+}
+
+void RSkDrawUtils::drawBorder(SkCanvas *canvas,
+                               Rect frame,
+                               BorderMetrics borderProps,
+                               SharedColor backgroundColor,
+                               Float opacity)
+{
+    if(hasUniformBorderEdges(borderProps) && \
+       ((backgroundColor != borderProps.borderColors.left)&& \
+          (isDrawVisible(borderProps.borderColors.left,opacity) ))){
+         drawRect(DrawRect,canvas,frame,borderProps,borderProps.borderColors.left,opacity);
+
+    }else{
+         /*Draw Right Side*/
+         if((backgroundColor != borderProps.borderColors.right) && \
+                 (isDrawVisible(borderProps.borderColors.right,opacity) )){
+             drawEdges(RightEdge,canvas,frame,borderProps,backgroundColor,opacity);
+         }
+         /*Draw Left Side*/
+         if((backgroundColor != borderProps.borderColors.left) && \
+                 (isDrawVisible(borderProps.borderColors.left,opacity))){
+             drawEdges(LeftEdge,canvas,frame,borderProps,backgroundColor,opacity);
+         }
+         /*Draw Top Side*/
+         if((backgroundColor != borderProps.borderColors.top) && \
+                 (isDrawVisible(borderProps.borderColors.top,opacity) )){
+             drawEdges(TopEdge,canvas,frame,borderProps,backgroundColor,opacity);
+         }
+         /*Draw Bottom Side*/
+         if((backgroundColor != borderProps.borderColors.bottom) && \
+                 (isDrawVisible(borderProps.borderColors.bottom,opacity))){
+             drawEdges(BottomEdge,canvas,frame,borderProps,backgroundColor,opacity);
+         }
+    }
+}
+
+
+void RSkDrawUtils::drawRect(DrawMethod drawMethod,SkCanvas *canvas,
+                                        Rect frame,
+                                        BorderMetrics borderProps,
+                                        SharedColor Color,
+                                        Float opacity)
+{
+
+    if(canvas == NULL) return;
+
+>>>>>>> Added support on Native side to handle View Style Props (#3)
     auto rectStrokeWidth = borderProps.borderWidths.left;
 
     SkRRect rRect ;
     SkRect rect;
+<<<<<<< HEAD
     SkPaint paintObj;
     if(paint != NULL){ paintObj = *paint; }
 	
   /*Creating basic layout from props*/
     rect=SkRect::MakeXYWH(frame.origin.x,frame.origin.y,\
          frame.size.width,frame.size.height);
+=======
+    SkPaint paint;
+
+  /*Creating basic layout from props*/
+    rect=SkRect::MakeXYWH(frame.origin.x,frame.origin.y,\
+         frame.size.width,frame.size.height);
+
+>>>>>>> Added support on Native side to handle View Style Props (#3)
     SkVector radii[4]={{borderProps.borderRadii.topLeft,borderProps.borderRadii.topLeft},
                        {borderProps.borderRadii.topRight,borderProps.borderRadii.topRight}, \
                        {borderProps.borderRadii.bottomLeft,borderProps.borderRadii.bottomLeft}, \
                        {borderProps.borderRadii.bottomRight,borderProps.borderRadii.bottomRight } };
 
+<<<<<<< HEAD
     setColor(Color,opacity,&paintObj );
     /* To sync with the border draw type, resetting the stroke width for background*/
     if(!hasUniformBorderEdges(borderProps) && (drawMethod == Background))
+=======
+    setColor(Color,opacity,&paint);
+    /* To sync with the border draw type, resetting the stroke width for background*/
+    if(!hasUniformBorderEdges(borderProps) && (drawMethod == DrawFillRect))
+>>>>>>> Added support on Native side to handle View Style Props (#3)
         rectStrokeWidth=0;
 
     /*Border adjustment needed in case of stroke width, as half the pixels where drawn outside and half inside by SKIA*/
@@ -169,6 +252,7 @@ void drawRect(DrawMethod drawMethod,SkCanvas *canvas,
           rect.inset(rectStrokeWidth/2,rectStrokeWidth/2);
       }
       rRect.setRectRadii(rect,radii);
+<<<<<<< HEAD
     if(drawMethod == Background){
         setStyle(rectStrokeWidth,SkPaint::kStrokeAndFill_Style,BorderStyle::Solid,&paintObj);
     }
@@ -178,11 +262,26 @@ void drawRect(DrawMethod drawMethod,SkCanvas *canvas,
     canvas->drawRRect(rRect, paintObj);
 }
 void drawEdges(BorderEdges borderEdge,SkCanvas *canvas,
+=======
+
+    if(drawMethod == DrawFillRect){
+        setStyle(rectStrokeWidth,SkPaint::kStrokeAndFill_Style,BorderStyle::Solid,&paint);
+    }else if(drawMethod == DrawRect){
+        setStyle(rectStrokeWidth,SkPaint::kStroke_Style,borderProps.borderStyles.left,&paint);
+    }
+    canvas->drawRRect(rRect, paint);
+}
+void RSkDrawUtils::drawEdges(BorderEdges borderEdge,SkCanvas *canvas,
+>>>>>>> Added support on Native side to handle View Style Props (#3)
                                         Rect frame,
                                         BorderMetrics borderProps,
                                         SharedColor backgroundColor,
                                         Float opacity)
 {
+<<<<<<< HEAD
+=======
+
+>>>>>>> Added support on Native side to handle View Style Props (#3)
     if(canvas == NULL) return;
 
     SkPath path;
@@ -215,6 +314,10 @@ void drawEdges(BorderEdges borderEdge,SkCanvas *canvas,
         pathMetrics.endRadius=borderProps.borderRadii.bottomRight;
         pathMetrics.width=strokeWidth;
         pathMetrics.angle=0;
+<<<<<<< HEAD
+=======
+
+>>>>>>> Added support on Native side to handle View Style Props (#3)
     }
     if(borderEdge == BottomEdge){
         edgeColor=borderProps.borderColors.bottom;
@@ -236,7 +339,11 @@ void drawEdges(BorderEdges borderEdge,SkCanvas *canvas,
      if(borderEdge == LeftEdge){
          edgeColor=borderProps.borderColors.left;
          strokeWidth=borderProps.borderWidths.left;
+<<<<<<< HEAD
 
+=======
+     
+>>>>>>> Added support on Native side to handle View Style Props (#3)
          pathMetrics.outterStart.x=rectOriginX;
          pathMetrics.outterStart.y=rectOriginY;
          pathMetrics.outterEnd.x=rectOriginX;

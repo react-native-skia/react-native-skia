@@ -181,8 +181,13 @@ const renderMainView = () => {
                opacity:baseOpacity*10,
              }}>
             
+<<<<<<< HEAD
            {renderImage(baseOpacity)}
            {renderImage(baseOpacity/2)}
+=======
+           {renderImage(baseOpacity*10)}
+           {renderImage(baseOpacity*5)}
+>>>>>>> Added support on Native side to handle View Style Props (#3)
 
            </View>)
   }
@@ -200,8 +205,13 @@ const renderMainView = () => {
                borderColor:mainViewborderColor,
                opacity:baseOpacity*10,
              }}>
+<<<<<<< HEAD
 	   {renderImage(baseOpacity/2)}
            {renderImage(baseOpacity)}
+=======
+           {renderImage(baseOpacity*10)}
+           {renderImage(baseOpacity*5)}
+>>>>>>> Added support on Native side to handle View Style Props (#3)
            </View>)
    }
 
