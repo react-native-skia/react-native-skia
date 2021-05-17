@@ -14,8 +14,6 @@
 #include "modules/skparagraph/include/Paragraph.h"
 #include "modules/skparagraph/include/ParagraphBuilder.h"
 #include "modules/skparagraph/src/ParagraphBuilderImpl.h"
-
-namespace facebook {
 namespace react {
 
 class RSkTextLayoutManager {

@@ -73,8 +73,6 @@ void debugLayoutConstraints(LayoutConstraints layoutConstraints) {
 
 TextLayoutManager::~TextLayoutManager() {}
 
-TextMeasurement TextLayoutManager::measure(
-    AttributedStringBox attributedStringBox,
     ParagraphAttributes paragraphAttributes,
     LayoutConstraints layoutConstraints) const {
 #ifdef RNS_DEBUG_TEXT_ATTRIBUTES

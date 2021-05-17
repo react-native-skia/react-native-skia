@@ -99,8 +99,6 @@ uint32_t RSkTextLayoutManager::buildParagraph (AttributedString attributedString
                 bool fontDecorationRequired,
                 std::shared_ptr<ParagraphBuilder> builder) const {
     uint32_t attachmentCount = 0;
-    std::unique_ptr<Paragraph> fPara;
-    TextStyle style;
     ParagraphStyle paraStyle;
     auto fontSize = TextAttributes::defaultTextAttributes().fontSize;
     auto fontSizeMultiplier = TextAttributes::defaultTextAttributes().fontSizeMultiplier;
@@ -110,8 +108,6 @@ uint32_t RSkTextLayoutManager::buildParagraph (AttributedString attributedString
            attachmentCount++;
            continue;
         }
-
-        fontSize = !std::isnan(fragment.textAttributes.fontSize) ?
                                  fragment.textAttributes.fontSize :
                                  TextAttributes::defaultTextAttributes().fontSize;
 
