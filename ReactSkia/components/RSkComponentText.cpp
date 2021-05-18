@@ -39,7 +39,7 @@ void RSkComponentParagraph::OnPaint(SkCanvas *canvas) {
 
   std::unique_ptr<skia::textlayout::Paragraph> fPara;
   /* RSkTextLayoutManager to build paragraph, set build with true to consider font decoration */
-  fPara = buildParagraph(data.attributedString , props.paragraphAttributes , frameSize ,true);
+  fPara = textLayoutManager_.buildParagraph(data.attributedString , props.paragraphAttributes , frameSize ,true);
   fPara->paint(canvas, framePoint.x, framePoint.y);
 
 }

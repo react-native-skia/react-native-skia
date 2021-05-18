@@ -22,12 +22,15 @@ class RSkComponentRawText final : public RSkComponent {
   void OnPaint(SkCanvas *canvas) override;
 };
 
-class RSkComponentParagraph final : public RSkComponent ,public RSkTextLayoutManager{
+class RSkComponentParagraph final : public RSkComponent {
  public:
   RSkComponentParagraph(const ShadowView &shadowView);
 
  protected:
   void OnPaint(SkCanvas *canvas) override;
+
+ private:
+  RSkTextLayoutManager textLayoutManager_;
 };
 
 } // namespace react
