@@ -1,0 +1,92 @@
+#include <algorithm>
+#include "RSkEventEmitter.h"
+
+#include <glog/logging.h>
+
+namespace facebook {
+namespace react {
+RSkEventEmitter::RSkEventEmitter(
+    const std::string &name, 
+    std::shared_ptr<CallInvoker> jsInvoker,
+    Instance *bridgeInstance)
+    : TurboModule(name, jsInvoker),
+    bridgeInstance_(bridgeInstance), 
+    listenerCount_(0) {
+
+        methodMap_["addListener"] = MethodMetadata{1, addListenerWrapper};
+        methodMap_["removeListeners"] = MethodMetadata{1, removeListenersWrapper};
+}
+
+jsi::Value RSkEventEmitter::addListenerWrapper(
+      jsi::Runtime &rt,
+      TurboModule &turboModule,
+      const jsi::Value *args,
+      size_t count) {
+    if (count != 1) {
+      return jsi::Value::undefined();
+    }
+    auto &self = static_cast<RSkEventEmitter &>(turboModule);
+    auto nameValue = args[0].getString(rt);
+    auto eventName = nameValue.utf8(rt);
+    
+    // Call specific Event listener in Class object 
+    // TODO: check what to return
+    return self.addListener(eventName.data());
+}
+
+jsi::Value RSkEventEmitter::addListener(std::string eventName) {
+    listenerCount_++;
+    if (listenerCount_ == 1) {
+        // TODO: It would be beneficial to pass on the eventName as a parameter as a Derived class may
+        // be responsible to observing different types of events 
+        startObserving();
+    }
+    // TODO: Check if we this return value is Ok? 
+    return listenerCount_;
+}
+
+void RSkEventEmitter::sendEventWithName(std::string eventName, folly::dynamic &&params) {
+    if (bridgeInstance_ == NULL) {
+        LOG(ERROR) << "EventEmitter not initialized with Bridge instance";
+    }
+
+    // TODO: check if the eventName is in supportedEvents()
+    if (listenerCount_ >= 1) {
+        bridgeInstance_->callJSFunction(
+            "RCTDeviceEventEmitter", "emit", 
+            params != NULL ? folly::dynamic::array(folly::dynamic::array(eventName), 
+                params)
+            : folly::dynamic::array(eventName));
+    }
+}
+
+jsi::Value RSkEventEmitter::removeListenersWrapper(
+      jsi::Runtime &rt,
+      TurboModule &turboModule,
+      const jsi::Value *args,
+      size_t count) {
+    if (count != 4) {
+      return jsi::Value::undefined();
+    }
+    auto &self = static_cast<RSkEventEmitter &>(turboModule);
+    int removeCount = args[0].getNumber();
+
+    // Call the specific non-static Class object
+    return self.removeListeners(removeCount);
+}
+
+jsi::Value RSkEventEmitter::removeListeners(int removeCount) {
+
+    listenerCount_ = std::max(listenerCount_ - removeCount, 0);
+
+    if (listenerCount_ == 0) {
+        // TODO: It should be beneficial to pass on the eventName as a Derived class may
+        // be responsible to observing different types of events 
+        stopObserving();
+    }
+    // TODO: Check if we really need to return something? 
+    return listenerCount_;
+}
+
+} // namespace react
+} // namespace facebook
