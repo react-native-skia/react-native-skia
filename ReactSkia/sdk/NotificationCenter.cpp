@@ -1,6 +1,7 @@
 //
 // Copyright (c) 2014 Sean Farrell
-// 
+// Copyright (C) 1994-2021 OpenTV, Inc. and Nagravision S.A.
+//  
 // Permission is hereby granted, free of charge, to any person obtaining a copy 
 // of this software and associated documentation files (the "Software"), to deal
 // in the Software without restriction, including without limitation the rights 
@@ -19,15 +20,10 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE 
 // SOFTWARE.
 //
-/*
-* Copyright (C) 1994-2021 OpenTV, Inc. and Nagravision S.A.
-*
-* Use of this source code is governed by a BSD-style license that can be
-* found in the LICENSE file.
-*/
+
+#include <glog/logging.h>
 
 #include "NotificationCenter.h"
-#include <glog/logging.h>
 
 unsigned int NotificationCenter::last_listener = 0;
 std::mutex NotificationCenter::mutex;
@@ -39,12 +35,10 @@ void NotificationCenter::removeListener(unsigned int listener_id) {
     auto i = std::find_if(listeners.begin(), listeners.end(), [&] (std::pair<const std::string, std::shared_ptr<ListenerBase>> p) {
         return p.second->id == listener_id;
     });
-    if (i != listeners.end())
-    {
+    if (i != listeners.end()) {
         listeners.erase(i);
     }
-    else
-    {
+    else {
         // throw does not work as exception is disbaled with -fno-exceptions 
         //throw std::invalid_argument("NotificationCenter::removeListener: Invalid listener id.");
 

@@ -6,9 +6,9 @@
 */
 
 #include <algorithm>
-#include "RSkEventEmitter.h"
-
 #include <glog/logging.h>
+
+#include "RSkEventEmitter.h"
 
 namespace facebook {
 namespace react {

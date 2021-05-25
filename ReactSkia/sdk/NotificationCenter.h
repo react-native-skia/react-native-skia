@@ -1,6 +1,7 @@
 //
 // Copyright (c) 2014 Sean Farrell
-// 
+// Copyright (C) 1994-2021 OpenTV, Inc. and Nagravision S.A.
+//  
 // Permission is hereby granted, free of charge, to any person obtaining a copy 
 // of this software and associated documentation files (the "Software"), to deal
 // in the Software without restriction, including without limitation the rights 
@@ -19,12 +20,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE 
 // SOFTWARE.
 //
-/*
-* Copyright (C) 1994-2021 OpenTV, Inc. and Nagravision S.A.
-*
-* Use of this source code is governed by a BSD-style license that can be
-* found in the LICENSE file.
-*/
 
 #include <iostream>
 #include <functional>
@@ -36,11 +31,9 @@
 
 #pragma once
 
-class NotificationCenter
-{
+class NotificationCenter {
     private:
-        struct ListenerBase
-        {
+        struct ListenerBase {
             ListenerBase() {}
 
             ListenerBase(unsigned int i)
@@ -52,8 +45,7 @@ class NotificationCenter
         };
 
         template <typename... Args>
-        struct Listener : public ListenerBase
-        {
+        struct Listener : public ListenerBase {
             Listener() {}
 
             Listener(unsigned int i, std::function<void (Args...)> c)
@@ -92,10 +84,8 @@ class NotificationCenter
 };
 
 template <typename... Args>
-unsigned int NotificationCenter::addListener(std::string eventName, std::function<void (Args...)> cb)
-{
-    if (!cb)
-    {
+unsigned int NotificationCenter::addListener(std::string eventName, std::function<void (Args...)> cb) {
+    if (!cb) {
         // throw does not work as exception is disbaled with -fno-exceptions 
         //throw std::invalid_argument("NotificationCenter::addListener: No callbak provided.");
 
@@ -111,14 +101,12 @@ unsigned int NotificationCenter::addListener(std::string eventName, std::functio
 }
 
 template <typename... Args>
-unsigned int NotificationCenter::on(std::string eventName, std::function<void (Args...)> cb)
-{
+unsigned int NotificationCenter::on(std::string eventName, std::function<void (Args...)> cb) {
     return addListener(eventName, cb);
 }
 
 template <typename... Args>
-void NotificationCenter::emit(std::string eventName, Args... args)
-{
+void NotificationCenter::emit(std::string eventName, Args... args) {
     std::list<std::shared_ptr<Listener<Args...>>> handlers;
     
     {
@@ -128,24 +116,12 @@ void NotificationCenter::emit(std::string eventName, Args... args)
         handlers.resize(std::distance(range.first, range.second));
         std::transform(range.first, range.second, handlers.begin(), [] (std::pair<const std::string, std::shared_ptr<ListenerBase>> p) {
             auto l = std::dynamic_pointer_cast<Listener<Args...>>(p.second);
-            // if (l)
-            // {
-            //     return l;
-            // }
-            // else
-            // {
-            //     // throw does not work as exception is disbaled with -fno-exceptions 
-            //     //throw std::logic_error("NotificationCenter::emit: Invalid event signature.");
-
-            //     std::cout << "NotificationCenter::emit: Invalid event signature.";
-            //     return NULL;
-            // }
+            
             return l;
         });
     }
 
-    for (auto& h : handlers)
-    {
+    for (auto& h : handlers) {
         h->cb(args...);
     }        
 }
