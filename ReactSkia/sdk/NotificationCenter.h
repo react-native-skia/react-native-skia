@@ -57,8 +57,6 @@ class NotificationCenter {
         std::mutex mutex;
         unsigned int last_listener;
         std::multimap<std::string, std::shared_ptr<ListenerBase>> listeners;
-
-        NotificationCenter(const NotificationCenter&) = delete;  
         const NotificationCenter& operator = (const NotificationCenter&) = delete;
     public:
         NotificationCenter() {

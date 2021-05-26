@@ -37,7 +37,6 @@ jsi::Value RSkEventEmitter::addListenerWrapper(
     auto eventName = nameValue.utf8(rt);
     
     // Call specific Event listener in Class object 
-
     return self.addListener(eventName.data());
 }
 
@@ -73,8 +72,6 @@ jsi::Value RSkEventEmitter::removeListenersWrapper(
       const jsi::Value *args,
       size_t count) {
     if (count != 1) {
-      return jsi::Value::undefined();
-    }
     auto &self = static_cast<RSkEventEmitter &>(turboModule);
     int removeCount = args[0].getNumber();
 

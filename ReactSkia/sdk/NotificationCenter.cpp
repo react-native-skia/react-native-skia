@@ -26,8 +26,6 @@
 #include "NotificationCenter.h"
 
 static std::unique_ptr<NotificationCenter> defaultCenter_;
-
-void NotificationCenter::removeListener(unsigned int listener_id) {
     std::lock_guard<std::mutex> lock(mutex);
 
     auto i = std::find_if(listeners.begin(), listeners.end(), [&] (std::pair<const std::string, std::shared_ptr<ListenerBase>> p) {
