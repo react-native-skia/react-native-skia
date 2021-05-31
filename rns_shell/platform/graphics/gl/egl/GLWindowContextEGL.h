@@ -36,12 +36,18 @@ public:
 
     static bool isExtensionSupported(const char* extensionList, const char* extension);
 
+<<<<<<< HEAD
     void onSwapBuffers(std::vector<SkIRect> &damage) override;
     void onDestroyContext() override;
 #if USE(RNS_SHELL_PARTIAL_UPDATES)
     bool onHasSwapBuffersWithDamage() override;
     bool onHasBufferCopy() override;
 #endif
+=======
+    void onSwapBuffers() override;
+    void onDestroyContext() override;
+
+>>>>>>> RNS Shell Implementation  (#8)
 protected:
     sk_sp<const GrGLInterface> onInitializeContext() override;
 
@@ -68,11 +74,16 @@ private:
     bool makeContextCurrent() override;
     void swapInterval();
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> RNS Shell Implementation  (#8)
     GLNativeWindowType      window_;
 #if USE(WPE_RENDERER)
     struct wpe_renderer_backend_egl_offscreen_target* wpeTarget_ { nullptr };
 #endif
 
+<<<<<<< HEAD
 #if USE(RNS_SHELL_PARTIAL_UPDATES)
     std::vector<EGLint> rectsToInts(EGLDisplay display, EGLSurface surface, const std::vector<SkIRect>& rects);
 #if USE(RNS_SHELL_COPY_BUFFERS)
@@ -82,11 +93,14 @@ private:
 #endif //RNS_SHELL_COPY_BUFFERS
 #endif //RNS_SHELL_PARTIAL_UPDATES
 
+=======
+>>>>>>> RNS Shell Implementation  (#8)
     PlatformDisplay& platformDisplay_;
     EGLSurface glSurface_ { nullptr };
     EGLContext glContext_ { nullptr };
     EGLSurfaceType surfaceType_;
 
+<<<<<<< HEAD
 #if USE(RNS_SHELL_PARTIAL_UPDATES) &&  USE(RNS_SHELL_COPY_BUFFERS)
     GLuint offScreenFbo_ { 0 };
     GLuint colorTexture_ { 0 };
@@ -94,6 +108,8 @@ private:
 #endif
 
 
+=======
+>>>>>>> RNS Shell Implementation  (#8)
     typedef GLWindowContext INHERITED;
 };
 

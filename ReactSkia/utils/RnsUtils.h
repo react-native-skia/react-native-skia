@@ -48,6 +48,7 @@
             localCount++;\
             RNS_LOG_INFO(msg << " Average(" <<  ( total / localCount) << ") ms"); \
         }
+<<<<<<< HEAD
     #define RNS_PROFILE_START(marker) \
             double marker= SkTime::GetMSecs();
     #define RNS_PROFILE_END(msg, marker) \
@@ -57,4 +58,9 @@
     #define RNS_PROFILE_API_AVG_ON(msg, instruction) instruction
     #define RNS_PROFILE_START(marker)
     #define RNS_PROFILE_END(msg, marker)
+=======
+#else
+    #define RNS_PROFILE_API_ON(msg, instruction) instruction
+    #define RNS_PROFILE_API_AVG_ON(msg, instruction) instruction
+>>>>>>> RNS Shell Implementation  (#8)
 #endif

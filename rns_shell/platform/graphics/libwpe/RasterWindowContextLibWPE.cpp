@@ -42,7 +42,11 @@ void RasterWindowContextLibWPE::initializeContext() {
 
 sk_sp<SkSurface> RasterWindowContextLibWPE::getBackbufferSurface() { return backbufferSurface_; }
 
+<<<<<<< HEAD
 void RasterWindowContextLibWPE::swapBuffers(std::vector<SkIRect> &damage) {
+=======
+void RasterWindowContextLibWPE::swapBuffers() {
+>>>>>>> RNS Shell Implementation  (#8)
     RNS_LOG_NOT_IMPL;
     // TODO : We need to blit the SkPixmap data to native window (window_) which is returned by libwpe.
     // So this part of code will be specific to display backend used in LIBWPE, so it is better to implement
@@ -65,6 +69,7 @@ void RasterWindowContextLibWPE::swapBuffers(std::vector<SkIRect> &damage) {
 #endif
 }
 
+<<<<<<< HEAD
 #if USE(RNS_SHELL_PARTIAL_UPDATES)
 bool RasterWindowContextLibWPE::hasBufferCopy() {
     RNS_LOG_NOT_IMPL;
@@ -72,3 +77,7 @@ bool RasterWindowContextLibWPE::hasBufferCopy() {
 }
 #endif
 }  // namespace RnsShell
+=======
+}  // namespace RnsShell
+
+>>>>>>> RNS Shell Implementation  (#8)

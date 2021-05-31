@@ -1,12 +1,21 @@
 #include "ReactSkia/JSITurboModuleManager.h"
-#include "ReactSkia/version.h"
 
 #include "ReactSkia/utils/RnsLog.h"
+#include "ReactSkia/version.h"
+
+<<<<<<< HEAD
+#include "ReactSkia/utils/RnsLog.h"
+=======
+>>>>>>> RNS Shell Implementation  (#8)
 
 #include "cxxreact/Instance.h"
 #include "jsi/JSIDynamic.h"
 
 #include <folly/io/async/ScopedEventBaseThread.h>
+<<<<<<< HEAD
+=======
+#include "modules/platform/nopoll/RSkWebSocketModule.h"
+>>>>>>> RNS Shell Implementation  (#8)
 
 namespace facebook {
 namespace react {

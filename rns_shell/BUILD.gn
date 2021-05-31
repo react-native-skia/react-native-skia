@@ -9,6 +9,7 @@ config("rns_shell_config") {
   cflags_objcc = [ "-std=c++17" ]
   include_dirs = [ "." ]
 
+<<<<<<< HEAD
   include_dirs += [
     "common",
     "platform/graphics",
@@ -16,14 +17,22 @@ config("rns_shell_config") {
   ]
 
   if(is_linux) {
+=======
+  if(is_linux) {
+    include_dirs += [ "." ]
+
+>>>>>>> RNS Shell Implementation  (#8)
     defines = ["GOOGLE_STRIP_LOG=0"]
     extra_cppflags = getenv("BUILD_CPPFLAGS")
     if(extra_cppflags != "") {
       defines += string_split(extra_cppflags)
     }
+<<<<<<< HEAD
     if(rns_enable_partial_updates) {
       defines += ["USE_RNS_SHELL_PARTIAL_UPDATES"]
     }
+=======
+>>>>>>> RNS Shell Implementation  (#8)
   }
 }
 
@@ -104,8 +113,11 @@ source_set("rns_shell") {
     "compositor/Compositor.cpp",
     "compositor/layers/Layer.h",
     "compositor/layers/Layer.cpp",
+<<<<<<< HEAD
     "compositor/layers/PictureLayer.h",
     "compositor/layers/PictureLayer.cpp",
+=======
+>>>>>>> RNS Shell Implementation  (#8)
   ]
 
   if(gl_has_gpu) {
@@ -195,8 +207,16 @@ source_set("rns_shell") {
         }
     }
   }
+<<<<<<< HEAD
   public_configs = [ ":rns_shell_config" ]
   configs += [ "//ReactSkia:ReactSkia_config" ]
+=======
+
+  configs += [
+    ":rns_shell_config",
+    "//ReactSkia:ReactSkia_config",
+  ]
+>>>>>>> RNS Shell Implementation  (#8)
 
   configs -= [ "//build/config/compiler:chromium_code" ]
   configs += [ "//build/config/compiler:no_chromium_code" ]

@@ -7,6 +7,7 @@
 */
 
 #include "compositor/layers/Layer.h"
+<<<<<<< HEAD
 #include "compositor/layers/PictureLayer.h"
 
 namespace RnsShell {
@@ -20,6 +21,13 @@ SharedLayer Layer::Create(LayerType type) {
             RNS_LOG_ASSERT(false, "Default layers can be created only from RSkComponent constructor");
             return nullptr;
     }
+=======
+
+namespace RnsShell {
+
+SharedLayer Layer::Create() {
+    return std::make_shared<Layer>();
+>>>>>>> RNS Shell Implementation  (#8)
 }
 
 uint64_t Layer::nextUniqueId() {
@@ -31,6 +39,7 @@ uint64_t Layer::nextUniqueId() {
     return id;
 }
 
+<<<<<<< HEAD
 Layer::Layer(LayerType type)
     : layerId_(nextUniqueId())
     , parent_(nullptr)
@@ -38,6 +47,12 @@ Layer::Layer(LayerType type)
     , frame_(SkIRect::MakeEmpty())
     , anchorPosition_(SkPoint::Make(0,0)) {
     RNS_LOG_INFO("Layer Constructed(" << this << ") with ID : " << layerId_);
+=======
+Layer::Layer()
+    : layerId_(nextUniqueId())
+    , parent_(nullptr) {
+    RNS_LOG_DEBUG("Layer Constructed(" << this << ") with ID : " << layerId_);
+>>>>>>> RNS Shell Implementation  (#8)
 }
 
 Layer* Layer::rootLayer() {
@@ -74,6 +89,7 @@ void Layer::removeChild(SharedLayer child, size_t index) {
     children_.erase(children_.begin() + index);
 }
 
+<<<<<<< HEAD
 void Layer::prePaint(PaintContext& context) {
 }
 
@@ -111,12 +127,34 @@ void Layer::paint(PaintContext& context) {
     }
 }
 
+=======
+void Layer::prePaint(SkSurface *surface) {
+}
+
+void Layer::paint(SkSurface *surface) {
+#if !defined(GOOGLE_STRIP_LOG) || (GOOGLE_STRIP_LOG <= INFO)
+    RNS_GET_TIME_STAMP_US(start);
+#endif
+    RNS_LOG_TRACE("Layer (" << layerId_ << ") has " << children_.size() << " childrens with surface : " << surface);
+    onPaint(surface); // First paint self and then children if any
+    for (auto& layer : children_) {
+        if(layer->needsPainting())
+            layer->paint(surface);
+    }
+#if !defined(GOOGLE_STRIP_LOG) || (GOOGLE_STRIP_LOG <= INFO)
+    RNS_GET_TIME_STAMP_US(end);
+    RNS_LOG_TRACE("Layer (" << layerId_ << ") took " <<  (end - start) << " us  to paint self and children");
+#endif
+}
+
+>>>>>>> RNS Shell Implementation  (#8)
 void Layer::setParent(Layer* layer) {
     // TODO add checks
     RNS_LOG_TODO("Add checks");
     parent_ = layer;
 }
 
+<<<<<<< HEAD
 bool Layer::needsPainting(PaintContext& context) {
 
     if (frame_.isEmpty() || isHidden_) { // If layer is hidden or layers paint bounds is empty then skip paint
@@ -136,6 +174,11 @@ bool Layer::needsPainting(PaintContext& context) {
 
     RNS_LOG_TRACE("Skip Layer (" << layerId_ << ")");
     return false;
+=======
+bool Layer::needsPainting() {
+    // TODO add checks canvas.quickeReject(paintBounds);
+    return true;
+>>>>>>> RNS Shell Implementation  (#8)
 }
 
 }   // namespace RnsShell

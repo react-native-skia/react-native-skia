@@ -81,6 +81,7 @@ sk_sp<SkSurface> GLWindowContext::getBackbufferSurface() {
     return surface_;
 }
 
+<<<<<<< HEAD
 void GLWindowContext::swapBuffers(std::vector<SkIRect> &damage) {
     this->onSwapBuffers(damage);
 }
@@ -95,6 +96,12 @@ bool GLWindowContext::hasBufferCopy() {
 }
 #endif
 
+=======
+void GLWindowContext::swapBuffers() {
+    this->onSwapBuffers();
+}
+
+>>>>>>> RNS Shell Implementation  (#8)
 void GLWindowContext::setDisplayParams(const DisplayParams& params) {
     displayParams_ = params;
     this->destroyContext();

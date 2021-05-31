@@ -31,6 +31,7 @@ public:
     void setViewportSize(const SkRect& viewportSize);
     SkRect& viewport() { return attributes_.viewportSize; }
     void invalidate();
+<<<<<<< HEAD
     void begin(); // Call this before modifying render layer tree
     void commit(); // Commit the changes in render layer tree
 
@@ -38,14 +39,20 @@ public:
     bool supportsPartialUpdates() { return supportPartialUpdate_; } // Wheather compositor can support partial paint and update
     void addDamageRect(SkIRect damage) { if(supportPartialUpdate_ && !damage.isEmpty()) surfaceDamage_.push_back(damage); }
 #endif
+=======
+    void commit();
+>>>>>>> RNS Shell Implementation  (#8)
 
 private:
 
     void createWindowContext();
     void renderLayerTree();
+<<<<<<< HEAD
     SkRect beginClip(SkCanvas *canvas);
 
     std::mutex isMutating; // Lock the renderLayer tree while updating and rendering
+=======
+>>>>>>> RNS Shell Implementation  (#8)
 
     SharedLayer rootLayer_;
     std::unique_ptr<Window> window_;
@@ -53,11 +60,14 @@ private:
     sk_sp<SkSurface> backBuffer_;
     uint64_t nativeWindowHandle_;
 
+<<<<<<< HEAD
 #if USE(RNS_SHELL_PARTIAL_UPDATES)
     bool supportPartialUpdate_;
 #endif
     std::vector<SkIRect> surfaceDamage_;
 
+=======
+>>>>>>> RNS Shell Implementation  (#8)
     struct {
         //Lock lock;
         SkRect viewportSize;

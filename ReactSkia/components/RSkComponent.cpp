@@ -14,11 +14,22 @@ RSkComponent::RSkComponent(const ShadowView &shadowView)
     , parent_(nullptr)
     , absOrigin_(shadowView.layoutMetrics.frame.origin)
     , component_(shadowView)
+<<<<<<< HEAD
 {
+=======
+#ifdef RNS_ENABLE_API_PERF
+    , componentName_(shadowView.componentName ? shadowView.componentName : "Rootview")
+#endif
+    {
+#ifdef RNS_ENABLE_API_PERF
+    RNS_UNUSED(componentName_);
+#endif
+>>>>>>> RNS Shell Implementation  (#8)
 }
 
 RSkComponent::~RSkComponent() {}
 
+<<<<<<< HEAD
 void RSkComponent::onPaint(SkCanvas* canvas) {
   if(canvas) {
     RNS_PROFILE_API_OFF(component_.componentName << " Paint:", OnPaint(canvas));
@@ -51,6 +62,16 @@ void RSkComponent::requiresLayer(const ShadowView &shadowView) {
         layer_ = this->shared_from_this();
     else
         layer_ = RnsShell::Layer::Create(RnsShell::LAYER_TYPE_PICTURE);
+=======
+void RSkComponent::onPaint(SkSurface *surface) {
+  if(surface) {
+    auto canvas = surface->getCanvas();
+    if(canvas)
+        RNS_PROFILE_API_AVG_ON(componentName_ << " Paint:", OnPaint(canvas));
+  } else {
+      RNS_LOG_ERROR("Invalid canvas ??");
+  }
+>>>>>>> RNS Shell Implementation  (#8)
 }
 
 void RSkComponent::updateComponentData(const ShadowView &newShadowView , const uint32_t updateMask) {
@@ -82,10 +103,14 @@ void RSkComponent::mountChildComponent(
         newChildComponent->parent_ = this;
         newChildComponent->absOrigin_ =  absOrigin_ + newChildComponent->component_.layoutMetrics.frame.origin;
     }
+<<<<<<< HEAD
 
     RNS_LOG_ASSERT((this->layer_ && newChildComponent->layer_), "Layer Object cannot be null");
     if(this->layer_)
         this->layer_->insertChild(newChildComponent->layer_, index);
+=======
+    this->insertChild(newChildComponent, index);
+>>>>>>> RNS Shell Implementation  (#8)
 }
 
 void RSkComponent::unmountChildComponent(
@@ -96,10 +121,14 @@ void RSkComponent::unmountChildComponent(
         oldChildComponent->parent_ = nullptr ;
         oldChildComponent->absOrigin_ = oldChildComponent->component_.layoutMetrics.frame.origin;
     }
+<<<<<<< HEAD
 
     RNS_LOG_ASSERT((this->layer_ && oldChildComponent->layer_), "Layer Object cannot be null");
     if(this->layer_)
         this->layer_->removeChild(oldChildComponent->layer_, index);
+=======
+    this->removeChild(oldChildComponent, index);
+>>>>>>> RNS Shell Implementation  (#8)
 }
 
 } // namespace react

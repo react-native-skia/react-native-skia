@@ -9,12 +9,16 @@
 
 #include "RuntimeEventBeat.h"
 #include "ReactSkia/utils/RnsLog.h"
+<<<<<<< HEAD
 
 #define BEAT_INTERVAL  1000 /*unit ms. Beat interval Set to:1 sec as temp fix*/
+=======
+>>>>>>> RNS Shell Implementation  (#8)
 
 namespace facebook {
 namespace react {
 
+<<<<<<< HEAD
 
 /*Activity is dummy param to fit in React common implementation, It is not needed as
   RNS implementation is not based on runloop*/
@@ -50,6 +54,19 @@ void RuntimeEventBeat::stopObserving() const noexcept
 bool RuntimeEventBeat::isOnRunLoopThread() const noexcept
 {
   return (baetThread_.getThreadId() == std::thread::id());
+=======
+RuntimeEventBeat::RuntimeEventBeat(EventBeat::SharedOwnerBox const &ownerBox, RuntimeExecutor runtimeExecutor)
+    : EventBeat(ownerBox), runtimeExecutor_(std::move(runtimeExecutor)) {
+    RNS_LOG_NOT_IMPL;
+}
+
+RuntimeEventBeat::~RuntimeEventBeat() {
+    RNS_LOG_NOT_IMPL;
+}
+
+void RuntimeEventBeat::induce() const {
+    RNS_LOG_NOT_IMPL;
+>>>>>>> RNS Shell Implementation  (#8)
 }
 
 } // namespace react

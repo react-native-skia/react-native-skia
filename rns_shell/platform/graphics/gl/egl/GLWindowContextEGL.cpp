@@ -28,8 +28,11 @@ static const char* gEGLAPIName = "OpenGL";
 static const EGLenum gEGLAPIVersion = EGL_OPENGL_API;
 #endif
 
+<<<<<<< HEAD
 static PFNEGLSWAPBUFFERSWITHDAMAGEEXTPROC eglSwapBuffersWithDamage = nullptr;
 
+=======
+>>>>>>> RNS Shell Implementation  (#8)
 const char* GLWindowContextEGL::errorString(int statusCode) {
     static_assert(sizeof(int) >= sizeof(EGLint), "EGLint must not be wider than int");
     switch (statusCode) {
@@ -334,7 +337,11 @@ sk_sp<const GrGLInterface> GLWindowContextEGL::onInitializeContext() {
     }
 
     glClearStencil(0);
+<<<<<<< HEAD
     glClearColor(0, 0, 0, 0);
+=======
+    glClearColor(0, 0, 0xff, 0);
+>>>>>>> RNS Shell Implementation  (#8)
     glStencilMask(0xffffffff);
     glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
@@ -343,10 +350,13 @@ sk_sp<const GrGLInterface> GLWindowContextEGL::onInitializeContext() {
         glViewport(0, 0, width_, height_);
     }
 
+<<<<<<< HEAD
 
 #if USE(RNS_SHELL_PARTIAL_UPDATES) &&  USE(RNS_SHELL_COPY_BUFFERS)
     eglInitializeOffscreenFrameBuffer();
 #endif
+=======
+>>>>>>> RNS Shell Implementation  (#8)
     swapInterval();
     return interface ? interface : GrGLMakeNativeInterface();
 }
@@ -367,9 +377,12 @@ void GLWindowContextEGL::onDestroyContext() {
         eglDestroySurface(platformDisplay_.eglDisplay(), glSurface_);
         glSurface_ = nullptr;
     }
+<<<<<<< HEAD
 #if USE(RNS_SHELL_PARTIAL_UPDATES) &&  USE(RNS_SHELL_COPY_BUFFERS)
         eglDeleteOffscreenFrameBuffer();
 #endif
+=======
+>>>>>>> RNS Shell Implementation  (#8)
 
 #if USE(WPE_RENDERER)
     destroyWPETarget();
@@ -388,11 +401,16 @@ bool GLWindowContextEGL::makeContextCurrent() {
     return res;
 }
 
+<<<<<<< HEAD
 void GLWindowContextEGL::onSwapBuffers(std::vector<SkIRect> &damage) {
+=======
+void GLWindowContextEGL::onSwapBuffers() {
+>>>>>>> RNS Shell Implementation  (#8)
     if (glContext_ && glSurface_) {
 #if !defined(GOOGLE_STRIP_LOG) || (GOOGLE_STRIP_LOG <= INFO)
         RNS_GET_TIME_STAMP_US(start);
 #endif
+<<<<<<< HEAD
 
 #if USE(RNS_SHELL_PARTIAL_UPDATES)
         if(eglSwapBuffersWithDamage) {
@@ -410,6 +428,9 @@ void GLWindowContextEGL::onSwapBuffers(std::vector<SkIRect> &damage) {
         eglSwapBuffers(platformDisplay_.eglDisplay(), glSurface_);
 #endif // RNS_SHELL_PARTIAL_UPDATES
 
+=======
+        eglSwapBuffers(platformDisplay_.eglDisplay(), glSurface_);
+>>>>>>> RNS Shell Implementation  (#8)
 #if !defined(GOOGLE_STRIP_LOG) || (GOOGLE_STRIP_LOG <= INFO)
         RNS_GET_TIME_STAMP_US(end);
         Performance::takeSamples(end - start);
@@ -418,6 +439,7 @@ void GLWindowContextEGL::onSwapBuffers(std::vector<SkIRect> &damage) {
 }
 
 void GLWindowContextEGL::swapInterval() {
+<<<<<<< HEAD
     EGLDisplay display = platformDisplay_.eglDisplay();
     const char* extensions = eglQueryString(display, EGL_EXTENSIONS);
 
@@ -544,6 +566,11 @@ void GLWindowContextEGL::eglDeleteOffscreenFrameBuffer() {
 
 #endif
 
+=======
+    eglSwapInterval(platformDisplay_.eglDisplay(), displayParams_.disableVsync_ ? 0 : 1);
+}
+
+>>>>>>> RNS Shell Implementation  (#8)
 }  // namespace RnsShell
 
 #endif // USE(EGL)
