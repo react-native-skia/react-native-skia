@@ -1,7 +1,20 @@
+# ReactSkia Build.gn
+
+declare_args() {
+  # Enable API profiling
+  rns_enable_api_profiling = false
+}
+
 config("ReactSkia_config") {
   include_dirs = [
-    # "//react-native",
+     "//rns_shell/common",
+     "//rns_shell/platform/graphics",
+     "//rns_shell/platform/graphics/gl",
   ]
+  defines = []
+  if(rns_enable_api_profiling) {
+    defines += ["RNS_ENABLE_API_PERF"]
+  }
 }
 
 config("textlayoutmanager_config") {
@@ -110,7 +123,7 @@ source_set("ReactSkia") {
     "//react-native/ReactCommon/react/renderer/components/image",
     "//react-native/ReactCommon/react/renderer/components/text",
     "//react-native/ReactCommon/react/renderer/textlayoutmanager",
-    "//sk_app",
+    "//rns_shell",
     "//skia",
   ]
 
@@ -144,6 +157,13 @@ executable("ReactSkiaApp") {
 
   configs -= [ "//build/config/compiler:chromium_code" ]
   configs += [ "//build/config/compiler:no_chromium_code" ]
+  configs -= [ "//build/config/compiler:no_exceptions" ]
+  configs += [ "//build/config/compiler:exceptions" ]
+  configs -= [ "//build/config/compiler:no_rtti" ]
+  configs += [ "//build/config/compiler:rtti" ]
+  configs += [
+    ":ReactSkia_config",
+  ]
 
   if (is_clang) {
     configs -= [ "//build/config/clang:find_bad_constructs" ]

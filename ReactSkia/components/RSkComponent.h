@@ -1,9 +1,12 @@
 #pragma once
 
+#include "ReactSkia/utils/RnsUtils.h"
+#include "ReactSkia/utils/RnsLog.h"
+
 #include "include/core/SkCanvas.h"
 #include "react/renderer/mounting/ShadowView.h"
-#include "sk_app/Window.h"
-#include <glog/logging.h>
+
+#include "rns_shell/compositor/layers/Layer.h"
 
 namespace facebook {
 namespace react {
@@ -35,7 +38,7 @@ struct Component {
 
 class RSkComponent;
 
-class RSkComponent : public sk_app::Window::Layer {
+class RSkComponent : public RnsShell::Layer {
  public:
   RSkComponent(const ShadowView &shadowView);
   RSkComponent(RSkComponent &&) = default;
@@ -60,13 +63,16 @@ class RSkComponent : public sk_app::Window::Layer {
   virtual void OnPaint(SkCanvas *canvas) = 0;
 
  private:
-  // sk_app::Window::Layer implementations
+  // RnsShell::Layer implementations
   void onPaint(SkSurface *surface) override;
 
  private:
   RSkComponent *parent_;
   Point absOrigin_;
   Component component_;
+#ifdef RNS_ENABLE_API_PERF
+  ComponentName componentName_;
+#endif
 };
 
 } // namespace react
