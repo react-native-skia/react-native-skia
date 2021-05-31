@@ -4,6 +4,35 @@ config("ReactSkia_config") {
   ]
 }
 
+config("textlayoutmanager_config") {
+  include_dirs = [
+    ".",
+    "//ReactSkia/textlayoutmanager",
+    "//third_party/skia",
+    "//skia/config",
+  ]
+}
+
+import("//react-native/common.gni")
+rn_cxx_component("textlayoutmanager") {
+  sources = [
+    "textlayoutmanager/react/renderer/textlayoutmanager/TextLayoutManager.cpp",
+    "textlayoutmanager/RSkTextLayoutManager.cpp",
+  ]
+
+  deps = [
+     "//folly",
+     "//react-native/ReactCommon/react/renderer/attributedstring:attributedstring",
+     "//react-native/ReactCommon/react/renderer/graphics:graphics",
+     "//react-native/ReactCommon/jsi:JSIDynamic",
+     "//skia:skparagraph",
+  ]
+
+  with_exceptions = true
+  with_rtti = true
+  public_configs = [":textlayoutmanager_config"]
+}
+
 source_set("ReactSkia") {
   sources = [
     "ComponentViewRegistry.cpp",

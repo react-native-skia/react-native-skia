@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ReactSkia/components/RSkComponent.h"
+#include "ReactSkia/textlayoutmanager/RSkTextLayoutManager.h"
 
 namespace facebook {
 namespace react {
@@ -27,6 +28,9 @@ class RSkComponentParagraph final : public RSkComponent {
 
  protected:
   void OnPaint(SkCanvas *canvas) override;
+
+ private:
+  RSkTextLayoutManager textLayoutManager_;
 };
 
 } // namespace react

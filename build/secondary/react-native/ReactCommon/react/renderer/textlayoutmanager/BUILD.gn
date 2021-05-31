@@ -3,14 +3,13 @@ import("//react-native/common.gni")
 config("textlayoutmanager_config") {
   include_dirs = [
     ".",
-    "platform/cxx",
+    "//ReactSkia/textlayoutmanager",
   ]
 }
 
 rn_cxx_component("textlayoutmanager") {
   sources = [
     "TextMeasureCache.cpp",
-    "platform/cxx/react/renderer/textlayoutmanager/TextLayoutManager.cpp",
   ]
 
   defines = [
@@ -28,10 +27,12 @@ rn_cxx_component("textlayoutmanager") {
     "//react-native/ReactCommon/react/utils:utils",
     "//react-native/ReactCommon/yoga:yoga",
     "//third_party/glog:glog",
+    "//ReactSkia:textlayoutmanager",
   ]
 
   with_exceptions = true
   with_rtti = true
 
   public_configs = [ ":textlayoutmanager_config" ]
+  public_configs += [ "//ReactSkia:textlayoutmanager_config"]
 }

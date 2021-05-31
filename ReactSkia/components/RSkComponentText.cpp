@@ -33,32 +33,15 @@ void RSkComponentParagraph::OnPaint(SkCanvas *canvas) {
   auto const &props =
       *std::static_pointer_cast<ParagraphProps const>(component.props);
   auto data = state->getData();
-  auto text = data.attributedString.getString();
-  auto fontSize = !std::isnan(props.textAttributes.fontSize) ? props.textAttributes.fontSize : TextAttributes::defaultTextAttributes().fontSize;
-  float ratio = 255.9999;
-  auto color = colorComponentsFromColor(props.textAttributes.foregroundColor ? props.textAttributes.foregroundColor : TextAttributes::defaultTextAttributes().foregroundColor);
-
-
-  SkFont font;
-  font.setSubpixel(true);
-  font.setSize(fontSize);
-  SkPaint paint;
-  paint.setColor(SkColorSetARGB(
-      color.alpha * ratio,
-      color.red * ratio,
-      color.green * ratio,
-      color.blue * ratio));
 
   auto framePoint = getFrameOrigin();
+  auto frameSize = getFrameSize();
 
-  canvas->drawSimpleText(
-      text.c_str(),
-      text.length(),
-      SkTextEncoding::kUTF8,
-      framePoint.x,
-      framePoint.y,
-      font,
-      paint);
+  std::unique_ptr<skia::textlayout::Paragraph> fPara;
+  /* RSkTextLayoutManager to build paragraph, set build with true to consider font decoration */
+  fPara = textLayoutManager_.buildParagraph(data.attributedString , props.paragraphAttributes , frameSize ,true);
+  fPara->paint(canvas, framePoint.x, framePoint.y);
+
 }
 
 } // namespace react
