@@ -17,6 +17,7 @@
 #include "ReactSkia/platform/linux/MainRunLoopEventBeat.h"
 #include "ReactSkia/platform/linux/RuntimeEventBeat.h"
 #endif
+#include "ReactSkia/utils/RnsLog.h"
 
 #include "ReactCommon/TurboModuleBinding.h"
 #include "cxxreact/JSBigString.h"
@@ -32,7 +33,6 @@
 #include "react/utils/ContextContainer.h"
 
 #include <folly/io/async/ScopedEventBaseThread.h>
-#include <glog/logging.h>
 
 namespace facebook {
 namespace react {
@@ -106,7 +106,7 @@ void RNInstance::Start(RSkSurfaceWindow *surface) {
 
   // NOTE(kudo): Does adding RootView here make sense !?
   auto *provider = componentViewRegistry_->GetProvider(RootComponentName);
-  surface->AddComponent(provider->CreateComponent({}));
+  surface->compositor()->setRootLayer(provider->CreateComponent({}));
 }
 
 void RNInstance::Stop() {
@@ -130,13 +130,16 @@ void RNInstance::InitializeJSCore() {
   // NOTE(kudo): Workaround for TurboModules being fully initialized
   std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
-  auto source = JSBigFileString::fromPath("SimpleViewApp.bundle");
   try {
+    auto source = JSBigFileString::fromPath("SimpleViewApp.bundle");
     instance_->loadScriptFromString(
         std::move(source), "SimpleViewApp.bundle", true);
   } catch (const jsi::JSError &ex) {
     std::string exc = ex.what();
-    LOG(ERROR) << "JSError: " << exc;
+    RNS_LOG_ERROR("JS ERROR : " << exc);
+  } catch (const std::system_error& ex) {
+    std::string exc = ex.what();
+    RNS_LOG_ERROR("SYSTEM ERROR : " << exc);
   }
 }
 

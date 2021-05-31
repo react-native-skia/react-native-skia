@@ -8,8 +8,6 @@
 
 #include "react/renderer/components/image/ImageShadowNode.h"
 
-#include <glog/logging.h>
-
 namespace facebook {
 namespace react {
 
@@ -17,9 +15,9 @@ namespace {
 std::unique_ptr<SkBitmap> GetAsset(const char *path) {
   sk_sp<SkData> data = SkData::MakeFromFileName(path);
   if (!data) {
-    LOG(ERROR)
-        << "RSkComponentImage::_::GetAsset() - Unable to make SkData from path: "
-        << path;
+    RNS_LOG_ERROR (
+        "RSkComponentImage::_::GetAsset() - Unable to make SkData from path: "
+        << path);
     return nullptr;
   }
 

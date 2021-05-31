@@ -6,24 +6,22 @@
  */
 
 #include "RuntimeEventBeat.h"
+#include "ReactSkia/utils/RnsLog.h"
 
 namespace facebook {
 namespace react {
 
 RuntimeEventBeat::RuntimeEventBeat(EventBeat::SharedOwnerBox const &ownerBox, RuntimeExecutor runtimeExecutor)
-    : EventBeat(ownerBox), runtimeExecutor_(std::move(runtimeExecutor))
-{
-  printf("\033[22;35m [WARN  ] %s %d: %s() !!!!!!!!!! NOT IMPLEMENTED !!!!!!!!!! \033[22;0m \n", __FILE__, __LINE__, __func__);
+    : EventBeat(ownerBox), runtimeExecutor_(std::move(runtimeExecutor)) {
+    RNS_LOG_NOT_IMPL;
 }
 
-RuntimeEventBeat::~RuntimeEventBeat()
-{
-  printf("\033[22;35m [WARN  ] %s %d: %s() !!!!!!!!!! NOT IMPLEMENTED !!!!!!!!!! \033[22;0m \n", __FILE__, __LINE__, __func__);
+RuntimeEventBeat::~RuntimeEventBeat() {
+    RNS_LOG_NOT_IMPL;
 }
 
-void RuntimeEventBeat::induce() const
-{
-  printf("\033[22;35m [WARN  ] %s %d: %s() !!!!!!!!!! NOT IMPLEMENTED !!!!!!!!!! \033[22;0m \n", __FILE__, __LINE__, __func__);
+void RuntimeEventBeat::induce() const {
+    RNS_LOG_NOT_IMPL;
 }
 
 } // namespace react

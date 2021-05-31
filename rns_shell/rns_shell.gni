@@ -1,0 +1,29 @@
+# Copyright (C) 1994-2021 OpenTV, Inc. and Nagravision S.A. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+if(is_linux) {
+  import("//build/config/linux/pkg_config.gni")
+}
+
+declare_args() {
+  if(is_linux) {
+    # x11, wayland, direcftb, libwpe
+    gl_display_backend = "x11"
+
+    # Can be true only for X11 backend, others will use egl
+    gl_use_glx = true
+
+    # For Embedded systems we will use OpenGL ES
+    gl_use_opengl_es = false
+
+    # For platform which doesnt have gpu have to set this to false
+    gl_has_gpu = true
+  }
+}
+
+declare_args() {
+  if(gl_display_backend == "libwpe") {
+    wpe_interface_version="1.0"
+  }
+}

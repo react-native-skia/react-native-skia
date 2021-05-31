@@ -1,11 +1,13 @@
 #include "ReactSkia/JSITurboModuleManager.h"
+
+#include "ReactSkia/utils/RnsLog.h"
 #include "ReactSkia/version.h"
+
 
 #include "cxxreact/Instance.h"
 #include "jsi/JSIDynamic.h"
 
 #include <folly/io/async/ScopedEventBaseThread.h>
-#include <glog/logging.h>
 #include "modules/platform/nopoll/RSkWebSocketModule.h"
 
 namespace facebook {
@@ -74,8 +76,7 @@ class ExceptionsManagerModule : public TurboModule {
     if (count == 1 && args[0].isObject()) {
       auto data = args[0].asObject(rt);
       auto message = data.getProperty(rt, "message");
-      LOG(ERROR) << "[ExceptionManager] message: "
-                 << message.asString(rt).utf8(rt);
+      RNS_LOG_ERROR("[ExceptionManager] message : " << message.asString(rt).utf8(rt));
     }
     return jsi::Value::undefined();
   }
@@ -141,8 +142,8 @@ class TimingModule : public TurboModule {
       double callbackId,
       double duration,
       bool repeats) {
-    // LOG(INFO) << "TimingModule::OnTimeout - callbackId=" << callbackId
-    //           << ", repeat=" << repeats << ", duration=" << duration;
+    RNS_LOG_DEBUG("TimingModule::OnTimeout - callbackId=" << callbackId
+               << ", repeat=" << repeats << ", duration=" << duration);
     bridge->callJSFunction(
         "JSTimers", "callTimers", folly::dynamic::array(folly::dynamic::array(callbackId)));
     if (repeats) {

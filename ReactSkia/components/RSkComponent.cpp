@@ -10,13 +10,25 @@ RSkComponent::RSkComponent(const ShadowView &shadowView)
     : parent_(nullptr)
     , absOrigin_(shadowView.layoutMetrics.frame.origin)
     , component_(shadowView)
-    {}
+#ifdef RNS_ENABLE_API_PERF
+    , componentName_(shadowView.componentName ? shadowView.componentName : "Rootview")
+#endif
+    {
+#ifdef RNS_ENABLE_API_PERF
+    RNS_UNUSED(componentName_);
+#endif
+}
 
 RSkComponent::~RSkComponent() {}
 
 void RSkComponent::onPaint(SkSurface *surface) {
-  auto canvas = surface->getCanvas();
-  OnPaint(canvas);
+  if(surface) {
+    auto canvas = surface->getCanvas();
+    if(canvas)
+        RNS_PROFILE_API_AVG_ON(componentName_ << " Paint:", OnPaint(canvas));
+  } else {
+      RNS_LOG_ERROR("Invalid canvas ??");
+  }
 }
 
 void RSkComponent::updateComponentData(const ShadowView &newShadowView , const uint32_t updateMask) {
@@ -38,7 +50,7 @@ void RSkComponent::mountChildComponent(
         newChildComponent->parent_ = this;
         newChildComponent->absOrigin_ =  absOrigin_ + newChildComponent->component_.layoutMetrics.frame.origin;
     }
-    /* TODO : Add the new child to children list */
+    this->insertChild(newChildComponent, index);
 }
 
 void RSkComponent::unmountChildComponent(
@@ -49,7 +61,7 @@ void RSkComponent::unmountChildComponent(
         oldChildComponent->parent_ = nullptr ;
         oldChildComponent->absOrigin_ = oldChildComponent->component_.layoutMetrics.frame.origin;
     }
-    /* TODO : Remove the old child from children list */
+    this->removeChild(oldChildComponent, index);
 }
 
 } // namespace react

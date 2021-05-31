@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include "ReactSkia/utils/RnsLog.h"
 #include "MainRunLoopEventBeat.h"
 
 #include "RCTUtils.h"
@@ -14,24 +15,20 @@ namespace facebook {
 namespace react {
 
 MainRunLoopEventBeat::MainRunLoopEventBeat(EventBeat::SharedOwnerBox const &ownerBox, RuntimeExecutor runtimeExecutor)
-    : EventBeat(ownerBox), runtimeExecutor_(std::move(runtimeExecutor))
-{
-  printf("\033[22;35m [WARN  ] %s %d: %s() !!!!!!!!!! NOT IMPLEMENTED !!!!!!!!!! \033[22;0m \n", __FILE__, __LINE__, __func__);
+    : EventBeat(ownerBox), runtimeExecutor_(std::move(runtimeExecutor)) {
+    RNS_LOG_NOT_IMPL;
 }
 
-MainRunLoopEventBeat::~MainRunLoopEventBeat()
-{
-  printf("\033[22;35m [WARN  ] %s %d: %s() !!!!!!!!!! NOT IMPLEMENTED !!!!!!!!!! \033[22;0m \n", __FILE__, __LINE__, __func__);
+MainRunLoopEventBeat::~MainRunLoopEventBeat() {
+    RNS_LOG_NOT_IMPL;
 }
 
-void MainRunLoopEventBeat::induce() const
-{
-  printf("\033[22;35m [WARN  ] %s %d: %s() !!!!!!!!!! NOT IMPLEMENTED !!!!!!!!!! \033[22;0m \n", __FILE__, __LINE__, __func__);
+void MainRunLoopEventBeat::induce() const {
+    RNS_LOG_NOT_IMPL;
 }
 
-void MainRunLoopEventBeat::lockExecutorAndBeat() const
-{
-  printf("\033[22;35m [WARN  ] %s %d: %s() !!!!!!!!!! NOT IMPLEMENTED !!!!!!!!!! \033[22;0m \n", __FILE__, __LINE__, __func__);
+void MainRunLoopEventBeat::lockExecutorAndBeat() const {
+    RNS_LOG_NOT_IMPL;
 }
 
 } // namespace react

@@ -87,6 +87,13 @@ void MountingManager::ProcessMutations(
       }
     }
   }
+
+#if !defined(GOOGLE_STRIP_LOG) || (GOOGLE_STRIP_LOG <= INFO)
+  static double prevTime = SkTime::GetMSecs();
+  RNS_LOG_INFO_EVERY_N(60, "Called Compositor Commit(" << std::this_thread::get_id()) << ") : after " << SkTime::GetMSecs() - prevTime << " ms";
+  prevTime = SkTime::GetMSecs();
+#endif
+  surface_->compositor()->commit();
 }
 
 
@@ -98,9 +105,6 @@ void MountingManager::CreateMountInstruction(
   if (provider) {
     std::shared_ptr<RSkComponent> component =
         provider->CreateAndAddComponent(mutation.newChildShadowView);
-    if (component) {
-      surface_->AddComponent(component);
-    }
   }
 }
 
@@ -112,7 +116,6 @@ void MountingManager::DeleteMountInstruction(
   if (provider) {
       std::shared_ptr<RSkComponent> component = provider->GetComponent(mutation.oldChildShadowView.tag);
       if (component) {
-          surface_->DeleteComponent(component);
           provider->DeleteComponent(mutation.oldChildShadowView.tag);
       }
   }

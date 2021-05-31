@@ -86,6 +86,13 @@ target(_libcxx_target_type, "libc++") {
     "trunk/src/variant.cpp",
     "trunk/src/vector.cpp",
   ]
+
+  # Filesystem support
+  sources += [
+    "trunk/src/filesystem/operations.cpp",
+    "trunk/src/filesystem/directory_iterator.cpp"
+  ]
+
   if (is_win) {
     sources += [
       "trunk/src/support/win32/locale_win32.cpp",
