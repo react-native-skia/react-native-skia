@@ -117,6 +117,8 @@ source_set("sk_app") {
   }
 
   public_deps = [
+    "//folly",
+    "//folly:async",
     "//skia",
   ]
 
@@ -201,6 +203,8 @@ source_set("sk_app") {
 
   configs -= [ "//build/config/compiler:chromium_code" ]
   configs += [ "//build/config/compiler:no_chromium_code" ]
+  configs -= [ "//build/config/compiler:no_exceptions" ]
+  configs += [ "//build/config/compiler:exceptions" ]
 
   if (is_clang) {
     configs -= [ "//build/config/clang:find_bad_constructs" ]

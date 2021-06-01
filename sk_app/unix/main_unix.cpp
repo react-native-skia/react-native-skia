@@ -23,7 +23,12 @@
 
 #include "tools/timer/Timer.h"
 
+#include <glog/logging.h>
+
 bool done = false;
+
+// static
+folly::EventBase sk_app::Application::s_event_base;
 
 #if PLATFORM(X11)
 void xlib_runloop(sk_app::PlatformDisplay& pDisplay, sk_app::Application *app)
@@ -33,8 +38,12 @@ void xlib_runloop(sk_app::PlatformDisplay& pDisplay, sk_app::Application *app)
     // Get the file descriptor for the X display
     const int x11_fd = ConnectionNumber(display);
 
+    LOG(INFO) << "xlib main loop";
+
     bool done = false;
     while (!done) {
+        sk_app::Application::GetMainTaskRunner().loop();
+
         if (0 == XPending(display)) {
             // Only call select() when we have no events.
 
