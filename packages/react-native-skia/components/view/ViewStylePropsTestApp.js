@@ -11,7 +11,7 @@ const SimpleViewApp = React.Node = () => {
            toggleViewState((UseCaseCount+1)%useCases);
        }, timerValue)
      
-     var baseOpacity=10;
+     var baseOpacity=0.8;
      var baseRadius=30;
      var baseWidth=20;
      var bgColor='cornflowerblue';
@@ -37,7 +37,7 @@ const SimpleViewApp = React.Node = () => {
                borderColor:borderColor,
                opacity:opacity,
                margin: 20,
-	             borderRadius:baseRadius,
+               borderRadius:baseRadius,
            }}>
            </View> 
 }
@@ -48,7 +48,7 @@ const roundedBorderTest =(width,radius)=>{
                backgroundColor: bgColor,
                borderWidth:width,
                borderColor:borderColor,
-               opacity:baseOpacity*10,
+              opacity:baseOpacity,
                margin: 20,
                borderRadius:radius,
            }}>
@@ -71,6 +71,15 @@ const complexRoundedBorderTest =(radius,color,width)=>{
                borderRightColor:color,
                borderBottomColor:borderColor,
                borderTopColor:borderColor,
+
+              shadowOffset: {
+                 width: subViewWidth/2,
+                 height:subViewHeight/2
+              },
+              shadowRadius:20,
+	      shadowColor:'red',
+	      shadowOpacity: 1,
+
            }}>
            </View> 
 }
@@ -90,16 +99,14 @@ const renderMainView = () => {
                borderLeftWidth:baseWidth*3,
                borderBottomWidth:baseWidth/2,
                borderWidth:baseWidth,
-               borderRadius:0,
                borderLeftColor:'blue',
                borderRightColor:'yellow',
-               borderBottomColor:'orange',
-               borderColor:'firebrick',
+               borderTopColor:'orange',
                opacity:baseOpacity*10,
              }}>
             
-           {opacityTest(baseOpacity*2)}
-           {opacityTest(baseOpacity*5)}
+           {opacityTest(baseOpacity)}
+           {opacityTest(baseOpacity/2)}
            {opacityTest(baseOpacity*0)}
            {opacityTest(baseOpacity*8)}
 
@@ -114,7 +121,6 @@ const renderMainView = () => {
                flexDirection: 'row',
                justifyContent: 'center',
                alignItems: 'center',
-               backgroundColor:mainViewbgColor,
                borderRadius:baseRadius,
                borderColor:mainViewborderColor,
                borderWidth:baseWidth,
@@ -175,8 +181,8 @@ const renderMainView = () => {
                opacity:baseOpacity*10,
              }}>
             
-           {renderImage(baseOpacity*10)}
-           {renderImage(baseOpacity*5)}
+           {renderImage(baseOpacity)}
+           {renderImage(baseOpacity/2)}
 
            </View>)
   }
@@ -194,8 +200,8 @@ const renderMainView = () => {
                borderColor:mainViewborderColor,
                opacity:baseOpacity*10,
              }}>
-           {renderImage(baseOpacity*10)}
-           {renderImage(baseOpacity*5)}
+	   {renderImage(baseOpacity/2)}
+           {renderImage(baseOpacity)}
            </View>)
    }
 

@@ -49,14 +49,14 @@ void RSkComponentParagraph::OnPaint(SkCanvas *canvas) {
       color.green * ratio,
       color.blue * ratio));
 
-  auto framePoint = getFrameOrigin();
+  auto frame = getAbsoluteFrame();
 
   canvas->drawSimpleText(
       text.c_str(),
       text.length(),
       SkTextEncoding::kUTF8,
-      framePoint.x,
-      framePoint.y,
+      frame.origin.x,
+      frame.origin.y,
       font,
       paint);
 }
