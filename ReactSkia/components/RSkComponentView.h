@@ -1,12 +1,11 @@
 #pragma once
 
 #include "ReactSkia/components/RSkComponent.h"
-#include "ReactSkia/views/common/RSkDrawUtils.h"
 
 namespace facebook {
 namespace react {
 
-class RSkComponentView final : public RSkComponent, public RSkDrawUtils{
+class RSkComponentView final : public RSkComponent {
  public:
   RSkComponentView(const ShadowView &shadowView);
 

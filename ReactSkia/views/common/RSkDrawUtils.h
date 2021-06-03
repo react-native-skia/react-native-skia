@@ -23,10 +23,6 @@ struct ShadowMetrics{
     Float shadowOpacity{0};
     Float shadowRadius{0};
 };
-                               Rect frame,
-                               BorderMetrics borderMetrics,
-                               SharedColor bgColor,
-                               Float opacity);
   void drawBorder(SkCanvas *canvas,
                                Rect frame,
                                BorderMetrics borderMetrics,

@@ -70,8 +70,6 @@ void RSkComponentParagraph::OnPaint(SkCanvas *canvas) {
 
       expectedAttachmentCount = textLayoutManager_.buildParagraph(data.attributedString, props.paragraphAttributes, true, paraBuilder);
       currentAttachmentCount = 0;
-      auto paragraph = paraBuilder->Build();
-
       /* If the count is 0,means we have no fragment attachments.So paint right away*/
       if(!expectedAttachmentCount) {
           auto frame = getAbsoluteFrame();

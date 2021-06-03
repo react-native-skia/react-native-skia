@@ -37,7 +37,11 @@ const SimpleViewApp = React.Node = () => {
                borderColor:borderColor,
                opacity:opacity,
                margin: 20,
+<<<<<<< HEAD
                borderRadius:baseRadius,
+=======
+	       borderRadius:baseRadius,
+>>>>>>> Shadow Props supported on ReactNativeSkia and RSKDrawUtils refactored (#13)
            }}>
            </View> 
 }
@@ -48,7 +52,11 @@ const roundedBorderTest =(width,radius)=>{
                backgroundColor: bgColor,
                borderWidth:width,
                borderColor:borderColor,
+<<<<<<< HEAD
               opacity:baseOpacity,
+=======
+               opacity:baseOpacity,
+>>>>>>> Shadow Props supported on ReactNativeSkia and RSKDrawUtils refactored (#13)
                margin: 20,
                borderRadius:radius,
            }}>
@@ -71,7 +79,10 @@ const complexRoundedBorderTest =(radius,color,width)=>{
                borderRightColor:color,
                borderBottomColor:borderColor,
                borderTopColor:borderColor,
+<<<<<<< HEAD
 
+=======
+>>>>>>> Shadow Props supported on ReactNativeSkia and RSKDrawUtils refactored (#13)
               shadowOffset: {
                  width: subViewWidth/2,
                  height:subViewHeight/2
@@ -182,12 +193,17 @@ const renderMainView = () => {
              }}>
             
 <<<<<<< HEAD
+<<<<<<< HEAD
            {renderImage(baseOpacity)}
            {renderImage(baseOpacity/2)}
 =======
            {renderImage(baseOpacity*10)}
            {renderImage(baseOpacity*5)}
 >>>>>>> Added support on Native side to handle View Style Props (#3)
+=======
+           {renderImage(baseOpacity)}
+           {renderImage(baseOpacity/2)}
+>>>>>>> Shadow Props supported on ReactNativeSkia and RSKDrawUtils refactored (#13)
 
            </View>)
   }
@@ -206,12 +222,17 @@ const renderMainView = () => {
                opacity:baseOpacity*10,
              }}>
 <<<<<<< HEAD
+<<<<<<< HEAD
 	   {renderImage(baseOpacity/2)}
            {renderImage(baseOpacity)}
 =======
            {renderImage(baseOpacity*10)}
            {renderImage(baseOpacity*5)}
 >>>>>>> Added support on Native side to handle View Style Props (#3)
+=======
+           {renderImage(baseOpacity/2)}
+           {renderImage(baseOpacity)}
+>>>>>>> Shadow Props supported on ReactNativeSkia and RSKDrawUtils refactored (#13)
            </View>)
    }
 
