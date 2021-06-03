@@ -56,8 +56,7 @@ class RSkComponent : public RnsShell::Layer {
 
   virtual void updateComponentData(const ShadowView &newShadowView , const uint32_t updateMask);
   Component getComponentData() { return component_;};
-  Point getFrameOrigin() { return absOrigin_;};
-  Size getFrameSize() { return component_.layoutMetrics.frame.size;};
+  Rect getAbsoluteFrame(){return Rect{absOrigin_,component_.layoutMetrics.frame.size} ;};
 
  protected:
   virtual void OnPaint(SkCanvas *canvas) = 0;
