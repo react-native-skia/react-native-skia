@@ -6,11 +6,6 @@ declare_args() {
 }
 
 config("ReactSkia_config") {
-  include_dirs = [
-     "//rns_shell/common",
-     "//rns_shell/platform/graphics",
-     "//rns_shell/platform/graphics/gl",
-  ]
   defines = []
   if(rns_enable_api_profiling) {
     defines += ["RNS_ENABLE_API_PERF"]
