@@ -14,7 +14,6 @@ config("ReactSkia_config") {
 
 config("textlayoutmanager_config") {
   include_dirs = [
-<<<<<<< HEAD
     ".",
     "//ReactSkia/textlayoutmanager",
     "//third_party/skia",
@@ -40,7 +39,6 @@ rn_cxx_component("textlayoutmanager") {
   with_exceptions = true
   with_rtti = true
   public_configs = [":textlayoutmanager_config"]
-=======
      "//rns_shell/common",
      "//rns_shell/platform/graphics",
      "//rns_shell/platform/graphics/gl",
@@ -49,7 +47,6 @@ rn_cxx_component("textlayoutmanager") {
   if(rns_enable_api_profiling) {
     defines += ["RNS_ENABLE_API_PERF"]
   }
->>>>>>> RNS Shell Implementation  (#8)
 }
 
 config("textlayoutmanager_config") {

@@ -17,10 +17,7 @@
 #include <unordered_map>
 #include <vector>
 
-<<<<<<< HEAD
 #include "include/core/SkCanvas.h"
-=======
->>>>>>> RNS Shell Implementation  (#8)
 #include "include/core/SkSurface.h"
 
 #include "ReactSkia/utils/RnsLog.h"
@@ -30,7 +27,6 @@ namespace RnsShell {
 
 class Layer;
 
-<<<<<<< HEAD
 enum LayerType {
   LAYER_TYPE_DEFAULT = 0, // Default layer type which which will use component specific APIs to paint.
   LAYER_TYPE_PICTURE, // SkPiture based layer.
@@ -52,35 +48,16 @@ public:
 
     static SharedLayer Create(LayerType type = LAYER_TYPE_DEFAULT);
     Layer(LayerType);
-=======
-typedef std::vector<std::shared_ptr<Layer> > LayerList;
-using SharedLayer = std::shared_ptr<Layer>;
-
-class Layer {
-public:
-
-    static SharedLayer Create();
-    Layer();
->>>>>>> RNS Shell Implementation  (#8)
     virtual ~Layer() {};
 
     Layer* rootLayer();
     Layer* parent() { return parent_; }
 
-<<<<<<< HEAD
-    LayerType type() { return type_; }
-    int layerId() { return layerId_;}
 
     const LayerList& children() const { return children_; }
     bool needsPainting(PaintContext& context);
-=======
-    int layerId() { return layerId_;}
->>>>>>> RNS Shell Implementation  (#8)
-    void appendChild(SharedLayer child);
-    void insertChild(SharedLayer child, size_t index);
     void removeChild(SharedLayer child, size_t index);
 
-<<<<<<< HEAD
     virtual void paintSelf(PaintContext& context);
     virtual void prePaint(PaintContext& context);
     virtual void paint(PaintContext& context);
@@ -97,17 +74,13 @@ public:
 
     const bool masksToBounds() const { return masksToBounds_; }
     void setMasksTotBounds(bool masksToBounds) { masksToBounds_ = masksToBounds; }
-=======
     void prePaint(SkSurface *surface);
     void paint(SkSurface *surface);
-    virtual void onPaint(SkSurface*) {}
->>>>>>> RNS Shell Implementation  (#8)
 
 private:
     static uint64_t nextUniqueId();
 
     void setParent(Layer* layer);
-<<<<<<< HEAD
 
     int layerId_;
     Layer *parent_;
@@ -123,14 +96,8 @@ private:
     bool isHidden_ = { false }; // Wheather layer is hidden
     bool masksToBounds_ = { false }; // Clip childrens
     //Borders & Shadows ?
-=======
-    bool needsPainting();
-    const LayerList& children() const { return children_; }
-
-    int layerId_;
     Layer *parent_;
     LayerList children_;
->>>>>>> RNS Shell Implementation  (#8)
 };
 
 }   // namespace RnsShell

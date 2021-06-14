@@ -28,8 +28,6 @@ public:
     void prePaint(PaintContext& context) override;
     void paint(PaintContext& context) override;
 
-    void setPicture(sk_sp<SkPicture> picture) { picture_ = picture; }
-
 private:
     // Picture may reference images that have a reference to a GPU resource.
     // TODO what will happen for NON-GPU ?

@@ -47,14 +47,11 @@ Compositor::Compositor(SkRect& viewportSize, float scaleFactor)
         attributes_.scaleFactor = scaleFactor;
         attributes_.needsResize = !viewportSize.isEmpty();
     }
-<<<<<<< HEAD
 #if USE(RNS_SHELL_PARTIAL_UPDATES)
     supportPartialUpdate_ = windowContext_->hasSwapBuffersWithDamage() || windowContext_->hasBufferCopy();
     RNS_LOG_DEBUG("Support for Swapbuffer with damage rect : " << windowContext_->hasSwapBuffersWithDamage() <<
                   " Support for Copy buffer : " <<  windowContext_->hasBufferCopy());
 #endif
-=======
->>>>>>> RNS Shell Implementation  (#8)
     RNS_LOG_DEBUG("Native Window Handle : " << nativeWindowHandle_ << " Window Context : " << windowContext_.get() << "Back Buffer : " << backBuffer_.get());
 }
 
@@ -76,7 +73,6 @@ void Compositor::invalidate() {
     backBuffer_ = nullptr;
 }
 
-<<<<<<< HEAD
 SkRect Compositor::beginClip(SkCanvas *canvas) {
     SkRect clipBound = SkRect::MakeEmpty();
     if(surfaceDamage_.size() == 0)
@@ -97,8 +93,6 @@ SkRect Compositor::beginClip(SkCanvas *canvas) {
     return clipBound;
 }
 
-=======
->>>>>>> RNS Shell Implementation  (#8)
 void Compositor::renderLayerTree() {
 
     if(!windowContext_)
@@ -130,7 +124,6 @@ void Compositor::renderLayerTree() {
         if (needsResize)
             glViewport(0, 0, viewportSize.width(), viewportSize.height());
 #endif
-<<<<<<< HEAD
         auto canvas = backBuffer_.get()->getCanvas();
         SkAutoCanvasRestore save(canvas, true);
         SkRect clipBound = beginClip(canvas);
@@ -143,13 +136,6 @@ void Compositor::renderLayerTree() {
         RNS_PROFILE_API_OFF("Render Tree Pre-Paint", rootLayer_.get()->prePaint(paintContext));
         RNS_PROFILE_API_OFF("Render Tree Paint", rootLayer_.get()->paint(paintContext));
         RNS_PROFILE_API_OFF("SkSurface Flush & Submit", backBuffer_->flushAndSubmit());
-=======
-        RNS_PROFILE_API_OFF("Render Tree Pre-Paint", rootLayer_.get()->prePaint(backBuffer_.get()));
-        RNS_PROFILE_API_AVG_ON("Render Tree Paint", rootLayer_.get()->paint(backBuffer_.get()));
-        RNS_PROFILE_API_AVG_ON("SkSurface Flush & Submit", backBuffer_->flushAndSubmit());
->>>>>>> RNS Shell Implementation  (#8)
-#ifdef RNS_ENABLE_FRAME_RATE_CONTROL
-        {
             static double prevSwapTimestamp = SkTime::GetNSecs() * 1e-3;
             double diffUs = SkTime::GetNSecs() * 1e-3 - prevSwapTimestamp;
             int diff = RNS_TARGET_FPS_US - diffUs;
@@ -161,16 +147,9 @@ void Compositor::renderLayerTree() {
             prevSwapTimestamp = SkTime::GetNSecs() * 1e-3;
         }
 #endif
-<<<<<<< HEAD
         RNS_PROFILE_API_OFF("SwapBuffers", windowContext_->swapBuffers(surfaceDamage_));
-=======
-        RNS_PROFILE_API_AVG_ON("SwapBuffers", windowContext_->swapBuffers());
->>>>>>> RNS Shell Implementation  (#8)
-        window_->didRenderFrame();
-    }
 }
 
-<<<<<<< HEAD
 void Compositor::begin() {
     // Locke until render tree has rendered current tree
     std::scoped_lock lock(isMutating);
@@ -185,11 +164,11 @@ void Compositor::commit() {
     TaskLoop::main().dispatch([&]() {
         std::scoped_lock lock(isMutating); // Lock to make sure render tree is not mutated during the rendering
         RNS_PROFILE_API_OFF("RenderTree :", renderLayerTree());
-=======
-void Compositor::commit() {
-    TaskLoop::main().dispatch([&]() {
-        RNS_PROFILE_API_AVG_ON("RenderTree :", renderLayerTree());
->>>>>>> RNS Shell Implementation  (#8)
+void Compositor::begin() {
+    // Locke until render tree has rendered current tree
+    std::scoped_lock lock(isMutating);
+}
+
     });
 }
 

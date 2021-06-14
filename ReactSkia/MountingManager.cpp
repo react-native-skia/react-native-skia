@@ -92,11 +92,7 @@ void MountingManager::ProcessMutations(
 
 #if !defined(GOOGLE_STRIP_LOG) || (GOOGLE_STRIP_LOG <= INFO)
   static double prevTime = SkTime::GetMSecs();
-<<<<<<< HEAD
   RNS_LOG_INFO_EVERY_N(60, "Calling Compositor Commit(" << std::this_thread::get_id()) << ") : after " << SkTime::GetMSecs() - prevTime << " ms";
-=======
-  RNS_LOG_INFO_EVERY_N(60, "Called Compositor Commit(" << std::this_thread::get_id()) << ") : after " << SkTime::GetMSecs() - prevTime << " ms";
->>>>>>> RNS Shell Implementation  (#8)
   prevTime = SkTime::GetMSecs();
 #endif
   surface_->compositor()->commit();
@@ -110,10 +106,7 @@ void MountingManager::CreateMountInstruction(
   if (provider) {
     std::shared_ptr<RSkComponent> component =
         provider->CreateAndAddComponent(mutation.newChildShadowView);
-<<<<<<< HEAD
     component.get()->requiresLayer(mutation.newChildShadowView);
-=======
->>>>>>> RNS Shell Implementation  (#8)
   }
 }
 
