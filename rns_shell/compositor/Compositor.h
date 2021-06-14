@@ -31,12 +31,15 @@ public:
     void setViewportSize(const SkRect& viewportSize);
     SkRect& viewport() { return attributes_.viewportSize; }
     void invalidate();
-    void commit();
+    void begin(); // Call this before modifying render layer tree
+    void commit(); // Commit the changes in render layer tree
 
 private:
 
     void createWindowContext();
     void renderLayerTree();
+
+    std::mutex isMutating; // Lock the renderLayer tree while updating and rendering
 
     SharedLayer rootLayer_;
     std::unique_ptr<Window> window_;
