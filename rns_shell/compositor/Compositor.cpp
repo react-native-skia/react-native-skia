@@ -120,8 +120,18 @@ void Compositor::renderLayerTree() {
     }
 }
 
+void Compositor::begin() {
+    // Locke until render tree has rendered current tree
+    std::scoped_lock lock(isMutating);
+}
+
 void Compositor::commit() {
+
+    if(!windowContext_)
+        return;
+
     TaskLoop::main().dispatch([&]() {
+        std::scoped_lock lock(isMutating); // Lock to make sure render tree is not mutated during the rendering
         RNS_PROFILE_API_AVG_ON("RenderTree :", renderLayerTree());
     });
 }

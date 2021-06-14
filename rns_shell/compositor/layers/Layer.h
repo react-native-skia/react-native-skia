@@ -40,20 +40,20 @@ public:
     Layer* parent() { return parent_; }
 
     int layerId() { return layerId_;}
+    const LayerList& children() const { return children_; }
+    bool needsPainting();
     void appendChild(SharedLayer child);
     void insertChild(SharedLayer child, size_t index);
     void removeChild(SharedLayer child, size_t index);
 
-    void prePaint(SkSurface *surface);
-    void paint(SkSurface *surface);
+    virtual void prePaint(SkSurface *surface);
+    virtual void paint(SkSurface *surface);
     virtual void onPaint(SkSurface*) {}
 
 private:
     static uint64_t nextUniqueId();
 
     void setParent(Layer* layer);
-    bool needsPainting();
-    const LayerList& children() const { return children_; }
 
     int layerId_;
     Layer *parent_;

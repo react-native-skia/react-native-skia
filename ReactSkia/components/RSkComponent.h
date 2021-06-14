@@ -57,16 +57,20 @@ class RSkComponent : public RnsShell::Layer {
   virtual void updateComponentData(const ShadowView &newShadowView , const uint32_t updateMask);
   Component getComponentData() { return component_;};
   Rect getAbsoluteFrame(){return Rect{absOrigin_,component_.layoutMetrics.frame.size} ;};
+  std::shared_ptr<RnsShell::Layer> layer() { return layer_; }
 
  protected:
   virtual void OnPaint(SkCanvas *canvas) = 0;
 
  private:
+  void requiresLayer(const ShadowView &shadowView);
+  sk_sp<SkPicture> getPicture();
   // RnsShell::Layer implementations
   void onPaint(SkSurface *surface) override;
 
  private:
   RSkComponent *parent_;
+  std::shared_ptr<RnsShell::Layer> layer_;
   Point absOrigin_;
   Component component_;
 #ifdef RNS_ENABLE_API_PERF

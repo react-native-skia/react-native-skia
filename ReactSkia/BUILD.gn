@@ -7,6 +7,7 @@ declare_args() {
 
 config("ReactSkia_config") {
   include_dirs = [
+     "//rns_shell/",
      "//rns_shell/common",
      "//rns_shell/platform/graphics",
      "//rns_shell/platform/graphics/gl",

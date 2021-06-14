@@ -63,6 +63,8 @@ void MountingManager::ProcessMutations(
     ShadowViewMutationList const &mutations,
     SurfaceId surfaceId) {
 
+  surface_->compositor()->begin();
+
   for (auto const &mutation : mutations) {
     switch (mutation.type) {
       case ShadowViewMutation::Create: {
@@ -90,7 +92,7 @@ void MountingManager::ProcessMutations(
 
 #if !defined(GOOGLE_STRIP_LOG) || (GOOGLE_STRIP_LOG <= INFO)
   static double prevTime = SkTime::GetMSecs();
-  RNS_LOG_INFO_EVERY_N(60, "Called Compositor Commit(" << std::this_thread::get_id()) << ") : after " << SkTime::GetMSecs() - prevTime << " ms";
+  RNS_LOG_INFO_EVERY_N(60, "Calling Compositor Commit(" << std::this_thread::get_id()) << ") : after " << SkTime::GetMSecs() - prevTime << " ms";
   prevTime = SkTime::GetMSecs();
 #endif
   surface_->compositor()->commit();
