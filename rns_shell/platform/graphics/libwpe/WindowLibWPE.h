@@ -10,6 +10,9 @@
 
 #include <glib.h>
 
+#include "ReactSkia/sdk/NotificationCenter.h"
+#include "ReactSkia/sdk/RNSKeyCodeMapping.h"
+
 #include "include/private/SkChecksum.h"
 #include "src/core/SkTDynamicHash.h"
 
@@ -62,12 +65,13 @@ public:
     static SkTDynamicHash<WindowLibWPE, WPEWindowID> gWindowMap;
     static GMainLoop       *mainLoop_;
     static Application     *mainApp_; // Addded for triggering resize from window event.
-
 private:
     void setViewSize(int width, int height);
     bool initViewBackend(wpe_view_backend* viewBackend);
     bool initRenderTarget(wpe_view_backend* viewBackend, wpe_renderer_backend_egl* renderBackend);
     void closeWindow();
+    void onKey(rnsKey keyType,rnsKeyAction eventKeyAction);
+    rnsKey keyIdentifierForWPEKeyCode(int keyCode);
 
     struct wpe_renderer_backend_egl_target* rendererTarget_;
     PlatformDisplay *platformDisplay_;
@@ -77,8 +81,8 @@ private:
     int     viewWidth_;
     int     viewHeight_;
     int     MSAASampleCount_;
-
     typedef Window INHERITED;
+    NotificationCenter keyNotification;
 };
 
 }   // namespace RnsShell
