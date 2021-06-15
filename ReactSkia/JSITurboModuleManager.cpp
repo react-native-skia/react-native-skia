@@ -2,20 +2,12 @@
 
 #include "ReactSkia/utils/RnsLog.h"
 #include "ReactSkia/version.h"
-
-<<<<<<< HEAD
 #include "ReactSkia/utils/RnsLog.h"
-=======
->>>>>>> RNS Shell Implementation  (#8)
 
 #include "cxxreact/Instance.h"
 #include "jsi/JSIDynamic.h"
 
 #include <folly/io/async/ScopedEventBaseThread.h>
-<<<<<<< HEAD
-=======
-#include "modules/platform/nopoll/RSkWebSocketModule.h"
->>>>>>> RNS Shell Implementation  (#8)
 
 namespace facebook {
 namespace react {
@@ -244,7 +236,8 @@ JSITurboModuleManager::JSITurboModuleManager(Instance *bridgeInstance)
 
   modules_["Timing"] =
       std::make_shared<TimingModule>("Timing", jsInvoker, bridgeInstance);
-
+  modules_["TVNavigationEventEmitter"] =
+      std::make_shared<RSkTVNavigationEventEmitter>("TVNavigationEventEmitter",jsInvoker, bridgeInstance);
   modules_["AppState"] =
       std::make_shared<AppStateModule>("AppState", jsInvoker);
 

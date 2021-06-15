@@ -42,6 +42,7 @@ rn_cxx_component("textlayoutmanager") {
      "//rns_shell/common",
      "//rns_shell/platform/graphics",
      "//rns_shell/platform/graphics/gl",
+     "//ReactSkia/core_modules"
   ]
   defines = []
   if(rns_enable_api_profiling) {
@@ -117,6 +118,8 @@ source_set("ReactSkia") {
     "components/RSkComponentView.h",
     "modules/RSkWebSocketModuleBase.h",
     "modules/RSkWebSocketModuleBase.cpp",
+    "modules/RSkTVNavigationEventEmitter.cpp",
+    "modules/RSkTVNavigationEventEmitter.h",
     "views/common/RSkDrawUtils.h",
     "views/common/RSkDrawUtils.cpp",
   ]

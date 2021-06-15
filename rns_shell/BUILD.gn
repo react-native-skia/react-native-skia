@@ -53,6 +53,7 @@ if(is_linux && gl_display_backend == "x11") {
     "platform/graphics/x11/PlatformDisplayX11.cpp",
     "platform/graphics/x11/WindowX11.h",
     "platform/graphics/x11/WindowX11.cpp",
+    "platform/graphics/x11/X11KeyMap.cpp",
   ]
 
   if(!gl_has_gpu) {
@@ -77,6 +78,7 @@ if(is_linux && gl_display_backend == "libwpe") {
     "platform/graphics/libwpe/PlatformDisplayLibWPE.cpp",
     "platform/graphics/libwpe/PlatformDisplayLibWPE.h",
     "platform/graphics/libwpe/WindowLibWPE.cpp",
+    "platform/graphics/libwpe/WpeKeyMap.cpp",
   ]
   if(gl_has_gpu) {
     libwpe_platform_source += [ "platform/graphics/gl/egl/GLWindowContextEGLLibWPE.cpp" ]

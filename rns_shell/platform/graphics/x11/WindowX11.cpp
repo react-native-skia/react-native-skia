@@ -231,6 +231,8 @@ void WindowX11::closeWindow() {
 }
 
 bool WindowX11::handleEvent(const XEvent& event) {
+    int shiftLevel= (event.xkey.state & ShiftMask) ? 1 : 0;
+    KeySym keysym = XkbKeycodeToKeysym(display_, event.xkey.keycode,0,shiftLevel);
     switch (event.type) {
         case MapNotify:
             break;
@@ -242,6 +244,10 @@ bool WindowX11::handleEvent(const XEvent& event) {
             }
             break;
 
+        case KeyRelease:
+        case KeyPress:
+            onKey( keyIdentifierForX11KeyCode(keysym), (event.type == KeyRelease ) ? RNS_KEY_Release : RNS_KEY_Press);
+            break; 
         case ButtonPress:
             RNS_LOG_NOT_IMPL;
             break;
@@ -269,4 +275,9 @@ void WindowX11::setRequestedDisplayParams(const DisplayParams& params, bool allo
     //INHERITED::setRequestedDisplayParams(params, allowReattach);
 }
 
+void WindowX11::onKey(rnsKey eventKeyType, rnsKeyAction eventKeyAction){
+    std::string eventName = "RCTTVNavigationEventNotification";
+    keyNotification.emit(eventName, eventKeyType, eventKeyAction);
+    return;
+}
 }   // namespace RnsShell
