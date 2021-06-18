@@ -2,16 +2,19 @@
 
 #include "ReactSkia/RNInstance.h"
 #include "ReactSkia/RSkSurfaceWindow.h"
-#include "sk_app/Application.h"
+
+#include "rns_shell/common/Application.h"
 
 class SkCanvas;
 
-class ReactSkiaApp : public sk_app::Application {
+class ReactSkiaApp : public RnsShell::Application {
  public:
-  ReactSkiaApp(int argc, char **argv, void *platformData);
-  ~ReactSkiaApp() override;
 
-  void onIdle() override;
+  ReactSkiaApp(int argc, char **argv);
+  ~ReactSkiaApp();
+
+  void onIdle();
+  void onResize(int width, int height);
 
  private:
   std::unique_ptr<facebook::react::RNInstance> rnInstance_;

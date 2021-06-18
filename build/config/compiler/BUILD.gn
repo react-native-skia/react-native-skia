@@ -1973,6 +1973,25 @@ config("default_stack_frames") {
   # not be correct.
 }
 
+# Register variables -----------------------------------------------------------------
+#
+# Allow register variables or not
+# Note: C++17 doesnt support register variables
+
+config("registers") {
+  if(is_linux) {
+    cflags_cc = ["-Wdeprecated-register" ]
+    cflags_cc += ["-Wregister" ]
+  }
+}
+
+config("no_registers") {
+  if(is_linux) {
+    cflags_cc = ["-Wno-deprecated-register" ]
+    cflags_cc += ["-Wno-register" ]
+  }
+}
+
 # Default "optimization on" config.
 config("optimize") {
   if (is_win) {

@@ -1,0 +1,204 @@
+# Copyright (C) 1994-2021 OpenTV, Inc. and Nagravision S.A. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+import("//rns_shell/rns_shell.gni")
+
+config("rns_shell_config") {
+  cflags_cc = [ "-std=c++17", "-frtti"]
+  cflags_objcc = [ "-std=c++17" ]
+  include_dirs = [ "." ]
+
+  include_dirs += [
+    "common",
+    "platform/graphics",
+    "platform/graphics/gl",
+  ]
+
+  if(is_linux) {
+    defines = ["GOOGLE_STRIP_LOG=0"]
+    extra_cppflags = getenv("BUILD_CPPFLAGS")
+    if(extra_cppflags != "") {
+      defines += string_split(extra_cppflags)
+    }
+  }
+}
+
+if(is_linux && gl_has_gpu ) {
+  pkg_config("use_system_gl") {
+    if(gl_use_glx) {
+      packages = [ "glx" ]
+    } else {
+      packages = [ "egl" ]
+    }
+
+    if(gl_use_opengl_es) {
+      packages += [ "glesv2" ]
+    } else {
+      packages += [ "gl" ]
+    }
+    visibility = [ ":rns_shell" ]
+  }
+}
+
+#X11 Platform sources and dependenices
+if(is_linux && gl_display_backend == "x11") {
+  pkg_config("use_system_x11") {
+    packages = [ "x11" ]
+    visibility = [ ":rns_shell" ]
+  }
+  x11_platform_source = [
+    "platform/graphics/x11/PlatformDisplayX11.h",
+    "platform/graphics/x11/PlatformDisplayX11.cpp",
+    "platform/graphics/x11/WindowX11.h",
+    "platform/graphics/x11/WindowX11.cpp",
+  ]
+
+  if(!gl_has_gpu) {
+    x11_platform_source += [
+      "platform/graphics/x11/RasterWindowContextX11.h",
+      "platform/graphics/x11/RasterWindowContextX11.cpp",
+    ] # X11 Raster
+  }
+}
+
+#Libwpe Platform sources and dependenices
+if(is_linux && gl_display_backend == "libwpe") {
+  pkg_config("use_system_libwpe") {
+    packages = [
+      "wpe-${wpe_interface_version}",
+      "glib-2.0",
+    ]
+    visibility = [ ":rns_shell" ]
+  }
+
+  libwpe_platform_source = [
+    "platform/graphics/libwpe/PlatformDisplayLibWPE.cpp",
+    "platform/graphics/libwpe/PlatformDisplayLibWPE.h",
+    "platform/graphics/libwpe/WindowLibWPE.cpp",
+  ]
+  if(gl_has_gpu) {
+    libwpe_platform_source += [ "platform/graphics/gl/egl/GLWindowContextEGLLibWPE.cpp" ]
+  } else {
+    libwpe_platform_source += [
+      "platform/graphics/libwpe/RasterWindowContextLibWPE.h",
+      "platform/graphics/libwpe/RasterWindowContextLibWPE.cpp",
+    ] # LibWPE Raster
+  }
+}
+
+source_set("rns_shell") {
+
+  sources = [
+    "Application.h",
+    "common/Window.h",
+    "common/Window.cpp",
+    "common/WindowContext.h",
+    "common/WindowContext.cpp",
+    "common/Performance.h",
+    "common/Performance.cpp",
+    "compositor/Compositor.h",
+    "compositor/Compositor.cpp",
+    "compositor/layers/Layer.h",
+    "compositor/layers/Layer.cpp",
+  ]
+
+  if(gl_has_gpu) {
+    sources += [
+      "platform/graphics/gl/GLWindowContext.h",
+      "platform/graphics/gl/GLWindowContext.cpp",
+      "platform/graphics/gl/GrGLUtil.h",
+      "platform/graphics/gl/GrGLUtil.cpp",
+    ]
+  }
+
+  public_deps = [
+    "//skia",
+    "//folly",
+    "//third_party/libevent",
+  ]
+
+  if (is_mac) {
+    defines = [ "OS_MAC" ]
+
+    sources += [
+    ]
+
+    frameworks = [
+    ]
+  } else if (is_linux) {
+    defines = [ "OS_LINUX" ]
+
+    sources += [
+      "platform/graphics/WindowContextFactory.cpp",
+      "platform/graphics/WindowContextFactory.h",
+      "platform/graphics/PlatformDisplay.cpp",
+      "platform/graphics/PlatformDisplay.h",
+      "platform/linux/TaskLoop.h",
+      "platform/linux/TaskLoop.cpp",
+      "platform/linux/shell.cpp",
+    ]
+
+    # Backend type is x11. It can use either GLX or EGL interface for opengl
+    if (gl_display_backend == "x11") {
+      sources += x11_platform_source
+      configs += [ ":use_system_x11" ]
+      defines += [ "RNS_PLATFORM_X11" ]
+    } else if (gl_display_backend == "libwpe") { #Libwpe interface based backend. supports only EGL.
+      sources += libwpe_platform_source
+      configs += [ ":use_system_libwpe" ]
+      defines += [
+        "RNS_PLATFORM_LIBWPE",
+        "USE_WPE_RENDERER",
+      ]
+    }
+
+    if(gl_has_gpu) {
+      if(gl_use_glx && gl_display_backend == "x11") { # Use GLX interface. Only for x11 backend
+        defines += [ "USE_GLX" ]
+        sources += [
+          "platform/graphics/gl/glx/GLWindowContextGLX.cpp",
+          "platform/graphics/gl/glx/GrGLMakeNativeInterfaceGLX.cpp",
+        ]
+      } else { # Using EGL interface
+        sources += [
+          "platform/graphics/gl/egl/GLWindowContextEGL.cpp",
+          "platform/graphics/gl/egl/GrGLMakeNativeInterfaceEGL.cpp",
+        ]
+        if (gl_display_backend == "x11") {
+          sources += [ "platform/graphics/gl/egl/GLWindowContextEGLX11.cpp"]
+        }
+        defines += [
+          "USE_EGL",
+          "EGL_NO_X11"
+        ]
+      }
+      configs += [ ":use_system_gl" ]
+
+      # Flag for OpenGL ES
+      if(gl_use_opengl_es) {
+        defines += [ "USE_OPENGL_ES" ]
+      } else {
+        defines += [ "USE_OPENGL" ]
+      }
+      defines += [ "RNS_SHELL_HAS_GPU_SUPPORT" ]
+    } else {
+        if (gl_display_backend != "x11") {
+          defines += [
+            "EGL_NO_X11"
+          ]
+        }
+    }
+  }
+  public_configs = [ ":rns_shell_config" ]
+  configs += [ "//ReactSkia:ReactSkia_config" ]
+
+  configs -= [ "//build/config/compiler:chromium_code" ]
+  configs += [ "//build/config/compiler:no_chromium_code" ]
+  configs -= [ "//build/config/compiler:no_exceptions" ]
+  configs += [ "//build/config/compiler:exceptions" ]
+
+  if (is_clang) {
+    configs -= [ "//build/config/clang:find_bad_constructs" ]
+  }
+}

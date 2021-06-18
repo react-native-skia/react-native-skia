@@ -6,15 +6,15 @@
 #include "include/core/SkSurface.h"
 #include "include/effects/SkGradientShader.h"
 
-using namespace sk_app;
+using namespace RnsShell;
 
-Application *Application::Create(int argc, char **argv, void *platformData) {
-  return new ReactSkiaApp(argc, argv, platformData);
+Application *Application::Create(int argc, char **argv) {
+  return new ReactSkiaApp(argc, argv);
 }
 
-ReactSkiaApp::ReactSkiaApp(int argc, char **argv, void *platformData) {
+ReactSkiaApp::ReactSkiaApp(int argc, char **argv) {
   rnInstance_ = std::make_unique<facebook::react::RNInstance>();
-  surface_ = std::make_unique<facebook::react::RSkSurfaceWindow>(platformData);
+  surface_ = std::make_unique<facebook::react::RSkSurfaceWindow>();
   SkGraphics::Init();
   rnInstance_->Start(surface_.get());
 }
@@ -24,6 +24,9 @@ ReactSkiaApp::~ReactSkiaApp() {
 }
 
 void ReactSkiaApp::onIdle() {
-  // Just re-paint continously
-  surface_->GetWindow()->inval();
+  RNS_LOG_NOT_IMPL;
+}
+
+void ReactSkiaApp::onResize(int width, int height) {
+  surface_->compositor()->setViewportSize(SkRect::MakeWH(width, height));
 }
