@@ -29,7 +29,7 @@ void RSkComponent::onPaint(SkSurface *surface) {
   if(surface) {
     auto canvas = surface->getCanvas();
     if(canvas)
-        RNS_PROFILE_API_AVG_ON(componentName_ << " Paint:", OnPaint(canvas));
+        RNS_PROFILE_API_OFF(componentName_ << " Paint:", OnPaint(canvas));
   } else {
       RNS_LOG_ERROR("Invalid Surface ??");
   }
