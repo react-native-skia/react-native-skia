@@ -6,48 +6,74 @@
 
 #include "cxxreact/Instance.h"
 #include "ReactCommon/TurboModule.h"
+#include "core_modules/RSkEventEmitter.h"
 
 namespace facebook {
 namespace react {
 
-class RSkWebSocketModuleBase: public TurboModule { 
+class RSkWebSocketModuleBase: public RSkEventEmitter { 
    public :
 	RSkWebSocketModuleBase(
             const std::string &name,
             std::shared_ptr<CallInvoker> jsInvoker,
             Instance *bridgeInstance);
 
-        static jsi::Value NoOp(
-            jsi::Runtime &rt,
-            TurboModule &turboModule,
-            const jsi::Value *args,
-            size_t count) {
-            return jsi::Value::undefined();
-        }
     private:
         static jsi::Value getConnectWrapper(
             jsi::Runtime &rt,
             TurboModule &turboModule,
             const jsi::Value *args,
             size_t count);
-
-	static jsi::Value getCloseWrapper(
+        
+        static jsi::Value getCloseWrapper(
             jsi::Runtime &rt,
             TurboModule &turboModule,
             const jsi::Value *args,
             size_t count);
 
-	virtual jsi::Value getConnect(
+        static jsi::Value sendWrapper(
+            jsi::Runtime &rt,
+            TurboModule &turboModule,
+            const jsi::Value *args,
+            size_t count);
+
+        static jsi::Value sendBinaryWrapper(
+            jsi::Runtime &rt,
+            TurboModule &turboModule,
+            const jsi::Value *args,
+            size_t count);
+
+        static jsi::Value pingWrapper(
+            jsi::Runtime &rt,
+            TurboModule &turboModule,
+            const jsi::Value *args,
+            size_t count);
+
+        virtual jsi::Value getConnect(
             std::string,
             folly::dynamic,
             folly::dynamic,
             int) = 0;
 
-	virtual jsi::Value getClose(
+        virtual jsi::Value getClose(
             int,
             std::string,
             int) = 0;
 
+        virtual jsi::Value send(
+            std::string,
+            int) = 0;
+
+        virtual jsi::Value sendBinary(
+            std::string,
+            int) = 0;
+
+        virtual jsi::Value ping(
+            int) = 0;
+
+        void startObserving() {};
+
+        void stopObserving() {};
   
 };
 }//namespace react
