@@ -13,14 +13,8 @@ RSkComponent::RSkComponent(const ShadowView &shadowView)
     : parent_(nullptr)
     , absOrigin_(shadowView.layoutMetrics.frame.origin)
     , component_(shadowView)
-#ifdef RNS_ENABLE_API_PERF
-    , componentName_(shadowView.componentName ? shadowView.componentName : "Rootview")
-#endif
 {
     requiresLayer(shadowView);
-#ifdef RNS_ENABLE_API_PERF
-    RNS_UNUSED(componentName_);
-#endif
 }
 
 RSkComponent::~RSkComponent() {}
@@ -29,7 +23,7 @@ void RSkComponent::onPaint(SkSurface *surface) {
   if(surface) {
     auto canvas = surface->getCanvas();
     if(canvas)
-        RNS_PROFILE_API_AVG_ON(componentName_ << " Paint:", OnPaint(canvas));
+        RNS_PROFILE_API_AVG_ON(component_.componentName << " Paint:", OnPaint(canvas));
   } else {
       RNS_LOG_ERROR("Invalid Surface ??");
   }
@@ -43,7 +37,7 @@ sk_sp<SkPicture> RSkComponent::getPicture() {
   auto *canvas = recorder.beginRecording(SkRect::MakeXYWH(0, 0, frame.size.width, frame.size.height));
 
   if(canvas) {
-    RNS_PROFILE_API_OFF("Recording " << componentName_ << " Paint:", OnPaint(canvas));
+    RNS_PROFILE_API_OFF("Recording " << component_.componentName << " Paint:", OnPaint(canvas));
   } else {
     RNS_LOG_ERROR("Invalid canvas ??");
     return nullptr;
@@ -55,7 +49,9 @@ sk_sp<SkPicture> RSkComponent::getPicture() {
 void RSkComponent::requiresLayer(const ShadowView &shadowView) {
     RNS_LOG_TODO("Need to come up with rules to decide wheather we need to create picture layer, texture layer etc");
     RNS_LOG_TODO("For now use 0,0 as offset, in future this offset should represent abosulte x,y");
-    layer_ = RnsShell::PictureLayer::Create({0,0}, nullptr);
+    // Text components paragraph builder is not compatabile with Picture layer,so use default layer
+    if(strcmp(component_.componentName,"Paragraph"))
+       layer_ = RnsShell::PictureLayer::Create({0,0}, nullptr);
 }
 
 void RSkComponent::updateComponentData(const ShadowView &newShadowView , const uint32_t updateMask) {
@@ -72,7 +68,7 @@ void RSkComponent::updateComponentData(const ShadowView &newShadowView , const u
    }
    
    if(layer_) {
-      RNS_PROFILE_API_OFF(componentName_ << " getPicture :", static_cast<RnsShell::PictureLayer*>(layer_.get())->setPicture(getPicture()));
+     RNS_PROFILE_API_OFF(component_.componentName << " getPicture :", static_cast<RnsShell::PictureLayer*>(layer_.get())->setPicture(getPicture()));
    } 
 }
 
@@ -84,10 +80,18 @@ void RSkComponent::mountChildComponent(
         newChildComponent->parent_ = this;
         newChildComponent->absOrigin_ =  absOrigin_ + newChildComponent->component_.layoutMetrics.frame.origin;
     }
-    if(this->layer_)
-        this->layer_->insertChild(newChildComponent->layer_, index);
-    else
-        this->insertChild(newChildComponent, index);
+
+    if(this->layer_) { // If parent has a layer
+        if(newChildComponent->layer_)
+            this->layer_->insertChild(newChildComponent->layer_, index);
+        else
+            this->layer_->insertChild(newChildComponent, index);
+    }else {  // If parent itself is a layer type
+        if(newChildComponent->layer_)
+            this->insertChild(newChildComponent->layer_, index);
+        else
+            this->insertChild(newChildComponent, index);
+    }
 }
 
 void RSkComponent::unmountChildComponent(
@@ -98,10 +102,18 @@ void RSkComponent::unmountChildComponent(
         oldChildComponent->parent_ = nullptr ;
         oldChildComponent->absOrigin_ = oldChildComponent->component_.layoutMetrics.frame.origin;
     }
-    if(this->layer_)
-        this->layer_->removeChild(oldChildComponent->layer_, index);
-    else
-        this->removeChild(oldChildComponent, index);
+
+    if(this->layer_) { // If parent has a layer
+        if(oldChildComponent->layer_)
+            this->layer_->removeChild(oldChildComponent->layer_, index);
+        else
+            this->layer_->removeChild(oldChildComponent, index);
+    }else {  // If parent itself is a layer type
+        if(oldChildComponent->layer_)
+            this->removeChild(oldChildComponent->layer_, index);
+        else
+            this->removeChild(oldChildComponent, index);
+    }
 }
 
 } // namespace react

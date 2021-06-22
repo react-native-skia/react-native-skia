@@ -56,14 +56,7 @@ class TextLayoutManager : public RSkTextLayoutManager {
       ParagraphAttributes paragraphAttributes,
       Size size) const;
 
-  /*
-   * Returns an opaque pointer to platform-specific TextLayoutManager.
-   * Is used on a native views layer to delegate text rendering to the manager.
-   */
-  void *getNativeTextLayoutManager() const;
-
  private:
-  void *self_;
   ContextContainer::Shared contextContainer_;
   TextMeasureCache measureCache_{};
 };

@@ -73,10 +73,6 @@ void debugLayoutConstraints(LayoutConstraints layoutConstraints) {
 
 TextLayoutManager::~TextLayoutManager() {}
 
-void *TextLayoutManager::getNativeTextLayoutManager() const {
-  return self_;
-}
-
 TextMeasurement TextLayoutManager::measure(
     AttributedStringBox attributedStringBox,
     ParagraphAttributes paragraphAttributes,
