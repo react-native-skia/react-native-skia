@@ -10,6 +10,6 @@
   },
   "license": "MIT",
   "dependencies": {
-    "react-native": "1000.0.0"
+    "react-native": "file:../../react-native"
   }
 }
