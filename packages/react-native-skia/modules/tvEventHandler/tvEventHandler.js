@@ -3,7 +3,7 @@ import { View, AppRegistry, Image, Text, TVEventHandler } from 'react-native';
 
 console.log('TVEventHandler: ', TVEventHandler);
 
-class TvEventTestApp extends React.Component {
+class SimpleViewApp extends React.Component {
   constructor(props) {
     super(props);
 
@@ -21,15 +21,15 @@ class TvEventTestApp extends React.Component {
     this._tvEventHandler.enable(this, function(cmp, evt) {
       console.log('APP: TV Key event received: ', evt);
 
-      if (evt && evt.eventType === 'right') {
+      if (evt && evt.eventType === 'Right') {
         that.setState({bgColor: '#FF0000'})
-      } else if(evt && evt.eventType === 'up') {
+      } else if(evt && evt.eventType === 'Up') {
         that.setState({bgColor: '#00FF00'})
-      } else if(evt && evt.eventType === 'left') {
+      } else if(evt && evt.eventType === 'Left') {
         that.setState({bgColor: '#0000FF'})
-      } else if(evt && evt.eventType === 'down') {
+      } else if(evt && evt.eventType === 'Down') {
         that.setState({bgColor: '#00FFFF'})
-      } else if(evt && evt.eventType === 'select') {
+      } else if(evt && evt.eventType === 'Select') {
         that.setState({bgColor: '#FFFF00'})
       }
     });
@@ -74,4 +74,4 @@ class TvEventTestApp extends React.Component {
   }
 }
 
-AppRegistry.registerComponent('TvEventTestApp', () => TvEventTestApp);
+AppRegistry.registerComponent('SimpleViewApp', () => SimpleViewApp);
