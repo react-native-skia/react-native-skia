@@ -13,6 +13,7 @@ namespace facebook {
 namespace react {
 
 Point calculateFramePoint( Point origin , Size rect , float layoutWidth) {
+<<<<<<< HEAD
    /* Calculate the (x,y) cordinates of fragment attachments,based on the fragment width provided*/
    if(origin.x + rect.width < layoutWidth)
        origin.x += rect.width ;
@@ -22,6 +23,17 @@ Point calculateFramePoint( Point origin , Size rect , float layoutWidth) {
        origin.y += rect.height;
    }
    return origin;
+=======
+     /* Calculate the (x,y) cordinates of fragment attachments,based on the fragment width provided*/
+     if(origin.x + rect.width < layoutWidth)
+         origin.x += rect.width ;
+     else {
+         auto delta = layoutWidth - origin.x ;
+         origin.x = rect.width - delta ;
+         origin.y += rect.height;
+     }
+     return origin;
+>>>>>>> Native Text component & Text Layout Manager handle computation & draw of nested text  (#17)
 }
 
 TextAlign convertTextAlign (TextAlignment alignment) {
@@ -65,11 +77,20 @@ TextMeasurement RSkTextLayoutManager::doMeasure (AttributedString attributedStri
     auto paragraph = builder->Build();
     paragraph->layout(layoutConstraints.maximumSize.width);
 
+<<<<<<< HEAD
     size.width = paragraph->getMaxIntrinsicWidth() < paragraph->getMaxWidth() ?                                            paragraph->getMaxIntrinsicWidth() :                                            paragraph->getMaxWidth();
     size.height = paragraph->getHeight();
 
     Point attachmentPoint = calculateFramePoint({0,0}, size, layoutConstraints.maximumSize.width);
 
+=======
+    size.width = paragraph->getMaxIntrinsicWidth() < paragraph->getMaxWidth() ?
+	                                                          paragraph->getMaxIntrinsicWidth() :
+								  paragraph->getMaxWidth();
+    size.height = paragraph->getHeight();
+
+    Point attachmentPoint = calculateFramePoint({0,0}, size, layoutConstraints.maximumSize.width);
+>>>>>>> Native Text component & Text Layout Manager handle computation & draw of nested text  (#17)
     for (auto const &fragment : attributedString.getFragments()) {
        if (fragment.isAttachment()) {
            Rect rect;
@@ -78,11 +99,18 @@ TextMeasurement RSkTextLayoutManager::doMeasure (AttributedString attributedStri
            /* TODO : We will be unable to calculate exact (x,y) cordinates for the attachments*/
            /* Reason : attachment fragment width is clamped width wrt layout width; */
            /*          so we do not know actual position at which the previous attachment cordinate ends*/
+<<<<<<< HEAD
            /* But we need to still calculate total container height here, from all attachments */
            /* NOTE : height value calculated would be approximate,since we lack the knowledge of actual frag width here*/
            attachmentPoint = calculateFramePoint(attachmentPoint, rect.size, layoutConstraints.maximumSize.width);
            attachments.push_back(TextMeasurement::Attachment{rect, false});
 
+=======
+           /* But we need to still calculate total container height here, from all attachments */ 
+           /* NOTE : height value calculated would be approximate,since we lack the knowledge of actual frag width here*/
+           attachmentPoint = calculateFramePoint(attachmentPoint, rect.size, layoutConstraints.maximumSize.width);
+           attachments.push_back(TextMeasurement::Attachment{rect, false});
+>>>>>>> Native Text component & Text Layout Manager handle computation & draw of nested text  (#17)
        }
     }
 
@@ -103,15 +131,9 @@ uint32_t RSkTextLayoutManager::buildParagraph (AttributedString attributedString
     auto fontSize = TextAttributes::defaultTextAttributes().fontSize;
     auto fontSizeMultiplier = TextAttributes::defaultTextAttributes().fontSizeMultiplier;
 
-    for(auto &fragment: attributedString.getFragments()) {
-        if(fragment.isAttachment()) {
            attachmentCount++;
            continue;
         }
-                                 fragment.textAttributes.fontSize :
-                                 TextAttributes::defaultTextAttributes().fontSize;
-
-        fontSizeMultiplier = !std::isnan(fragment.textAttributes.fontSizeMultiplier) ?
                                    fragment.textAttributes.fontSizeMultiplier :
                                    TextAttributes::defaultTextAttributes().fontSizeMultiplier;
 
