@@ -10,14 +10,14 @@ namespace facebook {
 namespace react {
 
 RSkComponent::RSkComponent(const ShadowView &shadowView)
-    : parent_(nullptr)
+    : INHERITED(RnsShell::LAYER_TYPE_DEFAULT)
+    , parent_(nullptr)
     , absOrigin_(shadowView.layoutMetrics.frame.origin)
     , component_(shadowView)
 #ifdef RNS_ENABLE_API_PERF
     , componentName_(shadowView.componentName ? shadowView.componentName : "Rootview")
 #endif
 {
-    requiresLayer(shadowView);
 #ifdef RNS_ENABLE_API_PERF
     RNS_UNUSED(componentName_);
 #endif
@@ -54,8 +54,7 @@ sk_sp<SkPicture> RSkComponent::getPicture() {
 
 void RSkComponent::requiresLayer(const ShadowView &shadowView) {
     RNS_LOG_TODO("Need to come up with rules to decide wheather we need to create picture layer, texture layer etc");
-    RNS_LOG_TODO("For now use 0,0 as offset, in future this offset should represent abosulte x,y");
-    layer_ = RnsShell::PictureLayer::Create({0,0}, nullptr);
+    layer_ = RnsShell::Layer::Create(RnsShell::LAYER_TYPE_PICTURE);
 }
 
 void RSkComponent::updateComponentData(const ShadowView &newShadowView , const uint32_t updateMask) {
@@ -68,7 +67,7 @@ void RSkComponent::updateComponentData(const ShadowView &newShadowView , const u
    if(updateMask & ComponentUpdateMaskLayoutMetrics)
       component_.layoutMetrics = newShadowView.layoutMetrics;
 
-   if(layer_) {
+   if(layer_ && layer_->type() == RnsShell::LAYER_TYPE_PICTURE) {
      RNS_PROFILE_API_OFF(componentName_ << " getPicture :", static_cast<RnsShell::PictureLayer*>(layer_.get())->setPicture(getPicture()));
    }
 }
@@ -81,10 +80,10 @@ void RSkComponent::mountChildComponent(
         newChildComponent->parent_ = this;
         newChildComponent->absOrigin_ =  absOrigin_ + newChildComponent->component_.layoutMetrics.frame.origin;
     }
+
+    RNS_LOG_ASSERT((this->layer_ && newChildComponent->layer_), "Layer Object cannot be null");
     if(this->layer_)
         this->layer_->insertChild(newChildComponent->layer_, index);
-    else
-        this->insertChild(newChildComponent, index);
 }
 
 void RSkComponent::unmountChildComponent(
@@ -95,10 +94,10 @@ void RSkComponent::unmountChildComponent(
         oldChildComponent->parent_ = nullptr ;
         oldChildComponent->absOrigin_ = oldChildComponent->component_.layoutMetrics.frame.origin;
     }
+
+    RNS_LOG_ASSERT((this->layer_ && oldChildComponent->layer_), "Layer Object cannot be null");
     if(this->layer_)
         this->layer_->removeChild(oldChildComponent->layer_, index);
-    else
-        this->removeChild(oldChildComponent, index);
 }
 
 } // namespace react

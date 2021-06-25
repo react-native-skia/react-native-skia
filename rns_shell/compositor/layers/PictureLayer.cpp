@@ -10,14 +10,14 @@
 
 namespace RnsShell {
 
-SharedPictureLayer PictureLayer::Create(const SkPoint& offset, sk_sp<SkPicture> picture) {
-    return std::make_shared<PictureLayer>(offset, picture);
+SharedPictureLayer PictureLayer::Create() {
+    return std::make_shared<PictureLayer>();
 }
 
-PictureLayer::PictureLayer(const SkPoint& offset,
-                           sk_sp<SkPicture> picture)
-    : offset_(offset),
-      picture_(std::move(picture)) {}
+PictureLayer::PictureLayer()
+    : INHERITED(LAYER_TYPE_PICTURE) {
+    RNS_LOG_INFO("Picture Layer Constructed(" << this << ") with ID : " << layerId());
+}
 
 void PictureLayer::prePaint(SkSurface *surface) {
 }
@@ -34,7 +34,6 @@ void PictureLayer::paint(SkSurface *surface) {
         SkAutoCanvasRestore save(canvas, true);
         RNS_LOG_TRACE("SkPicture ( "  << picture_ << " )For " <<
                 picture_.get()->approximateOpCount() << " operations and size : " << picture_.get()->approximateBytesUsed());
-        canvas->translate(offset_.x(), offset_.y());
         picture()->playback(canvas);
     }
 

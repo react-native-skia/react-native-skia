@@ -102,11 +102,11 @@ void MountingManager::ProcessMutations(
 void MountingManager::CreateMountInstruction(
     ShadowViewMutation const &mutation,
     SurfaceId surfaceId) {
-
   auto provider = GetProvider(mutation.newChildShadowView);
   if (provider) {
     std::shared_ptr<RSkComponent> component =
         provider->CreateAndAddComponent(mutation.newChildShadowView);
+    component.get()->requiresLayer(mutation.newChildShadowView);
   }
 }
 
