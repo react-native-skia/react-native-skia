@@ -38,7 +38,7 @@ struct Component {
 
 class RSkComponent;
 
-class RSkComponent : public RnsShell::Layer {
+class RSkComponent : public RnsShell::Layer, public std::enable_shared_from_this<RSkComponent>  {
  public:
   RSkComponent(const ShadowView &shadowView);
   RSkComponent(RSkComponent &&) = default;
@@ -58,21 +58,27 @@ class RSkComponent : public RnsShell::Layer {
   Component getComponentData() { return component_;};
   Point getFrameOrigin() { return absOrigin_;};
   Size getFrameSize() { return component_.layoutMetrics.frame.size;};
+  std::shared_ptr<RnsShell::Layer> layer() { return layer_; }
+  void requiresLayer(const ShadowView &shadowView);
 
  protected:
   virtual void OnPaint(SkCanvas *canvas) = 0;
 
  private:
+  sk_sp<SkPicture> getPicture();
   // RnsShell::Layer implementations
   void onPaint(SkSurface *surface) override;
 
  private:
   RSkComponent *parent_;
+  std::shared_ptr<RnsShell::Layer> layer_;
   Point absOrigin_;
   Component component_;
 #ifdef RNS_ENABLE_API_PERF
   ComponentName componentName_;
 #endif
+
+  typedef Layer INHERITED;
 };
 
 } // namespace react

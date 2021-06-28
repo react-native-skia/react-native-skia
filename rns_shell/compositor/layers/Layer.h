@@ -26,37 +26,46 @@ namespace RnsShell {
 
 class Layer;
 
+enum LayerType {
+  LAYER_TYPE_DEFAULT = 0, // Default layer type which which will use component specific APIs to paint.
+  LAYER_TYPE_PICTURE, // SkPiture based layer.
+  LAYER_TYPE_TEXTURED, // SkTexture based layer.
+};
+
 typedef std::vector<std::shared_ptr<Layer> > LayerList;
 using SharedLayer = std::shared_ptr<Layer>;
 
 class Layer {
 public:
 
-    static SharedLayer Create();
-    Layer();
+    static SharedLayer Create(LayerType type = LAYER_TYPE_DEFAULT);
+    Layer(LayerType);
     virtual ~Layer() {};
 
     Layer* rootLayer();
     Layer* parent() { return parent_; }
 
+    LayerType type() { return type_; }
     int layerId() { return layerId_;}
+
+    const LayerList& children() const { return children_; }
+    bool needsPainting();
     void appendChild(SharedLayer child);
     void insertChild(SharedLayer child, size_t index);
     void removeChild(SharedLayer child, size_t index);
 
-    void prePaint(SkSurface *surface);
-    void paint(SkSurface *surface);
+    virtual void prePaint(SkSurface *surface);
+    virtual void paint(SkSurface *surface);
     virtual void onPaint(SkSurface*) {}
 
 private:
     static uint64_t nextUniqueId();
 
     void setParent(Layer* layer);
-    bool needsPainting();
-    const LayerList& children() const { return children_; }
 
     int layerId_;
     Layer *parent_;
+    LayerType type_;
     LayerList children_;
 };
 

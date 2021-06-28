@@ -7,11 +7,19 @@
 */
 
 #include "compositor/layers/Layer.h"
+#include "compositor/layers/PictureLayer.h"
 
 namespace RnsShell {
 
-SharedLayer Layer::Create() {
-    return std::make_shared<Layer>();
+SharedLayer Layer::Create(LayerType type) {
+    switch(type) {
+        case LAYER_TYPE_PICTURE:
+            return std::make_shared<PictureLayer>();
+        case LAYER_TYPE_DEFAULT:
+        default:
+            RNS_LOG_ASSERT(false, "Default layers can be created only from RSkComponent constructor");
+            return nullptr;
+    }
 }
 
 uint64_t Layer::nextUniqueId() {
@@ -23,10 +31,11 @@ uint64_t Layer::nextUniqueId() {
     return id;
 }
 
-Layer::Layer()
+Layer::Layer(LayerType type)
     : layerId_(nextUniqueId())
-    , parent_(nullptr) {
-    RNS_LOG_DEBUG("Layer Constructed(" << this << ") with ID : " << layerId_);
+    , parent_(nullptr)
+    , type_(type) {
+    RNS_LOG_INFO("Layer Constructed(" << this << ") with ID : " << layerId_);
 }
 
 Layer* Layer::rootLayer() {

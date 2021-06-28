@@ -106,7 +106,10 @@ void RNInstance::Start(RSkSurfaceWindow *surface) {
 
   // NOTE(kudo): Does adding RootView here make sense !?
   auto *provider = componentViewRegistry_->GetProvider(RootComponentName);
-  surface->compositor()->setRootLayer(provider->CreateComponent({}));
+  auto component = provider->CreateComponent({});
+  component.get()->requiresLayer({});
+  if(component)
+    surface->compositor()->setRootLayer(component->layer() ? component->layer() : component);
 }
 
 void RNInstance::Stop() {

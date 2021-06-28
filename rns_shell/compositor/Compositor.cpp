@@ -100,8 +100,8 @@ void Compositor::renderLayerTree() {
             glViewport(0, 0, viewportSize.width(), viewportSize.height());
 #endif
         RNS_PROFILE_API_OFF("Render Tree Pre-Paint", rootLayer_.get()->prePaint(backBuffer_.get()));
-        RNS_PROFILE_API_AVG_ON("Render Tree Paint", rootLayer_.get()->paint(backBuffer_.get()));
-        RNS_PROFILE_API_AVG_ON("SkSurface Flush & Submit", backBuffer_->flushAndSubmit());
+        RNS_PROFILE_API_OFF("Render Tree Paint", rootLayer_.get()->paint(backBuffer_.get()));
+        RNS_PROFILE_API_OFF("SkSurface Flush & Submit", backBuffer_->flushAndSubmit());
 #ifdef RNS_ENABLE_FRAME_RATE_CONTROL
         {
             static double prevSwapTimestamp = SkTime::GetNSecs() * 1e-3;
@@ -115,14 +115,24 @@ void Compositor::renderLayerTree() {
             prevSwapTimestamp = SkTime::GetNSecs() * 1e-3;
         }
 #endif
-        RNS_PROFILE_API_AVG_ON("SwapBuffers", windowContext_->swapBuffers());
+        RNS_PROFILE_API_OFF("SwapBuffers", windowContext_->swapBuffers());
         window_->didRenderFrame();
     }
 }
 
+void Compositor::begin() {
+    // Locke until render tree has rendered current tree
+    std::scoped_lock lock(isMutating);
+}
+
 void Compositor::commit() {
+
+    if(!windowContext_)
+        return;
+
     TaskLoop::main().dispatch([&]() {
-        RNS_PROFILE_API_AVG_ON("RenderTree :", renderLayerTree());
+        std::scoped_lock lock(isMutating); // Lock to make sure render tree is not mutated during the rendering
+        RNS_PROFILE_API_OFF("RenderTree :", renderLayerTree());
     });
 }
 
