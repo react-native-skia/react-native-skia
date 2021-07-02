@@ -29,10 +29,15 @@ static const EGLenum gEGLAPIVersion = EGL_OPENGL_API;
 #endif
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 static PFNEGLSWAPBUFFERSWITHDAMAGEEXTPROC eglSwapBuffersWithDamage = nullptr;
 
 =======
 >>>>>>> RNS Shell Implementation  (#8)
+=======
+static PFNEGLSWAPBUFFERSWITHDAMAGEEXTPROC eglSwapBuffersWithDamage = nullptr;
+
+>>>>>>> Munez graphics (#20)
 const char* GLWindowContextEGL::errorString(int statusCode) {
     static_assert(sizeof(int) >= sizeof(EGLint), "EGLint must not be wider than int");
     switch (statusCode) {
@@ -338,10 +343,14 @@ sk_sp<const GrGLInterface> GLWindowContextEGL::onInitializeContext() {
 
     glClearStencil(0);
 <<<<<<< HEAD
+<<<<<<< HEAD
     glClearColor(0, 0, 0, 0);
 =======
     glClearColor(0, 0, 0xff, 0);
 >>>>>>> RNS Shell Implementation  (#8)
+=======
+    glClearColor(0, 0, 0, 0);
+>>>>>>> Munez graphics (#20)
     glStencilMask(0xffffffff);
     glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
@@ -402,14 +411,19 @@ bool GLWindowContextEGL::makeContextCurrent() {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 void GLWindowContextEGL::onSwapBuffers(std::vector<SkIRect> &damage) {
 =======
 void GLWindowContextEGL::onSwapBuffers() {
 >>>>>>> RNS Shell Implementation  (#8)
+=======
+void GLWindowContextEGL::onSwapBuffers(std::vector<SkIRect> &damage) {
+>>>>>>> Munez graphics (#20)
     if (glContext_ && glSurface_) {
 #if !defined(GOOGLE_STRIP_LOG) || (GOOGLE_STRIP_LOG <= INFO)
         RNS_GET_TIME_STAMP_US(start);
 #endif
+<<<<<<< HEAD
 <<<<<<< HEAD
 
 #if USE(RNS_SHELL_PARTIAL_UPDATES)
@@ -431,6 +445,14 @@ void GLWindowContextEGL::onSwapBuffers() {
 =======
         eglSwapBuffers(platformDisplay_.eglDisplay(), glSurface_);
 >>>>>>> RNS Shell Implementation  (#8)
+=======
+        if(eglSwapBuffersWithDamage) {
+            auto rects = RectsToInts(platformDisplay_.eglDisplay(), glSurface_, damage);
+            eglSwapBuffersWithDamage(platformDisplay_.eglDisplay(), glSurface_, rects.data(), damage.size());
+        } else {
+            eglSwapBuffers(platformDisplay_.eglDisplay(), glSurface_);
+        }
+>>>>>>> Munez graphics (#20)
 #if !defined(GOOGLE_STRIP_LOG) || (GOOGLE_STRIP_LOG <= INFO)
         RNS_GET_TIME_STAMP_US(end);
         Performance::takeSamples(end - start);
@@ -440,6 +462,9 @@ void GLWindowContextEGL::onSwapBuffers() {
 
 void GLWindowContextEGL::swapInterval() {
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> Munez graphics (#20)
     EGLDisplay display = platformDisplay_.eglDisplay();
     const char* extensions = eglQueryString(display, EGL_EXTENSIONS);
 
@@ -459,6 +484,7 @@ void GLWindowContextEGL::swapInterval() {
         }
     }
 
+<<<<<<< HEAD
     eglSwapInterval(platformDisplay_.eglDisplay(), displayParams_.disableVsync_ ? 0 : 1);
 }
 
@@ -571,6 +597,31 @@ void GLWindowContextEGL::eglDeleteOffscreenFrameBuffer() {
 }
 
 >>>>>>> RNS Shell Implementation  (#8)
+=======
+    eglSwapInterval(platformDisplay_.eglDisplay(), displayParams_.disableVsync_ ? 0 : 1);
+}
+
+std::vector<EGLint> GLWindowContextEGL::RectsToInts(EGLDisplay display, EGLSurface surface, const std::vector<SkIRect>& rects) {
+    std::vector<EGLint> res;
+    EGLint height;
+
+    eglQuerySurface(platformDisplay_.eglDisplay(), glSurface_, EGL_HEIGHT, &height);
+    res.reserve(rects.size() * 4);
+
+    for (const auto& r : rects) {
+        res.push_back(r.left());
+        res.push_back(height - r.bottom());
+        res.push_back(r.width());
+        res.push_back(r.height());
+    }
+    return res;
+}
+
+bool GLWindowContextEGL::onHasSwapBuffersWithDamage() {
+    return !!eglSwapBuffersWithDamage;
+}
+
+>>>>>>> Munez graphics (#20)
 }  // namespace RnsShell
 
 #endif // USE(EGL)

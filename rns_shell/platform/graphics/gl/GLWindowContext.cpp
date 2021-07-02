@@ -82,10 +82,14 @@ sk_sp<SkSurface> GLWindowContext::getBackbufferSurface() {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> Munez graphics (#20)
 void GLWindowContext::swapBuffers(std::vector<SkIRect> &damage) {
     this->onSwapBuffers(damage);
 }
 
+<<<<<<< HEAD
 #if USE(RNS_SHELL_PARTIAL_UPDATES)
 bool GLWindowContext::hasSwapBuffersWithDamage() {
     return this->onHasSwapBuffersWithDamage();
@@ -99,6 +103,10 @@ bool GLWindowContext::hasBufferCopy() {
 =======
 void GLWindowContext::swapBuffers() {
     this->onSwapBuffers();
+=======
+bool GLWindowContext::hasSwapBuffersWithDamage() {
+    return this->onHasSwapBuffersWithDamage();
+>>>>>>> Munez graphics (#20)
 }
 
 >>>>>>> RNS Shell Implementation  (#8)

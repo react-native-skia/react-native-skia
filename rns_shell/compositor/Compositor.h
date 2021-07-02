@@ -38,12 +38,22 @@ public:
     bool supportsPartialUpdates() { return supportPartialUpdate_; } // Wheather compositor can support partial paint and update
     void addDamageRect(SkIRect damage) { if(supportPartialUpdate_ && !damage.isEmpty()) surfaceDamage_.push_back(damage); }
 #endif
+<<<<<<< HEAD
+=======
+
+private:
+>>>>>>> Munez graphics (#20)
 
     void createWindowContext();
     void renderLayerTree();
     SkRect beginClip(SkCanvas *canvas);
 
     std::mutex isMutating; // Lock the renderLayer tree while updating and rendering
+
+#if USE(RNS_SHELL_PARTIAL_UPDATES)
+    bool supportPartialUpdate_;
+#endif
+    std::vector<SkIRect> surfaceDamage_;
 
 #if USE(RNS_SHELL_PARTIAL_UPDATES)
     bool supportPartialUpdate_;

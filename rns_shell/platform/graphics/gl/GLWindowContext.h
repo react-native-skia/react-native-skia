@@ -61,6 +61,7 @@ public:
     bool isValid() override { return SkToBool(backendContext_.get()); }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
     void swapBuffers(std::vector<SkIRect> &damage) override;
 #if USE(RNS_SHELL_PARTIAL_UPDATES)
     bool hasSwapBuffersWithDamage() override;
@@ -69,6 +70,10 @@ public:
 =======
     void swapBuffers() override;
 >>>>>>> RNS Shell Implementation  (#8)
+=======
+    void swapBuffers(std::vector<SkIRect> &damage) override;
+    bool hasSwapBuffersWithDamage() override;
+>>>>>>> Munez graphics (#20)
 
     void setDisplayParams(const DisplayParams& params) override;
     static std::unique_ptr<GLWindowContext> createContextForWindow(GLNativeWindowType windowHandle, PlatformDisplay* = nullptr);
@@ -86,6 +91,7 @@ protected:
     void destroyContext();
     virtual void onDestroyContext() = 0;
 <<<<<<< HEAD
+<<<<<<< HEAD
     virtual void onSwapBuffers(std::vector<SkIRect> &damage) = 0;
 #if USE(RNS_SHELL_PARTIAL_UPDATES)
     virtual bool onHasSwapBuffersWithDamage() = 0;
@@ -93,6 +99,10 @@ protected:
 #endif
 =======
     virtual void onSwapBuffers() = 0;
+=======
+    virtual void onSwapBuffers(std::vector<SkIRect> &damage) = 0;
+    virtual bool onHasSwapBuffersWithDamage() = 0;
+>>>>>>> Munez graphics (#20)
 
 >>>>>>> RNS Shell Implementation  (#8)
     sk_sp<const GrGLInterface> backendContext_;

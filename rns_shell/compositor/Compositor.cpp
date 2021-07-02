@@ -48,11 +48,18 @@ Compositor::Compositor(SkRect& viewportSize, float scaleFactor)
         attributes_.needsResize = !viewportSize.isEmpty();
     }
 #if USE(RNS_SHELL_PARTIAL_UPDATES)
+<<<<<<< HEAD
     supportPartialUpdate_ = windowContext_->hasSwapBuffersWithDamage() || windowContext_->hasBufferCopy();
     RNS_LOG_DEBUG("Support for Swapbuffer with damage rect : " << windowContext_->hasSwapBuffersWithDamage() <<
                   " Support for Copy buffer : " <<  windowContext_->hasBufferCopy());
 #endif
     RNS_LOG_DEBUG("Native Window Handle : " << nativeWindowHandle_ << " Window Context : " << windowContext_.get() << "Back Buffer : " << backBuffer_.get());
+=======
+    supportPartialUpdate_ = windowContext_->hasSwapBuffersWithDamage(); // TODO || Or atleast support front to back buffer copy.
+#endif
+    RNS_LOG_DEBUG("Native Window Handle : " << nativeWindowHandle_ << " Window Context : " << windowContext_.get() << "Back Buffer : " << backBuffer_.get() <<
+                  "Has swapbuffer support with damage rect : " << windowContext_->hasSwapBuffersWithDamage());
+>>>>>>> Munez graphics (#20)
 }
 
 Compositor::~Compositor() {
@@ -80,10 +87,16 @@ SkRect Compositor::beginClip(SkCanvas *canvas) {
 
     SkPath clipPath = SkPath();
     for (auto& rect : surfaceDamage_) {
+<<<<<<< HEAD
         RNS_LOG_DEBUG("Add Damage " << rect.x() << " " << rect.y() << " " << rect.width() << " " << rect.height());
         clipPath.addRect(rect.left(), rect.top(), rect.right(), rect.bottom());
     }
 
+=======
+        RNS_LOG_DEBUG("Damage " << rect.x() << " " << rect.y() << " " << rect.width() << " " << rect.height());
+        clipPath.addRect(rect.left(), rect.top(), rect.right(), rect.bottom());
+    }
+>>>>>>> Munez graphics (#20)
     if(clipPath.getBounds().isEmpty())
         return clipBound;
 
@@ -136,6 +149,11 @@ void Compositor::renderLayerTree() {
         RNS_PROFILE_API_OFF("Render Tree Pre-Paint", rootLayer_.get()->prePaint(paintContext));
         RNS_PROFILE_API_OFF("Render Tree Paint", rootLayer_.get()->paint(paintContext));
         RNS_PROFILE_API_OFF("SkSurface Flush & Submit", backBuffer_->flushAndSubmit());
+<<<<<<< HEAD
+=======
+#ifdef RNS_ENABLE_FRAME_RATE_CONTROL
+        {
+>>>>>>> Munez graphics (#20)
             static double prevSwapTimestamp = SkTime::GetNSecs() * 1e-3;
             double diffUs = SkTime::GetNSecs() * 1e-3 - prevSwapTimestamp;
             int diff = RNS_TARGET_FPS_US - diffUs;
@@ -148,6 +166,11 @@ void Compositor::renderLayerTree() {
         }
 #endif
         RNS_PROFILE_API_OFF("SwapBuffers", windowContext_->swapBuffers(surfaceDamage_));
+<<<<<<< HEAD
+=======
+        window_->didRenderFrame();
+    }
+>>>>>>> Munez graphics (#20)
 }
 
 void Compositor::begin() {
@@ -164,11 +187,14 @@ void Compositor::commit() {
     TaskLoop::main().dispatch([&]() {
         std::scoped_lock lock(isMutating); // Lock to make sure render tree is not mutated during the rendering
         RNS_PROFILE_API_OFF("RenderTree :", renderLayerTree());
+<<<<<<< HEAD
 void Compositor::begin() {
     // Locke until render tree has rendered current tree
     std::scoped_lock lock(isMutating);
 }
 
+=======
+>>>>>>> Munez graphics (#20)
     });
 }
 

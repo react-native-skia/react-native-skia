@@ -43,6 +43,11 @@ struct Component {
 class RSkComponent;
 
 class RSkComponent : public RnsShell::Layer, public std::enable_shared_from_this<RSkComponent>  {
+<<<<<<< HEAD
+=======
+ public:
+  RSkComponent(const ShadowView &shadowView);
+>>>>>>> Munez graphics (#20)
   RSkComponent(RSkComponent &&) = default;
   RSkComponent &operator=(RSkComponent &&) = default;
 

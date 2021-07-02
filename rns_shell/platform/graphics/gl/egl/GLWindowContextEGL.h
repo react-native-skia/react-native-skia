@@ -37,6 +37,7 @@ public:
     static bool isExtensionSupported(const char* extensionList, const char* extension);
 
 <<<<<<< HEAD
+<<<<<<< HEAD
     void onSwapBuffers(std::vector<SkIRect> &damage) override;
     void onDestroyContext() override;
 #if USE(RNS_SHELL_PARTIAL_UPDATES)
@@ -45,7 +46,11 @@ public:
 #endif
 =======
     void onSwapBuffers() override;
+=======
+    void onSwapBuffers(std::vector<SkIRect> &damage) override;
+>>>>>>> Munez graphics (#20)
     void onDestroyContext() override;
+    bool onHasSwapBuffersWithDamage() override;
 
 >>>>>>> RNS Shell Implementation  (#8)
 protected:
@@ -73,9 +78,13 @@ private:
 #endif
     bool makeContextCurrent() override;
     void swapInterval();
+<<<<<<< HEAD
 
 <<<<<<< HEAD
 =======
+=======
+    std::vector<EGLint> RectsToInts(EGLDisplay display, EGLSurface surface, const std::vector<SkIRect>& rects);
+>>>>>>> Munez graphics (#20)
 
 >>>>>>> RNS Shell Implementation  (#8)
     GLNativeWindowType      window_;

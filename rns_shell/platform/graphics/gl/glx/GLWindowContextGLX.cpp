@@ -231,11 +231,16 @@ bool GLWindowContextGLX::makeContextCurrent() {
 
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 void GLWindowContextGLX::onSwapBuffers(std::vector<SkIRect> &damage) {
     RNS_UNUSED(damage);
 =======
 void GLWindowContextGLX::onSwapBuffers() {
 >>>>>>> RNS Shell Implementation  (#8)
+=======
+void GLWindowContextGLX::onSwapBuffers(std::vector<SkIRect> &damage) {
+    RNS_UNUSED(damage);
+>>>>>>> Munez graphics (#20)
     if (display_ && glContext_) {
 #if !defined(GOOGLE_STRIP_LOG) || (GOOGLE_STRIP_LOG <= INFO)
         RNS_GET_TIME_STAMP_US(start);

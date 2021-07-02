@@ -36,10 +36,14 @@ public:
     virtual sk_sp<SkSurface> getBackbufferSurface() = 0;
 
 <<<<<<< HEAD
+<<<<<<< HEAD
     virtual void swapBuffers(std::vector<SkIRect> &damage) = 0;
 =======
     virtual void swapBuffers() = 0;
 >>>>>>> RNS Shell Implementation  (#8)
+=======
+    virtual void swapBuffers(std::vector<SkIRect> &damage) = 0;
+>>>>>>> Munez graphics (#20)
     virtual bool makeContextCurrent() = 0;
 
     virtual bool isValid() = 0;
@@ -48,6 +52,7 @@ public:
     virtual void setDisplayParams(const DisplayParams& params) = 0;
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 #if USE(RNS_SHELL_PARTIAL_UPDATES)
     virtual bool hasSwapBuffersWithDamage() = 0; // Support for swapping/flipping multiple regions of backbuffer to frontbuffer
     virtual bool hasBufferCopy() = 0; // Support for copying frontbuffer to backbuffer. Required/used only when hasSwapBuffersWithDamage is false
@@ -55,6 +60,10 @@ public:
 
 =======
 >>>>>>> RNS Shell Implementation  (#8)
+=======
+    virtual bool hasSwapBuffersWithDamage() = 0;
+
+>>>>>>> Munez graphics (#20)
 #ifdef RNS_SHELL_HAS_GPU_SUPPORT
     GrDirectContext* directContext() const { return context_.get(); }
 #endif

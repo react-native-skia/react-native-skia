@@ -22,11 +22,11 @@ RSkComponent::RSkComponent(const ShadowView &shadowView)
 =======
 >>>>>>> Native Text component & Text Layout Manager handle computation & draw of nested text  (#17)
 {
-    requiresLayer(shadowView);
 }
 
 RSkComponent::~RSkComponent() {}
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 void RSkComponent::onPaint(SkCanvas* canvas) {
   if(canvas) {
@@ -38,6 +38,11 @@ void RSkComponent::onPaint(SkSurface *surface) {
     if(canvas)
         RNS_PROFILE_API_AVG_ON(component_.componentName << " Paint:", OnPaint(canvas));
 >>>>>>> Native Text component & Text Layout Manager handle computation & draw of nested text  (#17)
+=======
+void RSkComponent::onPaint(SkCanvas* canvas) {
+  if(canvas) {
+    RNS_PROFILE_API_OFF(component_.componentName << " Paint:", OnPaint(canvas));
+>>>>>>> Munez graphics (#20)
   } else {
     RNS_LOG_ERROR("Invalid canvas ??");
   }
@@ -63,6 +68,7 @@ sk_sp<SkPicture> RSkComponent::getPicture() {
 void RSkComponent::requiresLayer(const ShadowView &shadowView) {
     RNS_LOG_TODO("Need to come up with rules to decide wheather we need to create picture layer, texture layer etc");
 <<<<<<< HEAD
+<<<<<<< HEAD
     // Text components paragraph builder is not compatabile with Picture layer,so use default layer
     if(strcmp(component_.componentName,"Paragraph") == 0)
         layer_ = this->shared_from_this();
@@ -75,6 +81,13 @@ void RSkComponent::requiresLayer(const ShadowView &shadowView) {
     if(strcmp(component_.componentName,"Paragraph"))
        layer_ = RnsShell::PictureLayer::Create({0,0}, nullptr);
 >>>>>>> Native Text component & Text Layout Manager handle computation & draw of nested text  (#17)
+=======
+    // Text components paragraph builder is not compatabile with Picture layer,so use default layer
+    if(strcmp(component_.componentName,"Paragraph") == 0)
+        layer_ = this->shared_from_this();
+    else
+        layer_ = RnsShell::Layer::Create(RnsShell::LAYER_TYPE_PICTURE);
+>>>>>>> Munez graphics (#20)
 }
 
 void RSkComponent::updateComponentData(const ShadowView &newShadowView , const uint32_t updateMask) {
@@ -108,8 +121,6 @@ void RSkComponent::mountChildComponent(
     RNS_LOG_ASSERT((this->layer_ && newChildComponent->layer_), "Layer Object cannot be null");
     if(this->layer_)
         this->layer_->insertChild(newChildComponent->layer_, index);
-    const int index) {
-
     if(oldChildComponent) {
         oldChildComponent->parent_ = nullptr ;
         oldChildComponent->absOrigin_ = oldChildComponent->component_.layoutMetrics.frame.origin;

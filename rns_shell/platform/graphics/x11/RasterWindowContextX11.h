@@ -23,6 +23,7 @@ public:
 
     sk_sp<SkSurface> getBackbufferSurface() override;
 <<<<<<< HEAD
+<<<<<<< HEAD
     void swapBuffers(std::vector<SkIRect> &damage) override;
     bool makeContextCurrent() override { return true; }
 #if USE(RNS_SHELL_PARTIAL_UPDATES)
@@ -33,6 +34,11 @@ public:
     void swapBuffers() override;
     bool makeContextCurrent() override { return true; }
 >>>>>>> RNS Shell Implementation  (#8)
+=======
+    void swapBuffers(std::vector<SkIRect> &damage) override;
+    bool makeContextCurrent() override { return true; }
+    bool hasSwapBuffersWithDamage() override { return false; }
+>>>>>>> Munez graphics (#20)
     bool isValid() override { return SkToBool(window_); }
     void initializeContext();
     void setDisplayParams(const DisplayParams& params) override;

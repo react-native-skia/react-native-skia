@@ -53,9 +53,19 @@ public:
     Layer* rootLayer();
     Layer* parent() { return parent_; }
 
+<<<<<<< HEAD
 
     const LayerList& children() const { return children_; }
     bool needsPainting(PaintContext& context);
+=======
+    LayerType type() { return type_; }
+    int layerId() { return layerId_;}
+
+    const LayerList& children() const { return children_; }
+    bool needsPainting(PaintContext& context);
+    void appendChild(SharedLayer child);
+    void insertChild(SharedLayer child, size_t index);
+>>>>>>> Munez graphics (#20)
     void removeChild(SharedLayer child, size_t index);
 
     virtual void paintSelf(PaintContext& context);
@@ -74,8 +84,11 @@ public:
 
     const bool masksToBounds() const { return masksToBounds_; }
     void setMasksTotBounds(bool masksToBounds) { masksToBounds_ = masksToBounds; }
+<<<<<<< HEAD
     void prePaint(SkSurface *surface);
     void paint(SkSurface *surface);
+=======
+>>>>>>> Munez graphics (#20)
 
 private:
     static uint64_t nextUniqueId();
@@ -85,6 +98,7 @@ private:
     int layerId_;
     Layer *parent_;
     LayerType type_;
+<<<<<<< HEAD
     LayerList children_;
 
     //Layer Geometry
@@ -97,7 +111,19 @@ private:
     bool masksToBounds_ = { false }; // Clip childrens
     //Borders & Shadows ?
     Layer *parent_;
+=======
+>>>>>>> Munez graphics (#20)
     LayerList children_;
+
+    //Layer Geometry
+    SkIRect frame_; //The paint bounds should include any transform performed by the layer itself in its parents coordinate space
+    SkIRect bounds_; //The paint bounds in its own coordinate space
+    SkPoint anchorPosition_; // Position of Layer wrt anchor point in parents coordinate space. This will be used during the transformation.
+
+    //Layer’s Appearance
+    bool isHidden_ = { false }; // Wheather layer is hidden
+    bool masksToBounds_ = { false }; // Clip childrens
+    //Borders & Shadows ?
 };
 
 }   // namespace RnsShell

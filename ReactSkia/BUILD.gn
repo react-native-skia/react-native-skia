@@ -214,7 +214,6 @@ executable("ReactSkiaApp") {
   configs += [
     ":ReactSkia_config",
   ]
-
   if (is_clang) {
     configs -= [ "//build/config/clang:find_bad_constructs" ]
   }

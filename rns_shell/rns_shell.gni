@@ -20,11 +20,17 @@ declare_args() {
     # For platform which doesnt have gpu have to set this to false
     gl_has_gpu = true
 <<<<<<< HEAD
+<<<<<<< HEAD
 
     # Use partial updates ( dirty region painting and swaping) if system support.
     rns_enable_partial_updates = false
 =======
 >>>>>>> RNS Shell Implementation  (#8)
+=======
+
+    # Use partial updates ( dirty region painting and swaping) if system support.
+    rns_enable_partial_updates = false
+>>>>>>> Munez graphics (#20)
   }
 }
 

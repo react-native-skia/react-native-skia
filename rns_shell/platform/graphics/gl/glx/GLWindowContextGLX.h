@@ -27,6 +27,7 @@ public:
     ~GLWindowContextGLX() override;
 
 <<<<<<< HEAD
+<<<<<<< HEAD
     void onSwapBuffers(std::vector<SkIRect> &damage) override;
     void onDestroyContext() override;
 #if USE(RNS_SHELL_PARTIAL_UPDATES)
@@ -35,7 +36,11 @@ public:
 #endif
 =======
     void onSwapBuffers() override;
+=======
+    void onSwapBuffers(std::vector<SkIRect> &damage) override;
+>>>>>>> Munez graphics (#20)
     void onDestroyContext() override;
+    bool onHasSwapBuffersWithDamage() override { return false; }
 
 >>>>>>> RNS Shell Implementation  (#8)
 protected:

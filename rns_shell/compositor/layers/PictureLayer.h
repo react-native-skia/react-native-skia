@@ -27,6 +27,11 @@ public:
     virtual void paintSelf(PaintContext& context) override;
     void prePaint(PaintContext& context) override;
     void paint(PaintContext& context) override;
+<<<<<<< HEAD
+=======
+
+    void setPicture(sk_sp<SkPicture> picture) { picture_ = picture; }
+>>>>>>> Munez graphics (#20)
 
 private:
     // Picture may reference images that have a reference to a GPU resource.

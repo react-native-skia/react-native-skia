@@ -22,10 +22,15 @@
 #ifdef RNS_SHELL_HAS_GPU_SUPPORT
 #include "GLWindowContext.h"
 <<<<<<< HEAD
+<<<<<<< HEAD
 #else
 #include "WindowContextFactory.h"
 =======
 >>>>>>> RNS Shell Implementation  (#8)
+=======
+#else
+#include "WindowContextFactory.h"
+>>>>>>> Munez graphics (#20)
 #endif
 
 // FIXME We will need window id only when we have multipple windows and have to choose which window to update,

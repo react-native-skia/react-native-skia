@@ -49,10 +49,14 @@ void RasterWindowContextX11::initializeContext() {
 sk_sp<SkSurface> RasterWindowContextX11::getBackbufferSurface() { return backbufferSurface_; }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 void RasterWindowContextX11::swapBuffers(std::vector<SkIRect> &damage) {
 =======
 void RasterWindowContextX11::swapBuffers() {
 >>>>>>> RNS Shell Implementation  (#8)
+=======
+void RasterWindowContextX11::swapBuffers(std::vector<SkIRect> &damage) {
+>>>>>>> Munez graphics (#20)
 #if !defined(GOOGLE_STRIP_LOG) || (GOOGLE_STRIP_LOG <= INFO)
     RNS_GET_TIME_STAMP_US(start);
 #endif
