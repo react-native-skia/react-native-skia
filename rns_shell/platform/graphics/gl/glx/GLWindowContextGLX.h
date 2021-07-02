@@ -26,8 +26,9 @@ public:
     GLWindowContextGLX(GLNativeWindowType, GLXFBConfig, PlatformDisplay&, const DisplayParams&, GLXContext);
     ~GLWindowContextGLX() override;
 
-    void onSwapBuffers() override;
+    void onSwapBuffers(std::vector<SkIRect> &damage) override;
     void onDestroyContext() override;
+    bool onHasSwapBuffersWithDamage() override { return false; }
 
 protected:
     sk_sp<const GrGLInterface> onInitializeContext() override;

@@ -28,6 +28,8 @@ static const char* gEGLAPIName = "OpenGL";
 static const EGLenum gEGLAPIVersion = EGL_OPENGL_API;
 #endif
 
+static PFNEGLSWAPBUFFERSWITHDAMAGEEXTPROC eglSwapBuffersWithDamage = nullptr;
+
 const char* GLWindowContextEGL::errorString(int statusCode) {
     static_assert(sizeof(int) >= sizeof(EGLint), "EGLint must not be wider than int");
     switch (statusCode) {
@@ -332,7 +334,7 @@ sk_sp<const GrGLInterface> GLWindowContextEGL::onInitializeContext() {
     }
 
     glClearStencil(0);
-    glClearColor(0, 0, 0xff, 0);
+    glClearColor(0, 0, 0, 0);
     glStencilMask(0xffffffff);
     glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
@@ -379,12 +381,17 @@ bool GLWindowContextEGL::makeContextCurrent() {
     return res;
 }
 
-void GLWindowContextEGL::onSwapBuffers() {
+void GLWindowContextEGL::onSwapBuffers(std::vector<SkIRect> &damage) {
     if (glContext_ && glSurface_) {
 #if !defined(GOOGLE_STRIP_LOG) || (GOOGLE_STRIP_LOG <= INFO)
         RNS_GET_TIME_STAMP_US(start);
 #endif
-        eglSwapBuffers(platformDisplay_.eglDisplay(), glSurface_);
+        if(eglSwapBuffersWithDamage) {
+            auto rects = RectsToInts(platformDisplay_.eglDisplay(), glSurface_, damage);
+            eglSwapBuffersWithDamage(platformDisplay_.eglDisplay(), glSurface_, rects.data(), damage.size());
+        } else {
+            eglSwapBuffers(platformDisplay_.eglDisplay(), glSurface_);
+        }
 #if !defined(GOOGLE_STRIP_LOG) || (GOOGLE_STRIP_LOG <= INFO)
         RNS_GET_TIME_STAMP_US(end);
         Performance::takeSamples(end - start);
@@ -393,7 +400,46 @@ void GLWindowContextEGL::onSwapBuffers() {
 }
 
 void GLWindowContextEGL::swapInterval() {
+    EGLDisplay display = platformDisplay_.eglDisplay();
+    const char* extensions = eglQueryString(display, EGL_EXTENSIONS);
+
+    if (isExtensionSupported(extensions, "EGL_EXT_buffer_age")) {
+        RNS_LOG_INFO("EGL_EXT_buffer_age extenstion supported....");
+
+        if (isExtensionSupported(extensions, "EGL_KHR_partial_update")) {
+            RNS_LOG_INFO("EGL_KHR_partial_update extenstion supported....");
+        }
+
+        if (isExtensionSupported(extensions, "EGL_EXT_swap_buffers_with_damage")) {
+            RNS_LOG_INFO("EGL_EXT_swap_buffers_with_damage extenstion supported....");
+            eglSwapBuffersWithDamage =  reinterpret_cast<PFNEGLSWAPBUFFERSWITHDAMAGEEXTPROC>(eglGetProcAddress("eglSwapBuffersWithDamageEXT"));
+        } else if (isExtensionSupported(extensions, "EGL_KHR_swap_buffers_with_damage")) {
+            RNS_LOG_INFO("EGL_KHR_swap_buffers_with_damage extenstion supported....");
+            eglSwapBuffersWithDamage =  reinterpret_cast<PFNEGLSWAPBUFFERSWITHDAMAGEEXTPROC>(eglGetProcAddress("eglSwapBuffersWithDamageKHR"));
+        }
+    }
+
     eglSwapInterval(platformDisplay_.eglDisplay(), displayParams_.disableVsync_ ? 0 : 1);
+}
+
+std::vector<EGLint> GLWindowContextEGL::RectsToInts(EGLDisplay display, EGLSurface surface, const std::vector<SkIRect>& rects) {
+    std::vector<EGLint> res;
+    EGLint height;
+
+    eglQuerySurface(platformDisplay_.eglDisplay(), glSurface_, EGL_HEIGHT, &height);
+    res.reserve(rects.size() * 4);
+
+    for (const auto& r : rects) {
+        res.push_back(r.left());
+        res.push_back(height - r.bottom());
+        res.push_back(r.width());
+        res.push_back(r.height());
+    }
+    return res;
+}
+
+bool GLWindowContextEGL::onHasSwapBuffersWithDamage() {
+    return !!eglSwapBuffersWithDamage;
 }
 
 }  // namespace RnsShell

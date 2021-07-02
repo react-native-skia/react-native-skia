@@ -48,7 +48,7 @@ void RasterWindowContextX11::initializeContext() {
 
 sk_sp<SkSurface> RasterWindowContextX11::getBackbufferSurface() { return backbufferSurface_; }
 
-void RasterWindowContextX11::swapBuffers() {
+void RasterWindowContextX11::swapBuffers(std::vector<SkIRect> &damage) {
 #if !defined(GOOGLE_STRIP_LOG) || (GOOGLE_STRIP_LOG <= INFO)
     RNS_GET_TIME_STAMP_US(start);
 #endif

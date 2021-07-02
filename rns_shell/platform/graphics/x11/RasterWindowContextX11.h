@@ -22,8 +22,9 @@ public:
     RasterWindowContextX11(GLNativeWindowType , PlatformDisplay*, const DisplayParams&);
 
     sk_sp<SkSurface> getBackbufferSurface() override;
-    void swapBuffers() override;
+    void swapBuffers(std::vector<SkIRect> &damage) override;
     bool makeContextCurrent() override { return true; }
+    bool hasSwapBuffersWithDamage() override { return false; }
     bool isValid() override { return SkToBool(window_); }
     void initializeContext();
     void setDisplayParams(const DisplayParams& params) override;

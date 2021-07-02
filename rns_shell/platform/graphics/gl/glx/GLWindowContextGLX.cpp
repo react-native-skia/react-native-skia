@@ -230,7 +230,8 @@ bool GLWindowContextGLX::makeContextCurrent() {
 }
 
 
-void GLWindowContextGLX::onSwapBuffers() {
+void GLWindowContextGLX::onSwapBuffers(std::vector<SkIRect> &damage) {
+    RNS_UNUSED(damage);
     if (display_ && glContext_) {
 #if !defined(GOOGLE_STRIP_LOG) || (GOOGLE_STRIP_LOG <= INFO)
         RNS_GET_TIME_STAMP_US(start);

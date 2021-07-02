@@ -122,6 +122,7 @@ class TimingModule : public TurboModule {
     timerThread_.getEventBase()->runInEventBaseThread(
         [this, callbackId, duration, repeats]() {
           Instance *bridge = bridgeInstance_;
+          if(duration > 1) {
           timerThread_.getEventBase()->scheduleAt(
               std::bind(
                   &TimingModule::OnTimeout,
@@ -133,6 +134,16 @@ class TimingModule : public TurboModule {
               std::chrono::steady_clock::now() +
                   std::chrono::milliseconds(
                       static_cast<unsigned long long>(duration)));
+          } else {
+            timerThread_.getEventBase()->runInEventBaseThread(
+              std::bind(
+                  &TimingModule::OnTimeout,
+                  this,
+                  bridge,
+                  callbackId,
+                  duration,
+                  repeats));
+          }
         });
     return jsi::Value::undefined();
   }

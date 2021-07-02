@@ -31,13 +31,15 @@ public:
 
     virtual sk_sp<SkSurface> getBackbufferSurface() = 0;
 
-    virtual void swapBuffers() = 0;
+    virtual void swapBuffers(std::vector<SkIRect> &damage) = 0;
     virtual bool makeContextCurrent() = 0;
 
     virtual bool isValid() = 0;
 
     const DisplayParams& getDisplayParams() { return displayParams_; }
     virtual void setDisplayParams(const DisplayParams& params) = 0;
+
+    virtual bool hasSwapBuffersWithDamage() = 0;
 
 #ifdef RNS_SHELL_HAS_GPU_SUPPORT
     GrDirectContext* directContext() const { return context_.get(); }

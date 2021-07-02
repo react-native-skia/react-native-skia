@@ -19,22 +19,23 @@ using SharedPictureLayer = std::shared_ptr<PictureLayer>;
 class PictureLayer : public Layer {
 public:
 
-    static SharedPictureLayer Create(const SkPoint& offset, sk_sp<SkPicture> picture);
-    PictureLayer(const SkPoint& offset,
-               sk_sp<SkPicture> picture);
+    static SharedPictureLayer Create();
+    PictureLayer();
     virtual ~PictureLayer() {};
 
     SkPicture* picture() const { return picture_.get(); }
-    void prePaint(SkSurface *surface) override;
-    void paint(SkSurface *surface) override;
+    virtual void paintSelf(PaintContext& context) override;
+    void prePaint(PaintContext& context) override;
+    void paint(PaintContext& context) override;
 
     void setPicture(sk_sp<SkPicture> picture) { picture_ = picture; }
 
 private:
-    SkPoint offset_;
     // Picture may reference images that have a reference to a GPU resource.
     // TODO what will happen for NON-GPU ?
     sk_sp<SkPicture> picture_;
+
+    typedef Layer INHERITED;
 };
 
 }   // namespace RnsShell
