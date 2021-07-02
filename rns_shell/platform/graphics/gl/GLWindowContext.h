@@ -47,7 +47,8 @@ public:
 
     bool isValid() override { return SkToBool(backendContext_.get()); }
 
-    void swapBuffers() override;
+    void swapBuffers(std::vector<SkIRect> &damage) override;
+    bool hasSwapBuffersWithDamage() override;
 
     void setDisplayParams(const DisplayParams& params) override;
     static std::unique_ptr<GLWindowContext> createContextForWindow(GLNativeWindowType windowHandle, PlatformDisplay* = nullptr);
@@ -64,7 +65,8 @@ protected:
     // onDestroyContext().
     void destroyContext();
     virtual void onDestroyContext() = 0;
-    virtual void onSwapBuffers() = 0;
+    virtual void onSwapBuffers(std::vector<SkIRect> &damage) = 0;
+    virtual bool onHasSwapBuffersWithDamage() = 0;
 
     sk_sp<const GrGLInterface> backendContext_;
     sk_sp<SkSurface>           surface_;

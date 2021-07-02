@@ -36,8 +36,9 @@ public:
 
     static bool isExtensionSupported(const char* extensionList, const char* extension);
 
-    void onSwapBuffers() override;
+    void onSwapBuffers(std::vector<SkIRect> &damage) override;
     void onDestroyContext() override;
+    bool onHasSwapBuffersWithDamage() override;
 
 protected:
     sk_sp<const GrGLInterface> onInitializeContext() override;
@@ -64,7 +65,7 @@ private:
 #endif
     bool makeContextCurrent() override;
     void swapInterval();
-
+    std::vector<EGLint> RectsToInts(EGLDisplay display, EGLSurface surface, const std::vector<SkIRect>& rects);
 
     GLNativeWindowType      window_;
 #if USE(WPE_RENDERER)
