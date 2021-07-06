@@ -29,6 +29,7 @@ static const EGLenum gEGLAPIVersion = EGL_OPENGL_API;
 #endif
 
 static PFNEGLSWAPBUFFERSWITHDAMAGEEXTPROC eglSwapBuffersWithDamage = nullptr;
+static bool hasGlBlitFramebuffer = false;
 
 const char* GLWindowContextEGL::errorString(int statusCode) {
     static_assert(sizeof(int) >= sizeof(EGLint), "EGLint must not be wider than int");
@@ -338,6 +339,12 @@ sk_sp<const GrGLInterface> GLWindowContextEGL::onInitializeContext() {
     glStencilMask(0xffffffff);
     glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
+    GLint maj, min;
+    glGetIntegerv(GL_MAJOR_VERSION, &maj);
+    glGetIntegerv(GL_MINOR_VERSION, &min);
+
+    hasGlBlitFramebuffer = ((maj > 3) || ((maj == 3) && (min >= 0))); // glBlitFramebuffer supported OpenGL 3.0 onwards
+
     if (!eglQuerySurface(display, glSurface_, EGL_WIDTH, &width_)
         || !eglQuerySurface(display, glSurface_, EGL_HEIGHT, &height_)) {
         glViewport(0, 0, width_, height_);
@@ -392,7 +399,7 @@ void GLWindowContextEGL::onSwapBuffers(std::vector<SkIRect> &damage) {
         } else {
             eglSwapBuffers(platformDisplay_.eglDisplay(), glSurface_);
 #if USE(RNS_SHELL_PARTIAL_UPDATES) && USE(RNS_SHELL_COPY_BUFFERS)
-            if(onHasBufferCopy()) {
+            if(hasGlBlitFramebuffer) {
                 glReadBuffer(GL_FRONT); // Read Front
                 glDrawBuffer(GL_BACK); // Write Back
                 glBlitFramebuffer(0, 0, width_, height_, 0, 0, width_, height_, GL_COLOR_BUFFER_BIT, GL_NEAREST);
@@ -452,11 +459,7 @@ bool GLWindowContextEGL::onHasSwapBuffersWithDamage() {
 
 bool GLWindowContextEGL::onHasBufferCopy() {
 #if USE(RNS_SHELL_PARTIAL_UPDATES) && USE(RNS_SHELL_COPY_BUFFERS)
-    GLint maj, min;
-    glGetIntegerv(GL_MAJOR_VERSION, &maj);
-    glGetIntegerv(GL_MINOR_VERSION, &min);
-
-    return (maj > 3) || ((maj == 3) && (min >= 0)); // glBlitFramebuffer supported OpenGL 3.0 onwards
+    return hasGlBlitFramebuffer;
 #else
     return false;
 #endif
