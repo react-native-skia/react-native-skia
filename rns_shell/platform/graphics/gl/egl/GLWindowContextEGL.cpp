@@ -391,6 +391,13 @@ void GLWindowContextEGL::onSwapBuffers(std::vector<SkIRect> &damage) {
             eglSwapBuffersWithDamage(platformDisplay_.eglDisplay(), glSurface_, rects.data(), damage.size());
         } else {
             eglSwapBuffers(platformDisplay_.eglDisplay(), glSurface_);
+#if USE(RNS_SHELL_PARTIAL_UPDATES) && USE(RNS_SHELL_COPY_BUFFERS)
+            if(onHasBufferCopy()) {
+                glReadBuffer(GL_FRONT); // Read Front
+                glDrawBuffer(GL_BACK); // Write Back
+                glBlitFramebuffer(0, 0, width_, height_, 0, 0, width_, height_, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+            }
+#endif
         }
 #if !defined(GOOGLE_STRIP_LOG) || (GOOGLE_STRIP_LOG <= INFO)
         RNS_GET_TIME_STAMP_US(end);
@@ -438,9 +445,23 @@ std::vector<EGLint> GLWindowContextEGL::RectsToInts(EGLDisplay display, EGLSurfa
     return res;
 }
 
+#if USE(RNS_SHELL_PARTIAL_UPDATES)
 bool GLWindowContextEGL::onHasSwapBuffersWithDamage() {
     return !!eglSwapBuffersWithDamage;
 }
+
+bool GLWindowContextEGL::onHasBufferCopy() {
+#if USE(RNS_SHELL_PARTIAL_UPDATES) && USE(RNS_SHELL_COPY_BUFFERS)
+    GLint maj, min;
+    glGetIntegerv(GL_MAJOR_VERSION, &maj);
+    glGetIntegerv(GL_MINOR_VERSION, &min);
+
+    return (maj > 3) || ((maj == 3) && (min >= 0)); // glBlitFramebuffer supported OpenGL 3.0 onwards
+#else
+    return false;
+#endif
+}
+#endif
 
 }  // namespace RnsShell
 

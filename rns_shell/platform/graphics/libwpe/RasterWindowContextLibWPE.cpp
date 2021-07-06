@@ -65,5 +65,10 @@ void RasterWindowContextLibWPE::swapBuffers(std::vector<SkIRect> &damage) {
 #endif
 }
 
+#if USE(RNS_SHELL_PARTIAL_UPDATES)
+bool RasterWindowContextLibWPE::hasBufferCopy() {
+    RNS_LOG_NOT_IMPL;
+    return false;
+}
+#endif
 }  // namespace RnsShell
-

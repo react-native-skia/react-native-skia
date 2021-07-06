@@ -80,6 +80,14 @@ void RasterWindowContextX11::swapBuffers(std::vector<SkIRect> &damage) {
 #endif
 }
 
+#if USE(RNS_SHELL_PARTIAL_UPDATES)
+bool RasterWindowContextX11::hasBufferCopy() {
+    // With current implementation We are using offscreen bitmap to draw and then copying this bitmap to window.
+    // This means both bitmap and window has same data after frame display ( swapbuffer )
+    return true;
+}
+#endif
+
 }  // namespace RnsShell
 
 #endif // PLATFORM(X11)
