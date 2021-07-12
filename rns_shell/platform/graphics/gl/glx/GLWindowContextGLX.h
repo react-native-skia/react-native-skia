@@ -34,6 +34,7 @@ public:
     bool onHasSwapBuffersWithDamage() override { RNS_LOG_NOT_IMPL; return false; }
     bool onHasBufferCopy() override { RNS_LOG_NOT_IMPL; return false; };
 #endif
+<<<<<<< HEAD
 =======
     void onSwapBuffers() override;
 =======
@@ -43,6 +44,8 @@ public:
     bool onHasSwapBuffersWithDamage() override { return false; }
 
 >>>>>>> RNS Shell Implementation  (#8)
+=======
+>>>>>>> Partial Update Support - For Non-OpenGL platform and OpenGL platform without swapbufferWithDamage extension 
 protected:
     sk_sp<const GrGLInterface> onInitializeContext() override;
 

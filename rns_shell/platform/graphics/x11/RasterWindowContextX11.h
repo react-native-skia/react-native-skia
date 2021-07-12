@@ -30,6 +30,7 @@ public:
     bool hasSwapBuffersWithDamage() override { return false; }
     bool hasBufferCopy() override;
 #endif
+<<<<<<< HEAD
 =======
     void swapBuffers() override;
     bool makeContextCurrent() override { return true; }
@@ -39,6 +40,8 @@ public:
     bool makeContextCurrent() override { return true; }
     bool hasSwapBuffersWithDamage() override { return false; }
 >>>>>>> Munez graphics (#20)
+=======
+>>>>>>> Partial Update Support - For Non-OpenGL platform and OpenGL platform without swapbufferWithDamage extension 
     bool isValid() override { return SkToBool(window_); }
     void initializeContext();
     void setDisplayParams(const DisplayParams& params) override;

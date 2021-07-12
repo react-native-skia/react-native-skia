@@ -10,6 +10,7 @@
 #include "ReactSkia/utils/RnsUtils.h"
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 #define GL_GLEXT_PROTOTYPES 1
 #if USE(OPENGL_ES)
 #include <GLES2/gl2.h>
@@ -17,20 +18,31 @@
 #include <GLES2/gl2ext.h>
 #else
 =======
+=======
+#define GL_GLEXT_PROTOTYPES 1
+>>>>>>> Partial Update Support - For Non-OpenGL platform and OpenGL platform without swapbufferWithDamage extension 
 #if USE(OPENGL_ES)
 #include <GLES2/gl2.h>
+#include <GLES3/gl3.h>
 #include <GLES2/gl2ext.h>
 #else
+<<<<<<< HEAD
 #define GL_GLEXT_PROTOTYPES 1
 >>>>>>> RNS Shell Implementation  (#8)
+=======
+>>>>>>> Partial Update Support - For Non-OpenGL platform and OpenGL platform without swapbufferWithDamage extension 
 #include <GL/gl.h>
 #endif // USE(OPENGL_ES)
 
 #if USE(EGL)
 <<<<<<< HEAD
+<<<<<<< HEAD
 #define EGL_GLEXT_PROTOTYPES 1
 =======
 >>>>>>> RNS Shell Implementation  (#8)
+=======
+#define EGL_GLEXT_PROTOTYPES 1
+>>>>>>> Partial Update Support - For Non-OpenGL platform and OpenGL platform without swapbufferWithDamage extension 
 #include <EGL/egl.h>
 #include <EGL/eglext.h>
 #include <EGL/eglplatform.h>
@@ -67,6 +79,7 @@ public:
     bool hasSwapBuffersWithDamage() override;
     bool hasBufferCopy() override;
 #endif
+<<<<<<< HEAD
 =======
     void swapBuffers() override;
 >>>>>>> RNS Shell Implementation  (#8)
@@ -74,6 +87,8 @@ public:
     void swapBuffers(std::vector<SkIRect> &damage) override;
     bool hasSwapBuffersWithDamage() override;
 >>>>>>> Munez graphics (#20)
+=======
+>>>>>>> Partial Update Support - For Non-OpenGL platform and OpenGL platform without swapbufferWithDamage extension 
 
     void setDisplayParams(const DisplayParams& params) override;
     static std::unique_ptr<GLWindowContext> createContextForWindow(GLNativeWindowType windowHandle, PlatformDisplay* = nullptr);
@@ -101,10 +116,16 @@ protected:
     virtual void onSwapBuffers() = 0;
 =======
     virtual void onSwapBuffers(std::vector<SkIRect> &damage) = 0;
+#if USE(RNS_SHELL_PARTIAL_UPDATES)
     virtual bool onHasSwapBuffersWithDamage() = 0;
+<<<<<<< HEAD
 >>>>>>> Munez graphics (#20)
 
 >>>>>>> RNS Shell Implementation  (#8)
+=======
+    virtual bool onHasBufferCopy() = 0;
+#endif
+>>>>>>> Partial Update Support - For Non-OpenGL platform and OpenGL platform without swapbufferWithDamage extension 
     sk_sp<const GrGLInterface> backendContext_;
     sk_sp<SkSurface>           surface_;
 };

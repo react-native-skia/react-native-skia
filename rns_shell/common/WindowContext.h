@@ -9,9 +9,13 @@
 
 #include "ReactSkia/utils/RnsLog.h"
 <<<<<<< HEAD
+<<<<<<< HEAD
 #include "ReactSkia/utils/RnsUtils.h"
 =======
 >>>>>>> RNS Shell Implementation  (#8)
+=======
+#include "ReactSkia/utils/RnsUtils.h"
+>>>>>>> Partial Update Support - For Non-OpenGL platform and OpenGL platform without swapbufferWithDamage extension 
 
 #include "include/core/SkRefCnt.h"
 #include "include/core/SkSurfaceProps.h"
@@ -53,15 +57,21 @@ public:
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> Partial Update Support - For Non-OpenGL platform and OpenGL platform without swapbufferWithDamage extension 
 #if USE(RNS_SHELL_PARTIAL_UPDATES)
     virtual bool hasSwapBuffersWithDamage() = 0; // Support for swapping/flipping multiple regions of backbuffer to frontbuffer
     virtual bool hasBufferCopy() = 0; // Support for copying frontbuffer to backbuffer. Required/used only when hasSwapBuffersWithDamage is false
 #endif
+<<<<<<< HEAD
 
 =======
 >>>>>>> RNS Shell Implementation  (#8)
 =======
     virtual bool hasSwapBuffersWithDamage() = 0;
+=======
+>>>>>>> Partial Update Support - For Non-OpenGL platform and OpenGL platform without swapbufferWithDamage extension 
 
 >>>>>>> Munez graphics (#20)
 #ifdef RNS_SHELL_HAS_GPU_SUPPORT

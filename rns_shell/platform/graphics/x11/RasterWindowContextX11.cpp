@@ -89,6 +89,9 @@ void RasterWindowContextX11::swapBuffers(std::vector<SkIRect> &damage) {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> Partial Update Support - For Non-OpenGL platform and OpenGL platform without swapbufferWithDamage extension 
 #if USE(RNS_SHELL_PARTIAL_UPDATES)
 bool RasterWindowContextX11::hasBufferCopy() {
     // With current implementation We are using offscreen bitmap to draw and then copying this bitmap to window.
@@ -97,8 +100,11 @@ bool RasterWindowContextX11::hasBufferCopy() {
 }
 #endif
 
+<<<<<<< HEAD
 =======
 >>>>>>> RNS Shell Implementation  (#8)
+=======
+>>>>>>> Partial Update Support - For Non-OpenGL platform and OpenGL platform without swapbufferWithDamage extension 
 }  // namespace RnsShell
 
 #endif // PLATFORM(X11)

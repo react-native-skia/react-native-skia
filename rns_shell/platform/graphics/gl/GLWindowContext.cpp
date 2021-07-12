@@ -90,6 +90,9 @@ void GLWindowContext::swapBuffers(std::vector<SkIRect> &damage) {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> Partial Update Support - For Non-OpenGL platform and OpenGL platform without swapbufferWithDamage extension 
 #if USE(RNS_SHELL_PARTIAL_UPDATES)
 bool GLWindowContext::hasSwapBuffersWithDamage() {
     return this->onHasSwapBuffersWithDamage();
@@ -100,6 +103,7 @@ bool GLWindowContext::hasBufferCopy() {
 }
 #endif
 
+<<<<<<< HEAD
 =======
 void GLWindowContext::swapBuffers() {
     this->onSwapBuffers();
@@ -110,6 +114,8 @@ bool GLWindowContext::hasSwapBuffersWithDamage() {
 }
 
 >>>>>>> RNS Shell Implementation  (#8)
+=======
+>>>>>>> Partial Update Support - For Non-OpenGL platform and OpenGL platform without swapbufferWithDamage extension 
 void GLWindowContext::setDisplayParams(const DisplayParams& params) {
     displayParams_ = params;
     this->destroyContext();

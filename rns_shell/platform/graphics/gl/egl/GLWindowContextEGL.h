@@ -41,6 +41,7 @@ public:
     void onSwapBuffers(std::vector<SkIRect> &damage) override;
     void onDestroyContext() override;
 #if USE(RNS_SHELL_PARTIAL_UPDATES)
+<<<<<<< HEAD
     bool onHasSwapBuffersWithDamage() override;
     bool onHasBufferCopy() override;
 #endif
@@ -53,6 +54,11 @@ public:
     bool onHasSwapBuffersWithDamage() override;
 
 >>>>>>> RNS Shell Implementation  (#8)
+=======
+    bool onHasSwapBuffersWithDamage() override;
+    bool onHasBufferCopy() override;
+#endif
+>>>>>>> Partial Update Support - For Non-OpenGL platform and OpenGL platform without swapbufferWithDamage extension 
 protected:
     sk_sp<const GrGLInterface> onInitializeContext() override;
 
@@ -79,12 +85,15 @@ private:
     bool makeContextCurrent() override;
     void swapInterval();
 <<<<<<< HEAD
+<<<<<<< HEAD
 
 <<<<<<< HEAD
 =======
 =======
     std::vector<EGLint> RectsToInts(EGLDisplay display, EGLSurface surface, const std::vector<SkIRect>& rects);
 >>>>>>> Munez graphics (#20)
+=======
+>>>>>>> Partial Update Support - For Non-OpenGL platform and OpenGL platform without swapbufferWithDamage extension 
 
 >>>>>>> RNS Shell Implementation  (#8)
     GLNativeWindowType      window_;
@@ -93,6 +102,9 @@ private:
 #endif
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> Partial Update Support - For Non-OpenGL platform and OpenGL platform without swapbufferWithDamage extension 
 #if USE(RNS_SHELL_PARTIAL_UPDATES)
     std::vector<EGLint> rectsToInts(EGLDisplay display, EGLSurface surface, const std::vector<SkIRect>& rects);
 #if USE(RNS_SHELL_COPY_BUFFERS)
@@ -102,14 +114,20 @@ private:
 #endif //RNS_SHELL_COPY_BUFFERS
 #endif //RNS_SHELL_PARTIAL_UPDATES
 
+<<<<<<< HEAD
 =======
 >>>>>>> RNS Shell Implementation  (#8)
+=======
+>>>>>>> Partial Update Support - For Non-OpenGL platform and OpenGL platform without swapbufferWithDamage extension 
     PlatformDisplay& platformDisplay_;
     EGLSurface glSurface_ { nullptr };
     EGLContext glContext_ { nullptr };
     EGLSurfaceType surfaceType_;
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> Partial Update Support - For Non-OpenGL platform and OpenGL platform without swapbufferWithDamage extension 
 #if USE(RNS_SHELL_PARTIAL_UPDATES) &&  USE(RNS_SHELL_COPY_BUFFERS)
     GLuint offScreenFbo_ { 0 };
     GLuint colorTexture_ { 0 };
@@ -117,8 +135,11 @@ private:
 #endif
 
 
+<<<<<<< HEAD
 =======
 >>>>>>> RNS Shell Implementation  (#8)
+=======
+>>>>>>> Partial Update Support - For Non-OpenGL platform and OpenGL platform without swapbufferWithDamage extension 
     typedef GLWindowContext INHERITED;
 };
 

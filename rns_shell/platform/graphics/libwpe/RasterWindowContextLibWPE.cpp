@@ -74,14 +74,21 @@ void RasterWindowContextLibWPE::swapBuffers(std::vector<SkIRect> &damage) {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> Partial Update Support - For Non-OpenGL platform and OpenGL platform without swapbufferWithDamage extension 
 #if USE(RNS_SHELL_PARTIAL_UPDATES)
 bool RasterWindowContextLibWPE::hasBufferCopy() {
     RNS_LOG_NOT_IMPL;
     return false;
 }
 #endif
+<<<<<<< HEAD
 }  // namespace RnsShell
 =======
 }  // namespace RnsShell
 
 >>>>>>> RNS Shell Implementation  (#8)
+=======
+}  // namespace RnsShell
+>>>>>>> Partial Update Support - For Non-OpenGL platform and OpenGL platform without swapbufferWithDamage extension 
