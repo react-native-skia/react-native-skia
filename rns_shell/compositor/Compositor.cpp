@@ -80,9 +80,10 @@ SkRect Compositor::beginClip(SkCanvas *canvas) {
 
     SkPath clipPath = SkPath();
     for (auto& rect : surfaceDamage_) {
-        RNS_LOG_DEBUG("Damage " << rect.x() << " " << rect.y() << " " << rect.width() << " " << rect.height());
+        RNS_LOG_DEBUG("Add Damage " << rect.x() << " " << rect.y() << " " << rect.width() << " " << rect.height());
         clipPath.addRect(rect.left(), rect.top(), rect.right(), rect.bottom());
     }
+
     if(clipPath.getBounds().isEmpty())
         return clipBound;
 
