@@ -48,10 +48,11 @@ Compositor::Compositor(SkRect& viewportSize, float scaleFactor)
         attributes_.needsResize = !viewportSize.isEmpty();
     }
 #if USE(RNS_SHELL_PARTIAL_UPDATES)
-    supportPartialUpdate_ = windowContext_->hasSwapBuffersWithDamage(); // TODO || Or atleast support front to back buffer copy.
+    supportPartialUpdate_ = windowContext_->hasSwapBuffersWithDamage() || windowContext_->hasBufferCopy();
+    RNS_LOG_DEBUG("Support for Swapbuffer with damage rect : " << windowContext_->hasSwapBuffersWithDamage() <<
+                  " Support for Copy buffer : " <<  windowContext_->hasBufferCopy());
 #endif
-    RNS_LOG_DEBUG("Native Window Handle : " << nativeWindowHandle_ << " Window Context : " << windowContext_.get() << "Back Buffer : " << backBuffer_.get() <<
-                  "Has swapbuffer support with damage rect : " << windowContext_->hasSwapBuffersWithDamage());
+    RNS_LOG_DEBUG("Native Window Handle : " << nativeWindowHandle_ << " Window Context : " << windowContext_.get() << "Back Buffer : " << backBuffer_.get());
 }
 
 Compositor::~Compositor() {
@@ -79,9 +80,10 @@ SkRect Compositor::beginClip(SkCanvas *canvas) {
 
     SkPath clipPath = SkPath();
     for (auto& rect : surfaceDamage_) {
-        RNS_LOG_DEBUG("Damage " << rect.x() << " " << rect.y() << " " << rect.width() << " " << rect.height());
+        RNS_LOG_DEBUG("Add Damage " << rect.x() << " " << rect.y() << " " << rect.width() << " " << rect.height());
         clipPath.addRect(rect.left(), rect.top(), rect.right(), rect.bottom());
     }
+
     if(clipPath.getBounds().isEmpty())
         return clipBound;
 

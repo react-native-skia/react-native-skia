@@ -23,7 +23,10 @@ public:
     sk_sp<SkSurface> getBackbufferSurface() override;
     void swapBuffers(std::vector<SkIRect> &damage) override;
     bool makeContextCurrent() override { return true; }
+#if USE(RNS_SHELL_PARTIAL_UPDATES)
     bool hasSwapBuffersWithDamage() override { return false; }
+    bool hasBufferCopy() override;
+#endif
     bool isValid() override { return SkToBool(window_); }
     void initializeContext();
     void setDisplayParams(const DisplayParams& params) override;

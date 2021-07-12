@@ -343,6 +343,10 @@ sk_sp<const GrGLInterface> GLWindowContextEGL::onInitializeContext() {
         glViewport(0, 0, width_, height_);
     }
 
+
+#if USE(RNS_SHELL_PARTIAL_UPDATES) &&  USE(RNS_SHELL_COPY_BUFFERS)
+    eglInitializeOffscreenFrameBuffer();
+#endif
     swapInterval();
     return interface ? interface : GrGLMakeNativeInterface();
 }
@@ -363,6 +367,9 @@ void GLWindowContextEGL::onDestroyContext() {
         eglDestroySurface(platformDisplay_.eglDisplay(), glSurface_);
         glSurface_ = nullptr;
     }
+#if USE(RNS_SHELL_PARTIAL_UPDATES) &&  USE(RNS_SHELL_COPY_BUFFERS)
+        eglDeleteOffscreenFrameBuffer();
+#endif
 
 #if USE(WPE_RENDERER)
     destroyWPETarget();
@@ -386,12 +393,23 @@ void GLWindowContextEGL::onSwapBuffers(std::vector<SkIRect> &damage) {
 #if !defined(GOOGLE_STRIP_LOG) || (GOOGLE_STRIP_LOG <= INFO)
         RNS_GET_TIME_STAMP_US(start);
 #endif
+
+#if USE(RNS_SHELL_PARTIAL_UPDATES)
         if(eglSwapBuffersWithDamage) {
-            auto rects = RectsToInts(platformDisplay_.eglDisplay(), glSurface_, damage);
+            auto rects = rectsToInts(platformDisplay_.eglDisplay(), glSurface_, damage);
             eglSwapBuffersWithDamage(platformDisplay_.eglDisplay(), glSurface_, rects.data(), damage.size());
-        } else {
-            eglSwapBuffers(platformDisplay_.eglDisplay(), glSurface_);
+        } else { // Doesnt have swapBufferWithDamage extenstion support
+#if USE(RNS_SHELL_COPY_BUFFERS) // Partial updates can still be supported with offscreen buffer drawing, if enabled
+            eglBlitAndSwapBuffers();
+#else
+            eglSwapBuffers(platformDisplay_.eglDisplay(), glSurface_); // Partial update disabled
+#endif //RNS_SHELL_COPY_BUFFERS
         }
+#else
+        RNS_UNUSED(damage);
+        eglSwapBuffers(platformDisplay_.eglDisplay(), glSurface_);
+#endif // RNS_SHELL_PARTIAL_UPDATES
+
 #if !defined(GOOGLE_STRIP_LOG) || (GOOGLE_STRIP_LOG <= INFO)
         RNS_GET_TIME_STAMP_US(end);
         Performance::takeSamples(end - start);
@@ -422,7 +440,8 @@ void GLWindowContextEGL::swapInterval() {
     eglSwapInterval(platformDisplay_.eglDisplay(), displayParams_.disableVsync_ ? 0 : 1);
 }
 
-std::vector<EGLint> GLWindowContextEGL::RectsToInts(EGLDisplay display, EGLSurface surface, const std::vector<SkIRect>& rects) {
+#if USE(RNS_SHELL_PARTIAL_UPDATES)
+std::vector<EGLint> GLWindowContextEGL::rectsToInts(EGLDisplay display, EGLSurface surface, const std::vector<SkIRect>& rects) {
     std::vector<EGLint> res;
     EGLint height;
 
@@ -441,6 +460,89 @@ std::vector<EGLint> GLWindowContextEGL::RectsToInts(EGLDisplay display, EGLSurfa
 bool GLWindowContextEGL::onHasSwapBuffersWithDamage() {
     return !!eglSwapBuffersWithDamage;
 }
+
+bool GLWindowContextEGL::onHasBufferCopy() {
+#if USE(RNS_SHELL_COPY_BUFFERS)
+    return (offScreenFbo_ > 0);
+#else
+    return false;
+#endif
+}
+
+#if USE(RNS_SHELL_COPY_BUFFERS)
+void GLWindowContextEGL::eglBlitAndSwapBuffers() {
+	static GLint viewport[4];
+
+	glGetIntegerv(GL_VIEWPORT, viewport);
+
+// Copy ReadBuffer from SourceFB and write it to DrawFB's DrawBuffer
+#if USE(OPENGL_ES)
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0); // Default FB
+	glBindFramebuffer(GL_READ_FRAMEBUFFER , offScreenFbo_);
+	RNS_PROFILE_API_OFF("FB Blit ", glBlitFramebuffer(0, 0, viewport[2], viewport[3], 0, 0, viewport[2], viewport[3], (GL_COLOR_BUFFER_BIT ) , GL_NEAREST));
+#else
+	RNS_PROFILE_API_OFF("FB Blit ", glBlitNamedFramebuffer(offScreenFbo_, 0,
+                                        0, 0, viewport[2], viewport[3],
+                                        0, 0, viewport[2], viewport[3],
+                                        (GL_COLOR_BUFFER_BIT ) , GL_NEAREST));
+#endif
+
+    eglSwapBuffers(platformDisplay_.eglDisplay(), glSurface_);
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, 0); // Must keep default FB as readFrameBuffer
+
+#if USE(OPENGL_ES)
+    //Draw FrameBuffers
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, offScreenFbo_);
+#endif
+}
+
+void GLWindowContextEGL::eglInitializeOffscreenFrameBuffer() {
+
+    // Create FBO
+    glGenFramebuffers(1, &offScreenFbo_);
+    glBindFramebuffer(GL_FRAMEBUFFER, offScreenFbo_);
+
+    // Create Texture for Color Buffer and attach it to FBO
+    glGenTextures(1, &colorTexture_);
+    glBindTexture(GL_TEXTURE_2D, colorTexture_);
+    glTexImage2D(GL_TEXTURE_2D, 0,GL_RGBA, width_, height_, 0,GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, colorTexture_, 0);
+
+    // Create Texture for Depth and Stencil Buffer and attach it to FBO
+    glGenTextures(1, &depthStencilTexture_);
+    glBindTexture(GL_TEXTURE_2D, depthStencilTexture_);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8, width_, height_, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, NULL);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, depthStencilTexture_, 0);
+
+    // Cleanup in case of error
+    if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+        eglDeleteOffscreenFrameBuffer();
+    } else {
+        glClearStencil(0);
+        glClearColor(0, 0, 0, 0);
+        glStencilMask(0xffffffff);
+        glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+    }
+}
+
+void GLWindowContextEGL::eglDeleteOffscreenFrameBuffer() {
+    if(offScreenFbo_) {
+        glDeleteFramebuffers(1, &offScreenFbo_);
+        offScreenFbo_ = 0;
+    }
+    if(colorTexture_) {
+        glDeleteTextures(1, &colorTexture_);
+        colorTexture_ = 0;
+    }
+    if(depthStencilTexture_) {
+        glDeleteTextures(1, &depthStencilTexture_);
+        depthStencilTexture_ = 0;
+    }
+    glBindFramebuffer(GL_FRAMEBUFFER, 0); // reset to default FB
+}
+#endif //RNS_SHELL_COPY_BUFFERS
+
+#endif
 
 }  // namespace RnsShell
 

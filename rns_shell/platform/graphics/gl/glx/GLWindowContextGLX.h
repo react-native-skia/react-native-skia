@@ -28,8 +28,10 @@ public:
 
     void onSwapBuffers(std::vector<SkIRect> &damage) override;
     void onDestroyContext() override;
-    bool onHasSwapBuffersWithDamage() override { return false; }
-
+#if USE(RNS_SHELL_PARTIAL_UPDATES)
+    bool onHasSwapBuffersWithDamage() override { RNS_LOG_NOT_IMPL; return false; }
+    bool onHasBufferCopy() override { RNS_LOG_NOT_IMPL; return false; };
+#endif
 protected:
     sk_sp<const GrGLInterface> onInitializeContext() override;
 

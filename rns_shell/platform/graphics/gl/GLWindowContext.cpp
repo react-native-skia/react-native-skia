@@ -85,9 +85,15 @@ void GLWindowContext::swapBuffers(std::vector<SkIRect> &damage) {
     this->onSwapBuffers(damage);
 }
 
+#if USE(RNS_SHELL_PARTIAL_UPDATES)
 bool GLWindowContext::hasSwapBuffersWithDamage() {
     return this->onHasSwapBuffersWithDamage();
 }
+
+bool GLWindowContext::hasBufferCopy() {
+    return this->onHasBufferCopy();
+}
+#endif
 
 void GLWindowContext::setDisplayParams(const DisplayParams& params) {
     displayParams_ = params;
