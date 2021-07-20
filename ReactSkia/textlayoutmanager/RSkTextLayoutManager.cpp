@@ -59,6 +59,31 @@ SkPaint convertTextColor ( SharedColor textColor ) {
    return paint;
 }
 
+SkFontStyle::Slant convertFontStyle (FontStyle fontStyle) {
+    switch(fontStyle){
+        case FontStyle::Italic : return SkFontStyle::kItalic_Slant;
+        case FontStyle::Normal : 
+        default: 
+            return SkFontStyle::kUpright_Slant;
+    }
+}   
+
+int convertFontWeight (FontWeight fontWeight) {
+    switch(fontWeight){
+        case FontWeight::Weight100 : return SkFontStyle::kThin_Weight;
+        case FontWeight::Weight200 : return SkFontStyle::kExtraLight_Weight;
+        case FontWeight::Weight300 : return SkFontStyle::kLight_Weight;
+        case FontWeight::Weight500 : return SkFontStyle::kMedium_Weight;
+        case FontWeight::Weight600 : return SkFontStyle::kSemiBold_Weight;
+        case FontWeight::Weight800 : return SkFontStyle::kExtraBold_Weight;
+        case FontWeight::Weight900 : return SkFontStyle::kBlack_Weight;
+        case FontWeight::Bold : return SkFontStyle::kBold_Weight;
+        case FontWeight::Regular : 
+        default:
+            return SkFontStyle::kNormal_Weight;
+    }
+} 
+
 RSkTextLayoutManager::RSkTextLayoutManager() {
     /* Set default font collection */ 
     collection_ = sk_make_sp<FontCollection>();
@@ -130,16 +155,18 @@ uint32_t RSkTextLayoutManager::buildParagraph (AttributedString attributedString
     ParagraphStyle paraStyle;
     auto fontSize = TextAttributes::defaultTextAttributes().fontSize;
     auto fontSizeMultiplier = TextAttributes::defaultTextAttributes().fontSizeMultiplier;
+    
+    int fontWeight = SkFontStyle::kNormal_Weight;
+    SkFontStyle::Slant fontStyle = SkFontStyle::kUpright_Slant;
 
            attachmentCount++;
            continue;
         }
                                    fragment.textAttributes.fontSizeMultiplier :
                                    TextAttributes::defaultTextAttributes().fontSizeMultiplier;
-
-        style.setFontSize(fontSize * fontSizeMultiplier);
         style.setFontFamilies({SkString(fragment.textAttributes.fontFamily.c_str())});
-
+        style.setFontStyle(SkFontStyle{fontWeight, SkFontStyle::kNormal_Width, fontStyle});
+    
         /* Build paragraph considering text decoration attributes*/
         /* Required during text paint */
         if(fontDecorationRequired) {
