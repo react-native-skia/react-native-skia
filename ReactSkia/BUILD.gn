@@ -87,6 +87,8 @@ source_set("ReactSkia") {
     "modules/RSkTVNavigationEventEmitter.h",
     "views/common/RSkDrawUtils.h",
     "views/common/RSkDrawUtils.cpp",
+    "views/common/RSkImageCacheManager.h",
+    "views/common/RSkImageCacheManager.cpp",
   ]
 
   if (is_mac) {
