@@ -1,44 +1,17 @@
 #include "ReactSkia/components/RSkComponentImage.h"
-#include "include/core/SkBitmap.h"
-#include "include/core/SkData.h"
-#include "include/core/SkImageGenerator.h"
 #include "include/core/SkPaint.h"
 #include "ReactSkia/views/common/RSkDrawUtils.h"
+#include "ReactSkia/views/common/RSkImageCacheManager.h"
 #include "react/renderer/components/image/ImageShadowNode.h"
+
+#include "ReactSkia/utils/RnsLog.h"
+#include "ReactSkia/utils/RnsUtils.h"
 
 namespace facebook {
 namespace react {
 
 using namespace RSkDrawUtils;
-
-namespace {
-std::unique_ptr<SkBitmap> GetAsset(const char *path) {
-  sk_sp<SkData> data = SkData::MakeFromFileName(path);
-  if (!data) {
-    RNS_LOG_ERROR (
-        "RSkComponentImage::_::GetAsset() - Unable to make SkData from path: "
-        << path);
-    return nullptr;
-  }
-
-  std::unique_ptr<SkImageGenerator> gen(
-      SkImageGenerator::MakeFromEncoded(std::move(data)));
-  if (!gen) {
-    return nullptr;
-  }
-  auto bitmap = std::make_unique<SkBitmap>();
-  bool success = gen && bitmap->tryAllocPixels(gen->getInfo()) &&
-      gen->getPixels(
-          gen->getInfo().makeColorSpace(nullptr),
-          bitmap->getPixels(),
-          bitmap->rowBytes());
-  if (!success) {
-    return nullptr;
-  }
-  return bitmap;
-}
-
-} // namespace
+using namespace RSkImageCacheManager;
 
 RSkComponentImage::RSkComponentImage(const ShadowView &shadowView)
     : RSkComponent(shadowView) {}
@@ -56,16 +29,24 @@ void RSkComponentImage::OnPaint(
   if (source.type == ImageSource::Type::Local && !source.uri.empty()) {
     assert(source.uri.substr(0, 14) == "file://assets/");
     std::string path = "./" + source.uri.substr(7);
-    auto bitmap = GetAsset(path.c_str());
-    assert(bitmap);
 
     Rect frame = getAbsoluteFrame();
     SkRect rect = SkRect::MakeXYWH(frame.origin.x, frame.origin.y, frame.size.width, frame.size.height);
     auto const &imageBorderMetrics=imageProps.resolveBorderMetrics(component.layoutMetrics);
-
+	
     /* Draw order 1. Background 2. Image 3. Border*/
     drawBackground(canvas,frame,imageBorderMetrics,imageProps.backgroundColor,imageProps.opacity);
-    canvas->drawBitmapRect(*bitmap, rect, nullptr);
+    RNS_PROFILE_START(drawImage)
+    sk_sp<SkImage> imageData=getImageData(path.c_str());
+    if(imageData) {
+      canvas->drawImageRect(imageData, rect, nullptr);
+    } else {
+      RNS_LOG_ERROR("Draw Image Failed for:" << path);
+    }
+    RNS_PROFILE_END(path.c_str(),drawImage)
+#ifdef RNS_IMAGE_CACHE_USAGE_DEBUG
+      printCacheUsage();
+#endif //RNS_IMAGECACHING_DEBUG
     drawBorder(canvas,frame,imageBorderMetrics,imageProps.backgroundColor,imageProps.opacity);
   }
 }

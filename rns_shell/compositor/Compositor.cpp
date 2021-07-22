@@ -231,4 +231,10 @@ void Compositor::setViewportSize(const SkRect& viewportSize) {
     commit();
 }
 
+#ifdef RNS_SHELL_HAS_GPU_SUPPORT
+GrDirectContext* Compositor::getDirectContext( ) {
+  return windowContext_ ? windowContext_->directContext() : nullptr;
+}
+#endif
+
 }   // namespace RnsShell

@@ -41,6 +41,10 @@ public:
 <<<<<<< HEAD
 =======
 
+#ifdef RNS_SHELL_HAS_GPU_SUPPORT
+    GrDirectContext* getDirectContext(); // interface to expose directcontext of gpu backend
+#endif
+
 private:
 >>>>>>> Munez graphics (#20)
 
