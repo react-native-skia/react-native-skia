@@ -39,6 +39,10 @@ public:
     void addDamageRect(SkIRect damage) { if(supportPartialUpdate_ && !damage.isEmpty()) surfaceDamage_.push_back(damage); }
 #endif
 
+#ifdef RNS_SHELL_HAS_GPU_SUPPORT
+    GrDirectContext* getDirectContext(); // interface to expose directcontext of gpu backend
+#endif
+
 private:
 
     void createWindowContext();
