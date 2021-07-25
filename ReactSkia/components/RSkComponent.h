@@ -59,6 +59,7 @@ class RSkComponent : public RnsShell::Layer, public std::enable_shared_from_this
   Point getFrameOrigin() { return absOrigin_;};
   Size getFrameSize() { return component_.layoutMetrics.frame.size;};
   std::shared_ptr<RnsShell::Layer> layer() { return layer_; }
+
   void requiresLayer(const ShadowView &shadowView);
 
  protected:
@@ -67,7 +68,7 @@ class RSkComponent : public RnsShell::Layer, public std::enable_shared_from_this
  private:
   sk_sp<SkPicture> getPicture();
   // RnsShell::Layer implementations
-  void onPaint(SkSurface *surface) override;
+  void onPaint(SkCanvas*) override;
 
  private:
   RSkComponent *parent_;

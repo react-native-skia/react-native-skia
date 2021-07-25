@@ -8,6 +8,7 @@
 #pragma once
 
 #include "ReactSkia/utils/RnsLog.h"
+#include "ReactSkia/utils/RnsUtils.h"
 
 #include "include/core/SkRefCnt.h"
 #include "include/core/SkSurfaceProps.h"
@@ -31,13 +32,18 @@ public:
 
     virtual sk_sp<SkSurface> getBackbufferSurface() = 0;
 
-    virtual void swapBuffers() = 0;
+    virtual void swapBuffers(std::vector<SkIRect> &damage) = 0;
     virtual bool makeContextCurrent() = 0;
 
     virtual bool isValid() = 0;
 
     const DisplayParams& getDisplayParams() { return displayParams_; }
     virtual void setDisplayParams(const DisplayParams& params) = 0;
+
+#if USE(RNS_SHELL_PARTIAL_UPDATES)
+    virtual bool hasSwapBuffersWithDamage() = 0; // Support for swapping/flipping multiple regions of backbuffer to frontbuffer
+    virtual bool hasBufferCopy() = 0; // Support for copying frontbuffer to backbuffer. Required/used only when hasSwapBuffersWithDamage is false
+#endif
 
 #ifdef RNS_SHELL_HAS_GPU_SUPPORT
     GrDirectContext* directContext() const { return context_.get(); }

@@ -25,13 +25,11 @@ RSkComponent::RSkComponent(const ShadowView &shadowView)
 
 RSkComponent::~RSkComponent() {}
 
-void RSkComponent::onPaint(SkSurface *surface) {
-  if(surface) {
-    auto canvas = surface->getCanvas();
-    if(canvas)
-        RNS_PROFILE_API_OFF(componentName_ << " Paint:", OnPaint(canvas));
+void RSkComponent::onPaint(SkCanvas* canvas) {
+  if(canvas) {
+    RNS_PROFILE_API_OFF(componentName_ << " Paint:", OnPaint(canvas));
   } else {
-      RNS_LOG_ERROR("Invalid Surface ??");
+    RNS_LOG_ERROR("Invalid canvas ??");
   }
 }
 
@@ -64,8 +62,14 @@ void RSkComponent::updateComponentData(const ShadowView &newShadowView , const u
       component_.state = newShadowView.state;
    if(updateMask & ComponentUpdateMaskEventEmitter)
       component_.eventEmitter = newShadowView.eventEmitter;
-   if(updateMask & ComponentUpdateMaskLayoutMetrics)
+   if(updateMask & ComponentUpdateMaskLayoutMetrics) {
       component_.layoutMetrics = newShadowView.layoutMetrics;
+
+      Rect frame = component_.layoutMetrics.frame;
+      SkIRect frameIRect = SkIRect::MakeXYWH(frame.origin.x, frame.origin.y, frame.size.width, frame.size.height);
+      if(layer() && layer().get())
+        layer().get()->setFrame(frameIRect);
+   }
 
    if(layer_ && layer_->type() == RnsShell::LAYER_TYPE_PICTURE) {
      RNS_PROFILE_API_OFF(componentName_ << " getPicture :", static_cast<RnsShell::PictureLayer*>(layer_.get())->setPicture(getPicture()));

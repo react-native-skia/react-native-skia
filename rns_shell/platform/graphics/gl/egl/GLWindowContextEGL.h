@@ -36,9 +36,12 @@ public:
 
     static bool isExtensionSupported(const char* extensionList, const char* extension);
 
-    void onSwapBuffers() override;
+    void onSwapBuffers(std::vector<SkIRect> &damage) override;
     void onDestroyContext() override;
-
+#if USE(RNS_SHELL_PARTIAL_UPDATES)
+    bool onHasSwapBuffersWithDamage() override;
+    bool onHasBufferCopy() override;
+#endif
 protected:
     sk_sp<const GrGLInterface> onInitializeContext() override;
 
@@ -65,16 +68,31 @@ private:
     bool makeContextCurrent() override;
     void swapInterval();
 
-
     GLNativeWindowType      window_;
 #if USE(WPE_RENDERER)
     struct wpe_renderer_backend_egl_offscreen_target* wpeTarget_ { nullptr };
 #endif
 
+#if USE(RNS_SHELL_PARTIAL_UPDATES)
+    std::vector<EGLint> rectsToInts(EGLDisplay display, EGLSurface surface, const std::vector<SkIRect>& rects);
+#if USE(RNS_SHELL_COPY_BUFFERS)
+    void eglInitializeOffscreenFrameBuffer();
+    void eglDeleteOffscreenFrameBuffer();
+    void eglBlitAndSwapBuffers();
+#endif //RNS_SHELL_COPY_BUFFERS
+#endif //RNS_SHELL_PARTIAL_UPDATES
+
     PlatformDisplay& platformDisplay_;
     EGLSurface glSurface_ { nullptr };
     EGLContext glContext_ { nullptr };
     EGLSurfaceType surfaceType_;
+
+#if USE(RNS_SHELL_PARTIAL_UPDATES) &&  USE(RNS_SHELL_COPY_BUFFERS)
+    GLuint offScreenFbo_ { 0 };
+    GLuint colorTexture_ { 0 };
+    GLuint depthStencilTexture_ { 0 };
+#endif
+
 
     typedef GLWindowContext INHERITED;
 };

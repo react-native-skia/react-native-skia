@@ -48,7 +48,7 @@ void RasterWindowContextX11::initializeContext() {
 
 sk_sp<SkSurface> RasterWindowContextX11::getBackbufferSurface() { return backbufferSurface_; }
 
-void RasterWindowContextX11::swapBuffers() {
+void RasterWindowContextX11::swapBuffers(std::vector<SkIRect> &damage) {
 #if !defined(GOOGLE_STRIP_LOG) || (GOOGLE_STRIP_LOG <= INFO)
     RNS_GET_TIME_STAMP_US(start);
 #endif
@@ -79,6 +79,14 @@ void RasterWindowContextX11::swapBuffers() {
     Performance::takeSamples(end - start);
 #endif
 }
+
+#if USE(RNS_SHELL_PARTIAL_UPDATES)
+bool RasterWindowContextX11::hasBufferCopy() {
+    // With current implementation We are using offscreen bitmap to draw and then copying this bitmap to window.
+    // This means both bitmap and window has same data after frame display ( swapbuffer )
+    return true;
+}
+#endif
 
 }  // namespace RnsShell
 

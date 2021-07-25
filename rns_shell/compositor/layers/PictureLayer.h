@@ -24,8 +24,9 @@ public:
     virtual ~PictureLayer() {};
 
     SkPicture* picture() const { return picture_.get(); }
-    void prePaint(SkSurface *surface) override;
-    void paint(SkSurface *surface) override;
+    virtual void paintSelf(PaintContext& context) override;
+    void prePaint(PaintContext& context) override;
+    void paint(PaintContext& context) override;
 
     void setPicture(sk_sp<SkPicture> picture) { picture_ = picture; }
 

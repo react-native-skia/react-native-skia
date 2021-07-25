@@ -170,8 +170,10 @@ void MountingManager::UpdateMountInstruction(
            newChildComponent->updateComponentData(mutation.newChildShadowView,ComponentUpdateMaskEventEmitter);
        if(oldChildShadowView.layoutMetrics != newChildShadowView.layoutMetrics)
            newChildComponent->updateComponentData(mutation.newChildShadowView,ComponentUpdateMaskLayoutMetrics);
+#if USE(RNS_SHELL_PARTIAL_UPDATES)
+       surface_->compositor()->addDamageRect(newChildComponent->layer().get()->getFrame());
+#endif
   }
-
 }
 
 } // namespace react

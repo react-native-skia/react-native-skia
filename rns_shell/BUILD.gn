@@ -21,6 +21,9 @@ config("rns_shell_config") {
     if(extra_cppflags != "") {
       defines += string_split(extra_cppflags)
     }
+    if(rns_enable_partial_updates) {
+      defines += ["USE_RNS_SHELL_PARTIAL_UPDATES"]
+    }
   }
 }
 
