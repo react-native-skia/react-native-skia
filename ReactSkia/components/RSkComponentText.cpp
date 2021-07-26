@@ -34,14 +34,12 @@ void RSkComponentParagraph::OnPaint(SkCanvas *canvas) {
       *std::static_pointer_cast<ParagraphProps const>(component.props);
   auto data = state->getData();
 
-  auto framePoint = getFrameOrigin();
-  auto frameSize = getFrameSize();
+  auto frame = getAbsoluteFrame();
 
   std::unique_ptr<skia::textlayout::Paragraph> fPara;
   /* RSkTextLayoutManager to build paragraph, set build with true to consider font decoration */
-  fPara = textLayoutManager_.buildParagraph(data.attributedString , props.paragraphAttributes , frameSize ,true);
-  fPara->paint(canvas, framePoint.x, framePoint.y);
-
+  fPara = textLayoutManager_.buildParagraph(data.attributedString , props.paragraphAttributes , frame.size ,true);
+  fPara->paint(canvas, frame.origin.x, frame.origin.y);
 }
 
 } // namespace react

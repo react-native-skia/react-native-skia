@@ -1,32 +1,33 @@
 #include "ReactSkia/components/RSkComponentView.h"
-
 #include "include/core/SkPaint.h"
 #include "react/renderer/components/view/ViewShadowNode.h"
-
+#include "ReactSkia/views/common/RSkDrawUtils.h"
 #include <glog/logging.h>
 
 namespace facebook {
 namespace react {
 
+using namespace RSkDrawUtils;
 RSkComponentView::RSkComponentView(const ShadowView &shadowView)
     : RSkComponent(shadowView) {}
 
 void RSkComponentView::OnPaint(SkCanvas *canvas) {
   auto component = getComponentData();
   auto const &viewProps = *std::static_pointer_cast<ViewProps const>(component.props);
-  auto bgcolor = colorComponentsFromColor(viewProps.backgroundColor);
-  float ratio = 255.9999;
-  SkPaint paint;
-  paint.setColor(SkColorSetARGB(
-      bgcolor.alpha * ratio,
-      bgcolor.red * ratio,
-      bgcolor.green * ratio,
-      bgcolor.blue * ratio));
+  /* apply view style props */
+  auto borderMetrics=viewProps.resolveBorderMetrics(component.layoutMetrics);
+  Rect frame = getAbsoluteFrame();
+  /*Retrieve Shadow Props*/
+  ShadowMetrics shadowMetrics{};
+  shadowMetrics.shadowColor=viewProps.shadowColor;
+  shadowMetrics.shadowOffset=viewProps.shadowOffset;
+  shadowMetrics.shadowOpacity=viewProps.shadowOpacity;
+  shadowMetrics.shadowRadius=viewProps.shadowRadius;
 
-  auto framePoint = getFrameOrigin();
-  auto frameSize = getFrameSize();
-  SkRect rect = SkRect::MakeXYWH(framePoint.x,framePoint.y,frameSize.width,frameSize.height);
-  canvas->drawRect(rect, paint);
+/*Draw Order : 1. Shadow 2. BackGround 3 Border*/
+  drawShadow(canvas,frame,borderMetrics,shadowMetrics);
+  drawBackground(canvas,frame,borderMetrics,viewProps.backgroundColor,viewProps.opacity);
+  drawBorder(canvas,frame,borderMetrics,viewProps.backgroundColor,viewProps.opacity);
 }
 
 } // namespace react

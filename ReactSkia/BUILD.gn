@@ -74,6 +74,9 @@ source_set("ReactSkia") {
     "components/RSkComponentText.h",
     "components/RSkComponentView.cpp",
     "components/RSkComponentView.h",
+    "views/common/RSkDrawUtils.h",
+    "views/common/RSkDrawUtils.cpp",
+
   ]
 
   if (is_mac) {
