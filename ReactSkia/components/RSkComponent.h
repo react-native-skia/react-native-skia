@@ -1,9 +1,12 @@
 #pragma once
 
+#include "ReactSkia/utils/RnsUtils.h"
+#include "ReactSkia/utils/RnsLog.h"
+
 #include "include/core/SkCanvas.h"
 #include "react/renderer/mounting/ShadowView.h"
-#include "sk_app/Window.h"
-#include <glog/logging.h>
+
+#include "rns_shell/compositor/layers/Layer.h"
 
 namespace facebook {
 namespace react {
@@ -35,7 +38,7 @@ struct Component {
 
 class RSkComponent;
 
-class RSkComponent : public sk_app::Window::Layer {
+class RSkComponent : public RnsShell::Layer, public std::enable_shared_from_this<RSkComponent>  {
  public:
   RSkComponent(const ShadowView &shadowView);
   RSkComponent(RSkComponent &&) = default;
@@ -54,18 +57,28 @@ class RSkComponent : public sk_app::Window::Layer {
   virtual void updateComponentData(const ShadowView &newShadowView , const uint32_t updateMask);
   Component getComponentData() { return component_;};
   Rect getAbsoluteFrame(){return Rect{absOrigin_,component_.layoutMetrics.frame.size} ;};
+  std::shared_ptr<RnsShell::Layer> layer() { return layer_; }
+
+  void requiresLayer(const ShadowView &shadowView);
 
  protected:
   virtual void OnPaint(SkCanvas *canvas) = 0;
 
  private:
-  // sk_app::Window::Layer implementations
-  void onPaint(SkSurface *surface) override;
+  sk_sp<SkPicture> getPicture();
+  // RnsShell::Layer implementations
+  void onPaint(SkCanvas*) override;
 
  private:
   RSkComponent *parent_;
+  std::shared_ptr<RnsShell::Layer> layer_;
   Point absOrigin_;
   Component component_;
+#ifdef RNS_ENABLE_API_PERF
+  ComponentName componentName_;
+#endif
+
+  typedef Layer INHERITED;
 };
 
 } // namespace react

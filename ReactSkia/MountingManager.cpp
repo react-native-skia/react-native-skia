@@ -63,6 +63,8 @@ void MountingManager::ProcessMutations(
     ShadowViewMutationList const &mutations,
     SurfaceId surfaceId) {
 
+  surface_->compositor()->begin();
+
   for (auto const &mutation : mutations) {
     switch (mutation.type) {
       case ShadowViewMutation::Create: {
@@ -87,20 +89,24 @@ void MountingManager::ProcessMutations(
       }
     }
   }
+
+#if !defined(GOOGLE_STRIP_LOG) || (GOOGLE_STRIP_LOG <= INFO)
+  static double prevTime = SkTime::GetMSecs();
+  RNS_LOG_INFO_EVERY_N(60, "Calling Compositor Commit(" << std::this_thread::get_id()) << ") : after " << SkTime::GetMSecs() - prevTime << " ms";
+  prevTime = SkTime::GetMSecs();
+#endif
+  surface_->compositor()->commit();
 }
 
 
 void MountingManager::CreateMountInstruction(
     ShadowViewMutation const &mutation,
     SurfaceId surfaceId) {
-
   auto provider = GetProvider(mutation.newChildShadowView);
   if (provider) {
     std::shared_ptr<RSkComponent> component =
         provider->CreateAndAddComponent(mutation.newChildShadowView);
-    if (component) {
-      surface_->AddComponent(component);
-    }
+    component.get()->requiresLayer(mutation.newChildShadowView);
   }
 }
 
@@ -112,7 +118,6 @@ void MountingManager::DeleteMountInstruction(
   if (provider) {
       std::shared_ptr<RSkComponent> component = provider->GetComponent(mutation.oldChildShadowView.tag);
       if (component) {
-          surface_->DeleteComponent(component);
           provider->DeleteComponent(mutation.oldChildShadowView.tag);
       }
   }
@@ -165,8 +170,10 @@ void MountingManager::UpdateMountInstruction(
            newChildComponent->updateComponentData(mutation.newChildShadowView,ComponentUpdateMaskEventEmitter);
        if(oldChildShadowView.layoutMetrics != newChildShadowView.layoutMetrics)
            newChildComponent->updateComponentData(mutation.newChildShadowView,ComponentUpdateMaskLayoutMetrics);
+#if USE(RNS_SHELL_PARTIAL_UPDATES)
+       surface_->compositor()->addDamageRect(newChildComponent->layer().get()->getFrame());
+#endif
   }
-
 }
 
 } // namespace react
