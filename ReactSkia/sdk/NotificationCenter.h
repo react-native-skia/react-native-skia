@@ -54,9 +54,9 @@ class NotificationCenter {
             std::function<void (Args...)> cb;
         };
 
-        static std::mutex mutex;
-        static unsigned int last_listener;
-        static std::multimap<std::string, std::shared_ptr<ListenerBase>> listeners;
+        std::mutex mutex;
+        unsigned int last_listener;
+        std::multimap<std::string, std::shared_ptr<ListenerBase>> listeners;
 
         NotificationCenter(const NotificationCenter&) = delete;  
         const NotificationCenter& operator = (const NotificationCenter&) = delete;
@@ -66,6 +66,9 @@ class NotificationCenter {
         }
 
         ~NotificationCenter() {}
+
+        static NotificationCenter& defaultCenter();
+        static void initializeDefault();
 
         template <typename... Args>
         unsigned int addListener(std::string eventName, std::function<void (Args...)> cb);
@@ -88,7 +91,6 @@ unsigned int NotificationCenter::addListener(std::string eventName, std::functio
     if (!cb) {
         // throw does not work as exception is disbaled with -fno-exceptions 
         //throw std::invalid_argument("NotificationCenter::addListener: No callbak provided.");
-
         std::cout << "NotificationCenter::addListener: No callback provided.";
     }
 
@@ -108,7 +110,6 @@ unsigned int NotificationCenter::on(std::string eventName, std::function<void (A
 template <typename... Args>
 void NotificationCenter::emit(std::string eventName, Args... args) {
     std::list<std::shared_ptr<Listener<Args...>>> handlers;
-    
     {
         std::lock_guard<std::mutex> lock(mutex);
 

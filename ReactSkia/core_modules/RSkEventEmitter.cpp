@@ -37,7 +37,7 @@ jsi::Value RSkEventEmitter::addListenerWrapper(
     auto eventName = nameValue.utf8(rt);
     
     // Call specific Event listener in Class object 
-    // TODO: check what to return
+
     return self.addListener(eventName.data());
 }
 
@@ -48,8 +48,8 @@ jsi::Value RSkEventEmitter::addListener(std::string eventName) {
         // be responsible to observing different types of events 
         startObserving();
     }
-    // TODO: Check if we this return value is Ok? 
-    return listenerCount_;
+    
+    return jsi::Value::undefined();
 }
 
 void RSkEventEmitter::sendEventWithName(std::string eventName, folly::dynamic &&params) {
@@ -72,7 +72,7 @@ jsi::Value RSkEventEmitter::removeListenersWrapper(
       TurboModule &turboModule,
       const jsi::Value *args,
       size_t count) {
-    if (count != 4) {
+    if (count != 1) {
       return jsi::Value::undefined();
     }
     auto &self = static_cast<RSkEventEmitter &>(turboModule);
@@ -91,8 +91,8 @@ jsi::Value RSkEventEmitter::removeListeners(int removeCount) {
         // be responsible to observing different types of events 
         stopObserving();
     }
-    // TODO: Check if we really need to return something? 
-    return listenerCount_;
+    
+    return jsi::Value::undefined();
 }
 
 } // namespace react
