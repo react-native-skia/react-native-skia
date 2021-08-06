@@ -82,6 +82,8 @@ source_set("ReactSkia") {
     "views/common/RSkDrawUtils.h",
     "views/common/RSkImageCacheManager.cpp",
     "views/common/RSkImageCacheManager.h",
+    "views/common/RSkImageUtils.cpp",
+    "views/common/RSkImageUtils.h",
   ]
 
   if (is_mac) {
