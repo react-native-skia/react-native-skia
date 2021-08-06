@@ -66,9 +66,9 @@ void RSkComponentParagraph::OnPaint(SkCanvas *canvas) {
       }
 
       ParagraphStyle paraStyle;
-      paraBuilder = std::static_pointer_cast<ParagraphBuilder>(std::make_shared<ParagraphBuilderImpl>(paraStyle,textLayoutManager_.collection_));
+      paraBuilder = std::static_pointer_cast<ParagraphBuilder>(std::make_shared<ParagraphBuilderImpl>(paraStyle,data.layoutManager->collection_));
 
-      expectedAttachmentCount = textLayoutManager_.buildParagraph(data.attributedString, props.paragraphAttributes, true, paraBuilder);
+      expectedAttachmentCount = data.layoutManager->buildParagraph(data.attributedString, props.paragraphAttributes, true, paraBuilder);
       currentAttachmentCount = 0;
       /* If the count is 0,means we have no fragment attachments.So paint right away*/
       if(!expectedAttachmentCount) {
