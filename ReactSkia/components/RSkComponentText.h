@@ -58,8 +58,6 @@ class RSkComponentParagraph final : public RSkComponent {
      return nullptr;
   }
 
-  RSkTextLayoutManager textLayoutManager_;
-
 };
 
 } // namespace react

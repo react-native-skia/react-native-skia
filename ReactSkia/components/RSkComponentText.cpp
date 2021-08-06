@@ -46,7 +46,7 @@ void RSkComponentParagraph::OnPaint(SkCanvas *canvas) {
   /*    - use parent paragraph builder to add text & push style */
   /*    - draw the paragraph, when we reach the last fragment attachment*/
   if(parent) {
-      parent->expectedAttachmentCount += textLayoutManager_.buildParagraph(data.attributedString,
+      parent->expectedAttachmentCount += data.layoutManager->buildParagraph(data.attributedString,
                                                           props.paragraphAttributes,
                                                           true,
                                                           parent->paraBuilder);
@@ -66,9 +66,9 @@ void RSkComponentParagraph::OnPaint(SkCanvas *canvas) {
       }
 
       ParagraphStyle paraStyle;
-      paraBuilder = std::static_pointer_cast<ParagraphBuilder>(std::make_shared<ParagraphBuilderImpl>(paraStyle,textLayoutManager_.collection_));
+      paraBuilder = std::static_pointer_cast<ParagraphBuilder>(std::make_shared<ParagraphBuilderImpl>(paraStyle,data.layoutManager->collection_));
 
-      expectedAttachmentCount = textLayoutManager_.buildParagraph(data.attributedString, props.paragraphAttributes, true, paraBuilder);
+      expectedAttachmentCount = data.layoutManager->buildParagraph(data.attributedString, props.paragraphAttributes, true, paraBuilder);
       currentAttachmentCount = 0;
       auto paragraph = paraBuilder->Build();
 
