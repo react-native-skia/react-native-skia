@@ -120,10 +120,12 @@ source_set("ReactSkia") {
     "modules/RSkWebSocketModuleBase.cpp",
     "modules/RSkTVNavigationEventEmitter.cpp",
     "modules/RSkTVNavigationEventEmitter.h",
-    "views/common/RSkDrawUtils.h",
     "views/common/RSkDrawUtils.cpp",
-    "views/common/RSkImageCacheManager.h",
+    "views/common/RSkDrawUtils.h",
     "views/common/RSkImageCacheManager.cpp",
+    "views/common/RSkImageCacheManager.h",
+    "views/common/RSkImageUtils.cpp",
+    "views/common/RSkImageUtils.h",
   ]
 
   if (is_mac) {
