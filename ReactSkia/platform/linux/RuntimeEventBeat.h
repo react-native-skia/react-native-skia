@@ -5,32 +5,26 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-//#include <CoreFoundation/CFRunLoop.h>
-//#include <CoreFoundation/CoreFoundation.h>
-#include <ReactCommon/RuntimeExecutor.h>
-#include <react/renderer/core/EventBeat.h>
+#include <react/utils/RunLoopObserver.h>
 
 namespace facebook {
 namespace react {
 
 /*
- * Event beat associated with JavaScript runtime.
- * The beat is called on `RuntimeExecutor`'s thread induced by the main thread
- * event loop.
+ * RuntimeEventBeat to flush Asynchronous Native Module Events into JS world .
+ * using ReactCommon 'RunLoopObserver'
  */
-class RuntimeEventBeat : public EventBeat {
+class RuntimeEventBeat : public RunLoopObserver{
  public:
-  RuntimeEventBeat(
-      EventBeat::SharedOwnerBox const &ownerBox,
-      RuntimeExecutor runtimeExecutor);
+  RuntimeEventBeat(RunLoopObserver::WeakOwner const &owner);
   ~RuntimeEventBeat();
-
-  void induce() const override;
+  virtual bool isOnRunLoopThread() const noexcept override;
+  static bool keepBeating;
+  void triggerBeat(RunLoopObserver::Activity activities); /*to transmit beat call to Beat Thread*/
 
  private:
-  const RuntimeExecutor runtimeExecutor_;
-//  CFRunLoopObserverRef mainRunLoopObserver_;
-  mutable std::atomic<bool> isBusy_{false};
+  void startObserving() const noexcept override;
+  void stopObserving() const noexcept override;
 };
 
 } // namespace react
