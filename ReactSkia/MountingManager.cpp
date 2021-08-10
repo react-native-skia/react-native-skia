@@ -135,6 +135,7 @@ void MountingManager::InsertMountInstruction(
 
   if (parentComponent) {
       parentComponent->mountChildComponent(newChildComponent,mutation.index);
+      surface_->navigator()->addToNavList(newChildComponent);
   }
 
 }
@@ -148,6 +149,7 @@ void MountingManager::RemoveMountInstruction(
 
   if (parentComponent) {
       parentComponent->unmountChildComponent(oldChildComponent,mutation.index);
+      surface_->navigator()->removeFromNavList(oldChildComponent);
   }
 
 }
@@ -173,6 +175,7 @@ void MountingManager::UpdateMountInstruction(
 #if USE(RNS_SHELL_PARTIAL_UPDATES)
        surface_->compositor()->addDamageRect(newChildComponent->layer().get()->getFrame());
 #endif
+       surface_->navigator()->updateInNavList(newChildComponent); // only if TV related proeprties have changed ?
   }
 }
 

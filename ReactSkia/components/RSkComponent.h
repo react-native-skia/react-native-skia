@@ -5,6 +5,7 @@
 
 #include "include/core/SkCanvas.h"
 #include "react/renderer/mounting/ShadowView.h"
+#include "react/renderer/components/view/ViewProps.h"
 
 #include "rns_shell/compositor/layers/Layer.h"
 
@@ -38,6 +39,7 @@ struct Component {
   EventEmitter::Shared eventEmitter{};
   LayoutMetrics layoutMetrics{EmptyLayoutMetrics};
   State::Shared state{};
+  int zIndex{};
 };
 
 class RSkComponent;

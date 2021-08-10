@@ -73,7 +73,6 @@ private:
 #endif
     int          MSAASampleCount_;
     Atom         wmDeleteMessage_;
-    NotificationCenter keyNotification;
     typedef Window INHERITED;
 };
 

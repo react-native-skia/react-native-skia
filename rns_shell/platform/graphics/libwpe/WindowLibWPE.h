@@ -92,7 +92,6 @@ private:
     int     viewHeight_;
     int     MSAASampleCount_;
     typedef Window INHERITED;
-    NotificationCenter keyNotification;
 };
 
 }   // namespace RnsShell

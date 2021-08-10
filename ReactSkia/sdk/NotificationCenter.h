@@ -91,7 +91,6 @@ unsigned int NotificationCenter::addListener(std::string eventName, std::functio
         //throw std::invalid_argument("NotificationCenter::addListener: No callbak provided.");
         std::cout << "NotificationCenter::addListener: No callback provided.";
     }
-
     std::lock_guard<std::mutex> lock(mutex);
 
     unsigned int listener_id = ++last_listener;
@@ -110,7 +109,6 @@ void NotificationCenter::emit(std::string eventName, Args... args) {
     std::list<std::shared_ptr<Listener<Args...>>> handlers;
     {
         std::lock_guard<std::mutex> lock(mutex);
-
         auto range = listeners.equal_range(eventName);
         handlers.resize(std::distance(range.first, range.second));
         std::transform(range.first, range.second, handlers.begin(), [] (std::pair<const std::string, std::shared_ptr<ListenerBase>> p) {

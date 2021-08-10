@@ -47,7 +47,6 @@ jsi::Value RSkEventEmitter::addListener(std::string eventName) {
         // be responsible to observing different types of events 
         startObserving();
     }
-    
     return jsi::Value::undefined();
 }
 
@@ -72,8 +71,6 @@ jsi::Value RSkEventEmitter::removeListenersWrapper(
       const jsi::Value *args,
       size_t count) {
     if (count != 1) {
-    auto &self = static_cast<RSkEventEmitter &>(turboModule);
-    int removeCount = args[0].getNumber();
 
     // Call the specific non-static Class object
     return self.removeListeners(removeCount);
@@ -88,9 +85,7 @@ jsi::Value RSkEventEmitter::removeListeners(int removeCount) {
         // be responsible to observing different types of events 
         stopObserving();
     }
-    
     return jsi::Value::undefined();
 }
 
 } // namespace react
-} // namespace facebook

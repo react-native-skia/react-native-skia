@@ -38,8 +38,7 @@ void TaskLoop::dispatch(Func fun) {
         eventBase_.runInEventBaseThread(std::move(fun));
 }
 
-void TaskLoop::initializeMain()
-{
+void TaskLoop::initializeMain() {
     if(mainTaskRunner_.get() == nullptr)
         mainTaskRunner_ = std::make_unique<TaskLoop>();
 }
