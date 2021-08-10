@@ -54,9 +54,9 @@ class NotificationCenter {
             std::function<void (Args...)> cb;
         };
 
-        static std::mutex mutex;
-        static unsigned int last_listener;
-        static std::multimap<std::string, std::shared_ptr<ListenerBase>> listeners;
+        std::mutex mutex;
+        unsigned int last_listener;
+        std::multimap<std::string, std::shared_ptr<ListenerBase>> listeners;
 
         NotificationCenter(const NotificationCenter&) = delete;  
         const NotificationCenter& operator = (const NotificationCenter&) = delete;
@@ -66,6 +66,9 @@ class NotificationCenter {
         }
 
         ~NotificationCenter() {}
+
+        static NotificationCenter& defaultCenter();
+        static void initializeDefault();
 
         template <typename... Args>
         unsigned int addListener(std::string eventName, std::function<void (Args...)> cb);
@@ -91,7 +94,6 @@ unsigned int NotificationCenter::addListener(std::string eventName, std::functio
 
         std::cout << "NotificationCenter::addListener: No callback provided.";
     }
-
     std::lock_guard<std::mutex> lock(mutex);
 
     unsigned int listener_id = ++last_listener;
@@ -111,7 +113,6 @@ void NotificationCenter::emit(std::string eventName, Args... args) {
     
     {
         std::lock_guard<std::mutex> lock(mutex);
-
         auto range = listeners.equal_range(eventName);
         handlers.resize(std::distance(range.first, range.second));
         std::transform(range.first, range.second, handlers.begin(), [] (std::pair<const std::string, std::shared_ptr<ListenerBase>> p) {

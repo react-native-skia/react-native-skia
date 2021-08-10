@@ -20,6 +20,7 @@ RSkSurfaceWindow::RSkSurfaceWindow() {
     setDirectContext(compositor_->getDirectContext());
   }
 #endif
+  navigator_ = RSkSpatialNavigator::sharedSpatialNavigator();
 }
 
 RSkSurfaceWindow::~RSkSurfaceWindow() {

@@ -2,12 +2,16 @@
 
 #include "react/renderer/core/LayoutConstraints.h"
 
+#include "ReactSkia/core_modules/RSkSpatialNavigator.h"
 #include "rns_shell/compositor/Compositor.h"
 
 #include <list>
 
 namespace facebook {
 namespace react {
+
+using namespace SpatialNavigator;
+using namespace RnsShell;
 
 class RSkComponent;
 
@@ -19,7 +23,8 @@ class RSkSurfaceWindow {
 
   ~RSkSurfaceWindow();
 
-  RnsShell::Compositor* compositor() { return compositor_.get(); }
+  Compositor* compositor() { return compositor_.get(); }
+  RSkSpatialNavigator* navigator() { return navigator_; }
 
   LayoutConstraints GetLayoutConstraints();
 
@@ -34,7 +39,8 @@ class RSkSurfaceWindow {
   void RecreateWindowBackend();
 
  private:
-  std::unique_ptr<RnsShell::Compositor> compositor_;
+  std::unique_ptr<Compositor> compositor_;
+  RSkSpatialNavigator* navigator_;
 };
 
 } // namespace react

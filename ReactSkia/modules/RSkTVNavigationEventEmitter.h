@@ -1,7 +1,13 @@
+/*
+* Copyright (C) 1994-2021 OpenTV, Inc. and Nagravision S.A.
+*
+* Use of this source code is governed by a BSD-style license that can be
+* found in the LICENSE file.
+*/
+
 #include "sdk/NotificationCenter.h"
 #include "sdk/RNSKeyCodeMapping.h"
 #include "core_modules/RSkEventEmitter.h"
-#include "tools/skui/Key.h"
 
 namespace facebook {
 namespace react {
@@ -10,11 +16,10 @@ class RSkTVNavigationEventEmitter final: public RSkEventEmitter {
     private:
         std::vector<std::string> events_ = {"onHWKeyEvent"};
         std::string tvEventName_ = "RCTTVNavigationEventNotification";
-        unsigned int eventId_ = UINT_MAX; // Some undefined ID
+        unsigned int navEventId_ = UINT_MAX; // Some undefined ID
 
-        NotificationCenter keyEventNotification;
-
-        void onTVKeyEvent(rnsKey  eventType,rnsKeyAction eventKeyAction);
+        void handleTVKeyEvent(rnsKey  eventKey, rnsKeyAction eventKeyAction);
+        void handleTVNavigationEventNotification(folly::dynamic paramObject);
 
     public:
         RSkTVNavigationEventEmitter(
@@ -29,7 +34,6 @@ class RSkTVNavigationEventEmitter final: public RSkEventEmitter {
         }
 
         void startObserving();
-
         void stopObserving();
 };
 

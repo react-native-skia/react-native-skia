@@ -25,9 +25,7 @@
 
 #include "NotificationCenter.h"
 
-unsigned int NotificationCenter::last_listener = 0;
-std::mutex NotificationCenter::mutex;
-std::multimap<std::string, std::shared_ptr<NotificationCenter::ListenerBase>> NotificationCenter::listeners;
+static std::unique_ptr<NotificationCenter> defaultCenter_;
 
 void NotificationCenter::removeListener(unsigned int listener_id) {
     std::lock_guard<std::mutex> lock(mutex);
@@ -44,4 +42,13 @@ void NotificationCenter::removeListener(unsigned int listener_id) {
 
         std::cout << "NotificationCenter::removeListener: Invalid listener id.";
     }
+}
+
+NotificationCenter& NotificationCenter::defaultCenter() {
+    return *defaultCenter_;
+}
+
+void NotificationCenter::initializeDefault() {
+    if(defaultCenter_.get() == nullptr)
+        defaultCenter_ = std::make_unique<NotificationCenter>();
 }

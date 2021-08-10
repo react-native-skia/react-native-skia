@@ -6,11 +6,11 @@
 * found in the LICENSE file.
 */
 
-
 #include "src/utils/SkUTF.h"
 #include "WindowContextFactory.h"
 #include "WindowLibWPE.h"
 #include "platform/linux/TaskLoop.h"
+
 using namespace std; 
 namespace RnsShell {
 
@@ -245,9 +245,9 @@ void WindowLibWPE::setRequestedDisplayParams(const DisplayParams& params, bool a
 
     INHERITED::setRequestedDisplayParams(params, allowReattach);
 }
+
 void WindowLibWPE::onKey(rnsKey keyType, rnsKeyAction eventKeyAction){
-    std::string eventName = "RCTTVNavigationEventNotification";
-    keyNotification.emit(eventName,keyType,eventKeyAction);
+    NotificationCenter::defaultCenter().emit("onHWKeyEvent", eventKeyType, eventKeyAction);
     return;
 }
 

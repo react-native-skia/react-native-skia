@@ -276,8 +276,8 @@ void WindowX11::setRequestedDisplayParams(const DisplayParams& params, bool allo
 }
 
 void WindowX11::onKey(rnsKey eventKeyType, rnsKeyAction eventKeyAction){
-    std::string eventName = "RCTTVNavigationEventNotification";
-    keyNotification.emit(eventName, eventKeyType, eventKeyAction);
+    NotificationCenter::defaultCenter().emit("onHWKeyEvent", eventKeyType, eventKeyAction);
     return;
 }
+
 }   // namespace RnsShell

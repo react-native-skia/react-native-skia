@@ -49,6 +49,7 @@ typedef enum rnsKey{
 }rnsKey;
 
 typedef enum rnsKeyAction{
+    RNS_KEY_UnknownAction = -1,
     RNS_KEY_Press,
     RNS_KEY_Release
 }rnsKeyAction;

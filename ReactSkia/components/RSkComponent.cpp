@@ -13,9 +13,7 @@ RSkComponent::RSkComponent(const ShadowView &shadowView)
     : INHERITED(RnsShell::LAYER_TYPE_DEFAULT)
     , parent_(nullptr)
     , absOrigin_(shadowView.layoutMetrics.frame.origin)
-    , component_(shadowView)
-{
-}
+    , component_(shadowView) {}
 
 RSkComponent::~RSkComponent() {}
 
@@ -54,8 +52,11 @@ void RSkComponent::requiresLayer(const ShadowView &shadowView) {
 }
 
 void RSkComponent::updateComponentData(const ShadowView &newShadowView , const uint32_t updateMask) {
-   if(updateMask & ComponentUpdateMaskProps)
+   if(updateMask & ComponentUpdateMaskProps) {
       component_.props = newShadowView.props;
+      auto const &viewProps = *std::static_pointer_cast<ViewProps const>(component_.props);
+      component_.zIndex = viewProps.zIndex.value_or(0);
+   }
    if(updateMask & ComponentUpdateMaskState)
       component_.state = newShadowView.state;
    if(updateMask & ComponentUpdateMaskEventEmitter)
