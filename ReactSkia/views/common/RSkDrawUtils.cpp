@@ -146,6 +146,148 @@ void drawRect(DrawMethod drawMethod,SkCanvas *canvas,
 {
     if(canvas == NULL) return;
 /*Case DrawRect assumes same width for all the sides.So referring left */
+<<<<<<< HEAD
+=======
+    auto rectStrokeWidth = borderProps.borderWidths.left;
+
+    SkRRect rRect ;
+    SkRect rect;
+    SkPaint paintObj;
+    if(paint != NULL){ paintObj = *paint; }
+	
+  /*Creating basic layout from props*/
+    rect=SkRect::MakeXYWH(frame.origin.x,frame.origin.y,\
+         frame.size.width,frame.size.height);
+    SkVector radii[4]={{borderProps.borderRadii.topLeft,borderProps.borderRadii.topLeft},
+                       {borderProps.borderRadii.topRight,borderProps.borderRadii.topRight}, \
+                       {borderProps.borderRadii.bottomLeft,borderProps.borderRadii.bottomLeft}, \
+                       {borderProps.borderRadii.bottomRight,borderProps.borderRadii.bottomRight } };
+
+    setColor(Color,opacity,&paintObj );
+    /* To sync with the border draw type, resetting the stroke width for background*/
+    if(!hasUniformBorderEdges(borderProps) && (drawMethod == Background))
+        rectStrokeWidth=0;
+
+    /*Border adjustment needed in case of stroke width, as half the pixels where drawn outside and half inside by SKIA*/
+      if(rectStrokeWidth > 0){
+          rect.inset(rectStrokeWidth/2,rectStrokeWidth/2);
+      }
+      rRect.setRectRadii(rect,radii);
+    if(drawMethod == Background){
+        setStyle(rectStrokeWidth,SkPaint::kStrokeAndFill_Style,BorderStyle::Solid,&paintObj);
+    }
+    if(drawMethod == Border){
+        setStyle(rectStrokeWidth,SkPaint::kStroke_Style,borderProps.borderStyles.left,&paintObj);
+    }
+    canvas->drawRRect(rRect, paintObj);
+}
+void drawEdges(BorderEdges borderEdge,SkCanvas *canvas,
+                                        Rect frame,
+                                        BorderMetrics borderProps,
+                                        SharedColor backgroundColor,
+                                        Float opacity)
+{
+    if(canvas == NULL) return;
+
+    SkPath path;
+    SkPaint paint;
+    PathMetrics pathMetrics;
+
+     /*Constructing draw cordinates*/
+    auto rectOriginX=frame.origin.x;
+    auto rectOriginY=frame.origin.y;
+    auto rectDestX=frame.origin.x+frame.size.width;
+    auto rectDestY=frame.origin.y+frame.size.height;
+
+    /*Setting up default Value*/
+    auto strokeWidth = borderProps.borderWidths.left;
+    auto edgeColor=borderProps.borderColors.left;
+
+    if(borderEdge == RightEdge){
+        edgeColor=borderProps.borderColors.right;
+        strokeWidth=borderProps.borderWidths.right;
+
+        pathMetrics.outterStart.x=rectDestX;
+        pathMetrics.outterStart.y=rectOriginY;
+        pathMetrics.outterEnd.x=rectDestX;
+        pathMetrics.outterEnd.y=rectDestY;
+        pathMetrics.innerStart.x=rectDestX-strokeWidth;
+        pathMetrics.innerStart.y=rectOriginY+borderProps.borderWidths.top;
+        pathMetrics.innerEnd.x=rectDestX-strokeWidth;
+        pathMetrics.innerEnd.y=rectDestY-borderProps.borderWidths.bottom;
+        pathMetrics.startRadius=borderProps.borderRadii.topRight;
+        pathMetrics.endRadius=borderProps.borderRadii.bottomRight;
+        pathMetrics.width=strokeWidth;
+        pathMetrics.angle=0;
+    }
+    if(borderEdge == BottomEdge){
+        edgeColor=borderProps.borderColors.bottom;
+        strokeWidth=borderProps.borderWidths.bottom;
+
+        pathMetrics.outterStart.x=rectOriginX;
+        pathMetrics.outterStart.y=rectDestY;
+        pathMetrics.outterEnd.x=rectDestX;
+        pathMetrics.outterEnd.y=rectDestY;
+        pathMetrics.innerStart.x=rectOriginX+borderProps.borderWidths.left;
+        pathMetrics.innerStart.y=rectDestY-strokeWidth;
+        pathMetrics.innerEnd.x=rectDestX-borderProps.borderWidths.right;
+        pathMetrics.innerEnd.y=rectDestY-strokeWidth;
+        pathMetrics.startRadius=borderProps.borderRadii.bottomLeft;
+        pathMetrics.endRadius=borderProps.borderRadii.bottomRight;
+        pathMetrics.width=strokeWidth;
+        pathMetrics.angle=90;
+    }
+     if(borderEdge == LeftEdge){
+         edgeColor=borderProps.borderColors.left;
+         strokeWidth=borderProps.borderWidths.left;
+
+         pathMetrics.outterStart.x=rectOriginX;
+         pathMetrics.outterStart.y=rectOriginY;
+         pathMetrics.outterEnd.x=rectOriginX;
+         pathMetrics.outterEnd.y=rectDestY;
+         pathMetrics.innerStart.x=rectOriginX+strokeWidth;
+         pathMetrics.innerStart.y=rectOriginY+borderProps.borderWidths.top;
+         pathMetrics.innerEnd.x=rectOriginX+strokeWidth;
+         pathMetrics.innerEnd.y=rectDestY-borderProps.borderWidths.bottom;
+         pathMetrics.startRadius=borderProps.borderRadii.topLeft;
+         pathMetrics.endRadius=borderProps.borderRadii.bottomLeft;
+         pathMetrics.width=strokeWidth;
+         pathMetrics.angle=180;
+     }
+     if(borderEdge == TopEdge){
+         edgeColor=borderProps.borderColors.top;
+         strokeWidth=borderProps.borderWidths.top;
+     
+         pathMetrics.outterStart.x=rectOriginX;
+         pathMetrics.outterStart.y=rectOriginY;
+         pathMetrics.outterEnd.x=rectDestX;
+         pathMetrics.outterEnd.y=rectOriginY;
+         pathMetrics.innerStart.x=rectOriginX+borderProps.borderWidths.left;
+         pathMetrics.innerStart.y=rectOriginY+strokeWidth;
+         pathMetrics.innerEnd.x=rectDestX-borderProps.borderWidths.right;
+         pathMetrics.innerEnd.y=rectOriginY+strokeWidth;
+         pathMetrics.startRadius=borderProps.borderRadii.topLeft;
+         pathMetrics.endRadius=borderProps.borderRadii.topRight;
+         pathMetrics.width=strokeWidth;
+         pathMetrics.angle=270;
+     }
+     createEdge(pathMetrics,borderEdge,&path);
+     setColor(edgeColor,opacity,&paint);
+     path.setFillType(SkPathFillType::kEvenOdd);
+     canvas->drawPath(path, paint);
+}
+} //namespace
+namespace RSkDrawUtils{
+void  drawBackground(SkCanvas *canvas, 
+                               Rect frame,
+                               BorderMetrics borderProps,
+                               SharedColor backgroundColor,
+                               Float opacity)
+{
+    if( backgroundColor && isDrawVisible(backgroundColor,opacity) ){
+      drawRect(Background,canvas,frame,borderProps,backgroundColor,opacity);
+    }
+>>>>>>> Bug Fix:There shouldn't any background drawing, when background color not specified
 }
 void drawBorder(SkCanvas *canvas,
                                Rect frame,
