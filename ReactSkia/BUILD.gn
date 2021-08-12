@@ -85,6 +85,8 @@ source_set("ReactSkia") {
     "components/RSkComponentView.h",
     "modules/RSkWebSocketModuleBase.h",
     "modules/RSkWebSocketModuleBase.cpp",
+    "modules/RSkNetworkingModuleBase.h",
+    "modules/RSkNetworkingModuleBase.cpp",
     "modules/RSkTVNavigationEventEmitter.cpp",
     "modules/RSkTVNavigationEventEmitter.h",
     "views/common/RSkDrawUtils.cpp",
@@ -114,6 +116,8 @@ source_set("ReactSkia") {
       "platform/linux/RuntimeEventBeat.cpp",
       "modules/platform/nopoll/RSkWebSocketModule.cpp",
       "modules/platform/nopoll/RSkWebSocketModule.h",
+      "modules/platform/libcurl/RSkNetworkingModule.cpp",
+      "modules/platform/libcurl/RSkNetworkingModule.h",
     ]
     defines = ["OS_LINUX"]
   }
@@ -160,8 +164,10 @@ source_set("ReactSkia") {
     ":ReactSkia_config",
   ]
 
+
   if (is_linux) {
     configs += ["//third_party/nopoll:nopoll_from_pkgconfig"]
+    configs += ["//third_party/libcurl:libcurl_from_pkgconfig"]
   }
 
 }
