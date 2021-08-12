@@ -1,0 +1,19 @@
+# Copyright (C) 1994-2021 OpenTV, Inc. and Nagravision S.A.  
+# This source code is licensed under the MIT license found in the  
+# LICENSE file in the root directory of this source tree.
+
+declare_args() {
+  use_system_libcurl = true
+}
+
+if (use_system_libcurl) {
+  import("//build/config/linux/pkg_config.gni")
+  pkg_config("libcurl_from_pkgconfig") {
+    defines = [ "CURL_ENABLED" ]
+    visibility = [ "*" ]
+    packages = [ "libcurl" ]
+
+  }
+} else {
+  print("[ ERROR ] Building curl from Source is not supported yet. Please set use_system_curl=true while configuring")
+}
