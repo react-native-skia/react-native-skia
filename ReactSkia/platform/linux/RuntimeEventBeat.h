@@ -4,6 +4,7 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
+#include <folly/io/async/ScopedEventBaseThread.h>
 
 #include <react/utils/RunLoopObserver.h>
 
@@ -19,12 +20,13 @@ class RuntimeEventBeat : public RunLoopObserver{
   RuntimeEventBeat(RunLoopObserver::WeakOwner const &owner);
   ~RuntimeEventBeat();
   virtual bool isOnRunLoopThread() const noexcept override;
-  static bool keepBeating;
-  void triggerBeat(RunLoopObserver::Activity activities); /*to transmit beat call to Beat Thread*/
 
  private:
   void startObserving() const noexcept override;
   void stopObserving() const noexcept override;
+  void beat();
+  folly::ScopedEventBaseThread baetThread_;
+  RunLoopObserver::Activity activities_;
 };
 
 } // namespace react
