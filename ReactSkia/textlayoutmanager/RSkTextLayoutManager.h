@@ -13,6 +13,7 @@
 #include <react/renderer/textlayoutmanager/TextMeasureCache.h>
 #include "modules/skparagraph/include/Paragraph.h"
 #include "modules/skparagraph/include/ParagraphBuilder.h"
+#include "modules/skparagraph/src/ParagraphBuilderImpl.h"
 
 namespace facebook {
 namespace react {
@@ -30,10 +31,11 @@ public:
 
    /* Build attributedString  paragraph using skia's skparagraph module */ 
    /* Set fontDecorationRequired to true, to consider font paint & decoration attributes for paragraph build */
-   std::unique_ptr<skia::textlayout::Paragraph> buildParagraph (AttributedString attributedString,
-                                                                  ParagraphAttributes paragraphAttributes,
-                                                                  Size size,
-                                                                  bool fontDecorationRequired=false) const;
+   uint32_t buildParagraph (AttributedString attributedString,
+                                ParagraphAttributes paragraphAttributes,
+                                bool fontDecorationRequired=false,
+                                std::shared_ptr<skia::textlayout::ParagraphBuilder> builder=nullptr) const;
+
    /* Font collection manager */
    sk_sp<skia::textlayout::FontCollection> collection_;
 };

@@ -24,12 +24,16 @@ enum ComponentUpdateMask {
 
 struct Component {
   Component( const ShadowView &shadowView)
-    : props(shadowView.props)
+    : tag(shadowView.tag)
+    , componentName(shadowView.componentName ? shadowView.componentName : "Rootview")
+    , props(shadowView.props)
     , eventEmitter(shadowView.eventEmitter)
     , layoutMetrics(shadowView.layoutMetrics)
     , state(shadowView.state)
   {}
 
+  Tag tag;
+  ComponentName componentName;
   Props::Shared props{};
   EventEmitter::Shared eventEmitter{};
   LayoutMetrics layoutMetrics{EmptyLayoutMetrics};
@@ -61,6 +65,8 @@ class RSkComponent : public RnsShell::Layer, public std::enable_shared_from_this
 
   void requiresLayer(const ShadowView &shadowView);
 
+  RSkComponent *getParent() {return parent_; };
+
  protected:
   virtual void OnPaint(SkCanvas *canvas) = 0;
 
@@ -74,9 +80,6 @@ class RSkComponent : public RnsShell::Layer, public std::enable_shared_from_this
   std::shared_ptr<RnsShell::Layer> layer_;
   Point absOrigin_;
   Component component_;
-#ifdef RNS_ENABLE_API_PERF
-  ComponentName componentName_;
-#endif
 
   typedef Layer INHERITED;
 };

@@ -14,20 +14,14 @@ RSkComponent::RSkComponent(const ShadowView &shadowView)
     , parent_(nullptr)
     , absOrigin_(shadowView.layoutMetrics.frame.origin)
     , component_(shadowView)
-#ifdef RNS_ENABLE_API_PERF
-    , componentName_(shadowView.componentName ? shadowView.componentName : "Rootview")
-#endif
 {
-#ifdef RNS_ENABLE_API_PERF
-    RNS_UNUSED(componentName_);
-#endif
 }
 
 RSkComponent::~RSkComponent() {}
 
 void RSkComponent::onPaint(SkCanvas* canvas) {
   if(canvas) {
-    RNS_PROFILE_API_OFF(componentName_ << " Paint:", OnPaint(canvas));
+    RNS_PROFILE_API_OFF(component_.componentName << " Paint:", OnPaint(canvas));
   } else {
     RNS_LOG_ERROR("Invalid canvas ??");
   }
@@ -36,12 +30,12 @@ void RSkComponent::onPaint(SkCanvas* canvas) {
 sk_sp<SkPicture> RSkComponent::getPicture() {
 
   SkPictureRecorder recorder;
-  auto frameSize = getFrameSize();
+  auto frame = getAbsoluteFrame();
 
-  auto *canvas = recorder.beginRecording(SkRect::MakeXYWH(0, 0, frameSize.width, frameSize.height));
+  auto *canvas = recorder.beginRecording(SkRect::MakeXYWH(0, 0, frame.size.width, frame.size.height));
 
   if(canvas) {
-    RNS_PROFILE_API_OFF("Recording " << componentName_ << " Paint:", OnPaint(canvas));
+    RNS_PROFILE_API_OFF("Recording " << component_.componentName << " Paint:", OnPaint(canvas));
   } else {
     RNS_LOG_ERROR("Invalid canvas ??");
     return nullptr;
@@ -52,7 +46,11 @@ sk_sp<SkPicture> RSkComponent::getPicture() {
 
 void RSkComponent::requiresLayer(const ShadowView &shadowView) {
     RNS_LOG_TODO("Need to come up with rules to decide wheather we need to create picture layer, texture layer etc");
-    layer_ = RnsShell::Layer::Create(RnsShell::LAYER_TYPE_PICTURE);
+    // Text components paragraph builder is not compatabile with Picture layer,so use default layer
+    if(strcmp(component_.componentName,"Paragraph") == 0)
+        layer_ = this->shared_from_this();
+    else
+        layer_ = RnsShell::Layer::Create(RnsShell::LAYER_TYPE_PICTURE);
 }
 
 void RSkComponent::updateComponentData(const ShadowView &newShadowView , const uint32_t updateMask) {
@@ -72,7 +70,7 @@ void RSkComponent::updateComponentData(const ShadowView &newShadowView , const u
    }
 
    if(layer_ && layer_->type() == RnsShell::LAYER_TYPE_PICTURE) {
-     RNS_PROFILE_API_OFF(componentName_ << " getPicture :", static_cast<RnsShell::PictureLayer*>(layer_.get())->setPicture(getPicture()));
+     RNS_PROFILE_API_OFF(component_.componentName << " getPicture :", static_cast<RnsShell::PictureLayer*>(layer_.get())->setPicture(getPicture()));
    }
 }
 
