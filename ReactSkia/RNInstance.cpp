@@ -18,6 +18,7 @@
 #include "ReactSkia/platform/linux/RuntimeEventBeat.h"
 #endif
 #include "ReactSkia/utils/RnsLog.h"
+#include "ReactSkia/utils/AppLog.h"
 
 #include "ReactCommon/TurboModuleBinding.h"
 #include "cxxreact/JSBigString.h"
@@ -47,13 +48,14 @@ class JSCExecutorFactory : public JSExecutorFactory {
       std::shared_ptr<MessageQueueThread> jsQueue) override {
     auto installBindings = [jsiTurboModuleManager =
                                 jsiTurboModuleManager_](jsi::Runtime &runtime) {
-      // react::Logger iosLoggingBinder = [](const std::string &message,
-      // unsigned int logLevel) {
-      //   _RCTLogJavaScriptInternal(static_cast<RCTLogLevel>(logLevel),
-      //   [NSString stringWithUTF8String:message.c_str()]);
-      // };
-      // react::bindNativeLogger(runtime, iosLoggingBinder);
-      TurboModuleBinding::install(
+    react::bindNativeLogger(runtime, rnsLoggingBinder);
+
+    PerformanceNow rnsPerformanceNowBinder = [](){
+       return SkTime::GetMSecs();
+    };
+    react::bindNativePerformanceNow(runtime, rnsPerformanceNowBinder);
+
+    TurboModuleBinding::install(
           runtime, std::move(jsiTurboModuleManager->GetProvider()));
     };
     return std::make_unique<JSIExecutor>(
