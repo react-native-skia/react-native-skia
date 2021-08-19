@@ -21,15 +21,15 @@ class SimpleViewApp extends React.Component {
     this._tvEventHandler.enable(this, function(cmp, evt) {
       console.log('APP: TV Key event received: ', evt);
 
-      if (evt && evt.eventType === 'Right') {
+      if (evt && evt.eventType === 'right') {
         that.setState({bgColor: '#FF0000'})
-      } else if(evt && evt.eventType === 'Up') {
+      } else if(evt && evt.eventType === 'up') {
         that.setState({bgColor: '#00FF00'})
-      } else if(evt && evt.eventType === 'Left') {
+      } else if(evt && evt.eventType === 'left') {
         that.setState({bgColor: '#0000FF'})
-      } else if(evt && evt.eventType === 'Down') {
+      } else if(evt && evt.eventType === 'down') {
         that.setState({bgColor: '#00FFFF'})
-      } else if(evt && evt.eventType === 'Select') {
+      } else if(evt && evt.eventType === 'select') {
         that.setState({bgColor: '#FFFF00'})
       }
     });
