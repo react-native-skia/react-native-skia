@@ -72,6 +72,17 @@ int convertFontWeight (FontWeight fontWeight) {
     }
 } 
 
+TextDecoration convertDecoration (TextDecorationLineType textDecoration){
+    switch(textDecoration){
+        case TextDecorationLineType::Underline : return TextDecoration::kUnderline;
+        case TextDecorationLineType::Strikethrough : return TextDecoration::kLineThrough;
+        case TextDecorationLineType::UnderlineStrikethrough : return (TextDecoration)(TextDecoration::kLineThrough | TextDecoration::kUnderline);
+        case TextDecorationLineType::None :
+        default:
+            return TextDecoration::kNoDecoration;
+    }
+}
+
 RSkTextLayoutManager::RSkTextLayoutManager() {
     /* Set default font collection */ 
     collection_ = sk_make_sp<FontCollection>();
@@ -93,7 +104,7 @@ TextMeasurement RSkTextLayoutManager::doMeasure (AttributedString attributedStri
     size.width = paragraph->getMaxIntrinsicWidth() < paragraph->getMaxWidth() ?
 	                                                          paragraph->getMaxIntrinsicWidth() :
 								  paragraph->getMaxWidth();
-    size.height = paragraph->getHeight();
+    size.height = paragraph->getHeight(); 
 
     Point attachmentPoint = calculateFramePoint({0,0}, size, layoutConstraints.maximumSize.width);
     for (auto const &fragment : attributedString.getFragments()) {
@@ -128,10 +139,12 @@ uint32_t RSkTextLayoutManager::buildParagraph (AttributedString attributedString
     ParagraphStyle paraStyle;
     auto fontSize = TextAttributes::defaultTextAttributes().fontSize;
     auto fontSizeMultiplier = TextAttributes::defaultTextAttributes().fontSizeMultiplier;
-    
     int fontWeight = SkFontStyle::kNormal_Weight;
     SkFontStyle::Slant fontStyle = SkFontStyle::kUpright_Slant;
-
+    double fontShadowRadius = 0;
+    Size fontShadowOffset = {0,0};                         
+    SkScalar fontLineHeight;
+    SkPoint setShadowPoint;  
 
     for(auto &fragment: attributedString.getFragments()) {
         if(fragment.isAttachment()) {
@@ -140,25 +153,50 @@ uint32_t RSkTextLayoutManager::buildParagraph (AttributedString attributedString
         }
 
         fontSize = (!std::isnan(fragment.textAttributes.fontSize)) && (fragment.textAttributes.fontSize > 0) ? 
-                                 fragment.textAttributes.fontSize :
-                                 TextAttributes::defaultTextAttributes().fontSize;
+                                fragment.textAttributes.fontSize :
+                                TextAttributes::defaultTextAttributes().fontSize;
 
         fontSizeMultiplier = !std::isnan(fragment.textAttributes.fontSizeMultiplier) ?
-                                 fragment.textAttributes.fontSizeMultiplier :
-                                 TextAttributes::defaultTextAttributes().fontSizeMultiplier;
+                                fragment.textAttributes.fontSizeMultiplier :
+                                TextAttributes::defaultTextAttributes().fontSizeMultiplier;
 
         fontWeight = fragment.textAttributes.fontWeight.has_value() ? 
-                                 convertFontWeight(fragment.textAttributes.fontWeight.value()) : 
-                                 SkFontStyle::kNormal_Weight;
+                                convertFontWeight(fragment.textAttributes.fontWeight.value()) : 
+                                SkFontStyle::kNormal_Weight;
 
         fontStyle = fragment.textAttributes.fontStyle.has_value() ? 
-                                 convertFontStyle(fragment.textAttributes.fontStyle.value()): 
-                                 SkFontStyle::kUpright_Slant;
+                                convertFontStyle(fragment.textAttributes.fontStyle.value()): 
+                                SkFontStyle::kUpright_Slant;
+        
+        fontLineHeight = (!std::isnan(fragment.textAttributes.lineHeight)) && (fragment.textAttributes.lineHeight > 0) ?
+                                fragment.textAttributes.lineHeight :
+                                fontSize;
+
+        fontShadowOffset = fragment.textAttributes.textShadowOffset.has_value() ?
+                                fragment.textAttributes.textShadowOffset.value() : 
+                                fontShadowOffset;
+
+        fontShadowRadius = (!std::isnan(fragment.textAttributes.textShadowRadius)) && (fragment.textAttributes.textShadowRadius > 0) ?
+                                fragment.textAttributes.textShadowRadius :
+                                fontShadowRadius;
 
         style.setFontSize(fontSize * fontSizeMultiplier);
         style.setFontFamilies({SkString(fragment.textAttributes.fontFamily.c_str())});
         style.setFontStyle(SkFontStyle{fontWeight, SkFontStyle::kNormal_Width, fontStyle});
-    
+        style.setHeightOverride(true);
+        style.setHeight(fontLineHeight / fontSize);
+        style.setDecoration(fragment.textAttributes.textDecorationLineType.has_value() ?
+                                convertDecoration(fragment.textAttributes.textDecorationLineType.value()) :
+                                TextDecoration::kNoDecoration);
+        style.addShadow(TextShadow(convertTextColor(fragment.textAttributes.textShadowColor ?
+                                                    fragment.textAttributes.textShadowColor :
+                                                    fragment.textAttributes.foregroundColor).getColor(),
+                                                    setShadowPoint.Make(fontShadowOffset.width,fontShadowOffset.height),
+                                                    fontShadowRadius));
+        style.setLetterSpacing(!std::isnan(fragment.textAttributes.letterSpacing) ?
+                                fragment.textAttributes.letterSpacing :
+                                0); 
+
         /* Build paragraph considering text decoration attributes*/
         /* Required during text paint */
         if(fontDecorationRequired) {
@@ -168,6 +206,9 @@ uint32_t RSkTextLayoutManager::buildParagraph (AttributedString attributedString
             style.setBackgroundColor(convertTextColor(fragment.textAttributes.backgroundColor ?
                                                       fragment.textAttributes.backgroundColor :
                                                       TextAttributes::defaultTextAttributes().backgroundColor));
+            style.setDecorationColor(convertTextColor(fragment.textAttributes.textDecorationColor ?
+                                                      fragment.textAttributes.textDecorationColor :
+                                                      fragment.textAttributes.foregroundColor).getColor());   
         }
 
         if(fragment.textAttributes.alignment.has_value())
@@ -183,5 +224,4 @@ uint32_t RSkTextLayoutManager::buildParagraph (AttributedString attributedString
 
 } // namespace react 
 } // namespace facebook
-
 
