@@ -84,6 +84,17 @@ int convertFontWeight (FontWeight fontWeight) {
     }
 } 
 
+TextDecoration convertDecoration (TextDecorationLineType textDecoration){
+    switch(textDecoration){
+        case TextDecorationLineType::Underline : return TextDecoration::kUnderline;
+        case TextDecorationLineType::Strikethrough : return TextDecoration::kLineThrough;
+        case TextDecorationLineType::UnderlineStrikethrough : return (TextDecoration)(TextDecoration::kLineThrough | TextDecoration::kUnderline);
+        case TextDecorationLineType::None :
+        default:
+            return TextDecoration::kNoDecoration;
+    }
+}
+
 RSkTextLayoutManager::RSkTextLayoutManager() {
     /* Set default font collection */ 
     collection_ = sk_make_sp<FontCollection>();
@@ -102,40 +113,21 @@ TextMeasurement RSkTextLayoutManager::doMeasure (AttributedString attributedStri
     auto paragraph = builder->Build();
     paragraph->layout(layoutConstraints.maximumSize.width);
 
-<<<<<<< HEAD
     size.width = paragraph->getMaxIntrinsicWidth() < paragraph->getMaxWidth() ?                                            paragraph->getMaxIntrinsicWidth() :                                            paragraph->getMaxWidth();
     size.height = paragraph->getHeight();
 
     Point attachmentPoint = calculateFramePoint({0,0}, size, layoutConstraints.maximumSize.width);
 
-=======
-    size.width = paragraph->getMaxIntrinsicWidth() < paragraph->getMaxWidth() ?
-	                                                          paragraph->getMaxIntrinsicWidth() :
-								  paragraph->getMaxWidth();
-    size.height = paragraph->getHeight();
-
-    Point attachmentPoint = calculateFramePoint({0,0}, size, layoutConstraints.maximumSize.width);
->>>>>>> Native Text component & Text Layout Manager handle computation & draw of nested text  (#17)
-    for (auto const &fragment : attributedString.getFragments()) {
-       if (fragment.isAttachment()) {
            Rect rect;
            rect.size.width = fragment.parentShadowView.layoutMetrics.frame.size.width;
            rect.size.height = fragment.parentShadowView.layoutMetrics.frame.size.height;
            /* TODO : We will be unable to calculate exact (x,y) cordinates for the attachments*/
            /* Reason : attachment fragment width is clamped width wrt layout width; */
            /*          so we do not know actual position at which the previous attachment cordinate ends*/
-<<<<<<< HEAD
            /* But we need to still calculate total container height here, from all attachments */
            /* NOTE : height value calculated would be approximate,since we lack the knowledge of actual frag width here*/
            attachmentPoint = calculateFramePoint(attachmentPoint, rect.size, layoutConstraints.maximumSize.width);
            attachments.push_back(TextMeasurement::Attachment{rect, false});
-
-=======
-           /* But we need to still calculate total container height here, from all attachments */ 
-           /* NOTE : height value calculated would be approximate,since we lack the knowledge of actual frag width here*/
-           attachmentPoint = calculateFramePoint(attachmentPoint, rect.size, layoutConstraints.maximumSize.width);
-           attachments.push_back(TextMeasurement::Attachment{rect, false});
->>>>>>> Native Text component & Text Layout Manager handle computation & draw of nested text  (#17)
        }
     }
 
@@ -155,7 +147,6 @@ uint32_t RSkTextLayoutManager::buildParagraph (AttributedString attributedString
     ParagraphStyle paraStyle;
     auto fontSize = TextAttributes::defaultTextAttributes().fontSize;
     auto fontSizeMultiplier = TextAttributes::defaultTextAttributes().fontSizeMultiplier;
-    
     int fontWeight = SkFontStyle::kNormal_Weight;
     SkFontStyle::Slant fontStyle = SkFontStyle::kUpright_Slant;
 
@@ -164,9 +155,20 @@ uint32_t RSkTextLayoutManager::buildParagraph (AttributedString attributedString
         }
                                    fragment.textAttributes.fontSizeMultiplier :
                                    TextAttributes::defaultTextAttributes().fontSizeMultiplier;
-        style.setFontFamilies({SkString(fragment.textAttributes.fontFamily.c_str())});
-        style.setFontStyle(SkFontStyle{fontWeight, SkFontStyle::kNormal_Width, fontStyle});
-    
+        style.setHeightOverride(true);
+        style.setHeight(fontLineHeight / fontSize);
+        style.setDecoration(fragment.textAttributes.textDecorationLineType.has_value() ?
+                                convertDecoration(fragment.textAttributes.textDecorationLineType.value()) :
+                                TextDecoration::kNoDecoration);
+        style.addShadow(TextShadow(convertTextColor(fragment.textAttributes.textShadowColor ?
+                                                    fragment.textAttributes.textShadowColor :
+                                                    fragment.textAttributes.foregroundColor).getColor(),
+                                                    setShadowPoint.Make(fontShadowOffset.width,fontShadowOffset.height),
+                                                    fontShadowRadius));
+        style.setLetterSpacing(!std::isnan(fragment.textAttributes.letterSpacing) ?
+                                fragment.textAttributes.letterSpacing :
+                                0); 
+
         /* Build paragraph considering text decoration attributes*/
         /* Required during text paint */
         if(fontDecorationRequired) {
@@ -176,6 +178,9 @@ uint32_t RSkTextLayoutManager::buildParagraph (AttributedString attributedString
             style.setBackgroundColor(convertTextColor(fragment.textAttributes.backgroundColor ?
                                                       fragment.textAttributes.backgroundColor :
                                                       TextAttributes::defaultTextAttributes().backgroundColor));
+            style.setDecorationColor(convertTextColor(fragment.textAttributes.textDecorationColor ?
+                                                      fragment.textAttributes.textDecorationColor :
+                                                      fragment.textAttributes.foregroundColor).getColor());   
         }
 
         if(fragment.textAttributes.alignment.has_value())
@@ -191,5 +196,4 @@ uint32_t RSkTextLayoutManager::buildParagraph (AttributedString attributedString
 
 } // namespace react 
 } // namespace facebook
-
 
