@@ -246,7 +246,7 @@ void WindowLibWPE::setRequestedDisplayParams(const DisplayParams& params, bool a
     INHERITED::setRequestedDisplayParams(params, allowReattach);
 }
 
-void WindowLibWPE::onKey(rnsKey keyType, rnsKeyAction eventKeyAction){
+void WindowLibWPE::onKey(rnsKey eventKeyType, rnsKeyAction eventKeyAction){
     NotificationCenter::defaultCenter().emit("onHWKeyEvent", eventKeyType, eventKeyAction);
     return;
 }
