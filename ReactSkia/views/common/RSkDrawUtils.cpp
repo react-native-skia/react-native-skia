@@ -154,10 +154,11 @@ void drawRect(DrawMethod drawMethod,SkCanvas *canvas,
   /*Creating basic layout from props*/
     rect=SkRect::MakeXYWH(frame.origin.x,frame.origin.y,\
          frame.size.width,frame.size.height);
+    /*Skia apply radius in clockwise direction starting from TopLeft*/
     SkVector radii[4]={{borderProps.borderRadii.topLeft,borderProps.borderRadii.topLeft},
                        {borderProps.borderRadii.topRight,borderProps.borderRadii.topRight}, \
-                       {borderProps.borderRadii.bottomLeft,borderProps.borderRadii.bottomLeft}, \
-                       {borderProps.borderRadii.bottomRight,borderProps.borderRadii.bottomRight } };
+                       {borderProps.borderRadii.bottomRight,borderProps.borderRadii.bottomRight }, \
+                       {borderProps.borderRadii.bottomLeft,borderProps.borderRadii.bottomLeft}};
 
     setColor(Color,opacity,&paintObj );
     /* To sync with the border draw type, resetting the stroke width for background*/
@@ -280,7 +281,7 @@ void  drawBackground(SkCanvas *canvas,
                                SharedColor backgroundColor,
                                Float opacity)
 {
-    if(isDrawVisible(backgroundColor,opacity)){
+    if( backgroundColor && isDrawVisible(backgroundColor,opacity) ){
       drawRect(Background,canvas,frame,borderProps,backgroundColor,opacity);
     }
 }
