@@ -1,36 +1,33 @@
 /*
  * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (C) 1994-2021 OpenTV, Inc. and Nagravision S.A.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
+#include <folly/io/async/ScopedEventBaseThread.h>
 
-//#include <CoreFoundation/CFRunLoop.h>
-//#include <CoreFoundation/CoreFoundation.h>
-#include <ReactCommon/RuntimeExecutor.h>
-#include <react/renderer/core/EventBeat.h>
+#include <react/utils/RunLoopObserver.h>
 
 namespace facebook {
 namespace react {
 
 /*
- * Event beat associated with JavaScript runtime.
- * The beat is called on `RuntimeExecutor`'s thread induced by the main thread
- * event loop.
+ * RuntimeEventBeat to flush Asynchronous Native Module Events into JS world .
+ * using ReactCommon 'RunLoopObserver'
  */
-class RuntimeEventBeat : public EventBeat {
+class RuntimeEventBeat : public RunLoopObserver{
  public:
-  RuntimeEventBeat(
-      EventBeat::SharedOwnerBox const &ownerBox,
-      RuntimeExecutor runtimeExecutor);
+  RuntimeEventBeat(RunLoopObserver::WeakOwner const &owner);
   ~RuntimeEventBeat();
-
-  void induce() const override;
-
+  virtual bool isOnRunLoopThread() const noexcept override;
+ 
  private:
-  const RuntimeExecutor runtimeExecutor_;
-//  CFRunLoopObserverRef mainRunLoopObserver_;
-  mutable std::atomic<bool> isBusy_{false};
+  void startObserving() const noexcept override;
+  void stopObserving() const noexcept override;
+  void beat();
+  folly::ScopedEventBaseThread beatThread_;
+  RunLoopObserver::Activity activities_;
 };
 
 } // namespace react
