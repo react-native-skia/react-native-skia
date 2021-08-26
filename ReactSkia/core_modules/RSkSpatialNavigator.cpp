@@ -51,18 +51,17 @@ void RSkSpatialNavigator::sendNotificationWithEventType(std::string eventType, i
 
 /*
  * Add a new candidate to the Navigatable if it meets the following criteria:
- * isTVSelectable, accessible are true
+ * isTVSelectable, focuable are true
 */
 void RSkSpatialNavigator::addToNavList(std::shared_ptr<RSkComponent> newCandidate) {
     Component newCandData = newCandidate.get()->getComponentData();
-#if 0
-    if (candidate.props->accessible == true || candidate.isTVSelectable == true ) {
-#else
-    if(1) {
-#endif
+    auto const &viewProps = *std::static_pointer_cast<ViewProps const>(newCandData.props);
+    RNS_LOG_DEBUG("Add " << newCandData.componentName << "[" << newCandData.tag <<"] to Navigatable List : isTVSelectable["
+                                    << viewProps.isTVSelectable << "]" << " focusable[" << viewProps.focusable << "] " <<
+                                    "hasTVPreferredFocus[" << viewProps.hasTVPreferredFocus << "]" << " accessible[" << viewProps.accessible << "]");
+    if (viewProps.isTVSelectable == true || viewProps.focusable == true) {
         navComponentList_.push_back(newCandidate.get());
-        // TODO If this new component has hasTVPreferredFocus then send Blur to current focused element and send focus to this new candidate
-        if(1) { //newCandidate.get()->props.hasTVPreferredFocus == true) {
+        if(viewProps.hasTVPreferredFocus == true) {
             if(currentFocus_)
                 sendNotificationWithEventType("blur", currentFocus_->getComponentData().tag);
 
@@ -74,11 +73,8 @@ void RSkSpatialNavigator::addToNavList(std::shared_ptr<RSkComponent> newCandidat
 
 void RSkSpatialNavigator::removeFromNavList(std::shared_ptr<RSkComponent> candidate) {
     Component canData = candidate.get()->getComponentData();
-#if 0
-    if (candidate.props->accessible == true || candidate.isTVSelectable == true ) {
-#else
-    if(1) {
-#endif
+    auto const &viewProps = *std::static_pointer_cast<ViewProps const>(canData.props);
+    if (viewProps.isTVSelectable == true || viewProps.focusable == true) {
         CandidateList::iterator it;
         it = std::find(navComponentList_.begin(), navComponentList_.end(), candidate.get());
         if (it != navComponentList_.end()) {
@@ -93,14 +89,14 @@ void RSkSpatialNavigator::removeFromNavList(std::shared_ptr<RSkComponent> candid
 
 void RSkSpatialNavigator::updateInNavList(std::shared_ptr<RSkComponent> candidate) {
     Component canData = candidate.get()->getComponentData();
+    auto const &viewProps = *std::static_pointer_cast<ViewProps const>(canData.props);
 
     CandidateList::iterator it;
     it = std::find(navComponentList_.begin(), navComponentList_.end(), candidate.get());
 
     if (it != navComponentList_.end()) {
         // Candidate found in the navigatable list, Reset data if candidate's focusable props have changed
-        // TODO: Check the interdependency / priority of the props below
-        if (0/*canData.accessible == false || canData.isTVSelectable == false*/) {
+        if (viewProps.isTVSelectable == false && viewProps.focusable == false) {
             if (currentFocus_ == candidate.get()) {
                 sendNotificationWithEventType("blur", currentFocus_->getComponentData().tag);
                 currentFocus_ = nullptr;
@@ -108,7 +104,7 @@ void RSkSpatialNavigator::updateInNavList(std::shared_ptr<RSkComponent> candidat
             navComponentList_.erase(it);
         }
     } else {
-        // Candidate not found in the current list, Call add method to check if one of props (isTVNavigatable, accessible) might have changed
+        // Candidate not found in the current list, Call add method to check if one of props (isTVNavigatable, focusable) might have changed
         addToNavList(candidate);
     }
 }
@@ -285,11 +281,40 @@ static inline bool isValidCandidate(rnsKey direction, Component& curData, Compon
     return false;
 }
 
+void RSkSpatialNavigator::setDefaultFocus() {
+    RSkComponent *nextFocus = nullptr;
+    std::vector<RSkComponent*>::reverse_iterator i;
+    RNS_LOG_WARN("No Item is focused currently, select the Last TV preferred element, if not then the first element");
+    if(navComponentList_.size() == 0) {
+        RNS_LOG_WARN("There is no candidates for navigation....");
+        return;
+    }
+
+    for (i = navComponentList_.rbegin(); i != navComponentList_.rend(); ++i ) {
+        nextFocus = *i;
+        auto const &viewProps = *std::static_pointer_cast<ViewProps const>(nextFocus->getComponentData().props);
+        if(viewProps.hasTVPreferredFocus == true)
+            break;
+    }
+
+    // Didn't find any element with hasTVPreferredFocus so choose the first element as default focus
+    if(i == navComponentList_.rend()) {
+        nextFocus = navComponentList_.front();
+    }
+
+    if(nextFocus != nullptr) {
+        sendNotificationWithEventType("focus", nextFocus->getComponentData().tag);
+        RNS_LOG_DEBUG("Set default Focus :[" << nextFocus->getComponentData().tag << "]");
+        currentFocus_ = nextFocus;
+    }
+    return;
+}
+
 void RSkSpatialNavigator::navigateInDirection(rnsKey keyEvent) {
 
-    // There is no currently focused element, select last TV Preffered component or first component ?
-    if( currentFocus_ == nullptr) {
-        RNS_LOG_TODO("No Item is focused currently, select the TV preferred or the first one ?");
+    // There is no currently focused element, select last TV Preffered component else first component
+    if( currentFocus_ == nullptr ) {
+        setDefaultFocus();
         return;
     }
 
@@ -354,7 +379,7 @@ void RSkSpatialNavigator::navigateInDirection(rnsKey keyEvent) {
 
     // By now we have two sorted set where the top most element in the set is the right candidate to navigate in respective set.
     // Choose right candidate between top most element from overLapping and nonOverLapping set
-    RNS_PROFILE_API_ON("MoveFocus : ", moveTheFocusInDirection(keyEvent, overLapping, nonOverLapping));
+    RNS_PROFILE_API_OFF("MoveFocus : ", moveTheFocusInDirection(keyEvent, overLapping, nonOverLapping));
 }
 
 void RSkSpatialNavigator::handleKeyEvent(rnsKey  eventKeyType, rnsKeyAction eventKeyAction) {
@@ -371,7 +396,7 @@ void RSkSpatialNavigator::handleKeyEvent(rnsKey  eventKeyType, rnsKeyAction even
         case RNS_KEY_Down:
         case RNS_KEY_Left:
         case RNS_KEY_Right:{
-            RNS_PROFILE_API_ON("NavigateInDirection : ", navigateInDirection(eventKeyType));
+            RNS_PROFILE_API_OFF("NavigateInDirection : ", navigateInDirection(eventKeyType));
             break;
         }
         default:

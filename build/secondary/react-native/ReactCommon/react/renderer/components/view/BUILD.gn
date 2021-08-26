@@ -6,6 +6,7 @@ rn_cxx_component("view") {
     "Touch.cpp",
     "TouchEvent.cpp",
     "TouchEventEmitter.cpp",
+    "TVViewProps.cpp",
     "ViewEventEmitter.cpp",
     "ViewProps.cpp",
     "ViewShadowNode.cpp",

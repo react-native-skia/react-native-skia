@@ -228,7 +228,13 @@ JSITurboModuleManager::JSITurboModuleManager(Instance *bridgeInstance)
       std::make_shared<StaticTurboModule>("PlatformConstants", jsInvoker);
   auto rnVersion = folly::dynamic::object("major", 0)("minor", 0)("patch", 0);
   staticModule->SetConstants(folly::dynamic::object("isTesting", true)(
-      "reactNativeVersion", std::move(rnVersion)) ("osVersion",STRINGIFY(RNS_OS_VERSION)));
+      "reactNativeVersion", std::move(rnVersion)) ("osVersion",STRINGIFY(RNS_OS_VERSION))
+#if TARGET_OS_TV
+      ("interfaceIdiom", STRINGIFY(tv))
+#else
+      ("interfaceIdiom", STRINGIFY(unknown))
+#endif
+    );
   modules_["PlatformConstants"] = std::move(staticModule);
 
   modules_["ExceptionsManager"] =
