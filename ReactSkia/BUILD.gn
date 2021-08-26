@@ -9,7 +9,7 @@ config("ReactSkia_config") {
   include_dirs = [
      "//ReactSkia/core_modules"
   ]
-  defines = []
+  defines = ["TARGET_OS_TV=1"]
   if(rns_enable_api_profiling) {
     defines += ["RNS_ENABLE_API_PERF"]
   }

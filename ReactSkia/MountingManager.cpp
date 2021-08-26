@@ -164,8 +164,10 @@ void MountingManager::UpdateMountInstruction(
   std::shared_ptr<RSkComponent> newChildComponent = GetComponent(mutation.newChildShadowView);
   if(newChildComponent)
   {
-       if(oldChildShadowView.props != newChildShadowView.props)
+       if(oldChildShadowView.props != newChildShadowView.props) {
            newChildComponent->updateComponentData(mutation.newChildShadowView,ComponentUpdateMaskProps);
+           surface_->navigator()->updateInNavList(newChildComponent); //TODO only if TV related proeprties have changed ?
+       }
        if(oldChildShadowView.state != newChildShadowView.state)
            newChildComponent->updateComponentData(mutation.newChildShadowView,ComponentUpdateMaskState);
        if(oldChildShadowView.eventEmitter != newChildShadowView.eventEmitter)
@@ -175,7 +177,6 @@ void MountingManager::UpdateMountInstruction(
 #if USE(RNS_SHELL_PARTIAL_UPDATES)
        surface_->compositor()->addDamageRect(newChildComponent->layer().get()->getFrame());
 #endif
-       surface_->navigator()->updateInNavList(newChildComponent); // only if TV related proeprties have changed ?
   }
 }
 
