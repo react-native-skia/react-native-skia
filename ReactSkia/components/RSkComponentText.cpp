@@ -8,6 +8,8 @@
 
 #include <glog/logging.h>
 
+using namespace skia::textlayout;
+
 namespace facebook {
 namespace react {
 
@@ -23,7 +25,10 @@ RSkComponentRawText::RSkComponentRawText(const ShadowView &shadowView)
 void RSkComponentRawText::OnPaint(SkCanvas *canvas) {}
 
 RSkComponentParagraph::RSkComponentParagraph(const ShadowView &shadowView)
-    : RSkComponent(shadowView) {}
+    : RSkComponent(shadowView)
+    , paraBuilder(nullptr)
+    , expectedAttachmentCount(0)
+    , currentAttachmentCount(0){}
 
 void RSkComponentParagraph::OnPaint(SkCanvas *canvas) {
   auto component = getComponentData();
@@ -34,12 +39,46 @@ void RSkComponentParagraph::OnPaint(SkCanvas *canvas) {
       *std::static_pointer_cast<ParagraphProps const>(component.props);
   auto data = state->getData();
 
-  auto frame = getAbsoluteFrame();
+  /* Check if this component has parent Paragraph component */
+  RSkComponentParagraph * parent = getParentParagraph();
 
-  std::unique_ptr<skia::textlayout::Paragraph> fPara;
-  /* RSkTextLayoutManager to build paragraph, set build with true to consider font decoration */
-  fPara = textLayoutManager_.buildParagraph(data.attributedString , props.paragraphAttributes , frame.size ,true);
-  fPara->paint(canvas, frame.origin.x, frame.origin.y);
+  /* If parent, this text component is part of nested text(aka fragment attachment)*/
+  /*    - use parent paragraph builder to add text & push style */
+  /*    - draw the paragraph, when we reach the last fragment attachment*/
+  if(parent) {
+      parent->expectedAttachmentCount += textLayoutManager_.buildParagraph(
+                                                    data.attributedString,
+                                                    props.paragraphAttributes,
+                                                    true,
+                                                    parent->paraBuilder);
+      auto paragraph = parent->paraBuilder->Build();
+      parent->currentAttachmentCount++;
+      if(!parent->expectedAttachmentCount || (parent->expectedAttachmentCount == parent->currentAttachmentCount)) {
+            auto frame = parent->getAbsoluteFrame();
+            paragraph->layout(frame.size.width);
+            paragraph->paint(canvas, frame.origin.x, frame.origin.y);
+      }
+   } else {
+      /* If previously created builder is available,using it will append the text in builder*/
+      /* If it reaches here,means there is an update in text.So create new paragraph builder*/
+      if(nullptr != paraBuilder) {
+          paraBuilder.reset();
+      }
+
+      ParagraphStyle paraStyle;
+      paraBuilder = std::static_pointer_cast<ParagraphBuilder>(std::make_shared<ParagraphBuilderImpl>(paraStyle,textLayoutManager_.collection_));
+
+      expectedAttachmentCount = textLayoutManager_.buildParagraph(data.attributedString, props.paragraphAttributes, true, paraBuilder);
+      currentAttachmentCount = 0;
+      auto paragraph = paraBuilder->Build();
+
+      /* If the count is 0,means we have no fragment attachments.So paint right away*/
+      if(!expectedAttachmentCount) {
+          auto frame = getAbsoluteFrame();
+          paragraph->layout(frame.size.width);
+          paragraph->paint(canvas, frame.origin.x, frame.origin.y);
+      }
+   }
 }
 
 } // namespace react

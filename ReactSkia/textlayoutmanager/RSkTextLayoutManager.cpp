@@ -12,6 +12,18 @@ using namespace skia::textlayout;
 namespace facebook {
 namespace react {
 
+Point calculateFramePoint( Point origin , Size rect , float layoutWidth) {
+   /* Calculate the (x,y) cordinates of fragment attachments,based on the fragment width provided*/
+   if(origin.x + rect.width < layoutWidth)
+       origin.x += rect.width ;
+   else {
+       auto delta = layoutWidth - origin.x ;
+       origin.x = rect.width - delta ;
+       origin.y += rect.height;
+   }
+   return origin;
+}
+
 TextAlign convertTextAlign (TextAlignment alignment) {
    switch(alignment) {
       case TextAlignment::Natural :
@@ -45,32 +57,59 @@ TextMeasurement RSkTextLayoutManager::doMeasure (AttributedString attributedStri
                 ParagraphAttributes paragraphAttributes,
                 LayoutConstraints layoutConstraints) const {
     TextMeasurement::Attachments attachments;
-    std::unique_ptr<Paragraph> paragraph = buildParagraph (attributedString, paragraphAttributes, layoutConstraints.maximumSize);
-    
+    ParagraphStyle paraStyle;
+    Size size;
+
+    std::shared_ptr<ParagraphBuilder> builder = std::static_pointer_cast<ParagraphBuilder>(std::make_shared<ParagraphBuilderImpl>(paraStyle,collection_));
+    buildParagraph(attributedString, paragraphAttributes, false, builder);
+    auto paragraph = builder->Build();
+    paragraph->layout(layoutConstraints.maximumSize.width);
+
+    size.width = paragraph->getMaxIntrinsicWidth() < paragraph->getMaxWidth() ?                                            paragraph->getMaxIntrinsicWidth() :                                            paragraph->getMaxWidth();
+    size.height = paragraph->getHeight();
+
+    Point attachmentPoint = calculateFramePoint({0,0}, size, layoutConstraints.maximumSize.width);
+
     for (auto const &fragment : attributedString.getFragments()) {
        if (fragment.isAttachment()) {
-           /* TODO : Compute attachment frame details */
-           attachments.push_back(
-                TextMeasurement::Attachment{{{0, 0}, {0, 0}}, false});
+           Rect rect;
+           rect.size.width = fragment.parentShadowView.layoutMetrics.frame.size.width;
+           rect.size.height = fragment.parentShadowView.layoutMetrics.frame.size.height;
+           /* TODO : We will be unable to calculate exact (x,y) cordinates for the attachments*/
+           /* Reason : attachment fragment width is clamped width wrt layout width; */
+           /*          so we do not know actual position at which the previous attachment cordinate ends*/
+           /* But we need to still calculate total container height here, from all attachments */
+           /* NOTE : height value calculated would be approximate,since we lack the knowledge of actual frag width here*/
+           attachmentPoint = calculateFramePoint(attachmentPoint, rect.size, layoutConstraints.maximumSize.width);
+           attachments.push_back(TextMeasurement::Attachment{rect, false});
+
        }
     }
-    return TextMeasurement{{paragraph->getMaxWidth(), paragraph->getHeight()}, attachments};
+
+    /* Update the container height from all attachments */
+    if(!attachments.empty()) {
+       size.height = attachmentPoint.y + attachments[attachments.size()-1].frame.size.height;
+    }
+
+    return TextMeasurement{size, attachments};
 }
 
-std::unique_ptr<Paragraph> RSkTextLayoutManager::buildParagraph (AttributedString attributedString,
+uint32_t RSkTextLayoutManager::buildParagraph (AttributedString attributedString,
                 ParagraphAttributes paragraphAttributes,
-                Size size ,
-                bool fontDecorationRequired) const {
+                bool fontDecorationRequired,
+                std::shared_ptr<ParagraphBuilder> builder) const {
+    uint32_t attachmentCount = 0;
     std::unique_ptr<Paragraph> fPara;
     TextStyle style;
     ParagraphStyle paraStyle;
     auto fontSize = TextAttributes::defaultTextAttributes().fontSize;
     auto fontSizeMultiplier = TextAttributes::defaultTextAttributes().fontSizeMultiplier;
 
-    paraStyle.setTextStyle(style);
-    auto builder = ParagraphBuilder::make(paraStyle, collection_);
-
     for(auto &fragment: attributedString.getFragments()) {
+        if(fragment.isAttachment()) {
+           attachmentCount++;
+           continue;
+        }
 
         fontSize = !std::isnan(fragment.textAttributes.fontSize) ?
                                  fragment.textAttributes.fontSize :
@@ -102,9 +141,7 @@ std::unique_ptr<Paragraph> RSkTextLayoutManager::buildParagraph (AttributedStrin
         builder->addText(fragment.string.c_str(),fragment.string.length());
     }
 
-    fPara = builder->Build();
-    fPara->layout(size.width);
-    return fPara;
+    return attachmentCount;
 }
 
 } // namespace react 

@@ -25,11 +25,41 @@ class RSkComponentRawText final : public RSkComponent {
 class RSkComponentParagraph final : public RSkComponent {
  public:
   RSkComponentParagraph(const ShadowView &shadowView);
+  std::shared_ptr<skia::textlayout::ParagraphBuilder> paraBuilder;
+  uint32_t expectedAttachmentCount;
+  uint32_t currentAttachmentCount;
 
  protected:
   void OnPaint(SkCanvas *canvas) override;
 
  private:
+
+ private:
+  /* Method to check if parent is paragraph component */
+  bool isParentParagraph() {
+     RSkComponent *parent = getParent();
+     if((nullptr != parent)
+        && ( nullptr != parent->getComponentData().componentName)
+        && (!strcmp(parent->getComponentData().componentName,"Paragraph"))){
+           return true;
+     }
+     return false;
+  }
+
+  /* Method to get parent paragraph component,
+   * until it reaches the top paragraph parent which has paragraph builder*/
+  RSkComponentParagraph* getParentParagraph() {
+     if(isParentParagraph()) {
+        RSkComponentParagraph *parent = (RSkComponentParagraph*)getParent();
+        if(parent->paraBuilder) {
+           return parent;
+        } else {
+           return parent->getParentParagraph();
+        }
+     }
+     return nullptr;
+  }
+
   RSkTextLayoutManager textLayoutManager_;
 };
 
