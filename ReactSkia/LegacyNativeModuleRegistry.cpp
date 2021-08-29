@@ -38,8 +38,13 @@ class LegacyUIManagerModule : public NativeModule {
     if (reactMethodId == 0) {
       if (args[0] == "RCTView") {
         auto nativeProps = folly::dynamic::object("onLayout", true);
-        auto registry =
-            folly::dynamic::object("NativeProps", std::move(nativeProps));
+        auto directEventTypes = folly::dynamic::object(
+            "topLayout",
+            folly::dynamic::object("registrationName", "onLayout"));
+        auto registry = folly::dynamic::object(
+            "NativeProps", std::move(nativeProps))(
+            "bubblingEventTypes", folly::dynamic::object())(
+            "directEventTypes", std::move(directEventTypes));
         return {std::move(registry)};
       } else if (args[0] == "RCTImageView") {
         // NOTE(kudo): The ImageView config setup has two cases

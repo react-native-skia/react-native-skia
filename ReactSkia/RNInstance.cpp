@@ -30,6 +30,7 @@
 #include "react/renderer/components/root/RootShadowNode.h"
 #include "react/renderer/scheduler/Scheduler.h"
 #include "react/renderer/scheduler/SchedulerToolbox.h"
+#include <react/renderer/scheduler/AsynchronousEventBeat.h>
 #include "react/utils/ContextContainer.h"
 
 #include <folly/io/async/ScopedEventBaseThread.h>
@@ -181,9 +182,10 @@ void RNInstance::InitializeFabric() {
 
   toolbox.asynchronousEventBeatFactory =
       [runtimeExecutor](EventBeat::SharedOwnerBox const &ownerBox) {
-        return std::make_unique<RuntimeEventBeat>(ownerBox, runtimeExecutor);
-      };
-
+    auto runLoopObserver =
+        std::make_unique<RuntimeEventBeat const>(ownerBox->owner);
+      return std::make_unique<AsynchronousEventBeat>(std::move(runLoopObserver), runtimeExecutor);
+  };
   mountingManager_ =
       std::make_unique<MountingManager>(componentViewRegistry_.get());
   fabricScheduler_ =
