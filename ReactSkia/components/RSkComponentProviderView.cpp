@@ -1,7 +1,6 @@
 #include "ReactSkia/components/RSkComponentProviderView.h"
 #include "ReactSkia/components/RSkComponentView.h"
-
-#include "react/renderer/components/view/ViewComponentDescriptor.h"
+#include "ReactSkia/components/RSkViewComponentDescriptor.h"
 
 namespace facebook {
 namespace react {
@@ -9,7 +8,7 @@ namespace react {
 RSkComponentProviderView::RSkComponentProviderView() {}
 
 ComponentDescriptorProvider RSkComponentProviderView::GetDescriptorProvider() {
-  return concreteComponentDescriptorProvider<ViewComponentDescriptor>();
+  return concreteComponentDescriptorProvider<RSkViewComponentDescriptor>();
 }
 
 std::shared_ptr<RSkComponent> RSkComponentProviderView::CreateComponent(
