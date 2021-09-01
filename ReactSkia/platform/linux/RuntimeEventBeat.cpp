@@ -72,9 +72,7 @@ void RuntimeEventBeat::beat(){
 
 void RuntimeEventBeat::stopObserving() const noexcept
 {
-  RNS_LOG_NOT_IMPL;
-/* TODO:Need to check the usecase for stop & start beating
-       Based on the Beat thread to be redesigned*/
+  this->disable();
 }
 
 bool RuntimeEventBeat::isOnRunLoopThread() const noexcept
