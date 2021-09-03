@@ -4,6 +4,9 @@
 * This source code is licensed under the MIT license found in the
 * LICENSE file in the root directory of this source tree.
 */
+#include <curl/curl.h>
+#include <better/map.h>
+
 
 #include "ReactSkia/modules/RSkNetworkingModuleBase.h"
 
@@ -19,7 +22,12 @@ class RSkNetworkingModule:  public RSkNetworkingModuleBase {
 
         jsi::Value sendRequest(
             folly::dynamic) override;
-};
 
+        better::map <int , CURL*> connectionList_;
+
+  private:
+        static uint64_t nextUniqueId();
+
+};
 }// namespace react
 }// namespace facebook
