@@ -18,6 +18,7 @@
 #ifndef CA_CERTIFICATE
 #define CA_CERTIFICATE       "/etc/ssl/certs/ca-certificates.crt"      /**< The certificate of the CA to establish https connection to the server*/
 #endif
+enum curlStatus {CURL_RETURN_FAILURE=-1,CURL_RETURN_SUCESS};
 static bool curlInit = false;
 using namespace std;
 namespace facebook {
@@ -27,7 +28,6 @@ RSkNetworkingModule::RSkNetworkingModule(
             const std::string &name,
             std::shared_ptr<CallInvoker> jsInvoker,
             Instance *bridgeInstance) :  RSkNetworkingModuleBase(name, jsInvoker, bridgeInstance) {
-
 
 }
 
@@ -45,24 +45,27 @@ static size_t
 WriteMemoryCallback(void *contents, size_t size, size_t nmemb, void *userp)
 {
   size_t realsize = size * nmemb;
-  struct MemoryStruct *mem = (struct MemoryStruct *)userp;
- 
+  struct MemoryStruct *mem = (struct MemoryStruct *)userp; 
   char *ptr = (char *)realloc(mem->memory, mem->size + realsize + 1);
   if(!ptr) {
     /* out of memory! */
     printf("not enough memory (realloc returned NULL)\n");
     return 0;
   }
- 
   mem->memory = ptr;
   memcpy(&(mem->memory[mem->size]), contents, realsize);
   mem->size += realsize;
   mem->memory[mem->size] = 0;
-// TODO: this data response will be sent in load event
   return realsize;
 }
-
-
+uint64_t RSkNetworkingModule::nextUniqueId() {
+    static std::atomic<uint64_t> nextId(1);
+    uint64_t id;
+    do {
+        id = nextId.fetch_add(1);
+    } while (id == 0);  // 0 invalid id.
+    return id;
+}
 
 jsi::Value RSkNetworkingModule::sendRequest(
   folly::dynamic query) {
@@ -80,10 +83,9 @@ jsi::Value RSkNetworkingModule::sendRequest(
   const char *readptr;
   size_t sizeleft;
   struct MemoryStruct chunk;
-
   chunk.memory = (char *)malloc(1);  /* will be grown as needed by the realloc above */
   chunk.size = 0;    /* no data at this point */
-
+  uint64_t requestId =0;
   if(data["string"].c_str()) {
       readptr = data["string"].c_str();
       sizeleft = data["string"].getString().length();    
@@ -101,21 +103,23 @@ jsi::Value RSkNetworkingModule::sendRequest(
        /* Check for errors */
        if(res != CURLE_OK) {
           RNS_LOG_ERROR (stderr << "curl_global_init() failed: %s\n" <<curl_easy_strerror(res));
-          return 1;
+          return jsi::Value((int)CURL_RETURN_FAILURE);
        }
   }
 
   /* get a curl handle */
   curl = curl_easy_init();
 
-    if(curl != NULL) {
+  if(curl != NULL) {
+        requestId = nextUniqueId();
+        connectionList_[requestId] = curl;
         curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
         /*The following code gets executed for a https connection.*/
 
         if(strstr(url.c_str(),"https") != NULL) {
              curl_easy_setopt(curl, CURLOPT_SSLENGINE_DEFAULT, 1L);
              curl_easy_setopt(curl, CURLOPT_CAINFO, CA_CERTIFICATE);
-             curl_easy_setopt(curl,CURLOPT_SSL_VERIFYPEER,1);
+             curl_easy_setopt(curl,CURLOPT_SSL_VERIFYPEER,0);
         }
         if(timeout == 0) {
             /* if timeout is not specified, setting default time as 10L */
@@ -150,19 +154,27 @@ jsi::Value RSkNetworkingModule::sendRequest(
             curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&chunk);
         }
         res = curl_easy_perform(curl);
-
         /* Check for errors */
-        if(res != CURLE_OK)
-            RNS_LOG_ERROR (stderr << "curl_easy_perform() failed: %s\n" <<curl_easy_strerror(res));
-        // TODO:: clean to be done in abort, once implemented
+        if(res != CURLE_OK) {
+            if(res == CURLE_OPERATION_TIMEDOUT) {
+                sendEventWithName("didCompleteNetworkResponse", folly::dynamic::array(requestId ,curl_easy_strerror(res), true));
+            }else {
+                sendEventWithName("didCompleteNetworkResponse", folly::dynamic::array(requestId ,curl_easy_strerror(res), false));
+	    }
+	    RNS_LOG_ERROR (stderr << "curl_easy_perform() failed: %s\n" <<curl_easy_strerror(res));
+        }else {
+            sendEventWithName("didReceiveNetworkData", folly::dynamic::array(requestId ,chunk.memory));
+        }
+// TODO:: clean to be done in abort, once implemented
         curl_easy_cleanup(curl);
         free(chunk.memory);
-
   }
  
-  return jsi::Value::undefined();
+  return    jsi::Value((int)CURL_RETURN_SUCESS);
 
 
 }
+
+
 }// namespace react
 }//namespace facebook
