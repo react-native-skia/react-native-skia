@@ -232,7 +232,18 @@ void WindowX11::closeWindow() {
 
 bool WindowX11::handleEvent(const XEvent& event) {
     int shiftLevel= (event.xkey.state & ShiftMask) ? 1 : 0;
-    KeySym keysym = XkbKeycodeToKeysym(display_, event.xkey.keycode,0,shiftLevel);
+    int capsLock = (event.xkey.state & LockMask) ? 1 : 0;
+    /* Shift & CapsLock Combination Logic
+     * There two possibilties
+     * 1. CapsLock ON
+     *    a. shift ON  --> LowerCase
+     *    b. shift OFF --> UpperCase
+     *
+     * 2. CapsLock OFF 
+     *    a. shift ON  --> UpperCase
+     *    b. shift OFF --> LowerCase
+     */
+    KeySym keysym = XkbKeycodeToKeysym(display_, event.xkey.keycode,0,(shiftLevel^capsLock));
     switch (event.type) {
         case MapNotify:
             break;
