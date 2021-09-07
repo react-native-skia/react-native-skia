@@ -22,9 +22,6 @@ void RSkComponentText::OnPaint(SkCanvas *canvas) {}
 RSkComponentRawText::RSkComponentRawText(const ShadowView &shadowView)
     : RSkComponent(shadowView) {}
 
-RnsShell::LayerInvalidateMask RSkComponentRawText::updateComponentProps(const ShadowView &newShadowView,bool forceUpadte) {return RnsShell::LayerInvalidateNone;}
-void RSkComponentRawText::OnPaint(SkCanvas *canvas) {}
-
 RSkComponentParagraph::RSkComponentParagraph(const ShadowView &shadowView)
     : RSkComponent(shadowView)
     , paraBuilder(nullptr)
@@ -39,53 +36,57 @@ RnsShell::LayerInvalidateMask RSkComponentParagraph::updateComponentProps(const 
 }
 
 void RSkComponentParagraph::OnPaint(SkCanvas *canvas) {
-  auto component = getComponentData();
-  auto state =
-      std::static_pointer_cast<ParagraphShadowNode::ConcreteStateT const>(
-          component.state);
-  auto const &props =
-      *std::static_pointer_cast<ParagraphProps const>(component.props);
-  auto data = state->getData();
+    auto component = getComponentData();
+    auto state = std::static_pointer_cast<ParagraphShadowNode::ConcreteStateT const>(component.state);
+    auto const &props = *std::static_pointer_cast<ParagraphProps const>(component.props);
+    auto data = state->getData();
 
-  /* Check if this component has parent Paragraph component */
-  RSkComponentParagraph * parent = getParentParagraph();
-
-  /* If parent, this text component is part of nested text(aka fragment attachment)*/
-  /*    - use parent paragraph builder to add text & push style */
-  /*    - draw the paragraph, when we reach the last fragment attachment*/
-  if(parent) {
-      parent->expectedAttachmentCount += data.layoutManager->buildParagraph(data.attributedString,
-                                                          props.paragraphAttributes,
-                                                          true,
-                                                          parent->paraBuilder);
-      auto paragraph = parent->paraBuilder->Build();
-      parent->currentAttachmentCount++;
-      if(!parent->expectedAttachmentCount || (parent->expectedAttachmentCount == parent->currentAttachmentCount)) {
-            auto frame = parent->getComponentData().layoutMetrics.frame;
+    /* Check if this component has parent Paragraph component */
+    RSkComponentParagraph * parent = getParentParagraph();
+    SkScalar yOffset=0;
+  
+    /* If parent, this text component is part of nested text(aka fragment attachment)*/
+    /*    - use parent paragraph builder to add text & push style */
+    /*    - draw the paragraph, when we reach the last fragment attachment*/
+    if(parent) {        
+        parent->expectedAttachmentCount += data.layoutManager->buildParagraph(data.attributedString,
+                                                            props.paragraphAttributes,
+                                                            true,
+                                                            parent->paraBuilder);
+        auto paragraph = parent->paraBuilder->Build();
+        parent->currentAttachmentCount++;
+        if(!parent->expectedAttachmentCount || (parent->expectedAttachmentCount == parent->currentAttachmentCount)) {
+            auto frame = parent->getAbsoluteFrame();
             paragraph->layout(frame.size.width);
-            paragraph->paint(canvas, frame.origin.x, frame.origin.y);
-      }
-   } else {
-      /* If previously created builder is available,using it will append the text in builder*/
-      /* If it reaches here,means there is an update in text.So create new paragraph builder*/
-      if(nullptr != paraBuilder) {
-          paraBuilder.reset();
-      }
+            SkScalar paraHeight = paragraph->getHeight();
 
-      ParagraphStyle paraStyle;
-      paraBuilder = std::static_pointer_cast<ParagraphBuilder>(std::make_shared<ParagraphBuilderImpl>(paraStyle,data.layoutManager->collection_));
+            yOffset = yPosOffset(data.attributedString, paraHeight, frame);
+            paragraph->paint(canvas, frame.origin.x, frame.origin.y + yOffset);
+        }
+    }else {
+        /* If previously created builder is available,using it will append the text in builder*/
+        /* If it reaches here,means there is an update in text.So create new paragraph builder*/
+        if(nullptr != paraBuilder) {
+            paraBuilder.reset();
+        }
 
-      expectedAttachmentCount = data.layoutManager->buildParagraph(data.attributedString, props.paragraphAttributes, true, paraBuilder);
-      currentAttachmentCount = 0;
-      auto paragraph = paraBuilder->Build();
+        ParagraphStyle paraStyle;
+        paraBuilder = std::static_pointer_cast<ParagraphBuilder>(std::make_shared<ParagraphBuilderImpl>(paraStyle,data.layoutManager->collection_));
 
-      /* If the count is 0,means we have no fragment attachments.So paint right away*/
-      if(!expectedAttachmentCount) {
-          auto frame = component.layoutMetrics.frame;
-          paragraph->layout(frame.size.width);
-          paragraph->paint(canvas, frame.origin.x, frame.origin.y);
-      }
-   }
+        expectedAttachmentCount = data.layoutManager->buildParagraph(data.attributedString, props.paragraphAttributes, true, paraBuilder);
+        currentAttachmentCount = 0;
+        auto paragraph = paraBuilder->Build();
+
+        /* If the count is 0,means we have no fragment attachments.So paint right away*/
+        if(!expectedAttachmentCount) {
+            auto frame = getAbsoluteFrame();
+            paragraph->layout(frame.size.width);
+            SkScalar paraHeight = paragraph->getHeight();
+
+            yOffset = yPosOffset(data.attributedString, paraHeight, frame);
+            paragraph->paint(canvas, frame.origin.x, frame.origin.y + yOffset);
+        }
+    }
 }
 
 } // namespace react
