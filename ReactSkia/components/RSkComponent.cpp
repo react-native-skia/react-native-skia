@@ -62,6 +62,8 @@ void RSkComponent::updateComponentData(const ShadowView &newShadowView , const u
       component_.eventEmitter = newShadowView.eventEmitter;
    if(updateMask & ComponentUpdateMaskLayoutMetrics) {
       component_.layoutMetrics = newShadowView.layoutMetrics;
+      /* TODO : Analyze if this computation can be handled in RNS shell Layer */
+      absOrigin_ =  parent_ ? (parent_->absOrigin_ + component_.layoutMetrics.frame.origin) : component_.layoutMetrics.frame.origin;
 
       Rect frame = component_.layoutMetrics.frame;
       SkIRect frameIRect = SkIRect::MakeXYWH(frame.origin.x, frame.origin.y, frame.size.width, frame.size.height);
