@@ -10,10 +10,10 @@ const SimpleViewApp = React.Node = () => {
     const timeout = setTimeout(() => {
       if (color === '#444') {
         setColor('#00ff88');
-	setWidth(256);
+        setWidth(256);
       } else {
         setColor('#444');
-	setWidth(512);
+        setWidth(512);
       }
     }, 2000);
 
