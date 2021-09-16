@@ -22,6 +22,7 @@ RSkNetworkingModuleBase::RSkNetworkingModuleBase(
     Instance *bridgeInstance)
     : RSkEventEmitter(name, jsInvoker, bridgeInstance) {
     methodMap_["sendRequest"] = MethodMetadata{1, sendRequestWrapper};
+    methodMap_["abortRequest"] = MethodMetadata{1, abortRequestWrapper};
 
 }
 
@@ -34,10 +35,21 @@ jsi::Value RSkNetworkingModuleBase::sendRequestWrapper(
 
     auto &self = static_cast<RSkNetworkingModuleBase &>(turboModule);
     auto query = jsi::dynamicFromValue(rt, args[0]);
-    
-    return self.sendRequest(query);
+    jsi::Object callbackObj = args[1].getObject(rt);    
+    return self.sendRequest(query, callbackObj, rt);
 }
 
+jsi::Value RSkNetworkingModuleBase::abortRequestWrapper(
+     jsi::Runtime &rt,
+     TurboModule &turboModule,
+     const jsi::Value *args,
+     size_t count) {
+
+    auto &self = static_cast<RSkNetworkingModuleBase &>(turboModule);
+    auto requestId = jsi::dynamicFromValue(rt, args[0]);
+    return self.abortRequest(requestId);
+
+}
 
 }// namespace react
 }//namespace facebook
