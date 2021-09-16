@@ -27,9 +27,17 @@ class SimpleViewApp extends React.Component {
     xhr.onload = () => {
       console.log('Response ', xhr.responseText);
     };
+
+    xhr.onabort = () => {
+      console.log('Abort', xhr.responseText);
+    };
+
+
+
 	  xhr.open('POST', 'https://jsnplaceholder.typicode.com/'); // request to take 5 seconds to load
 //    xhr.timeout = 200; // request times out in 2 seconds
     xhr.send("1");
+    xhr.abort();
     this.xhr = xhr;
 
   }

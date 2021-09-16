@@ -68,7 +68,7 @@ uint64_t RSkNetworkingModule::nextUniqueId() {
 }
 
 jsi::Value RSkNetworkingModule::sendRequest(
-  folly::dynamic query) {
+  folly::dynamic query, const jsi::Object &callbackObj, jsi::Runtime &rt) {
   std::string method = query["method"].getString();
   auto url = query["url"];
   auto headers = query["headers"];
@@ -112,6 +112,10 @@ jsi::Value RSkNetworkingModule::sendRequest(
 
   if(curl != NULL) {
         requestId = nextUniqueId();
+        if(callbackObj.isFunction(rt)){
+            jsi::Function callback = callbackObj.getFunction(rt);
+            callback.call(rt, (int) requestId, 1);
+        }
         connectionList_[requestId] = curl;
         curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
         /*The following code gets executed for a https connection.*/
@@ -160,21 +164,34 @@ jsi::Value RSkNetworkingModule::sendRequest(
                 sendEventWithName("didCompleteNetworkResponse", folly::dynamic::array(requestId ,curl_easy_strerror(res), true));
             }else {
                 sendEventWithName("didCompleteNetworkResponse", folly::dynamic::array(requestId ,curl_easy_strerror(res), false));
-	    }
-	    RNS_LOG_ERROR (stderr << "curl_easy_perform() failed: %s\n" <<curl_easy_strerror(res));
+            }
+            RNS_LOG_ERROR (stderr << "curl_easy_perform() failed: %s\n" <<curl_easy_strerror(res));
         }else {
             sendEventWithName("didReceiveNetworkData", folly::dynamic::array(requestId ,chunk.memory));
         }
-// TODO:: clean to be done in abort, once implemented
-        curl_easy_cleanup(curl);
         free(chunk.memory);
   }
  
-  return    jsi::Value((int)CURL_RETURN_SUCESS);
-
+  return jsi::Value((int)CURL_RETURN_SUCESS);
 
 }
 
+jsi::Value RSkNetworkingModule::abortRequest(
+  folly::dynamic requestId) {
 
+ CURL* curl = connectionList_[requestId.asInt()];
+ if(curl != NULL) {
+     curl_easy_cleanup(curl);
+     connectionList_.erase(requestId.asInt());
+     curl = NULL;
+     sendEventWithName("didCompleteNetworkResponse", folly::dynamic::array(requestId.asInt() ,"Abort connection request succeeded.", false));
+     return jsi::Value((int)CURL_RETURN_SUCESS);
+ }
+
+ sendEventWithName("didCompleteNetworkResponse", folly::dynamic::array(requestId.asInt() ,"Abort connection request failed.", false));
+
+ return jsi::Value((int)CURL_RETURN_FAILURE);
+
+}
 }// namespace react
 }//namespace facebook

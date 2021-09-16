@@ -27,6 +27,17 @@ class RSkNetworkingModuleBase: public RSkEventEmitter {
             size_t count);
 
         virtual jsi::Value sendRequest(
+            folly::dynamic,
+            const jsi::Object&,
+            jsi::Runtime&) = 0;
+
+        static jsi::Value abortRequestWrapper(
+            jsi::Runtime &rt,
+            TurboModule &turboModule,
+            const jsi::Value *args,
+            size_t count);
+
+        virtual jsi::Value abortRequest(
             folly::dynamic) = 0;
 
         void startObserving() {};

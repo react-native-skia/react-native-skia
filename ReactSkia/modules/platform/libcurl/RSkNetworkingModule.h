@@ -21,7 +21,13 @@ class RSkNetworkingModule:  public RSkNetworkingModuleBase {
         ~ RSkNetworkingModule();
 
         jsi::Value sendRequest(
+            folly::dynamic,
+            const jsi::Object&,
+            jsi::Runtime&) override;
+
+        jsi::Value abortRequest(
             folly::dynamic) override;
+
 
         better::map <int , CURL*> connectionList_;
 
