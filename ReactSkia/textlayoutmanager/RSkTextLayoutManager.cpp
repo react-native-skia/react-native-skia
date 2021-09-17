@@ -214,6 +214,9 @@ uint32_t RSkTextLayoutManager::buildParagraph (AttributedString attributedString
         if(fragment.textAttributes.alignment.has_value())
             paraStyle.setTextAlign(convertTextAlign(fragment.textAttributes.alignment.value()));
 
+        if (paragraphAttributes.maximumNumberOfLines)
+            paraStyle.setMaxLines(paragraphAttributes.maximumNumberOfLines);
+
         builder->setParagraphStyle(paraStyle);
         builder->pushStyle(style);
         builder->addText(fragment.string.c_str(),fragment.string.length());
