@@ -9,7 +9,7 @@
 #include "ReactSkia/components/RSkComponentProviderRootView.h"
 #include "ReactSkia/components/RSkComponentProviderText.h"
 #include "ReactSkia/components/RSkComponentProviderView.h"
-
+#include "ReactSkia/components/RSkComponentProviderTextInput.h"
 #if defined (OS_MACOSX)
 #include "ReactSkia/platform/macosx/MainRunLoopEventBeat.h"
 #include "ReactSkia/platform/macosx/RuntimeEventBeat.h"
@@ -208,6 +208,10 @@ void RNInstance::RegisterComponents() {
       std::make_unique<RSkComponentProviderRawText>());
   componentViewRegistry_->Register(
       std::make_unique<RSkComponentProviderParagraph>());
+  componentViewRegistry_->Register(
+      std::make_unique<RSkComponentProviderTextInput>());
+  
+
 }
 
 } // namespace react

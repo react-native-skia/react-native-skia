@@ -5,7 +5,7 @@
 namespace facebook {
 namespace react {
 
-class RSkComponentView final : public RSkComponent {
+class RSkComponentView  : public RSkComponent {
  public:
   RSkComponentView(const ShadowView &shadowView);
 

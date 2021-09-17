@@ -3,7 +3,9 @@
 
 #include "react/renderer/scheduler/Scheduler.h"
 #include <glog/logging.h>
-
+#include "ReactSkia/utils/RnsLog.h"
+#include <iostream>
+using namespace std;
 namespace facebook {
 namespace react {
 
@@ -44,7 +46,11 @@ void MountingManager::schedulerDidDispatchCommand(
     const ShadowView &shadowView,
     const std::string &commandName,
     const folly::dynamic args) {
-  // TODO
+    printf("\n\n=====================\n");
+    cout<<"-----------------------shadowView tag"<<shadowView.tag<<endl;
+    cout<<"-----------------------shadowView componentName"<<shadowView.componentName<<endl;
+    cout<<"-----------------------shadowView commandName"<<commandName<<endl;
+    RNS_LOG_INFO("**********************************");
 }
 
 void MountingManager::schedulerDidSetJSResponder(
@@ -65,6 +71,14 @@ void MountingManager::ProcessMutations(
 
   surface_->compositor()->begin();
 
+    for (auto const &mutation : mutations) {
+    printf("\n\n=====================\n");
+    printf("Mutation type [%d] Index [%d]\n",mutation.type,mutation.index);
+    printf("Parent ShadowView Tag [%d] Name [%s] \n",mutation.parentShadowView.tag,mutation.parentShadowView.componentName);
+    printf("OldChild ShadowView Tag [%d] Name [%s] \n",mutation.oldChildShadowView.tag,mutation.oldChildShadowView.componentName);
+    printf("NewChild ShadowView Tag [%d] Name [%s] \n",mutation.newChildShadowView.tag,mutation.newChildShadowView.componentName);
+    printf("=====================\n\n");
+    }
   for (auto const &mutation : mutations) {
     switch (mutation.type) {
       case ShadowViewMutation::Create: {
