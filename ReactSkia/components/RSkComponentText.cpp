@@ -35,6 +35,21 @@ RnsShell::LayerInvalidateMask RSkComponentParagraph::updateComponentProps(const 
   return RnsShell::LayerInvalidateAll;
 }
 
+inline int getNumberOfLines(std::vector<LineMetrics>& metrics, int maxNumberOfLines, Float frameHeight) {
+    int i=0;
+    int minNumberOfLines = 0;
+    for(; i< metrics.size(); i++) {
+        if ((metrics[i]).fBaseline > frameHeight) {
+            minNumberOfLines = (metrics[i]).fLineNumber;
+            break;
+        }
+    }
+    if ((minNumberOfLines > 0) && (minNumberOfLines < maxNumberOfLines))
+        return minNumberOfLines;
+    
+    return maxNumberOfLines;
+}
+
 void RSkComponentParagraph::OnPaint(SkCanvas *canvas) {
     auto component = getComponentData();
     auto state = std::static_pointer_cast<ParagraphShadowNode::ConcreteStateT const>(component.state);
@@ -43,7 +58,10 @@ void RSkComponentParagraph::OnPaint(SkCanvas *canvas) {
 
     /* Check if this component has parent Paragraph component */
     RSkComponentParagraph * parent = getParentParagraph();
-    SkScalar yOffset=0;
+    ParagraphStyle paraStyle;
+    std::vector<LineMetrics> metrics;
+    SkScalar yOffset = 0;
+    int numberOfLines = 0;
   
     /* If parent, this text component is part of nested text(aka fragment attachment)*/
     /*    - use parent paragraph builder to add text & push style */
@@ -58,9 +76,17 @@ void RSkComponentParagraph::OnPaint(SkCanvas *canvas) {
         if(!parent->expectedAttachmentCount || (parent->expectedAttachmentCount == parent->currentAttachmentCount)) {
             auto frame = parent->getAbsoluteFrame();
             paragraph->layout(frame.size.width);
-            SkScalar paraHeight = paragraph->getHeight();
+            paragraph->getLineMetrics(metrics);
 
-            yOffset = yPosOffset(data.attributedString, paraHeight, frame);
+            numberOfLines = getNumberOfLines(metrics, props.paragraphAttributes.maximumNumberOfLines, frame.size.height);
+            if (numberOfLines){
+                paraStyle.setMaxLines(numberOfLines);
+                paraStyle.setEllipsis(u"\u2026");
+                parent->paraBuilder->setParagraphStyle(paraStyle);
+                paragraph = parent->paraBuilder->Build();
+                paragraph->layout(frame.size.width);
+            }
+            yOffset = yPosOffset(data.attributedString, paragraph->getHeight(), frame);
             paragraph->paint(canvas, frame.origin.x, frame.origin.y + yOffset);
         }
     }else {
@@ -70,7 +96,6 @@ void RSkComponentParagraph::OnPaint(SkCanvas *canvas) {
             paraBuilder.reset();
         }
 
-        ParagraphStyle paraStyle;
         paraBuilder = std::static_pointer_cast<ParagraphBuilder>(std::make_shared<ParagraphBuilderImpl>(paraStyle,data.layoutManager->collection_));
 
         expectedAttachmentCount = data.layoutManager->buildParagraph(data.attributedString, props.paragraphAttributes, true, paraBuilder);
@@ -81,9 +106,17 @@ void RSkComponentParagraph::OnPaint(SkCanvas *canvas) {
         if(!expectedAttachmentCount) {
             auto frame = getAbsoluteFrame();
             paragraph->layout(frame.size.width);
-            SkScalar paraHeight = paragraph->getHeight();
+            paragraph->getLineMetrics(metrics);
 
-            yOffset = yPosOffset(data.attributedString, paraHeight, frame);
+            numberOfLines = getNumberOfLines(metrics, props.paragraphAttributes.maximumNumberOfLines, frame.size.height);
+            if (numberOfLines){
+                paraStyle.setMaxLines(numberOfLines);
+                paraStyle.setEllipsis(u"\u2026");
+                paraBuilder->setParagraphStyle(paraStyle);
+                paragraph = paraBuilder->Build();
+                paragraph->layout(frame.size.width);
+            }
+            yOffset = yPosOffset(data.attributedString, paragraph->getHeight(), frame);
             paragraph->paint(canvas, frame.origin.x, frame.origin.y + yOffset);
         }
     }
