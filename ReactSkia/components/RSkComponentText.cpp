@@ -87,8 +87,10 @@ void RSkComponentParagraph::OnPaint(SkCanvas *canvas) {
 
             numberOfLines = getNumberOfLines(metrics, props.paragraphAttributes.maximumNumberOfLines, frame.size.height);
             if (numberOfLines){
+                if (EllipsizeMode::Tail == props.paragraphAttributes.ellipsizeMode) {
+                    paraStyle.setEllipsis(u"\u2026");
+                }
                 paraStyle.setMaxLines(numberOfLines);
-                paraStyle.setEllipsis(u"\u2026");
                 parent->paraBuilder->setParagraphStyle(paraStyle);
                 paragraph = parent->paraBuilder->Build();
                 paragraph->layout(frame.size.width);
@@ -117,8 +119,10 @@ void RSkComponentParagraph::OnPaint(SkCanvas *canvas) {
 
             numberOfLines = getNumberOfLines(metrics, props.paragraphAttributes.maximumNumberOfLines, frame.size.height);
             if (numberOfLines){
+                if (EllipsizeMode::Tail == props.paragraphAttributes.ellipsizeMode) {
+                    paraStyle.setEllipsis(u"\u2026");
+                }
                 paraStyle.setMaxLines(numberOfLines);
-                paraStyle.setEllipsis(u"\u2026");
                 paraBuilder->setParagraphStyle(paraStyle);
                 paragraph = paraBuilder->Build();
                 paragraph->layout(frame.size.width);
