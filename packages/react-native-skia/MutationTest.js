@@ -4,13 +4,16 @@ import { View, AppRegistry, Image, Text } from 'react-native';
 
 const SimpleViewApp = React.Node = () => {
   const [color, setColor] = useState('#444');
+  const [width, setWidth] = useState(512);
 
   useEffect(() => {
     const timeout = setTimeout(() => {
       if (color === '#444') {
         setColor('#00ff88');
+        setWidth(256);
       } else {
         setColor('#444');
+        setWidth(512);
       }
     }, 2000);
 
@@ -26,7 +29,7 @@ const SimpleViewApp = React.Node = () => {
                alignItems: 'center',
                backgroundColor: color }}>
       <Image
-        style={{ width: 512, height: 512 }}
+        style={{ width: width, height: 512 }}
         source={require('react-native/Libraries/NewAppScreen/components/logo.png')}
       />
       {color === '#00ff88' && (
