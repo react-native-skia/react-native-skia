@@ -23,6 +23,14 @@ enum ComponentUpdateMask {
       ComponentUpdateMaskState | ComponentUpdateMaskLayoutMetrics
 };
 
+struct CommonProps{
+    SkColor backgroundColor;
+    SkColor foregroundColor;
+    int pointerEvents;
+    EdgeInsets hitSlop;
+    int zIndex{};
+    /* TODO Add TVOS properties */
+};
 struct Component {
   Component( const ShadowView &shadowView)
     : tag(shadowView.tag)
@@ -39,7 +47,7 @@ struct Component {
   EventEmitter::Shared eventEmitter{};
   LayoutMetrics layoutMetrics{EmptyLayoutMetrics};
   State::Shared state{};
-  int zIndex{};
+  struct CommonProps commonProps;
 };
 
 class RSkComponent;
@@ -60,14 +68,15 @@ class RSkComponent : public RnsShell::Layer, public std::enable_shared_from_this
     std::shared_ptr<RSkComponent> oldChildComponent,
     const int index);
 
-  virtual void updateComponentData(const ShadowView &newShadowView , const uint32_t updateMask);
+  virtual void updateComponentData(const ShadowView &newShadowView , const uint32_t updateMask , bool forceUpdate);
   Component getComponentData() { return component_;};
   Rect getAbsoluteFrame(){return Rect{absOrigin_,component_.layoutMetrics.frame.size} ;};
   std::shared_ptr<RnsShell::Layer> layer() { return layer_; }
   RSkComponent *getParent() {return parent_; };
  
   void requiresLayer(const ShadowView &shadowView);
-
+  void updateProps(const ShadowView &newShadowView , bool forceUpdate);
+  virtual void updateComponentProps(const ShadowView &newShadowView,bool forceUpadate) = 0;
  protected:
   virtual void OnPaint(SkCanvas *canvas) = 0;
 

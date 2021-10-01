@@ -130,7 +130,7 @@ void MountingManager::InsertMountInstruction(
   std::shared_ptr<RSkComponent> newChildComponent = GetComponent(mutation.newChildShadowView);
   std::shared_ptr<RSkComponent> parentComponent = GetComponent(mutation.parentShadowView);
   if (newChildComponent) {
-      newChildComponent->updateComponentData(mutation.newChildShadowView,ComponentUpdateMaskAll);
+      newChildComponent->updateComponentData(mutation.newChildShadowView,ComponentUpdateMaskAll,true);
   }
 
   if (parentComponent) {
@@ -160,20 +160,24 @@ void MountingManager::UpdateMountInstruction(
 
   auto &oldChildShadowView = mutation.oldChildShadowView;
   auto &newChildShadowView = mutation.newChildShadowView;
-
+  uint32_t updateMask = ComponentUpdateMaskNone;
   std::shared_ptr<RSkComponent> newChildComponent = GetComponent(mutation.newChildShadowView);
   if(newChildComponent)
   {
-       if(oldChildShadowView.props != newChildShadowView.props) {
-           newChildComponent->updateComponentData(mutation.newChildShadowView,ComponentUpdateMaskProps);
-           surface_->navigator()->updateInNavList(newChildComponent); //TODO only if TV related proeprties have changed ?
-       }
+       if(oldChildShadowView.props != newChildShadowView.props)
+	   updateMask |= ComponentUpdateMaskProps;
        if(oldChildShadowView.state != newChildShadowView.state)
-           newChildComponent->updateComponentData(mutation.newChildShadowView,ComponentUpdateMaskState);
+           updateMask |= ComponentUpdateMaskState;
        if(oldChildShadowView.eventEmitter != newChildShadowView.eventEmitter)
-           newChildComponent->updateComponentData(mutation.newChildShadowView,ComponentUpdateMaskEventEmitter);
+	   updateMask |= ComponentUpdateMaskEventEmitter;
        if(oldChildShadowView.layoutMetrics != newChildShadowView.layoutMetrics)
-           newChildComponent->updateComponentData(mutation.newChildShadowView,ComponentUpdateMaskLayoutMetrics);
+	   updateMask |= ComponentUpdateMaskLayoutMetrics;
+
+       if(updateMask != ComponentUpdateMaskNone) {
+	   newChildComponent->updateComponentData(mutation.newChildShadowView,updateMask,false);
+           if(updateMask & ComponentUpdateMaskProps)
+               surface_->navigator()->updateInNavList(newChildComponent); //TODO only if TV related proeprties have changed ?
+       }
 #if USE(RNS_SHELL_PARTIAL_UPDATES)
        surface_->compositor()->addDamageRect(newChildComponent->layer().get()->getFrame());
 #endif

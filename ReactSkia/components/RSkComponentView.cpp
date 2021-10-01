@@ -11,7 +11,7 @@ using namespace RSkDrawUtils;
 
 RSkComponentView::RSkComponentView(const ShadowView &shadowView)
     : RSkComponent(shadowView) {}
-
+void  RSkComponentView::updateComponentProps(const ShadowView &newShadowView,bool forceUpdate) {}
 void RSkComponentView::OnPaint(SkCanvas *canvas) {
   auto component = getComponentData();
   auto const &viewProps = *std::static_pointer_cast<ViewProps const>(component.props);

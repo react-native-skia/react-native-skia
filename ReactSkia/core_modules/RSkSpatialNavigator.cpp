@@ -126,8 +126,8 @@ struct sortDirectionComparator {
         // Rule 4. If both candidates are having same dimension (x,y,w,h) then select the one with higher zIndex, else higher tag if zIndex is same
         if(listCandidate == newCandidate) {
             //Component with highest zIndex must be added before"
-            if(listData.zIndex > newData.zIndex) return true;
-            if(newData.zIndex  > listData.zIndex ) return false;
+            if(listData.commonProps.zIndex > newData.commonProps.zIndex) return true;
+            if(newData.commonProps.zIndex  > listData.commonProps.zIndex ) return false;
             // Last Resort. If both have same zIndex then items with bigger Tag will have more priority (Last added items will always have bigger tags)
             return listData.tag > newData.tag;
         }

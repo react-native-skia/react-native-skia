@@ -16,12 +16,14 @@ namespace react {
 RSkComponentText::RSkComponentText(const ShadowView &shadowView)
     : RSkComponent(shadowView) {}
 
+void RSkComponentText::updateComponentProps(const ShadowView &newShadowView,bool forceUpadte) {}
 void RSkComponentText::OnPaint(SkCanvas *canvas) {
 }
 
 RSkComponentRawText::RSkComponentRawText(const ShadowView &shadowView)
     : RSkComponent(shadowView) {}
 
+void RSkComponentRawText::updateComponentProps(const ShadowView &newShadowView,bool forceUpadte) {}
 void RSkComponentRawText::OnPaint(SkCanvas *canvas) {}
 
 RSkComponentParagraph::RSkComponentParagraph(const ShadowView &shadowView)
@@ -29,6 +31,13 @@ RSkComponentParagraph::RSkComponentParagraph(const ShadowView &shadowView)
     , paraBuilder(nullptr)
     , expectedAttachmentCount(0)
     , currentAttachmentCount(0){}
+
+
+void RSkComponentParagraph::updateComponentProps(const ShadowView &newShadowView,bool forceUpadte) {
+
+  auto const &paragraphProps = *std::static_pointer_cast<ParagraphProps const>(newShadowView.props);
+  paragraphAttributes_ = paragraphProps.paragraphAttributes;
+}
 
 inline SkScalar yPosOffset(AttributedString attributedString, SkScalar paraHeight, Rect frame) {
     for(auto &fragment: attributedString.getFragments()) {
