@@ -19,7 +19,6 @@
 
 #include "include/core/SkCanvas.h"
 #include "include/core/SkSurface.h"
-
 #include "ReactSkia/utils/RnsLog.h"
 #include "ReactSkia/utils/RnsUtils.h"
 
@@ -45,6 +44,15 @@ struct PaintContext {
 
 class Layer {
 public:
+    int  backfaceVisibility;
+    float opacity{1.0};
+
+    float shadowOpacity{};
+    float shadowRadius{3};
+    SkColor shadowColor;
+    SkSize shadowOffset{0,-3};
+
+    SkMatrix transformMatrix;
 
     static SharedLayer Create(LayerType type = LAYER_TYPE_DEFAULT);
     Layer(LayerType);
@@ -78,7 +86,6 @@ public:
 
     const bool masksToBounds() const { return masksToBounds_; }
     void setMasksTotBounds(bool masksToBounds) { masksToBounds_ = masksToBounds; }
-
 private:
     static uint64_t nextUniqueId();
 
