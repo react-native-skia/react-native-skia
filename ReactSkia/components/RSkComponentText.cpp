@@ -90,7 +90,7 @@ void RSkComponentParagraph::OnPaint(SkCanvas *canvas) {
         auto paragraph = parent->paraBuilder->Build();
         parent->currentAttachmentCount++;
         if(!parent->expectedAttachmentCount || (parent->expectedAttachmentCount == parent->currentAttachmentCount)) {
-            auto frame = parent->getAbsoluteFrame();
+            auto frame = parent->getComponentData().layoutMetrics.frame;
             paragraph->layout(frame.size.width);
             paragraph->getLineMetrics(metrics);
 
@@ -122,7 +122,7 @@ void RSkComponentParagraph::OnPaint(SkCanvas *canvas) {
 
         /* If the count is 0,means we have no fragment attachments.So paint right away*/
         if(!expectedAttachmentCount) {
-            auto frame = getAbsoluteFrame();
+            auto frame = component.layoutMetrics.frame;
             paragraph->layout(frame.size.width);
             paragraph->getLineMetrics(metrics);
 

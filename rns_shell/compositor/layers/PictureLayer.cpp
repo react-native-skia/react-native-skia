@@ -19,7 +19,16 @@ PictureLayer::PictureLayer()
     RNS_LOG_INFO("Picture Layer Constructed(" << this << ") with ID : " << layerId());
 }
 
-void PictureLayer::prePaint(PaintContext& context) {
+void PictureLayer::prePaint(PaintContext& context, bool forceLayout) {
+    //Adjust absolute Layout frame and dirty rects
+    bool forceChildrenLayout = (forceLayout || (invalidateMask_ & LayerLayoutInvalidate));
+    preRoll(context, forceLayout);
+    invalidateMask_ = LayerInvalidateNone;
+
+    // prePaint children recursively
+    for (auto& layer : children()) {
+        layer->prePaint(context, forceChildrenLayout);
+    }
 }
 
 void PictureLayer::paintSelf(PaintContext& context) {
@@ -41,8 +50,8 @@ void PictureLayer::paint(PaintContext& context) {
     RNS_LOG_DEBUG("Picture Layer (" << layerId() << ") has " << children().size() << " childrens");
     SkAutoCanvasRestore save(context.canvas, true); // Save current clip and matrix state
 
-    // TODO Concat matrix
     paintSelf(context);// First paint self and then children if any
+    context.canvas->translate(frame_.x(), frame_.y());
 
     if(masksToBounds()) { // Need to clip children.
         SkRect intRect = SkRect::Make(getFrame());

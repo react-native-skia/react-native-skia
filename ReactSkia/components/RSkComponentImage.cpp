@@ -58,7 +58,7 @@ void RSkComponentImage::OnPaint(
   if(imageData) {
 /* Emitting Load completed Event*/
     imageEventEmitter->onLoad();
-    Rect frame = getAbsoluteFrame();
+    Rect frame = component.layoutMetrics.frame;
     SkRect frameRect = SkRect::MakeXYWH(frame.origin.x, frame.origin.y, frame.size.width, frame.size.height);
     auto const &imageBorderMetrics=imageProps.resolveBorderMetrics(component.layoutMetrics);
     SkRect targetRect = computeTargetRect({imageData->width(),imageData->height()},frameRect,imageProps.resizeMode);
