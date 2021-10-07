@@ -120,8 +120,8 @@ struct sortDirectionComparator {
     bool operator()(const T& listItem, const T& newItem) const {
         Component listData = listItem->getComponentData();
         Component newData = newItem->getComponentData();
-        Rect listCandidate = listData.layoutMetrics.frame;
-        Rect newCandidate  = newData.layoutMetrics.frame;
+        const SkIRect& listCandidate = listItem->getLayerAbsoluteFrame();
+        const SkIRect& newCandidate = newItem->getLayerAbsoluteFrame();
 
         // Rule 4. If both candidates are having same dimension (x,y,w,h) then select the one with higher zIndex, else higher tag if zIndex is same
         if(listCandidate == newCandidate) {
@@ -141,21 +141,21 @@ struct sortDirectionComparator {
             case RNS_KEY_Left: {
                 // Rule 5.
                 if(direction_ == RNS_KEY_Right) {
-                    if(listCandidate.origin.x < newCandidate.origin.x) return true;
-                    if(newCandidate.origin.x  < listCandidate.origin.x) return false;
+                    if(listCandidate.left() < newCandidate.left()) return true;
+                    if(newCandidate.left()  < listCandidate.left()) return false;
                 }else {
-                    if(listCandidate.getMaxX() > newCandidate.getMaxX()) return true;
-                    if(newCandidate.getMaxX()  > listCandidate.getMaxX()) return false;
+                    if(listCandidate.right() > newCandidate.right()) return true;
+                    if(newCandidate.right()  > listCandidate.right()) return false;
                 }
                 // Rule 6.
-                if(listCandidate.origin.y < newCandidate.origin.y) return true;
-                if(newCandidate.origin.y  < listCandidate.origin.y) return false;
+                if(listCandidate.top() < newCandidate.top()) return true;
+                if(newCandidate.top()  < listCandidate.top()) return false;
                 // Rule 7.
-                if(listCandidate.size.width < newCandidate.size.width) return true;
-                if(newCandidate.size.width  < listCandidate.size.width) return false;
+                if(listCandidate.width() < newCandidate.width()) return true;
+                if(newCandidate.width()  < listCandidate.width()) return false;
                 // Rule 8
-                if(listCandidate.size.height < newCandidate.size.height) return true;
-                if(newCandidate.size.height  < listCandidate.size.height) return false;
+                if(listCandidate.height() < newCandidate.height()) return true;
+                if(newCandidate.height()  < listCandidate.height()) return false;
 
                 break;
             }
@@ -163,21 +163,21 @@ struct sortDirectionComparator {
             case RNS_KEY_Down: {
                 // Rule 5.
                 if(direction_ == RNS_KEY_Up) {
-                    if(listCandidate.getMaxY() > newCandidate.getMaxY()) return true;
-                    if(newCandidate.getMaxY()  > listCandidate.getMaxY()) return false;
+                    if(listCandidate.bottom() > newCandidate.bottom()) return true;
+                    if(newCandidate.bottom()  > listCandidate.bottom()) return false;
                 } else {
-                    if(listCandidate.origin.y < newCandidate.origin.y) return true;
-                    if(newCandidate.origin.y  < listCandidate.origin.y) return false;
+                    if(listCandidate.top() < newCandidate.top()) return true;
+                    if(newCandidate.top()  < listCandidate.top()) return false;
                 }
                 // Rule 6.
-                if(listCandidate.origin.x < newCandidate.origin.x) return true;
-                if(newCandidate.origin.x < listCandidate.origin.x) return false;
+                if(listCandidate.left() < newCandidate.left()) return true;
+                if(newCandidate.left() < listCandidate.left()) return false;
                 // Rule 7.
-                if(listCandidate.size.height < newCandidate.size.height) return true;
-                if(newCandidate.size.height  < listCandidate.size.height) return false;
+                if(listCandidate.height() < newCandidate.height()) return true;
+                if(newCandidate.height()  < listCandidate.height()) return false;
                 // Rule 8
-                if(listCandidate.size.width < newCandidate.size.width) return true;
-                if(newCandidate.size.width  < listCandidate.size.width) return false;
+                if(listCandidate.width() < newCandidate.width()) return true;
+                if(newCandidate.width()  < listCandidate.width()) return false;
 
                 break;
             }
@@ -196,17 +196,17 @@ void RSkSpatialNavigator::moveTheFocusInDirection(rnsKey keyEvent,
 #if defined(THIS_IS_NOT_DEFINED) && (!defined(GOOGLE_STRIP_LOG) || (GOOGLE_STRIP_LOG <= INFO))
     for (auto candidate = overLapping.begin(); candidate != overLapping.end(); candidate++) {
         RNS_LOG_INFO("OverLapping Tag[" << (*candidate)->getComponentData().tag << "] I[" <<
-                        (*candidate)->getComponentData().layoutMetrics.frame.origin.x << " " <<
-                        (*candidate)->getComponentData().layoutMetrics.frame.origin.y << " " <<
-                        (*candidate)->getComponentData().layoutMetrics.frame.getMaxX() << " " <<
-                        (*candidate)->getComponentData().layoutMetrics.frame.getMaxY() << "]");
+                        (*candidate)->getLayerAbsoluteFrame().left() << " " <<
+                        (*candidate)->getLayerAbsoluteFrame().top() << " " <<
+                        (*candidate)->getLayerAbsoluteFrame().right() << " " <<
+                        (*candidate)->getLayerAbsoluteFrame().bottom() << "]");
     }
     for (auto candidate = nonOverLapping.begin(); candidate != nonOverLapping.end(); candidate++) {
         RNS_LOG_INFO("NonOverLapping Tag[" << (*candidate)->getComponentData().tag << "] I[" <<
-                        (*candidate)->getComponentData().layoutMetrics.frame.origin.x << " " <<
-                        (*candidate)->getComponentData().layoutMetrics.frame.origin.y << " " <<
-                        (*candidate)->getComponentData().layoutMetrics.frame.getMaxX() << " " <<
-                        (*candidate)->getComponentData().layoutMetrics.frame.getMaxY() << "]");
+                        (*candidate)->getLayerAbsoluteFrame().left() << " " <<
+                        (*candidate)->getLayerAbsoluteFrame().top() << " " <<
+                        (*candidate)->getLayerAbsoluteFrame().right() << " " <<
+                        (*candidate)->getLayerAbsoluteFrame().bottom() << "]");
     }
 #endif
 
@@ -223,10 +223,10 @@ void RSkSpatialNavigator::moveTheFocusInDirection(rnsKey keyEvent,
         auto front = nonOverLapping.begin();
         if(nextFocus) {
             if(keyEvent == RNS_KEY_Up) {
-                if(nextFocus->getComponentData().layoutMetrics.frame.getMaxY() < (*front)->getComponentData().layoutMetrics.frame.getMaxY())
+                if(nextFocus->getLayerAbsoluteFrame().bottom() < (*front)->getLayerAbsoluteFrame().bottom())
                     nextFocus = *front;
             } else if(keyEvent == RNS_KEY_Down) {
-                if(nextFocus->getComponentData().layoutMetrics.frame.origin.y > (*front)->getComponentData().layoutMetrics.frame.origin.y)
+                if(nextFocus->getLayerAbsoluteFrame().top() > (*front)->getLayerAbsoluteFrame().top())
                     nextFocus = *front;
             }
         } else { // OverLapping set was empty, nothing to compare.
@@ -242,9 +242,13 @@ void RSkSpatialNavigator::moveTheFocusInDirection(rnsKey keyEvent,
     }
 }
 
-static inline bool isValidCandidate(rnsKey direction, Component& curData, Component& canData) {
-    Rect current = curData.layoutMetrics.frame;
-    Rect candidate = canData.layoutMetrics.frame;
+static inline bool isValidCandidate(rnsKey direction, RSkComponent *currentItem, RSkComponent *candidateItem) {
+
+    if(!currentItem || !candidateItem)
+        return false;
+
+    const SkIRect& current = currentItem->getLayerAbsoluteFrame();
+    const SkIRect& candidate = candidateItem->getLayerAbsoluteFrame();
 
     // Rule 1. If the candidate has same dimention as the current focussed item then ignore.
     if (candidate == current) {
@@ -254,12 +258,12 @@ static inline bool isValidCandidate(rnsKey direction, Component& curData, Compon
 
 #if 0 // Android is not handling this scenario , so we can disable this code for now to avoid this extra check overhead.
     // Rule 1.a If the candidte is completely inside the current focussed element and if it is below (not visible) then ignore it.
-    if(candidate.origin.x >= current.origin.x &&
-        candidate.getMaxX() <= current.getMaxX() &&
-        candidate.origin.y >= current.origin.y &&
-        candidate.getMaxY() <= current.getMaxY() &&
-        canData.zIndex <= curData.zIndex &&
-        canData.tag < curData.tag) {
+    if(candidate.left() >= current.left() &&
+        candidate.right() <= current.right() &&
+        candidate.top() >= current.top() &&
+        candidate.bottom() <= current.bottom() &&
+        candidateItem->getComponentData().commonProps.zIndex <= currentItem->getComponentData().commonProps.zIndex &&
+        candidateItem->getComponentData().tag < currentItem->getComponentData().tag) {
             return false;
     }
 #endif
@@ -267,13 +271,13 @@ static inline bool isValidCandidate(rnsKey direction, Component& curData, Compon
     // Rule 2. Candidate must be in the direction of navigation.
     switch(direction) {
         case RNS_KEY_Right:
-            return (candidate.origin.x >= current.origin.x); // Must be on right side
+            return (candidate.left() > current.left()); // Must be on right side
         case RNS_KEY_Left:
-            return(candidate.getMaxX() <= current.getMaxX()); // Must be on left side
+            return(candidate.right() < current.right()); // Must be on left side
         case RNS_KEY_Up:
-            return (candidate.getMaxY() <= current.getMaxY()); // Must be on up side
+            return (candidate.bottom() < current.bottom()); // Must be on up side
         case RNS_KEY_Down:
-            return(candidate.origin.y >= current.origin.y); // Must be on down side
+            return(candidate.top() > current.top()); // Must be on down side
         default:
             RNS_LOG_WARN("Inavlid diretion Navigation : " << RNSKeyMap[direction]);
             break;
@@ -319,9 +323,9 @@ void RSkSpatialNavigator::navigateInDirection(rnsKey keyEvent) {
     }
 
     Component curData = currentFocus_->getComponentData();
-    Rect currentRect = curData.layoutMetrics.frame;
+    const SkIRect& currentRect = currentFocus_->getLayerAbsoluteFrame();
     RNS_LOG_DEBUG("Current Focus Tag[" << curData.tag << "] I[" <<
-                    currentRect.origin.x << " " << currentRect.origin.y << " " << currentRect.getMaxX() << " " << currentRect.getMaxY() << "]");
+                    currentRect.left() << " " << currentRect.top() << " " << currentRect.right() << " " << currentRect.bottom() << "]");
 
     // Sorted set which will use sortDirectionComparator to sort while inserting the elements
     SortedCandidateList<RSkComponent> overLapping(keyEvent);
@@ -329,24 +333,24 @@ void RSkSpatialNavigator::navigateInDirection(rnsKey keyEvent) {
 
     for (auto candidate = navComponentList_.begin(); candidate != navComponentList_.end(); candidate++) {
         Component canData = (*candidate)->getComponentData();
-        Rect candidateRect = canData.layoutMetrics.frame;
+        const SkIRect& candidateRect = (*candidate)->getLayerAbsoluteFrame();
 
         RNS_LOG_DEBUG("Possible Candidate Tag[" << canData.tag << "] I[" <<
-                    candidateRect.origin.x << " " << candidateRect.origin.y << " " << candidateRect.getMaxX() << " " << candidateRect.getMaxY() << "]");
+                    candidateRect.left() << " " << candidateRect.top() << " " << candidateRect.right() << " " << candidateRect.bottom() << "]");
 
         if (*candidate == currentFocus_) {
             RNS_LOG_DEBUG("SKip the current focused item");
             continue;
         }
-        if (!isValidCandidate(keyEvent, curData, canData))
+        if (!isValidCandidate(keyEvent, currentFocus_, (*candidate)))
             continue;
 
         switch(keyEvent) {
             case RNS_KEY_Right:
             case RNS_KEY_Left: {
                 // Rule 3. Must have Projected overlap in Eastern/Western region
-                if(!( canData.layoutMetrics.frame.getMaxY() <= curData.layoutMetrics.frame.origin.y
-                    || canData.layoutMetrics.frame.origin.y > curData.layoutMetrics.frame.getMaxY())) {
+                if(!( candidateRect.bottom() < currentRect.top()
+                    || candidateRect.top() > currentRect.bottom())) {
                         RNS_LOG_DEBUG("Add Tag[ " << canData.tag << " ] to overlaping list for " << RNSKeyMap[keyEvent] << " direction");
                         overLapping.insert(*candidate); // Sorted using sortDirectionComparator
                 } // For Right and left navigation we consider only candiates which has projected overalp
@@ -355,17 +359,17 @@ void RSkSpatialNavigator::navigateInDirection(rnsKey keyEvent) {
             case RNS_KEY_Up:
             case RNS_KEY_Down: {
                 // Rule 3. Has either Projected overlap or nonOverlap in Northern/Southern region
-                if(!( canData.layoutMetrics.frame.getMaxX() <= curData.layoutMetrics.frame.origin.x
-                    || canData.layoutMetrics.frame.origin.x > curData.layoutMetrics.frame.getMaxX())) {
+                if(!( candidateRect.right() < currentRect.left()
+                    || candidateRect.left() > currentRect.right())) {
                         RNS_LOG_DEBUG("Add Tag[ " << canData.tag << " ] to overlaping list for " << RNSKeyMap[keyEvent] << " direction");
                         overLapping.insert(*candidate); // Sorted using sortDirectionComparator
                 } else {
                     // Rule 3.a For non-overlap, for up direction, only consider the candidates which is completely above current focussed item and
                     // for down direction, only consider the candidates which is completely below current focussed item
-                    if(keyEvent == RNS_KEY_Up && canData.layoutMetrics.frame.getMaxY() < curData.layoutMetrics.frame.origin.y) {
+                    if(keyEvent == RNS_KEY_Up && candidateRect.bottom() <= currentRect.top()) {
                         RNS_LOG_DEBUG("Add Tag[ " << canData.tag << " ] to nonOverlaping list for " << RNSKeyMap[keyEvent] << " direction");
                         nonOverLapping.insert(*candidate); // Sorted using sortDirectionComparator
-                    } else if(keyEvent == RNS_KEY_Down && canData.layoutMetrics.frame.origin.y > curData.layoutMetrics.frame.getMaxY()) {
+                    } else if(keyEvent == RNS_KEY_Down && candidateRect.top() >= currentRect.bottom()) {
                         RNS_LOG_DEBUG("Add Tag[ " << canData.tag << " ] to nonOverlaping list for " << RNSKeyMap[keyEvent] << " direction");
                         nonOverLapping.insert(*candidate); // Sorted using sortDirectionComparator
                     }

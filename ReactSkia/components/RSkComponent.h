@@ -71,6 +71,7 @@ class RSkComponent : public RnsShell::Layer, public std::enable_shared_from_this
   virtual void updateComponentData(const ShadowView &newShadowView , const uint32_t updateMask , bool forceUpdate);
   Component getComponentData() { return component_;}
   std::shared_ptr<RnsShell::Layer> layer() { return layer_; }
+  const SkIRect& getLayerAbsoluteFrame(){ return(layer_->absoluteFrame());}
   RSkComponent *getParent() {return parent_; };
  
   void requiresLayer(const ShadowView &shadowView);
