@@ -4,6 +4,7 @@ import { View, AppRegistry, Image, Text } from 'react-native';
 const SimpleViewApp = React.Node = () => {
   return (
     <View
+      isSkiaProp={true}
       style={{ flex: 1,
                flexDirection: 'column',
                justifyContent: 'center',

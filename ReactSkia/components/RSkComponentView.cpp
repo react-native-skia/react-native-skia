@@ -1,6 +1,6 @@
 #include "ReactSkia/components/RSkComponentView.h"
 #include "include/core/SkPaint.h"
-#include "react/renderer/components/view/ViewShadowNode.h"
+#include "ReactSkia/components/RSkViewShadowNode.h"
 #include "ReactSkia/views/common/RSkDrawUtils.h"
 #include <glog/logging.h>
 
@@ -13,7 +13,7 @@ RSkComponentView::RSkComponentView(const ShadowView &shadowView)
 
 void RSkComponentView::OnPaint(SkCanvas *canvas) {
   auto component = getComponentData();
-  auto const &viewProps = *std::static_pointer_cast<ViewProps const>(component.props);
+  auto const &viewProps = *std::static_pointer_cast<RSkViewProps const>(component.props);
   /* apply view style props */
   auto borderMetrics=viewProps.resolveBorderMetrics(component.layoutMetrics);
   Rect frame = getAbsoluteFrame();
@@ -28,6 +28,8 @@ void RSkComponentView::OnPaint(SkCanvas *canvas) {
   drawShadow(canvas,frame,borderMetrics,shadowMetrics);
   drawBackground(canvas,frame,borderMetrics,viewProps.backgroundColor,viewProps.opacity);
   drawBorder(canvas,frame,borderMetrics,viewProps.backgroundColor,viewProps.opacity);
+
+  LOG(INFO) << "ooxx isSkiaProp: " << viewProps.isSkiaProp;
 }
 
 } // namespace react
