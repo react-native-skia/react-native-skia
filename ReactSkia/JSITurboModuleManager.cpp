@@ -10,6 +10,7 @@
 #include <folly/io/async/ScopedEventBaseThread.h>
 #include "modules/platform/nopoll/RSkWebSocketModule.h"
 #include "modules/platform/libcurl/RSkNetworkingModule.h"
+#include "core_modules/RSkTimingModule.h"
 
 namespace facebook {
 namespace react {
@@ -83,101 +84,6 @@ class ExceptionsManagerModule : public TurboModule {
   }
 };
 
-class TimingModule : public TurboModule {
- public:
-  TimingModule(
-      const std::string &name,
-      std::shared_ptr<CallInvoker> jsInvoker,
-      Instance *bridgeInstance)
-      : TurboModule(name, jsInvoker),
-        bridgeInstance_(bridgeInstance),
-        timerThread_("TimerThread") {
-    methodMap_["createTimer"] = MethodMetadata{4, CreateTimerWrapper};
-  }
-
- private:
-  static jsi::Value CreateTimerWrapper(
-      jsi::Runtime &rt,
-      TurboModule &turboModule,
-      const jsi::Value *args,
-      size_t count) {
-    if (count != 4) {
-      return jsi::Value::undefined();
-    }
-    auto &self = static_cast<TimingModule &>(turboModule);
-    double callbackId = args[0].getNumber();
-    double duration = args[1].getNumber();
-    double jsSchedulingTime = args[2].getNumber();
-    bool repeats = args[3].getBool();
-    return self.CreateTimer(
-        rt, callbackId, duration, jsSchedulingTime, repeats);
-  }
-
- private:
-  jsi::Value CreateTimer(
-      jsi::Runtime &rt,
-      double callbackId,
-      double duration,
-      double jsSchedulingTime,
-      bool repeats) {
-    timerThread_.getEventBase()->runInEventBaseThread(
-        [this, callbackId, duration, repeats]() {
-          Instance *bridge = bridgeInstance_;
-          if(duration > 1) {
-          timerThread_.getEventBase()->scheduleAt(
-              std::bind(
-                  &TimingModule::OnTimeout,
-                  this,
-                  bridge,
-                  callbackId,
-                  duration,
-                  repeats),
-              std::chrono::steady_clock::now() +
-                  std::chrono::milliseconds(
-                      static_cast<unsigned long long>(duration)));
-          } else {
-            timerThread_.getEventBase()->runInEventBaseThread(
-              std::bind(
-                  &TimingModule::OnTimeout,
-                  this,
-                  bridge,
-                  callbackId,
-                  duration,
-                  repeats));
-          }
-        });
-    return jsi::Value::undefined();
-  }
-
-  void OnTimeout(
-      Instance *bridge,
-      double callbackId,
-      double duration,
-      bool repeats) {
-    RNS_LOG_DEBUG("TimingModule::OnTimeout - callbackId=" << callbackId
-               << ", repeat=" << repeats << ", duration=" << duration);
-    bridge->callJSFunction(
-        "JSTimers", "callTimers", folly::dynamic::array(folly::dynamic::array(callbackId)));
-    if (repeats) {
-      timerThread_.getEventBase()->scheduleAt(
-          std::bind(
-              &TimingModule::OnTimeout,
-              this,
-              bridge,
-              callbackId,
-              duration,
-              repeats),
-          std::chrono::steady_clock::now() +
-              std::chrono::milliseconds(
-                  static_cast<unsigned long long>(duration)));
-    }
-  }
-
- private:
-  Instance *bridgeInstance_;
-  folly::ScopedEventBaseThread timerThread_;
-};
-
 class AppStateModule : public TurboModule {
  public:
   AppStateModule(
@@ -243,7 +149,7 @@ JSITurboModuleManager::JSITurboModuleManager(Instance *bridgeInstance)
       std::make_shared<ExceptionsManagerModule>("ExceptionsManager", jsInvoker);
 
   modules_["Timing"] =
-      std::make_shared<TimingModule>("Timing", jsInvoker, bridgeInstance);
+      std::make_shared<RSkTimingModule>("Timing", jsInvoker, bridgeInstance);
   modules_["TVNavigationEventEmitter"] =
       std::make_shared<RSkTVNavigationEventEmitter>("TVNavigationEventEmitter",jsInvoker, bridgeInstance);
   modules_["AppState"] =

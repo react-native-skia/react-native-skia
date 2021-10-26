@@ -62,6 +62,8 @@ source_set("ReactSkia") {
     "core_modules/RSkEventEmitter.h",
     "core_modules/RSkSpatialNavigator.cpp",
     "core_modules/RSkSpatialNavigator.h",
+    "core_modules/RSkTimingModule.h",
+    "core_modules/RSkTimingModule.cpp",
     "RSkSurfaceWindow.cpp",
     "RSkSurfaceWindow.h",
     "components/RSkComponent.cpp",
