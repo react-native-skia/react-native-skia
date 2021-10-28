@@ -86,6 +86,8 @@ source_set("ReactSkia") {
     "components/RSkComponentView.h",
     "views/common/RSkDrawUtils.cpp",
     "views/common/RSkDrawUtils.h",
+    "views/common/RSkTextUtils.cpp",
+    "views/common/RSkTextUtils.h",
     "views/common/RSkImageCacheManager.cpp",
     "views/common/RSkImageCacheManager.h",
     "views/common/RSkImageUtils.cpp",
