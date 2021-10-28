@@ -5,10 +5,14 @@
 #include "react/renderer/components/text/ParagraphShadowNode.h"
 #include "react/renderer/components/text/RawTextShadowNode.h"
 #include "react/renderer/components/text/TextShadowNode.h"
+#include "ReactSkia/views/common/RSkDrawUtils.h"
+#include "ReactSkia/views/common/RSkTextUtils.h"
 
-#include <glog/logging.h>
+#include "ReactSkia/utils/RnsLog.h"
 
 using namespace skia::textlayout;
+using namespace facebook::react::RSkDrawUtils;
+using namespace facebook::react::RSkTextUtils;
 
 namespace facebook {
 namespace react {
@@ -17,8 +21,7 @@ RSkComponentText::RSkComponentText(const ShadowView &shadowView)
     : RSkComponent(shadowView) {}
 
 void RSkComponentText::updateComponentProps(const ShadowView &newShadowView,bool forceUpadte) {}
-void RSkComponentText::OnPaint(SkCanvas *canvas) {
-}
+void RSkComponentText::OnPaint(SkCanvas *canvas) {}
 
 RSkComponentRawText::RSkComponentRawText(const ShadowView &shadowView)
     : RSkComponent(shadowView) {}
@@ -34,113 +37,101 @@ RSkComponentParagraph::RSkComponentParagraph(const ShadowView &shadowView)
 
 
 void RSkComponentParagraph::updateComponentProps(const ShadowView &newShadowView,bool forceUpadte) {
-
   auto const &paragraphProps = *std::static_pointer_cast<ParagraphProps const>(newShadowView.props);
   paragraphAttributes_ = paragraphProps.paragraphAttributes;
 }
 
-inline SkScalar yPosOffset(AttributedString attributedString, SkScalar paraHeight, Rect frame) {
-    for(auto &fragment: attributedString.getFragments()) {
-        if((paraHeight < frame.size.height) && (!fragment.textAttributes.textAlignVertical.empty())) {
-            if(!strcmp(fragment.textAttributes.textAlignVertical.c_str(),"center"))
-                return ((frame.size.height/2) - (paraHeight/2));
-            else if(!strcmp(fragment.textAttributes.textAlignVertical.c_str(),"bottom"))
-                return (frame.size.height - paraHeight);
-        }
-    }
-    return 0;
-}
-
-inline int getNumberOfLines(std::vector<LineMetrics>& metrics, int maxNumberOfLines, Float frameHeight) {
-    int i=0;
-    int minNumberOfLines = 0;
-    for(; i< metrics.size(); i++) {
-        if ((metrics[i]).fBaseline > frameHeight) {
-            minNumberOfLines = (metrics[i]).fLineNumber;
-            break;
-        }
-    }
-    if ((minNumberOfLines > 0) && (minNumberOfLines < maxNumberOfLines))
-        return minNumberOfLines;
-    
-    return maxNumberOfLines;
-}
-
 void RSkComponentParagraph::OnPaint(SkCanvas *canvas) {
+    SkAutoCanvasRestore(canvas, true);
     auto component = getComponentData();
     auto state = std::static_pointer_cast<ParagraphShadowNode::ConcreteStateT const>(component.state);
     auto const &props = *std::static_pointer_cast<ParagraphProps const>(component.props);
     auto data = state->getData();
+    ParagraphStyle paraStyle;
+    auto borderMetrics = props.resolveBorderMetrics(component.layoutMetrics);
+    Rect borderFrame = component.layoutMetrics.frame;
+    bool isParent = false;
 
     /* Check if this component has parent Paragraph component */
-    RSkComponentParagraph * parent = getParentParagraph();
-    ParagraphStyle paraStyle;
-    std::vector<LineMetrics> metrics;
-    SkScalar yOffset = 0;
-    int numberOfLines = 0;
+    RSkComponentParagraph* parent = getParentParagraph();
   
     /* If parent, this text component is part of nested text(aka fragment attachment)*/
     /*    - use parent paragraph builder to add text & push style */
     /*    - draw the paragraph, when we reach the last fragment attachment*/
-    if(parent) {        
-        parent->expectedAttachmentCount += data.layoutManager->buildParagraph(data.attributedString,
-                                                            props.paragraphAttributes,
+    if(parent) {
+        auto parentComponent = parent->getComponentData();
+        auto const &parentProps = *std::static_pointer_cast<ParagraphProps const>(parentComponent.props);
+        auto parentBorderMetrics = parentProps.resolveBorderMetrics(parentComponent.layoutMetrics);
+        
+        if (parent->paraBuilder) {
+            isParent = true;
+            parent->expectedAttachmentCount += data.layoutManager->buildParagraph(props.backgroundColor,
+                                                            data.attributedString,
+                                                            paragraphAttributes_,
                                                             true,
                                                             parent->paraBuilder);
-        auto paragraph = parent->paraBuilder->Build();
-        parent->currentAttachmentCount++;
-        if(!parent->expectedAttachmentCount || (parent->expectedAttachmentCount == parent->currentAttachmentCount)) {
-            auto frame = parent->getComponentData().layoutMetrics.frame;
-            paragraph->layout(frame.size.width);
-            paragraph->getLineMetrics(metrics);
+            std::shared_ptr<Paragraph> para = parent->paraBuilder->Build();
+            parent->currentAttachmentCount++;
+            borderFrame = parentComponent.layoutMetrics.frame;
+            borderFrame.origin.x=0;
+            borderFrame.origin.y=0;
+            
+            if(!parent->expectedAttachmentCount || (parent->expectedAttachmentCount == parent->currentAttachmentCount)) {
+                setTextLines(para,
+                            parent->paraBuilder,
+                            parentComponent.layoutMetrics,
+                            paragraphAttributes_,
+                            isParent);
 
-            numberOfLines = getNumberOfLines(metrics, props.paragraphAttributes.maximumNumberOfLines, frame.size.height);
-            if (numberOfLines){
-                if (EllipsizeMode::Tail == props.paragraphAttributes.ellipsizeMode) {
-                    paraStyle.setEllipsis(u"\u2026");
-                }
-                paraStyle.setMaxLines(numberOfLines);
-                parent->paraBuilder->setParagraphStyle(paraStyle);
-                paragraph = parent->paraBuilder->Build();
-                paragraph->layout(frame.size.width);
+                drawText(para,
+                            canvas,
+                            data.attributedString,
+                            parentComponent.layoutMetrics,
+                            parentProps,
+                            isParent);
+                
+                drawBorder(canvas,
+                            borderFrame,
+                            parentBorderMetrics,
+                            parentProps.backgroundColor,
+                            parentProps.opacity);
             }
-            yOffset = yPosOffset(data.attributedString, paragraph->getHeight(), frame);
-            paragraph->paint(canvas, frame.origin.x, frame.origin.y + yOffset);
-        }
-    }else {
+        }   
+    }
+    else {
         /* If previously created builder is available,using it will append the text in builder*/
         /* If it reaches here,means there is an update in text.So create new paragraph builder*/
         if(nullptr != paraBuilder) {
             paraBuilder.reset();
         }
-
         paraBuilder = std::static_pointer_cast<ParagraphBuilder>(std::make_shared<ParagraphBuilderImpl>(paraStyle,data.layoutManager->collection_));
 
-        expectedAttachmentCount = data.layoutManager->buildParagraph(data.attributedString, props.paragraphAttributes, true, paraBuilder);
+        expectedAttachmentCount = data.layoutManager->buildParagraph(props.backgroundColor, data.attributedString, paragraphAttributes_, true, paraBuilder);
         currentAttachmentCount = 0;
-        auto paragraph = paraBuilder->Build();
+        std::shared_ptr<Paragraph> para = paraBuilder->Build();
 
         /* If the count is 0,means we have no fragment attachments.So paint right away*/
         if(!expectedAttachmentCount) {
-            auto frame = component.layoutMetrics.frame;
-            paragraph->layout(frame.size.width);
-            paragraph->getLineMetrics(metrics);
+            setTextLines(para,
+                        paraBuilder,
+                        component.layoutMetrics,
+                        paragraphAttributes_,
+                        isParent);
 
-            numberOfLines = getNumberOfLines(metrics, props.paragraphAttributes.maximumNumberOfLines, frame.size.height);
-            if (numberOfLines){
-                if (EllipsizeMode::Tail == props.paragraphAttributes.ellipsizeMode) {
-                    paraStyle.setEllipsis(u"\u2026");
-                }
-                paraStyle.setMaxLines(numberOfLines);
-                paraBuilder->setParagraphStyle(paraStyle);
-                paragraph = paraBuilder->Build();
-                paragraph->layout(frame.size.width);
-            }
-            yOffset = yPosOffset(data.attributedString, paragraph->getHeight(), frame);
-            paragraph->paint(canvas, frame.origin.x, frame.origin.y + yOffset);
+            drawText(para,
+                        canvas,
+                        data.attributedString,                    
+                        component.layoutMetrics,
+                        props,
+                        isParent);
+
+            drawBorder(canvas,
+                        borderFrame,
+                        borderMetrics,
+                        props.backgroundColor,
+                        props.opacity);
         }
     }
 }
-
 } // namespace react
 } // namespace facebook

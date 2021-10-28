@@ -86,11 +86,12 @@ TextMeasurement TextLayoutManager::measure(
 
   auto &attributedString = attributedStringBox.getValue();
   auto measurement = TextMeasurement{};
+  SharedColor backgroundColor;
   measurement = measureCache_.get(
       {attributedString, paragraphAttributes, layoutConstraints},
       [&](TextMeasureCacheKey const &key) {
         return doMeasure(
-            attributedString, paragraphAttributes, layoutConstraints);
+            backgroundColor, attributedString, paragraphAttributes, layoutConstraints);
       });
   measurement.size = layoutConstraints.clamp(measurement.size);
   return measurement;

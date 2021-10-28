@@ -89,7 +89,8 @@ RSkTextLayoutManager::RSkTextLayoutManager() {
     collection_->setDefaultFontManager(SkFontMgr::RefDefault());
 }
 
-TextMeasurement RSkTextLayoutManager::doMeasure (AttributedString attributedString,
+TextMeasurement RSkTextLayoutManager::doMeasure (SharedColor backGroundColor,
+                AttributedString attributedString,
                 ParagraphAttributes paragraphAttributes,
                 LayoutConstraints layoutConstraints) const {
     TextMeasurement::Attachments attachments;
@@ -97,7 +98,7 @@ TextMeasurement RSkTextLayoutManager::doMeasure (AttributedString attributedStri
     Size size;
 
     std::shared_ptr<ParagraphBuilder> builder = std::static_pointer_cast<ParagraphBuilder>(std::make_shared<ParagraphBuilderImpl>(paraStyle,collection_));
-    buildParagraph(attributedString, paragraphAttributes, false, builder);
+    buildParagraph(backGroundColor, attributedString, paragraphAttributes, false, builder);
     auto paragraph = builder->Build();
     paragraph->layout(layoutConstraints.maximumSize.width);
 
@@ -130,7 +131,8 @@ TextMeasurement RSkTextLayoutManager::doMeasure (AttributedString attributedStri
     return TextMeasurement{size, attachments};
 }
 
-uint32_t RSkTextLayoutManager::buildParagraph (AttributedString attributedString,
+uint32_t RSkTextLayoutManager::buildParagraph (SharedColor backGroundColor,
+                AttributedString attributedString,
                 ParagraphAttributes paragraphAttributes,
                 bool fontDecorationRequired,
                 std::shared_ptr<ParagraphBuilder> builder) const {
@@ -168,7 +170,7 @@ uint32_t RSkTextLayoutManager::buildParagraph (AttributedString attributedString
                                 convertFontStyle(fragment.textAttributes.fontStyle.value()): 
                                 SkFontStyle::kUpright_Slant;
         
-        fontLineHeight = (!std::isnan(fragment.textAttributes.lineHeight)) && (fragment.textAttributes.lineHeight > 0) ?
+        fontLineHeight = (!std::isnan(fragment.textAttributes.lineHeight)) && (fragment.textAttributes.lineHeight >= 0) ?
                                 fragment.textAttributes.lineHeight :
                                 fontSize;
 
@@ -203,12 +205,12 @@ uint32_t RSkTextLayoutManager::buildParagraph (AttributedString attributedString
             style.setForegroundColor(convertTextColor(fragment.textAttributes.foregroundColor ?
                                                       fragment.textAttributes.foregroundColor :
                                                       TextAttributes::defaultTextAttributes().foregroundColor));
-            style.setBackgroundColor(convertTextColor(fragment.textAttributes.backgroundColor ?
-                                                      fragment.textAttributes.backgroundColor :
+            style.setBackgroundColor(convertTextColor(backGroundColor ?
+                                                      backGroundColor :
                                                       TextAttributes::defaultTextAttributes().backgroundColor));
             style.setDecorationColor(convertTextColor(fragment.textAttributes.textDecorationColor ?
                                                       fragment.textAttributes.textDecorationColor :
-                                                      fragment.textAttributes.foregroundColor).getColor());   
+                                                      fragment.textAttributes.foregroundColor).getColor());
         }
 
         if(fragment.textAttributes.alignment.has_value())
@@ -220,6 +222,7 @@ uint32_t RSkTextLayoutManager::buildParagraph (AttributedString attributedString
         builder->setParagraphStyle(paraStyle);
         builder->pushStyle(style);
         builder->addText(fragment.string.c_str(),fragment.string.length());
+        builder->pop();
     }
 
     return attachmentCount;

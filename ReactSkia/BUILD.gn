@@ -93,6 +93,8 @@ source_set("ReactSkia") {
     "modules/RSkTVNavigationEventEmitter.h",
     "views/common/RSkDrawUtils.cpp",
     "views/common/RSkDrawUtils.h",
+    "views/common/RSkTextUtils.cpp",
+    "views/common/RSkTextUtils.h",
     "views/common/RSkImageCacheManager.cpp",
     "views/common/RSkImageCacheManager.h",
     "views/common/RSkImageUtils.cpp",
