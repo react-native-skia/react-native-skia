@@ -1,4 +1,5 @@
 #include "ReactSkia/components/RSkComponent.h"
+#include "ReactSkia/views/common/RSkConversion.h"
 
 #include "include/core/SkPaint.h"
 #include "include/core/SkPictureRecorder.h"
@@ -52,10 +53,78 @@ void RSkComponent::requiresLayer(const ShadowView &shadowView) {
     else
         layer_ = RnsShell::Layer::Create(RnsShell::LAYER_TYPE_PICTURE);
 }
+void RSkComponent::updateProps(const ShadowView &newShadowView,bool forceUpdate) {
 
-void RSkComponent::updateComponentData(const ShadowView &newShadowView , const uint32_t updateMask) {
-   if(updateMask & ComponentUpdateMaskProps)
+   auto const &newviewProps = *std::static_pointer_cast<ViewProps const>(newShadowView.props);
+   auto const &oldviewProps = *std::static_pointer_cast<ViewProps const>(component_.props);
+
+   updateComponentProps(newShadowView,forceUpdate);
+  //opacity
+   if((forceUpdate) || (oldviewProps.opacity != newviewProps.opacity)) {
+      layer_->opacity = newviewProps.opacity;
+   }
+  //ShadowOpacity
+   if ((forceUpdate) || (oldviewProps.shadowOpacity != newviewProps.shadowOpacity)) {
+      layer_->shadowOpacity = newviewProps.shadowOpacity;
+   }
+  //shadowRadius
+   if ((forceUpdate) || (oldviewProps.shadowRadius != newviewProps.shadowRadius)) {
+      layer_->shadowRadius = newviewProps.shadowRadius;
+   }
+  //shadowoffset
+   if ((forceUpdate) || (oldviewProps.shadowOffset != newviewProps.shadowOffset)) {
+      layer_->shadowOffset = RSkSkSizeFromSize(newviewProps.shadowOffset);
+   }
+  //shadowcolor
+   if ((forceUpdate) || (oldviewProps.shadowColor != newviewProps.shadowColor)) {
+      layer_->shadowColor = RSkColorFromSharedColor(newviewProps.shadowColor,SK_ColorBLACK);
+   }
+  //backfaceVisibility
+   if ((forceUpdate) || (oldviewProps.backfaceVisibility != newviewProps.backfaceVisibility)) {
+      layer_->backfaceVisibility = (int)newviewProps.backfaceVisibility;
+   }
+  //backgroundColor
+   if ((forceUpdate) || (oldviewProps.backgroundColor != newviewProps.backgroundColor)) {
+      component_.commonProps.backgroundColor = RSkColorFromSharedColor(newviewProps.backgroundColor,SK_ColorTRANSPARENT);
+   }
+  //foregroundColor
+   if ((forceUpdate) || (oldviewProps.foregroundColor != newviewProps.foregroundColor)) {
+      RNS_LOG_NOT_IMPL;
+      component_.commonProps.foregroundColor = RSkColorFromSharedColor(newviewProps.foregroundColor,SK_ColorTRANSPARENT);
+   }
+  /* TODO To be verified when implemented*/
+  //pointerEvents
+   if ((forceUpdate) || (oldviewProps.pointerEvents != newviewProps.pointerEvents)) {
+      RNS_LOG_NOT_IMPL;
+      component_.commonProps.pointerEvents = (int)newviewProps.pointerEvents;
+   }
+  //hitslop
+   if ((forceUpdate) || (oldviewProps.hitSlop != newviewProps.hitSlop)) {
+      RNS_LOG_NOT_IMPL;
+      component_.commonProps.hitSlop = newviewProps.hitSlop;
+   }
+  //overflow
+   if ((forceUpdate) || (oldviewProps.getClipsContentToBounds() != newviewProps.getClipsContentToBounds())) {
+      RNS_LOG_NOT_IMPL;//ViewProps.yogastyle.overflow
+      layer_->setMasksTotBounds(newviewProps.getClipsContentToBounds());
+   }
+  //zIndex
+   if ((forceUpdate) || (oldviewProps.zIndex != newviewProps.zIndex)) {
+      component_.commonProps.zIndex = newviewProps.zIndex.value_or(0);
+   }
+  //transform
+   if ((forceUpdate) || (oldviewProps.transform != newviewProps.transform)) {
+      layer_->transformMatrix = RSkTransformTo2DMatrix(newviewProps.transform);
+   }
+    /* TODO Add TVOS properties */
+}
+
+void RSkComponent::updateComponentData(const ShadowView &newShadowView,const uint32_t updateMask,bool forceUpdate) {
+
+   if(updateMask & ComponentUpdateMaskProps) {
+      updateProps(newShadowView,forceUpdate);
       component_.props = newShadowView.props;
+   }
    if(updateMask & ComponentUpdateMaskState)
       component_.state = newShadowView.state;
    if(updateMask & ComponentUpdateMaskEventEmitter)

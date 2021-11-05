@@ -9,7 +9,7 @@ namespace react {
 class RSkComponentText final : public RSkComponent {
  public:
   RSkComponentText(const ShadowView &shadowView);
-
+  void updateComponentProps(const ShadowView &newShadowView,bool forceUpadte) override;
  protected:
   void OnPaint(SkCanvas *canvas) override;
 };
@@ -17,7 +17,7 @@ class RSkComponentText final : public RSkComponent {
 class RSkComponentRawText final : public RSkComponent {
  public:
   RSkComponentRawText(const ShadowView &shadowView);
-
+  void updateComponentProps(const ShadowView &newShadowView,bool forceUpadte) override;
  protected:
   void OnPaint(SkCanvas *canvas) override;
 };
@@ -28,7 +28,7 @@ class RSkComponentParagraph final : public RSkComponent {
   std::shared_ptr<skia::textlayout::ParagraphBuilder> paraBuilder;
   uint32_t expectedAttachmentCount;
   uint32_t currentAttachmentCount;
-
+  void updateComponentProps(const ShadowView &newShadowView,bool forceUpadte) override;
  protected:
   void OnPaint(SkCanvas *canvas) override;
 
@@ -36,6 +36,7 @@ class RSkComponentParagraph final : public RSkComponent {
 
  private:
   /* Method to check if parent is paragraph component */
+  ParagraphAttributes paragraphAttributes_;
   bool isParentParagraph() {
      RSkComponent *parent = getParent();
      if((nullptr != parent)
