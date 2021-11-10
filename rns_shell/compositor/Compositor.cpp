@@ -124,16 +124,20 @@ void Compositor::renderLayerTree() {
         if (needsResize)
             glViewport(0, 0, viewportSize.width(), viewportSize.height());
 #endif
-        auto canvas = backBuffer_.get()->getCanvas();
+        auto canvas = backBuffer_->getCanvas();
         SkAutoCanvasRestore save(canvas, true);
-        SkRect clipBound = beginClip(canvas);
+        SkRect clipBound = SkRect::MakeEmpty();
         PaintContext paintContext = {
             canvas,  // canvas
-            &surfaceDamage_, // damage rects
-            clipBound, // combined clip bounds from surfaceDamage_
+            surfaceDamage_, // damage rects
+#if USE(RNS_SHELL_PARTIAL_UPDATES)
+            supportPartialUpdate_,
+#endif
+            clipBound, // After prePaint we need to update this with beginClip
             nullptr, // GrDirectContext
         };
         RNS_PROFILE_API_OFF("Render Tree Pre-Paint", rootLayer_.get()->prePaint(paintContext));
+        clipBound = beginClip(canvas);
         RNS_PROFILE_API_OFF("Render Tree Paint", rootLayer_.get()->paint(paintContext));
         RNS_PROFILE_API_OFF("SkSurface Flush & Submit", backBuffer_->flushAndSubmit());
 #ifdef RNS_ENABLE_FRAME_RATE_CONTROL
@@ -155,13 +159,14 @@ void Compositor::renderLayerTree() {
 }
 
 void Compositor::begin() {
-    // Locke until render tree has rendered current tree
-    std::scoped_lock lock(isMutating);
+    // Locke until render tree has rendered current tree and only then modify the render tree
+    isMutating.lock();
     surfaceDamage_.clear(); // Clear the previous damage rects.
 }
 
 void Compositor::commit() {
 
+    isMutating.unlock(); // Now we can unlock the render tree for commit.
     if(!windowContext_)
         return;
 

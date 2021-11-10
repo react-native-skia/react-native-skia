@@ -16,7 +16,7 @@ void RSkComponentView::OnPaint(SkCanvas *canvas) {
   auto const &viewProps = *std::static_pointer_cast<ViewProps const>(component.props);
   /* apply view style props */
   auto borderMetrics=viewProps.resolveBorderMetrics(component.layoutMetrics);
-  Rect frame = getAbsoluteFrame();
+  Rect frame = component.layoutMetrics.frame;
   /*Retrieve Shadow Props*/
   ShadowMetrics shadowMetrics{};
   shadowMetrics.shadowColor=viewProps.shadowColor;

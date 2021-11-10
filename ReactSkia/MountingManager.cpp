@@ -160,23 +160,19 @@ void MountingManager::UpdateMountInstruction(
   auto &newChildShadowView = mutation.newChildShadowView;
   uint32_t updateMask = ComponentUpdateMaskNone;
   std::shared_ptr<RSkComponent> newChildComponent = GetComponent(mutation.newChildShadowView);
-  if(newChildComponent)
-  {
-       if(oldChildShadowView.props != newChildShadowView.props)
-           updateMask |= ComponentUpdateMaskProps;
-       if(oldChildShadowView.state != newChildShadowView.state)
-           updateMask |= ComponentUpdateMaskState;
-       if(oldChildShadowView.eventEmitter != newChildShadowView.eventEmitter)
-           updateMask |= ComponentUpdateMaskEventEmitter;
-       if(oldChildShadowView.layoutMetrics != newChildShadowView.layoutMetrics)
-           updateMask |= ComponentUpdateMaskLayoutMetrics;
+  if(newChildComponent) {
+    if(oldChildShadowView.props != newChildShadowView.props)
+      updateMask |= ComponentUpdateMaskProps;
+    if(oldChildShadowView.state != newChildShadowView.state)
+      updateMask |= ComponentUpdateMaskState;
+    if(oldChildShadowView.eventEmitter != newChildShadowView.eventEmitter)
+      updateMask |= ComponentUpdateMaskEventEmitter;
+    if(oldChildShadowView.layoutMetrics != newChildShadowView.layoutMetrics)
+      updateMask |= ComponentUpdateMaskLayoutMetrics;
 
-       if(updateMask != ComponentUpdateMaskNone) {
-           newChildComponent->updateComponentData(mutation.newChildShadowView,updateMask,false);
-       }
-#if USE(RNS_SHELL_PARTIAL_UPDATES)
-       surface_->compositor()->addDamageRect(newChildComponent->layer().get()->getFrame());
-#endif
+    if(updateMask != ComponentUpdateMaskNone) {
+      newChildComponent->updateComponentData(mutation.newChildShadowView,updateMask,false);
+    }
   }
 }
 

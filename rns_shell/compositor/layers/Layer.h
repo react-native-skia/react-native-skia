@@ -27,9 +27,16 @@ namespace RnsShell {
 class Layer;
 
 enum LayerType {
-  LAYER_TYPE_DEFAULT = 0, // Default layer type which which will use component specific APIs to paint.
-  LAYER_TYPE_PICTURE, // SkPiture based layer.
-  LAYER_TYPE_TEXTURED, // SkTexture based layer.
+    LAYER_TYPE_DEFAULT = 0, // Default layer type which which will use component specific APIs to paint.
+    LAYER_TYPE_PICTURE, // SkPiture based layer.
+    LAYER_TYPE_TEXTURED, // SkTexture based layer.
+};
+
+enum LayerInvalidateMask {
+    LayerInvalidateNone = 0,
+    LayerPaintInvalidate = 1 << 0,
+    LayerLayoutInvalidate = 1 << 1,
+    LayerInvalidateAll = LayerPaintInvalidate | LayerLayoutInvalidate
 };
 
 typedef std::vector<std::shared_ptr<Layer> > LayerList;
@@ -37,7 +44,10 @@ using SharedLayer = std::shared_ptr<Layer>;
 
 struct PaintContext {
     SkCanvas* canvas;
-    std::vector<SkIRect>* damageRect; // Dirty rects in current frame
+    std::vector<SkIRect>& damageRect; // Dirty rects in current frame
+#if USE(RNS_SHELL_PARTIAL_UPDATES)
+    bool supportPartialUpdate;
+#endif
     const SkRect& dirtyClipBound; // combined clip bounds based on all the dirty rects.
     GrDirectContext* grContext;
 };
@@ -60,23 +70,31 @@ public:
 
     Layer* rootLayer();
     Layer* parent() { return parent_; }
+    const Layer* parent() const { return parent_; }
+    bool hasAncestor(const Layer* ancestor) const;
 
     LayerType type() { return type_; }
     int layerId() { return layerId_;}
 
     const LayerList& children() const { return children_; }
     bool needsPainting(PaintContext& context);
+    void preRoll(PaintContext& context, bool forceLayout = false);
+
     void appendChild(SharedLayer child);
     void insertChild(SharedLayer child, size_t index);
-    void removeChild(SharedLayer child, size_t index);
+    void removeChild(Layer *child, size_t index);
+    void removeChild(Layer *child);
+    void removeFromParent();
 
     virtual void paintSelf(PaintContext& context);
-    virtual void prePaint(PaintContext& context);
+    virtual void prePaint(PaintContext& context, bool forceChildrenLayout = false);
     virtual void paint(PaintContext& context);
     virtual void onPaint(SkCanvas*) {}
 
+    SkIRect& absoluteFrame() { return absFrame_; }
     const SkIRect& getFrame() const { return frame_; }
     void setFrame(const SkIRect& frame) { frame_ = frame; }
+    void invalidate(LayerInvalidateMask mask = LayerInvalidateAll) { invalidateMask_ = mask; }
 
     const SkIRect& getBounds() const { return bounds_; }
     void setBounds(const SkIRect& bounds) { bounds_ = bounds; }
@@ -86,6 +104,10 @@ public:
 
     const bool masksToBounds() const { return masksToBounds_; }
     void setMasksTotBounds(bool masksToBounds) { masksToBounds_ = masksToBounds; }
+
+public:
+    friend class PictureLayer;
+
 private:
     static uint64_t nextUniqueId();
 
@@ -97,7 +119,8 @@ private:
     LayerList children_;
 
     //Layer Geometry
-    SkIRect frame_; //The paint bounds should include any transform performed by the layer itself in its parents coordinate space
+    SkIRect frame_; //The frame bounds should include any transform performed by the layer itself in its parent's coordinate space
+    SkIRect absFrame_; // Absolute frame include any transform performed by the layer itself in rootview's coordinate space
     SkIRect bounds_; //The paint bounds in its own coordinate space
     SkPoint anchorPosition_; // Position of Layer wrt anchor point in parents coordinate space. This will be used during the transformation.
 
@@ -105,6 +128,8 @@ private:
     bool isHidden_ = { false }; // Wheather layer is hidden
     bool masksToBounds_ = { false }; // Clip childrens
     //Borders & Shadows ?
+
+    LayerInvalidateMask invalidateMask_;
 };
 
 }   // namespace RnsShell
