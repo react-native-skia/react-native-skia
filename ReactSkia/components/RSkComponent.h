@@ -2,6 +2,7 @@
 
 #include "ReactSkia/utils/RnsUtils.h"
 #include "ReactSkia/utils/RnsLog.h"
+#include "ReactSkia/sdk/RNSKeyCodeMapping.h"
 
 #include "include/core/SkCanvas.h"
 #include "react/renderer/mounting/ShadowView.h"
@@ -77,6 +78,7 @@ class RSkComponent : public RnsShell::Layer, public std::enable_shared_from_this
   void requiresLayer(const ShadowView &shadowView);
   void updateProps(const ShadowView &newShadowView , bool forceUpdate);
   virtual void updateComponentProps(const ShadowView &newShadowView,bool forceUpadate) = 0;
+  virtual void onHandleKey(rnsKey  eventKeyType,bool* stopPropagate){*stopPropagate=false;};
  protected:
   virtual void OnPaint(SkCanvas *canvas) = 0;
 

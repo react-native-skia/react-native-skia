@@ -65,9 +65,8 @@ private:
     // Private constructor: Singleton class
     RSkSpatialNavigator();
 
-    unsigned int eventId_ = UINT_MAX; // Set to undefined ID
     void navigateInDirection(rnsKey keyEvent);
-    void sendNotificationWithEventType(std::string eventType, int tag, rnsKeyAction keyAction = RNS_KEY_UnknownAction);
+    void sendNotificationWithEventType(std::string eventType, int tag);
     void moveTheFocusInDirection(rnsKey keyEvent, SortedCandidateList<RSkComponent>& overLapping, SortedCandidateList<RSkComponent>& nonOverLapping);
     void setDefaultFocus();
 
@@ -80,6 +79,7 @@ public:
     void updateInNavList(std::shared_ptr<RSkComponent> candidate);
 
     void handleKeyEvent(rnsKey  eventType, rnsKeyAction eventKeyAction);
+    RSkComponent* getCurrentFocusElement();
 };
 
 } // namespace SpatialNavigator

@@ -21,6 +21,7 @@ RSkSurfaceWindow::RSkSurfaceWindow() {
   }
 #endif
   navigator_ = RSkSpatialNavigator::sharedSpatialNavigator();
+  inputEventManager_ = RSkInputEventManager::getInputKeyEventManager();
 }
 
 RSkSurfaceWindow::~RSkSurfaceWindow() {

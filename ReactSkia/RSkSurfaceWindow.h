@@ -4,6 +4,7 @@
 
 #include "ReactSkia/core_modules/RSkSpatialNavigator.h"
 #include "rns_shell/compositor/Compositor.h"
+#include "ReactSkia/core_modules/RSkInputEventManager.h"
 
 #include <list>
 
@@ -41,6 +42,7 @@ class RSkSurfaceWindow {
  private:
   std::unique_ptr<Compositor> compositor_;
   RSkSpatialNavigator* navigator_;
+  RSkInputEventManager* inputEventManager_;
 };
 
 } // namespace react

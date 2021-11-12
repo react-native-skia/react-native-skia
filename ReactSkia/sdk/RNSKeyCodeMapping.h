@@ -31,6 +31,16 @@ typedef enum rnsKey{
     RNS_KEY_Red,
     RNS_KEY_Blue,
     RNS_KEY_Yellow,
+    RNS_KEY_TvRad,
+    RNS_KEY_AudioRecord,
+    RNS_KEY_Aud,
+    RNS_KEY_Cancel,
+    RNS_KEY_Mute,
+    RNS_KEY_Guia,
+    /*
+     * KeyBoard Keys
+     */
+    /*Numaric Key*/
     RNS_KEY_1,
     RNS_KEY_2,
     RNS_KEY_3,
@@ -41,15 +51,6 @@ typedef enum rnsKey{
     RNS_KEY_8,
     RNS_KEY_9,
     RNS_KEY_0,
-    RNS_KEY_TvRad,
-    RNS_KEY_AudioRecord,
-    RNS_KEY_Aud,
-    RNS_KEY_Cancel,
-    RNS_KEY_Mute,
-    RNS_KEY_Guia,
-    /*
-     * KeyBoard Keys
-     */
     /*Upper case Alphabets*/
     RNS_KEY_A,
     RNS_KEY_B,
@@ -194,6 +195,16 @@ static std::string RNSKeyMap[RNS_KEY_End]={
     "red",
     "blue",
     "yellow",
+    "tvRad",
+    "audioRecord",
+    "aud",
+    "cancel",
+    "mute",
+    "guia",
+    /*
+     * KeyBoard Keys.
+     */
+    /*Numaric Key*/
     "1",
     "2",
     "3",
@@ -204,15 +215,6 @@ static std::string RNSKeyMap[RNS_KEY_End]={
     "8",
     "9",
     "0",
-    "tvRad",
-    "audioRecord",
-    "aud",
-    "cancel",
-    "mute",
-    "guia",
-    /*
-     * KeyBoard Keys.
-     */
     /* Upper case Alphabets*/
     "A",
     "B",

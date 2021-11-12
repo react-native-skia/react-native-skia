@@ -9,7 +9,6 @@
 
 #include "RSkSpatialNavigator.h"
 #include "ReactSkia/components/RSkComponent.h"
-#include "ReactSkia/sdk/RNSKeyCodeMapping.h"
 
 namespace SpatialNavigator {
 
@@ -17,10 +16,6 @@ RSkSpatialNavigator* RSkSpatialNavigator::sharedSpatialNavigator_{nullptr};
 std::mutex RSkSpatialNavigator::mutex_;
 
 RSkSpatialNavigator::RSkSpatialNavigator() {
-    std::function<void(rnsKey, rnsKeyAction)> handler = std::bind(&RSkSpatialNavigator::handleKeyEvent, this,
-                                                                std::placeholders::_1, // rnsKey
-                                                                std::placeholders::_2);  // rnsKeyAction
-    eventId_ = NotificationCenter::defaultCenter().addListener("onHWKeyEvent", handler);
 }
 
 RSkSpatialNavigator::~RSkSpatialNavigator() {
@@ -37,13 +32,13 @@ RSkSpatialNavigator* RSkSpatialNavigator::sharedSpatialNavigator() {
     return sharedSpatialNavigator_;
 }
 
-void RSkSpatialNavigator::sendNotificationWithEventType(std::string eventType, int tag, rnsKeyAction keyAction) {
+void RSkSpatialNavigator::sendNotificationWithEventType(std::string eventType, int tag) {
     if(eventType.c_str() == nullptr)
         return;
     RNS_LOG_DEBUG("Send : " << eventType  << " To ComponentTag : " << tag );
     NotificationCenter::defaultCenter().emit("RCTTVNavigationEventNotification",
                                                 folly::dynamic(folly::dynamic::object("eventType", eventType.c_str())
-                                                                              ("eventKeyAction", (int)keyAction)
+                                                                              ("eventKeyAction", (int)RNS_KEY_UnknownAction)
                                                                               ("tag", tag)
                                                                               ("target", tag)
                                                                               ));
@@ -390,10 +385,6 @@ void RSkSpatialNavigator::handleKeyEvent(rnsKey  eventKeyType, rnsKeyAction even
 
     if(eventKeyAction != RNS_KEY_Press) // Need to act on keyPress only
         return;
-
-    // First send keyevent to TVNavigation Emitter
-    sendNotificationWithEventType(RNSKeyMap[eventKeyType], currentFocus_ ? currentFocus_->getComponentData().tag : -1, eventKeyAction);
-
     // Then based on spatial navigation alogirthm, send blur/focus
     switch(eventKeyType) {
         case RNS_KEY_Up:
@@ -406,6 +397,10 @@ void RSkSpatialNavigator::handleKeyEvent(rnsKey  eventKeyType, rnsKeyAction even
         default:
             break; // Ignore
     }
+}
+
+RSkComponent* RSkSpatialNavigator::getCurrentFocusElement(){
+    return currentFocus_;
 }
 
 } // namespace SpatialNavigator

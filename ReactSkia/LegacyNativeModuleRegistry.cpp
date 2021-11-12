@@ -93,6 +93,77 @@ class LegacyUIManagerModule : public NativeModule {
             "bubblingEventTypes", folly::dynamic::object())(
             "directEventTypes", std::move(directEventTypes));
         return {std::move(registry)};
+      }else if (args[0] == "RCTSinglelineTextInputView") {
+        auto nativeProps = folly::dynamic::object("allowFontScaling", true)(
+        "autoCompleteTypeAndroid",true)(
+        "autoCorrect",true)(
+        "autoFocus",true)(
+        "blurOnSubmit",true)(
+        "caretHidden",true)(
+        "clearButtonModeiOS",true)(
+        "clearTextOnFocusiOS",true)(
+        "contextMenuHidden",true)(
+        "dataDetectorTypesiOS",true)(
+        "defaultValue",true)(
+        "disableFullscreenUIAndroid",true)(
+        "editable",true)(
+        "enablesReturnKeyAutomaticallyiOS",true)(
+        "importantForAutofillAndroid",true)(
+        "inlineImageLeftAndroid",true)(
+        "inlineImagePaddingAndroid",true)(
+        "inputAccessoryViewIDiOS",true)(
+        "keyboardAppearanceiOS",true)(
+        "keyboardType",true)(
+        "maxFontSizeMultiplier",true)(
+        "maxLength",true)(
+        "multiline",true)(
+        "numberOfLinesAndroid",true)(
+        "placeholder",true)(
+        "placeholderTextColor",true)(
+        "returnKeyLabelAndroid",true)(
+        "returnKeyType",true)(
+        "rejectResponderTerminationiOS",true)(
+        "scrollEnablediOS",true)(
+        "secureTextEntry",true)(
+        "selection",true)(
+        "selectionColor",true)(
+        "selectTextOnFocus",true)(
+        "showSoftInputOnFocus",true)(
+        "spellCheckiOS",true)(
+        "textAlign",true)(
+        "textContentTypeiOS",true)(
+        "passwordRulesiOS",true)(
+        "style",true)(
+        "textBreakStrategyAndroid",true)(
+        "underlineColorAndroidAndroid",true)(
+        "value",true);
+        auto directEventTypes = folly::dynamic::object(
+            "topBlur",folly::dynamic::object("registrationName", "onBlur"))(
+            "topChange", folly::dynamic::object("registrationName", "onChange"))(
+            "topChangeText", folly::dynamic::object("registrationName", "onChangeText"))(
+            "topContentSizeChange", folly::dynamic::object("registrationName", "onContentSizeChange"))(
+            "topEndEditing", folly::dynamic::object("registrationName", "onEndEditing"))(
+            "topPressIn", folly::dynamic::object("registrationName", "onPressIn"))(
+            "topPressOut", folly::dynamic::object("registrationName", "onPressOut"))(
+            "topFocus", folly::dynamic::object("registrationName", "onFocus"))(
+            "topKeyPress", folly::dynamic::object("registrationName", "onKeyPress"))(
+            "topLayout", folly::dynamic::object("registrationName", "onLayout"))(
+            "topScroll", folly::dynamic::object("registrationName", "onScroll"))(
+            "topSelectionChange", folly::dynamic::object("registrationName", "onSelectionChange"))(
+            "topSubmitEditing", folly::dynamic::object("registrationName", "onSubmitEditing"));
+        auto bubblingEventTypes = folly::dynamic::object(
+            "topBlur",
+            folly::dynamic::object("phasedRegistrationNames", folly::dynamic::object("bubbled","onBlur")("captured", "onBlurCapture")))(
+            "topKeyPress",
+            folly::dynamic::object("phasedRegistrationNames", folly::dynamic::object("bubbled","onKeyPress")("captured", "onKeyPressCapture")))(
+            "toponChange",
+            folly::dynamic::object("phasedRegistrationNames", folly::dynamic::object("bubbled","onChange")("captured", "onChangeCapture")));
+        auto registry = folly::dynamic::object(
+            "NativeProps", std::move(nativeProps))("baseModuleName", "RCTView")(
+            "bubblingEventTypes", std::move(bubblingEventTypes))(
+            "directEventTypes", std::move(directEventTypes));
+
+        return {std::move(registry)};
       }
       throw std::invalid_argument(
           "Invalid getConstantsForViewManager viewManagerName");
