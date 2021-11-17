@@ -16,12 +16,14 @@ namespace react {
 RSkComponentText::RSkComponentText(const ShadowView &shadowView)
     : RSkComponent(shadowView) {}
 
+void RSkComponentText::updateComponentProps(const ShadowView &newShadowView,bool forceUpadte) {}
 void RSkComponentText::OnPaint(SkCanvas *canvas) {
 }
 
 RSkComponentRawText::RSkComponentRawText(const ShadowView &shadowView)
     : RSkComponent(shadowView) {}
 
+void RSkComponentRawText::updateComponentProps(const ShadowView &newShadowView,bool forceUpadte) {}
 void RSkComponentRawText::OnPaint(SkCanvas *canvas) {}
 
 RSkComponentParagraph::RSkComponentParagraph(const ShadowView &shadowView)
@@ -29,6 +31,12 @@ RSkComponentParagraph::RSkComponentParagraph(const ShadowView &shadowView)
     , paraBuilder(nullptr)
     , expectedAttachmentCount(0)
     , currentAttachmentCount(0){}
+
+void RSkComponentParagraph::updateComponentProps(const ShadowView &newShadowView,bool forceUpadte) {
+
+  auto const &paragraphProps = *std::static_pointer_cast<ParagraphProps const>(newShadowView.props);
+  paragraphAttributes_ = paragraphProps.paragraphAttributes;
+}
 
 void RSkComponentParagraph::OnPaint(SkCanvas *canvas) {
   auto component = getComponentData();
@@ -46,11 +54,10 @@ void RSkComponentParagraph::OnPaint(SkCanvas *canvas) {
   /*    - use parent paragraph builder to add text & push style */
   /*    - draw the paragraph, when we reach the last fragment attachment*/
   if(parent) {
-      parent->expectedAttachmentCount += textLayoutManager_.buildParagraph(
-                                                    data.attributedString,
-                                                    props.paragraphAttributes,
-                                                    true,
-                                                    parent->paraBuilder);
+      parent->expectedAttachmentCount += data.layoutManager->buildParagraph(data.attributedString,
+                                                          props.paragraphAttributes,
+                                                          true,
+                                                          parent->paraBuilder);
       auto paragraph = parent->paraBuilder->Build();
       parent->currentAttachmentCount++;
       if(!parent->expectedAttachmentCount || (parent->expectedAttachmentCount == parent->currentAttachmentCount)) {
@@ -66,9 +73,9 @@ void RSkComponentParagraph::OnPaint(SkCanvas *canvas) {
       }
 
       ParagraphStyle paraStyle;
-      paraBuilder = std::static_pointer_cast<ParagraphBuilder>(std::make_shared<ParagraphBuilderImpl>(paraStyle,textLayoutManager_.collection_));
+      paraBuilder = std::static_pointer_cast<ParagraphBuilder>(std::make_shared<ParagraphBuilderImpl>(paraStyle,data.layoutManager->collection_));
 
-      expectedAttachmentCount = textLayoutManager_.buildParagraph(data.attributedString, props.paragraphAttributes, true, paraBuilder);
+      expectedAttachmentCount = data.layoutManager->buildParagraph(data.attributedString, props.paragraphAttributes, true, paraBuilder);
       currentAttachmentCount = 0;
       auto paragraph = paraBuilder->Build();
 

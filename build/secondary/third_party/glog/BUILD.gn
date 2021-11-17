@@ -18,6 +18,7 @@ component("glog") {
   cflags_cc = [
     "-Wno-header-hygiene",
     "-Wno-c++98-compat-extra-semi",
+    "-Wno-unused-result",
   ]
 
   configs -= [ "//build/config/gcc:symbol_visibility_hidden" ]
