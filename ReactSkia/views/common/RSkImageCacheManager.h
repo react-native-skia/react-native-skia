@@ -13,12 +13,13 @@
 #define SKIA_CPU_IMAGE_CACHE_LIMIT  50*1024*1024 // 52,428,800 bytes
 #define SKIA_GPU_IMAGE_CACHE_LIMIT  50*1024*1024 // 52,428,800 bytes
 
+
 namespace facebook {
 namespace react {
 
 namespace RSkImageCacheManager{
-  
-  sk_sp<SkImage> getImageData(const char *path); // Interface to get teh extarcted image Data
+  void configure();
+  sk_sp<SkImage> getImageData(const char *path);
 #ifdef RNS_IMAGE_CACHE_USAGE_DEBUG
   void printCacheUsage();
 #endif
