@@ -91,9 +91,9 @@ void RSkComponentTextInput::onHandleKey(rnsKey  eventKeyType, bool* stopPropagat
     }
   }
 }
-void RSkComponentTextInput::updateComponentProps(const ShadowView &newShadowView,bool forceUpadate){
+RnsShell::LayerInvalidateMask  RSkComponentTextInput::updateComponentProps(const ShadowView &newShadowView,bool forceUpadate){
   // TODO
-  RNS_LOG_TODO("TODO");
+  return RnsShell::LayerInvalidateNone;
 }
 
 } // namespace react

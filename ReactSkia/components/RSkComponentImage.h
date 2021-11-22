@@ -17,7 +17,7 @@ struct ImgProps{
 class RSkComponentImage final : public RSkComponent {
  public:
   RSkComponentImage(const ShadowView &shadowView);
-  void updateComponentProps(const ShadowView &newShadowView,bool forceUpdate) override;
+  RnsShell::LayerInvalidateMask updateComponentProps(const ShadowView &newShadowView,bool forceUpdate) override;
  private :
   ImgProps imageProps;
  protected:

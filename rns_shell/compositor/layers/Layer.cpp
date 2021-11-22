@@ -12,7 +12,7 @@
 namespace RnsShell {
 
 #if USE(RNS_SHELL_PARTIAL_UPDATES)
-static inline void addDamgeRect(PaintContext& context, SkIRect dirtyAbsFrameRect) {
+static inline void addDamageRect(PaintContext& context, SkIRect dirtyAbsFrameRect) {
     // TODO Walk through the dirtyRect vector and
     // 1. If new dirty rect contains inside any pf existing dirtyRect then ignore
     // 2. If new dirty rect entirely covers any of existing dirtyRect then remove them from vector and add the new one
@@ -47,7 +47,7 @@ Layer::Layer(LayerType type)
     , type_(type)
     , frame_(SkIRect::MakeEmpty())
     , absFrame_(SkIRect::MakeEmpty())
-    , anchorPosition_(SkPoint::Make(0,0))
+    , anchorPosition_(SkPoint::Make(0.5,0.5)) // Default anchor point as centre
     , invalidateMask_(LayerInvalidateAll) {
     RNS_LOG_DEBUG("Layer Constructed(" << this << ") with ID : " << layerId_);
 }
@@ -105,23 +105,19 @@ void Layer::removeFromParent() {
 
 void Layer::preRoll(PaintContext& context, bool forceLayout) {
     // Layer Layout has changed or parent has forced Layout change for child. Need to recalculate absolute frame and update absFrame_
-    if(forceLayout || (invalidateMask_ & LayerLayoutInvalidate)) {
-        // Adjust absolute position
-        //TODO Once we have skia transform matrix, need to first update frame_ i.e before calculating newAbsFrame
-        // layer_->setFrame( trnsfromed x, y width hight
-        int frameAbsX = frame_.x(), frameAbsY = frame_.y();
-        if(parent_) {
-            frameAbsX += parent_->absFrame_.x();
-            frameAbsY += parent_->absFrame_.y();
-        }
+     if(forceLayout || (invalidateMask_ & LayerLayoutInvalidate)) {
+        // Adjust absolute position w.r.t transformation matrix
+        calculateTransformMatrix();
+        SkRect mapRect=SkRect::Make(frame_);
+        absoluteTransformMatrix_.mapRect(&mapRect);
 
-        SkIRect newAbsFrame = SkIRect::MakeXYWH(frameAbsX, frameAbsY, frame_.width(), frame_.height());
+        SkIRect newAbsFrame = SkIRect::MakeXYWH(mapRect.x(), mapRect.y(), mapRect.width(), mapRect.height());
 #if USE(RNS_SHELL_PARTIAL_UPDATES)
         if((invalidateMask_ & LayerLayoutInvalidate)) {
             // Add previous frame to damage rect only if layer layout was invalidated and new layout is different from old layout
-            if(context.supportPartialUpdate && (invalidateMask_ & LayerLayoutInvalidate)) {
+            if(context.supportPartialUpdate) {
                 if(absFrame_.isEmpty() != true && newAbsFrame.contains(absFrame_) != true ) {
-                    addDamgeRect(context, absFrame_); // Previous frame rect
+                    addDamageRect(context, absFrame_); // Previous frame rect
                     RNS_LOG_DEBUG("New frame layout is different from previous frame. Add to damage rect..");
                 }
             }
@@ -135,10 +131,10 @@ void Layer::preRoll(PaintContext& context, bool forceLayout) {
     }
 
 #if USE(RNS_SHELL_PARTIAL_UPDATES)
-    if(invalidateMask_ != LayerInvalidateNone) {// As long as there is some invalidation , it creates a dirty rect.
+    if(context.supportPartialUpdate && ( invalidateMask_ != LayerInvalidateNone)) {// As long as there is some invalidation , it creates a dirty rect.
         RNS_LOG_DEBUG("AddDamage Layer(ID:" << layerId_ <<
             ") AbsFrame[" << absFrame_.x() << "," << absFrame_.y() << "," << absFrame_.width() << "," << absFrame_.height() << "]");
-        addDamgeRect(context, absFrame_); // Previous frame rect
+        addDamageRect(context, absFrame_); // Previous frame rect
     }
 #endif
 }
@@ -173,11 +169,11 @@ void Layer::paint(PaintContext& context) {
 
     SkAutoCanvasRestore save(context.canvas, true); // Save current clip and matrix state.
 
+    context.canvas->setMatrix(absoluteTransformMatrix_); //Apply self & parent's combined transformation matrix before paint
     paintSelf(context); // First paint self and then children if any
-    context.canvas->translate(frame_.x(), frame_.y());
 
     if(masksToBounds_) { // Need to clip children.
-        SkRect intRect = SkRect::Make(frame_);
+        SkRect intRect = SkRect::Make(absFrame_);
         if(!context.dirtyClipBound.isEmpty() && intRect.intersect(context.dirtyClipBound) == false) {
             RNS_LOG_WARN("We should not call paint if it doesnt intersect with non empty dirtyClipBound...");
         }
@@ -225,6 +221,33 @@ bool Layer::needsPainting(PaintContext& context) {
 
     RNS_LOG_TRACE("Skip Layer (" << layerId_ << ") Frame [" << frame_.x() << "," << frame_.y() << "," << frame_.width() << "," << frame_.height() << "]");
     return false;
+}
+
+void Layer::calculateTransformMatrix() {
+
+/* Step 1: calculate transform matrix set by parent */
+    if(parent_) {
+        absoluteTransformMatrix_=parent_->absoluteTransformMatrix_;
+        absoluteTransformMatrix_.preTranslate(parent_->frame_.x(),parent_->frame_.y());
+    }
+/* Step 2: calculate transform matrix to be set on it's own on top it's parent's,if any */
+    if(!transformMatrix.isIdentity()) {
+/*
+  Logic to do transformation w.r.t anchor point
+     Step 2.1: Move anchor point of frame to the origin
+     Step 2.2: Apply  transformation
+     Step 2.3: Move back the origin to the orginal anchor point
+Order of opertaion have to be reversed as  pre matrix opertaion used,
+so starting from step 3 to step 1
+*/
+        int Xtrans =  frame_.x()+(frame_.width()*anchorPosition_.fX);
+        int Ytrans = frame_.y()+(frame_.height()*anchorPosition_.fY);
+
+        absoluteTransformMatrix_.preTranslate(Xtrans,Ytrans);
+        absoluteTransformMatrix_.preConcat(transformMatrix);
+        absoluteTransformMatrix_.preTranslate(-Xtrans,-Ytrans);
+
+    }
 }
 
 }   // namespace RnsShell

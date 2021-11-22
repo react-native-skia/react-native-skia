@@ -20,13 +20,13 @@ namespace react {
 RSkComponentText::RSkComponentText(const ShadowView &shadowView)
     : RSkComponent(shadowView) {}
 
-void RSkComponentText::updateComponentProps(const ShadowView &newShadowView,bool forceUpadte) {}
+RnsShell::LayerInvalidateMask RSkComponentText::updateComponentProps(const ShadowView &newShadowView,bool forceUpadte) {return RnsShell::LayerInvalidateNone;}
 void RSkComponentText::OnPaint(SkCanvas *canvas) {}
 
 RSkComponentRawText::RSkComponentRawText(const ShadowView &shadowView)
     : RSkComponent(shadowView) {}
 
-void RSkComponentRawText::updateComponentProps(const ShadowView &newShadowView,bool forceUpadte) {}
+RnsShell::LayerInvalidateMask RSkComponentRawText::updateComponentProps(const ShadowView &newShadowView,bool forceUpadte) {return RnsShell::LayerInvalidateNone;}
 void RSkComponentRawText::OnPaint(SkCanvas *canvas) {}
 
 RSkComponentParagraph::RSkComponentParagraph(const ShadowView &shadowView)
@@ -35,10 +35,11 @@ RSkComponentParagraph::RSkComponentParagraph(const ShadowView &shadowView)
     , expectedAttachmentCount(0)
     , currentAttachmentCount(0){}
 
+RnsShell::LayerInvalidateMask RSkComponentParagraph::updateComponentProps(const ShadowView &newShadowView,bool forceUpadte) {
 
-void RSkComponentParagraph::updateComponentProps(const ShadowView &newShadowView,bool forceUpadte) {
   auto const &paragraphProps = *std::static_pointer_cast<ParagraphProps const>(newShadowView.props);
   paragraphAttributes_ = paragraphProps.paragraphAttributes;
+  return RnsShell::LayerInvalidateAll;
 }
 
 void RSkComponentParagraph::OnPaint(SkCanvas *canvas) {
