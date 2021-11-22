@@ -56,18 +56,22 @@ void RSkComponentImage::OnPaint(
   }
 }
 
-void RSkComponentImage::updateComponentProps(const ShadowView &newShadowView,bool forceUpdate) {
+RnsShell::LayerInvalidateMask RSkComponentImage::updateComponentProps(const ShadowView &newShadowView,bool forceUpdate) {
 
     auto const &newimageProps = *std::static_pointer_cast<ImageProps const>(newShadowView.props);
     auto component = getComponentData();
     auto const &oldimageProps = *std::static_pointer_cast<ImageProps const>(component.props);
+    RnsShell::LayerInvalidateMask updateMask=RnsShell::LayerInvalidateNone;
 
-    if ((forceUpdate) || (oldimageProps.resizeMode != newimageProps.resizeMode)) {
-         imageProps.resizeMode = newimageProps.resizeMode;
+    if((forceUpdate) || (oldimageProps.resizeMode != newimageProps.resizeMode)) {
+      imageProps.resizeMode = newimageProps.resizeMode;
+      updateMask =static_cast<RnsShell::LayerInvalidateMask>(updateMask | RnsShell::LayerInvalidateAll);
     }
-    if ((forceUpdate) || (oldimageProps.tintColor != newimageProps.tintColor )) {
-	 imageProps.tintColor = RSkColorFromSharedColor(newimageProps.tintColor,SK_ColorTRANSPARENT);
+    if((forceUpdate) || (oldimageProps.tintColor != newimageProps.tintColor )) {
+      RNS_LOG_NOT_IMPL;
+      imageProps.tintColor = RSkColorFromSharedColor(newimageProps.tintColor,SK_ColorTRANSPARENT);
     }
+    return updateMask;
 }
 } // namespace react
 } // namespace facebook

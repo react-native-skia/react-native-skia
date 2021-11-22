@@ -80,6 +80,7 @@ public:
     bool needsPainting(PaintContext& context);
     void preRoll(PaintContext& context, bool forceLayout = false);
 
+    void applyTransformations(PaintContext& context);
     void appendChild(SharedLayer child);
     void insertChild(SharedLayer child, size_t index);
     void removeChild(Layer *child, size_t index);
@@ -113,6 +114,8 @@ private:
 
     void setParent(Layer* layer);
 
+    void calculateTransformMatrix();
+
     int layerId_;
     Layer *parent_;
     LayerType type_;
@@ -123,7 +126,7 @@ private:
     SkIRect absFrame_; // Absolute frame include any transform performed by the layer itself in rootview's coordinate space
     SkIRect bounds_; //The paint bounds in its own coordinate space
     SkPoint anchorPosition_; // Position of Layer wrt anchor point in parents coordinate space. This will be used during the transformation.
-
+    SkMatrix absoluteTransformMatrix_; // Combined Transformation Matrix of self & parent's
     //Layer’s Appearance
     bool isHidden_ = { false }; // Wheather layer is hidden
     bool masksToBounds_ = { false }; // Clip childrens
