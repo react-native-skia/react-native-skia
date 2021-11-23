@@ -10,8 +10,10 @@
 namespace facebook {
 namespace react {
 
+using namespace RnsShell;
+
 RSkComponent::RSkComponent(const ShadowView &shadowView)
-    : INHERITED(RnsShell::LAYER_TYPE_DEFAULT)
+    : INHERITED(Layer::EmptyClient::singleton(), LAYER_TYPE_DEFAULT)
     , parent_(nullptr)
     , absOrigin_(shadowView.layoutMetrics.frame.origin)
     , component_(shadowView) {}
@@ -43,13 +45,15 @@ sk_sp<SkPicture> RSkComponent::getPicture() {
   return recorder.finishRecordingAsPicture();
 }
 
-void RSkComponent::requiresLayer(const ShadowView &shadowView) {
+void RSkComponent::requiresLayer(const ShadowView &shadowView, Layer::Client& layerClient) {
     // Need to come up with rules to decide wheather we need to create picture layer, texture layer etc"
     // Text components paragraph builder is not compatabile with Picture layer,so use default layer
-    if(strcmp(component_.componentName,"Paragraph") == 0)
+    if(strcmp(component_.componentName,"Paragraph") == 0) {
         layer_ = this->shared_from_this();
+        layer_->setClient(layerClient); // Need to set client for Default layer type.
+    }
     else
-        layer_ = RnsShell::Layer::Create(RnsShell::LAYER_TYPE_PICTURE);
+        layer_ = Layer::Create(layerClient, LAYER_TYPE_PICTURE);
 }
 
 RnsShell::LayerInvalidateMask RSkComponent::updateProps(const ShadowView &newShadowView,bool forceUpdate) {

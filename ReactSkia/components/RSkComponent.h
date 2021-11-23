@@ -13,6 +13,8 @@
 namespace facebook {
 namespace react {
 
+using namespace RnsShell;
+
 enum ComponentUpdateMask {
   ComponentUpdateMaskNone = 0,
   ComponentUpdateMaskProps = 1 << 0,
@@ -75,10 +77,11 @@ class RSkComponent : public RnsShell::Layer, public std::enable_shared_from_this
   const SkIRect& getLayerAbsoluteFrame(){ return(layer_->absoluteFrame());}
   RSkComponent *getParent() {return parent_; };
  
-  void requiresLayer(const ShadowView &shadowView);
+  void requiresLayer(const ShadowView &shadowView, Layer::Client& layerClient);
   RnsShell::LayerInvalidateMask updateProps(const ShadowView &newShadowView , bool forceUpdate);
   virtual RnsShell::LayerInvalidateMask updateComponentProps(const ShadowView &newShadowView,bool forceUpadate) = 0;
   virtual void onHandleKey(rnsKey  eventKeyType,bool* stopPropagate){*stopPropagate=false;};
+
  protected:
   virtual void OnPaint(SkCanvas *canvas) = 0;
 

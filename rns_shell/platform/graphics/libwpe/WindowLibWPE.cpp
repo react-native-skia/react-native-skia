@@ -186,7 +186,7 @@ bool WindowLibWPE::initWindow(PlatformDisplay *platformDisplay) {
     gWindowMap.add(this);
 
     if(WindowLibWPE::mainApp_)
-        WindowLibWPE::mainApp_->onResize(viewWidth_, viewHeight_);
+        WindowLibWPE::mainApp_->sizeChanged(viewWidth_, viewHeight_);
 
     return true;
 }
@@ -198,7 +198,7 @@ void WindowLibWPE::setViewSize(int width, int height) {
     viewWidth_ = width;
     viewHeight_ = height;
     if(WindowLibWPE::mainApp_)
-        WindowLibWPE::mainApp_->onResize(viewWidth_, viewHeight_);
+        WindowLibWPE::mainApp_->sizeChanged(viewWidth_, viewHeight_);
 }
 
 void WindowLibWPE::closeWindow() {

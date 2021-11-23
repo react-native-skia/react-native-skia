@@ -21,10 +21,10 @@ static inline void addDamageRect(PaintContext& context, SkIRect dirtyAbsFrameRec
 }
 #endif
 
-SharedLayer Layer::Create(LayerType type) {
+SharedLayer Layer::Create(Client& layerClient, LayerType type) {
     switch(type) {
         case LAYER_TYPE_PICTURE:
-            return std::make_shared<PictureLayer>();
+            return std::make_shared<PictureLayer>(layerClient);
         case LAYER_TYPE_DEFAULT:
         default:
             RNS_LOG_ASSERT(false, "Default layers can be created only from RSkComponent constructor");
@@ -41,15 +41,21 @@ uint64_t Layer::nextUniqueId() {
     return id;
 }
 
-Layer::Layer(LayerType type)
+Layer::EmptyClient& Layer::EmptyClient::singleton() {
+    static Layer::EmptyClient client;
+    return client;
+}
+
+Layer::Layer(Client& layerClient, LayerType type)
     : layerId_(nextUniqueId())
     , parent_(nullptr)
     , type_(type)
+    , client_(&layerClient)
     , frame_(SkIRect::MakeEmpty())
     , absFrame_(SkIRect::MakeEmpty())
     , anchorPosition_(SkPoint::Make(0.5,0.5)) // Default anchor point as centre
     , invalidateMask_(LayerInvalidateAll) {
-    RNS_LOG_DEBUG("Layer Constructed(" << this << ") with ID : " << layerId_);
+    RNS_LOG_DEBUG("Layer Constructed(" << this << ") with ID : " << layerId_ << " and LayerClient : " << client_);
 }
 
 Layer* Layer::rootLayer() {

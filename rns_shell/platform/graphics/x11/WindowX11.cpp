@@ -59,7 +59,7 @@ void Window::createEventLoop(Application* app) {
                     case ConfigureNotify:
                         RNS_LOG_INFO("Resize Request with (Width x Height) : (" << event.xconfigurerequest.width <<
                                     " x " << event.xconfigurerequest.height << ")");
-                        app->onResize(event.xconfigurerequest.width, event.xconfigurerequest.height);
+                        app->sizeChanged(event.xconfigurerequest.width, event.xconfigurerequest.height);
                         break;
                     default:
                         WindowX11* win = WindowX11::gWindowMap.find(event.xany.window);

@@ -45,3 +45,11 @@ inline SkColor RSkColorFromSharedColor(facebook::react::SharedColor sharedColor,
     }
     return defaultColor;
 }
+
+inline facebook::react::Point RCTPointFromSkPoint(const SkPoint &point) {
+  return {point.x(), point.y()};
+}
+
+inline facebook::react::Size RCTSizeFromSkSize(const SkSize &size) {
+  return {size.width(), size.height()};
+}

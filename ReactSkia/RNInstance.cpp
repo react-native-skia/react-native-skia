@@ -20,6 +20,7 @@
 #endif
 #include "ReactSkia/utils/RnsLog.h"
 #include "ReactSkia/utils/AppLog.h"
+#include "ReactSkia/views/common/RSkConversion.h"
 
 #include "ReactCommon/TurboModuleBinding.h"
 #include "cxxreact/JSBigString.h"
@@ -36,6 +37,8 @@
 #include "react/utils/ContextContainer.h"
 
 #include <folly/io/async/ScopedEventBaseThread.h>
+
+#include "rns_shell/compositor/RendererDelegate.h"
 
 namespace facebook {
 namespace react {
@@ -87,38 +90,55 @@ class MessageQueueThreadImpl : public MessageQueueThread {
   folly::ScopedEventBaseThread thread_;
 };
 
-RNInstance::RNInstance() {
+static inline LayoutConstraints RSkGetLayoutConstraintsForSize(SkSize minimumSize, SkSize maximumSize) {
+  return {
+      .minimumSize = RCTSizeFromSkSize(minimumSize),
+      .maximumSize = RCTSizeFromSkSize(maximumSize),
+      .layoutDirection = facebook::react::LayoutDirection::LeftToRight, // TODO Hardcode for now and later based on some condition like IOS ??
+  };
+}
+
+static inline LayoutContext RSkGetLayoutContext(SkPoint viewportOffset) {
+  return {.pointScaleFactor = 1.0,
+          .swapLeftAndRightInRTL = false,
+          .fontSizeMultiplier = 1.0,
+          .viewportOffset = RCTPointFromSkPoint(viewportOffset)};
+}
+
+RNInstance::RNInstance(RendererDelegate &rendererDelegate) {
   InitializeJSCore();
   RegisterComponents();
-  InitializeFabric();
+  InitializeFabric(rendererDelegate);
 }
 
 RNInstance::~RNInstance() {}
 
-void RNInstance::Start(RSkSurfaceWindow *surface) {
+void RNInstance::Start(RSkSurfaceWindow *surface, RendererDelegate &rendererDelegate) {
   mountingManager_->BindSurface(surface);
-  SurfaceId surfaceId = 1;
+
+  LayoutContext layoutContext = RSkGetLayoutContext(surface->viewportOffset);
+  LayoutConstraints layoutConstraints = RSkGetLayoutConstraintsForSize(surface->minimumSize, surface->maximumSize);
+
   fabricScheduler_->startSurface(
-      surfaceId,
-      "SimpleViewApp",
-      folly::dynamic::object(),
-      surface->GetLayoutConstraints(),
-      {}, // layoutContext,
+      surface->surfaceId,
+      surface->moduleName,
+      surface->properties,
+      layoutConstraints,
+      layoutContext,
       {} // mountingOverrideDelegate
   );
-  fabricScheduler_->renderTemplateToSurface(surfaceId, {});
+  fabricScheduler_->renderTemplateToSurface(surface->surfaceId, {});
 
   // NOTE(kudo): Does adding RootView here make sense !?
   auto *provider = componentViewRegistry_->GetProvider(RootComponentName);
   auto component = provider->CreateComponent({});
-  component.get()->requiresLayer({});
-  if(component)
-    surface->compositor()->setRootLayer(component->layer() ? component->layer() : component);
+  component->requiresLayer({}, rendererDelegate);
+  RNS_LOG_ASSERT(component->layer(), "Layer Cannot Be Null");
+  rendererDelegate.setRootLayer(component->layer());
 }
 
-void RNInstance::Stop() {
-  SurfaceId surfaceId = 1;
-  fabricScheduler_->stopSurface(surfaceId);
+void RNInstance::Stop(RSkSurfaceWindow *surface) {
+  fabricScheduler_->stopSurface(surface->surfaceId);
 }
 
 void RNInstance::InitializeJSCore() {
@@ -150,7 +170,7 @@ void RNInstance::InitializeJSCore() {
   }
 }
 
-void RNInstance::InitializeFabric() {
+void RNInstance::InitializeFabric(RendererDelegate &rendererDelegate) {
   facebook::react::ContextContainer::Shared contextContainer =
       std::make_shared<facebook::react::ContextContainer const>();
   std::shared_ptr<const facebook::react::ReactNativeConfig> reactNativeConfig =
@@ -190,7 +210,7 @@ void RNInstance::InitializeFabric() {
       return std::make_unique<AsynchronousEventBeat>(std::move(runLoopObserver), runtimeExecutor);
   };
   mountingManager_ =
-      std::make_unique<MountingManager>(componentViewRegistry_.get());
+      std::make_unique<MountingManager>(componentViewRegistry_.get(), rendererDelegate);
   fabricScheduler_ =
       std::make_shared<Scheduler>(toolbox, nullptr, mountingManager_.get());
 }

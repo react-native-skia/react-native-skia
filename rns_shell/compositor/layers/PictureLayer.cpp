@@ -10,13 +10,13 @@
 
 namespace RnsShell {
 
-SharedPictureLayer PictureLayer::Create() {
-    return std::make_shared<PictureLayer>();
+SharedPictureLayer PictureLayer::Create(Client& layerClient) {
+    return std::make_shared<PictureLayer>(layerClient);
 }
 
-PictureLayer::PictureLayer()
-    : INHERITED(LAYER_TYPE_PICTURE) {
-    RNS_LOG_INFO("Picture Layer Constructed(" << this << ") with ID : " << layerId());
+PictureLayer::PictureLayer(Client& layerClient)
+    : INHERITED(layerClient, LAYER_TYPE_PICTURE) {
+    RNS_LOG_INFO("Picture Layer Constructed(" << this << ") with ID : " << layerId() << " and LayerClient : " << &layerClient);
 }
 
 void PictureLayer::prePaint(PaintContext& context, bool forceLayout) {

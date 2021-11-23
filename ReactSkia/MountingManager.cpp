@@ -1,14 +1,26 @@
+/*
+ * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (C) 1994-2021 OpenTV, Inc. and Nagravision S.A.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+#include <glog/logging.h>
+
+#include "react/renderer/scheduler/Scheduler.h"
+
 #include "ReactSkia/MountingManager.h"
 #include "ReactSkia/RSkSurfaceWindow.h"
 
-#include "react/renderer/scheduler/Scheduler.h"
-#include <glog/logging.h>
+#include "rns_shell/compositor/RendererDelegate.h"
 
 namespace facebook {
 namespace react {
 
-MountingManager::MountingManager(ComponentViewRegistry *componentViewRegistry)
-    : componentViewRegistry_(componentViewRegistry) {}
+MountingManager::MountingManager(ComponentViewRegistry *componentViewRegistry, RendererDelegate &rendererDelegate)
+    : nativeRenderDelegate_(rendererDelegate),
+      componentViewRegistry_(componentViewRegistry) {}
 
 void MountingManager::BindSurface(RSkSurfaceWindow *surface) {
   surface_ = surface;
@@ -63,7 +75,7 @@ void MountingManager::ProcessMutations(
     ShadowViewMutationList const &mutations,
     SurfaceId surfaceId) {
 
-  surface_->compositor()->begin();
+  nativeRenderDelegate_.begin();
 
   for (auto const &mutation : mutations) {
     switch (mutation.type) {
@@ -95,7 +107,7 @@ void MountingManager::ProcessMutations(
   RNS_LOG_INFO_EVERY_N(60, "Calling Compositor Commit(" << std::this_thread::get_id()) << ") : after " << SkTime::GetMSecs() - prevTime << " ms";
   prevTime = SkTime::GetMSecs();
 #endif
-  surface_->compositor()->commit();
+  nativeRenderDelegate_.commit();
 }
 
 
@@ -106,7 +118,7 @@ void MountingManager::CreateMountInstruction(
   if (provider) {
     std::shared_ptr<RSkComponent> component =
         provider->CreateAndAddComponent(mutation.newChildShadowView);
-    component.get()->requiresLayer(mutation.newChildShadowView);
+    component.get()->requiresLayer(mutation.newChildShadowView, nativeRenderDelegate_);
   }
 }
 

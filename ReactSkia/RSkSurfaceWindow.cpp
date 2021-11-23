@@ -13,26 +13,21 @@ GrDirectContext* RSkSurfaceWindow::directContext=nullptr;
 #endif
 
 RSkSurfaceWindow::RSkSurfaceWindow() {
-  SkRect viewPort(SkRect::MakeEmpty());
-  compositor_ = Compositor::create(viewPort);
-#ifdef RNS_SHELL_HAS_GPU_SUPPORT
-  if(compositor_) {
-    setDirectContext(compositor_->getDirectContext());
-  }
-#endif
+  RNS_LOG_TODO("Need to come up with proper way to set surfaceId, moduleName and properties members");
+  surfaceId = 1;
+  moduleName = "SimpleViewApp";
+  properties = folly::dynamic::object();
+
   navigator_ = RSkSpatialNavigator::sharedSpatialNavigator();
   inputEventManager_ = RSkInputEventManager::getInputKeyEventManager();
 }
 
 RSkSurfaceWindow::~RSkSurfaceWindow() {
-  compositor_->invalidate();
-  compositor_.reset();
 }
 
-LayoutConstraints RSkSurfaceWindow::GetLayoutConstraints() {
-  Size windowSize{static_cast<Float>(compositor_->viewport().width()),
-                  static_cast<Float>(compositor_->viewport().height())};
-  return {windowSize, windowSize};
+void RSkSurfaceWindow::setSize(SkSize size) {
+  RNS_LOG_INFO("Set Layout MinMax Size : " << size.width() << "x" << size.height());
+  minimumSize = maximumSize = size;
 }
 
 #ifdef RNS_SHELL_HAS_GPU_SUPPORT
