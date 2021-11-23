@@ -54,6 +54,18 @@ struct PaintContext {
 
 class Layer {
 public:
+    class Client {
+    public:
+        virtual ~Client() = default;
+        virtual void notifyFlushRequired() { }
+    };
+
+    // Singleton defualt client used for default layers.
+    class EmptyClient final : public Client {
+    public:
+        static EmptyClient& singleton();
+    };
+
     int  backfaceVisibility;
     float opacity{1.0};
 
@@ -64,9 +76,12 @@ public:
 
     SkMatrix transformMatrix;
 
-    static SharedLayer Create(LayerType type = LAYER_TYPE_DEFAULT);
-    Layer(LayerType);
+    static SharedLayer Create(Client& layerClient, LayerType type = LAYER_TYPE_DEFAULT);
+    Layer(Client&, LayerType);
     virtual ~Layer() {};
+
+    Client& client() const { return *client_; }
+    void setClient(Client& client) { client_ = &client; } // Used for Default Layer Type TODO: Need to remove this once we introduce Paintclient for default Layer.
 
     Layer* rootLayer();
     Layer* parent() { return parent_; }
@@ -119,6 +134,7 @@ private:
     Layer *parent_;
     LayerType type_;
     LayerList children_;
+    Client* client_;
 
     //Layer Geometry
     SkIRect frame_; //The frame bounds should include any transform performed by the layer itself in its parent's coordinate space

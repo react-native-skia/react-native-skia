@@ -96,13 +96,18 @@ if(is_linux && gl_display_backend == "libwpe") {
 source_set("rns_shell") {
 
   sources = [
-    "Application.h",
+    "common/Application.h",
+    "common/Application.cpp",
     "common/Window.h",
     "common/Window.cpp",
     "common/WindowContext.h",
     "common/WindowContext.cpp",
     "common/Performance.h",
     "common/Performance.cpp",
+    "compositor/LayerTreeHost.h",
+    "compositor/LayerTreeHost.cpp",
+    "compositor/RendererDelegate.h",
+    "compositor/RendererDelegate.cpp",
     "compositor/Compositor.h",
     "compositor/Compositor.cpp",
     "compositor/layers/Layer.h",

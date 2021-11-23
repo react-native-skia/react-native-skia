@@ -7,6 +7,9 @@
 
 class SkCanvas;
 
+namespace facebook {
+namespace react {
+
 class ReactSkiaApp : public RnsShell::Application {
  public:
 
@@ -14,9 +17,12 @@ class ReactSkiaApp : public RnsShell::Application {
   ~ReactSkiaApp();
 
   void onIdle();
-  void onResize(int width, int height);
+  void onResize(SkSize newSize);
 
  private:
   std::unique_ptr<facebook::react::RNInstance> rnInstance_;
   std::unique_ptr<facebook::react::RSkSurfaceWindow> surface_;
 };
+
+} // namespace react
+} // namespace facebook
