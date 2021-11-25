@@ -214,7 +214,11 @@ bool Layer::needsPainting(PaintContext& context) {
       return false;
     }
 
+#if USE(RNS_SHELL_PARTIAL_UPDATES)
+    if(!context.supportPartialUpdate)  //if partial update not supported,need to paint the layer
+#else
     if(context.damageRect.size() == 0) // No damage rect set, so need to paint the layer
+#endif
         return true;
 
     // As long as paintBounds interset with one of the dirty rect, we will need repainting.
