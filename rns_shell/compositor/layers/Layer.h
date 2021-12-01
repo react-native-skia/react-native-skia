@@ -80,7 +80,6 @@ public:
     bool needsPainting(PaintContext& context);
     void preRoll(PaintContext& context, bool forceLayout = false);
 
-    void applyTransformations(PaintContext& context);
     void appendChild(SharedLayer child);
     void insertChild(SharedLayer child, size_t index);
     void removeChild(Layer *child, size_t index);
