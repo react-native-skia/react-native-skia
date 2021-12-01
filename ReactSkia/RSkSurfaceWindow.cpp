@@ -8,9 +8,18 @@ using namespace RnsShell;
 namespace facebook {
 namespace react {
 
+#ifdef RNS_SHELL_HAS_GPU_SUPPORT
+GrDirectContext* RSkSurfaceWindow::directContext=nullptr;
+#endif
+
 RSkSurfaceWindow::RSkSurfaceWindow() {
   SkRect viewPort(SkRect::MakeEmpty());
   compositor_ = Compositor::create(viewPort);
+#ifdef RNS_SHELL_HAS_GPU_SUPPORT
+  if(compositor_) {
+    setDirectContext(compositor_->getDirectContext());
+  }
+#endif
 }
 
 RSkSurfaceWindow::~RSkSurfaceWindow() {
@@ -23,6 +32,12 @@ LayoutConstraints RSkSurfaceWindow::GetLayoutConstraints() {
                   static_cast<Float>(compositor_->viewport().height())};
   return {windowSize, windowSize};
 }
+
+#ifdef RNS_SHELL_HAS_GPU_SUPPORT
+void RSkSurfaceWindow::setDirectContext(GrDirectContext* context) {
+  RSkSurfaceWindow::directContext=context;
+}
+#endif
 
 } // namespace react
 } // namespace facebook
