@@ -20,8 +20,8 @@ namespace react {
   RNS implementation is not based on runloop*/
 RunLoopObserver::Activity activities{RunLoopObserver::Activity::BeforeWaiting};
 RuntimeEventBeat::RuntimeEventBeat(RunLoopObserver::WeakOwner const &owner)
-  : RunLoopObserver(activities, owner),baetThread_("BeatThread"),activities_{activities} {
-    baetThread_.getEventBase()->runInEventBaseThread(std::bind(&RuntimeEventBeat::beat,this));
+  : RunLoopObserver(activities, owner),beatThread_("BeatThread"),activities_{activities} {
+    beatThread_.getEventBase()->runInEventBaseThread(std::bind(&RuntimeEventBeat::beat,this));
 }
 
 RuntimeEventBeat::~RuntimeEventBeat() {
@@ -37,7 +37,7 @@ void RuntimeEventBeat::startObserving() const noexcept
 
 void RuntimeEventBeat::beat(){
   this->activityDidChange(activities_);
-  baetThread_.getEventBase()->scheduleAt(std::bind(&RuntimeEventBeat::beat,this), \
+  beatThread_.getEventBase()->scheduleAt(std::bind(&RuntimeEventBeat::beat,this), \
            std::chrono::steady_clock::now() + std::chrono::milliseconds(BEAT_INTERVAL));
 }
 
@@ -48,7 +48,7 @@ void RuntimeEventBeat::stopObserving() const noexcept
 
 bool RuntimeEventBeat::isOnRunLoopThread() const noexcept
 {
-  return (baetThread_.getThreadId() == std::thread::id());
+  return (beatThread_.getThreadId() == std::thread::id());
 }
 
 } // namespace react
