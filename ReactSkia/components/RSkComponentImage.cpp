@@ -64,7 +64,7 @@ void RSkComponentImage::OnPaint(
     auto bitmap = GetAsset(path.c_str());
     assert(bitmap);
 
-    Rect frame = getAbsoluteFrame();
+    Rect frame = component.layoutMetrics.frame;
     SkRect rect = SkRect::MakeXYWH(frame.origin.x, frame.origin.y, frame.size.width, frame.size.height);
     auto const &imageBorderMetrics=imageProps.resolveBorderMetrics(component.layoutMetrics);
 
