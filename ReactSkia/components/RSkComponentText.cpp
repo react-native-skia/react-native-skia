@@ -31,11 +31,7 @@ RSkComponentParagraph::RSkComponentParagraph(const ShadowView &shadowView)
     , expectedAttachmentCount(0)
     , currentAttachmentCount(0){}
 
-<<<<<<< HEAD
-void RSkComponentParagraph::updateComponentProps(const ShadowView &newShadowView,bool forceUpadte) {
-=======
 RnsShell::LayerInvalidateMask RSkComponentParagraph::updateComponentProps(const ShadowView &newShadowView,bool forceUpadte) {
->>>>>>> 6b47373fd... Supported Transform Props on Native Side (#60)
 
   auto const &paragraphProps = *std::static_pointer_cast<ParagraphProps const>(newShadowView.props);
   paragraphAttributes_ = paragraphProps.paragraphAttributes;
