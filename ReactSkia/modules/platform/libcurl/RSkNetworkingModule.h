@@ -6,7 +6,7 @@
 */
 #include <curl/curl.h>
 #include <better/map.h>
-
+#include <semaphore.h>
 
 #include "ReactSkia/modules/RSkNetworkingModuleBase.h"
 
@@ -56,13 +56,14 @@ struct NetworkRequest {
   }
 };
 
+  
 class RSkNetworkingModule:  public RSkNetworkingModuleBase {
  public:
   RSkNetworkingModule(
       const std::string &name,
       std::shared_ptr<CallInvoker> jsInvoker,
       Instance *bridgeInstance);
-      ~ RSkNetworkingModule();
+  ~ RSkNetworkingModule();
 
    jsi::Value sendRequest(
        folly::dynamic,
@@ -78,16 +79,21 @@ class RSkNetworkingModule:  public RSkNetworkingModuleBase {
   void headerCallbackWrapper(NetworkRequest*, char*, size_t);
   void writeMemoryCallbackWrapper(NetworkRequest*, char*, size_t);
   better::map <int , NetworkRequest*> connectionList_;
+  void processNetworkRequest(CURLM *cm);
   static size_t writeMemoryCallback(void *contents, size_t size, size_t nmemb, void *userp);
   static size_t progressCallback(void *clientp, double dltotal, double dlnow, double ultotal, double ulnow);
   static size_t headerCallback(void *contents, size_t size, size_t nitems, void *userdata);
 
  private:
   std::mutex connectionListLock_;
-  bool curlInit_ = false;
   uint64_t nextUniqueId();
+  bool exitLoop_ = false;
+  CURLM* curlMultiHandle_ = nullptr;
+  std::thread multiNetworkThread_;
+  sem_t networkRequestSem_;
 
 };
 
 }// namespace react
 }// namespace facebook
+
