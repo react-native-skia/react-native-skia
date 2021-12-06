@@ -62,7 +62,7 @@ void RSkComponentImage::OnPaint(
     auto const &imageBorderMetrics=imageProps.resolveBorderMetrics(component.layoutMetrics);
     SkRect targetRect = computeTargetRect({imageData->width(),imageData->height()},frameRect,imageProps.resizeMode);
     SkPaint paint;
-/* TO DO: Handle filter quality based of configuration. Setting Low Filter Quality as default for now*/
+/* TO DO: Handle filter quality based on build time configuration. Setting Low Filter Quality as a default for now*/
     paint.setFilterQuality(DEFAULT_IMAGE_FILTER_QUALITY);
     if(imageProps.resizeMode == ImageResizeMode::Repeat){
       sk_sp<SkImageFilter> imageFilter(SkImageFilters::Tile(targetRect,frameRect ,nullptr));
@@ -71,7 +71,6 @@ void RSkComponentImage::OnPaint(
 /* Draw order 1. Background 2. Image 3. Border*/
     drawBackground(canvas,frame,imageBorderMetrics,imageProps.backgroundColor,imageProps.opacity);
     canvas->save();
-      /*TO DO: Handle filter quality based of configuration. Setting Low Filter Quality as default for now*/
     if(( frameRect.width() < targetRect.width()) || ( frameRect.height() < targetRect.height())) {
       canvas->clipRect(frameRect,SkClipOp::kIntersect);
     }
