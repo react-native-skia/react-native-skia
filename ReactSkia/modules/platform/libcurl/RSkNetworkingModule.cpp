@@ -5,6 +5,7 @@
 * LICENSE file in the root directory of this source tree.
 */
 #include <curl/curl.h>
+#include <semaphore.h>
 
 #include "cxxreact/Instance.h"
 #include "jsi/JSIDynamic.h"
@@ -18,7 +19,7 @@
 #ifndef CA_CERTIFICATE
 #define CA_CERTIFICATE       "/etc/ssl/certs/ca-certificates.crt"      /**< The certificate of the CA to establish https connection to the server*/
 #endif
-#define TIMEOUT 10L
+#define MAX_PARALLEL_CONNECTION 5
 enum curlStatus {CURL_RETURN_FAILURE=-1,CURL_RETURN_SUCESS};
 using namespace std;
 namespace facebook {
@@ -30,10 +31,33 @@ RSkNetworkingModule::RSkNetworkingModule(
     Instance *bridgeInstance)
     :  RSkNetworkingModuleBase(name, jsInvoker, bridgeInstance) {
 
+  curl_global_init(CURL_GLOBAL_ALL);
+  sem_init(&networkRequestSem_, 0, 0);
+  curlMultiHandle_ = curl_multi_init();
+ /* Limit the amount of simultaneous connections curl should allow: */
+  curl_multi_setopt(curlMultiHandle_, CURLMOPT_MAX_TOTAL_CONNECTIONS, (long)MAX_PARALLEL_CONNECTION);
+  multiNetworkThread_ = std::thread([this]() {
+    while(!exitLoop_){
+      if(curlMultiHandle_) {
+        sem_wait(&networkRequestSem_);
+        processNetworkRequest(curlMultiHandle_);
+      }  else {
+          std::this_thread::sleep_for(1000ms);
+      }
+    }
+
+  });
+
+
 }
 
 RSkNetworkingModule::~RSkNetworkingModule() {
-
+  exitLoop_ = true;
+  multiNetworkThread_.join();
+  if(curlMultiHandle_){
+    curl_multi_cleanup(curlMultiHandle_);
+    curl_global_cleanup();
+  }
 };
 
 size_t RSkNetworkingModule::progressCallback(void *userdata, double dltotal, double dlnow, double ultotal, double ulnow) {
@@ -53,13 +77,6 @@ size_t RSkNetworkingModule::headerCallback(void *contents, size_t size,size_t ni
 {
   struct NetworkRequest *networkRequest = ((struct NetworkRequest *)userdata);
   networkRequest->self_->headerCallbackWrapper(networkRequest, (char*)contents, nitems);
-  std::string buffer = (char*)contents;
-  size_t pos = std::string::npos;
-  if((pos = buffer.find("Content-Length:")) != std::string::npos) {
-    double contentSize = 0.0;
-    curl_easy_getinfo(networkRequest->curl_, CURLINFO_CONTENT_LENGTH_DOWNLOAD, &contentSize);
-    networkRequest->contentSize_ = contentSize;
-  }
   return nitems * size;
 }
  
@@ -70,6 +87,45 @@ uint64_t RSkNetworkingModule::nextUniqueId() {
     id = nextId.fetch_add(1);
   } while (id == 0);  // 0 invalid id.
   return id;
+}
+
+void RSkNetworkingModule::processNetworkRequest(CURLM *curlMultiHandle) {
+  CURLMcode res = CURLM_OK;
+  CURLMsg *msg;
+  int stillAlive = 0;
+  int msgsLeft = 0;
+  do {
+    res = curl_multi_perform(curlMultiHandle, &stillAlive);
+    while((msg = curl_multi_info_read(curlMultiHandle, &msgsLeft))) {
+      if(msg->msg == CURLMSG_DONE) {
+        int requestId = 0;
+        CURL *curlHandle = msg->easy_handle;
+        curl_easy_getinfo(curlHandle, CURLINFO_PRIVATE, &requestId);
+        std::scoped_lock lock(connectionListLock_);
+        struct NetworkRequest *networkRequest = connectionList_[requestId];
+        // completionBlock
+        if(networkRequest) {
+          if(networkRequest->curl_ != NULL) {
+            if(!(networkRequest->useIncrementalUpdates_ && (networkRequest->responseType_ == "text") ))
+              sendData(networkRequest);
+            sendEventWithName("didCompleteNetworkResponse", folly::dynamic::array(networkRequest->requestId_ , (res != CURLM_OK) ? curl_easy_strerror(msg->data.result):"" , ((msg->data.result) == CURLE_OPERATION_TIMEDOUT ? "true" : "false") ));
+            connectionList_.erase(networkRequest->requestId_);
+          }
+          curl_multi_remove_handle(curlMultiHandle, curlHandle);
+          delete networkRequest;
+        } else {
+           curl_easy_cleanup(curlHandle);
+        }
+      }
+      else {
+        RNS_LOG_ERROR("Unknown critical error: CURLMsg" << msg->msg);
+      }
+
+    }
+    if(stillAlive)
+      curl_multi_wait(curlMultiHandle, NULL, 0, 1000, NULL);
+
+  } while(stillAlive);
 }
 
 bool RSkNetworkingModule::preparePostRequest(void* request, folly::dynamic headers, folly::dynamic data ) {
@@ -130,16 +186,6 @@ jsi::Value RSkNetworkingModule::sendRequest(
   jsi::Value status = jsi::Value((int)CURL_RETURN_FAILURE);
   CURLcode res = CURLE_FAILED_INIT;
   NetworkRequest *networkRequest =  new NetworkRequest(incrementalUpdates, responseType, this);
-  if(curlInit_ == false) {
-    res = curl_global_init(CURL_GLOBAL_DEFAULT);
-    /* Check for errors */
-    if(res != CURLE_OK) {
-      RNS_LOG_ERROR (stderr << "curl_global_init() failed: %s\n" <<curl_easy_strerror(res));
-      goto safe_return;
-    }
-    curlInit_ = true;
-  }
-
   /* get a curl handle */
   curl = curl_easy_init();
   if(curl == NULL) {
@@ -149,17 +195,17 @@ jsi::Value RSkNetworkingModule::sendRequest(
   networkRequest->curl_ = curl;
   networkRequest->requestId_ = nextUniqueId();
   curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-  /*The following code gets executed for a https connection.*/
-
+  curl_easy_setopt(curl, CURLOPT_PRIVATE, networkRequest->requestId_);
+  
+  //The following code gets executed for a https connection.
   if(strstr(url.c_str(),"https") != NULL) {
        curl_easy_setopt(curl, CURLOPT_SSLENGINE_DEFAULT, 1L);
        curl_easy_setopt(curl, CURLOPT_CAINFO, CA_CERTIFICATE);
        curl_easy_setopt(curl,CURLOPT_SSL_VERIFYPEER,0);
   }
 
-  if(timeout == 0) //if timeout is not specified, setting default time
-    timeout = TIMEOUT;    
-  curl_easy_setopt(curl, CURLOPT_TIMEOUT, timeout);
+  if(timeout)
+    curl_easy_setopt(curl, CURLOPT_TIMEOUT, timeout);
   
   curl_easy_setopt(curl, CURLOPT_VERBOSE, 0L);//Enable curl logs
 
@@ -192,24 +238,12 @@ jsi::Value RSkNetworkingModule::sendRequest(
     jsi::Function callback = callbackObj.getFunction(rt);
     callback.call(rt, (int) networkRequest->requestId_, 1);
   }
-  res = curl_easy_perform(curl);
-  {
-    // completionBlock
-    std::scoped_lock lock(connectionListLock_);
-    if(networkRequest->curl_ != NULL) {
-      if(!(networkRequest->useIncrementalUpdates_ && (networkRequest->responseType_ == "text") ))
-        sendData(networkRequest); 
-      sendEventWithName("didCompleteNetworkResponse", folly::dynamic::array(networkRequest->requestId_ ,curl_easy_strerror(res), res == CURLE_OPERATION_TIMEDOUT ? "true" : "false" ));
-      if(connectionList_[networkRequest->requestId_] != NULL) {
-        connectionList_.erase(networkRequest->requestId_);
-      }
-    }
-  }
+  curl_multi_add_handle(curlMultiHandle_, curl);
+  sem_post(&networkRequestSem_);
   status = jsi::Value((int)CURL_RETURN_SUCESS);
 safe_return :
-    if(networkRequest) {
-      delete networkRequest;
-    }
+  if(status.getNumber() == CURL_RETURN_FAILURE && networkRequest )
+    delete networkRequest;
   return status;
 }
 
@@ -263,18 +297,15 @@ void RSkNetworkingModule::headerCallbackWrapper(NetworkRequest *networkRequest, 
 }
 
 void RSkNetworkingModule::writeMemoryCallbackWrapper(NetworkRequest *networkRequest, char* writeMemoryBuffer, size_t realSize) {              
-  if(networkRequest->responseBuffer_ == nullptr && networkRequest->contentSize_ != 0)
-    networkRequest->responseBuffer_  = (char *) malloc(networkRequest->contentSize_+1);
+  networkRequest->responseBuffer_  = (char *) realloc(networkRequest->responseBuffer_ , networkRequest->responseBufferOffset_+realSize+1);
   RNS_LOG_ASSERT((networkRequest->responseBuffer_), "responseBuffer cannot be null");
-  memcpy(&(networkRequest->responseBuffer_[networkRequest->responseBufferOffset_]), writeMemoryBuffer, realSize);
+  memcpy(&(networkRequest->responseBuffer_ [networkRequest->responseBufferOffset_]), writeMemoryBuffer, realSize);
   networkRequest->responseBufferOffset_ += realSize;
-  if(networkRequest->contentSize_ == networkRequest->responseBufferOffset_) {
-     networkRequest->responseBuffer_[networkRequest->responseBufferOffset_] = 0;
-  }
+  networkRequest->responseBuffer_[networkRequest->responseBufferOffset_] = 0;
+  networkRequest->contentSize_ = networkRequest->responseBufferOffset_;
 }
 
 void RSkNetworkingModule::sendData(NetworkRequest *networkRequest) {
-  
   char* responseBuffer= NULL;
   if(!(networkRequest->responseBuffer_) || networkRequest->contentSize_ == 0)
     return;
@@ -287,8 +318,8 @@ void RSkNetworkingModule::sendData(NetworkRequest *networkRequest) {
     return;
   }
   sendEventWithName("didReceiveNetworkData", folly::dynamic::array(networkRequest->requestId_  , responseBuffer));
-
 }
 
 }// namespace react
 }//namespace facebook
+
