@@ -116,8 +116,17 @@ void Layer::preRoll(PaintContext& context, bool forceLayout) {
         calculateTransformMatrix();
         SkRect mapRect=SkRect::Make(frame_);
         absoluteTransformMatrix_.mapRect(&mapRect);
-
-        SkIRect newAbsFrame = SkIRect::MakeXYWH(mapRect.x(), mapRect.y(), mapRect.width(), mapRect.height());
+        SkIRect newAbsFrame;
+        if(shadowFilter) {
+            SkMatrix identityMatrix;
+            newAbsFrame = shadowFilter->filterBounds(
+            SkIRect::MakeXYWH(mapRect.x(),mapRect.y(),mapRect.width(),mapRect.height()) ,
+            identityMatrix,
+            SkImageFilter::kForward_MapDirection,
+            nullptr);
+        } else {
+              newAbsFrame = SkIRect::MakeXYWH(mapRect.x(), mapRect.y(), mapRect.width(), mapRect.height());
+        }
 #if USE(RNS_SHELL_PARTIAL_UPDATES)
         if((invalidateMask_ & LayerLayoutInvalidate)) {
             // Add previous frame to damage rect only if layer layout was invalidated and new layout is different from old layout

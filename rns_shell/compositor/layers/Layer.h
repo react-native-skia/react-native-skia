@@ -19,6 +19,7 @@
 
 #include "include/core/SkCanvas.h"
 #include "include/core/SkSurface.h"
+#include "include/core/SkImageFilter.h"
 #include "ReactSkia/utils/RnsLog.h"
 #include "ReactSkia/utils/RnsUtils.h"
 
@@ -69,11 +70,11 @@ public:
     int  backfaceVisibility;
     float opacity{1.0};
 
-    float shadowOpacity{};
+    float shadowOpacity{0};
     float shadowRadius{3};
-    SkColor shadowColor;
+    SkColor shadowColor=SK_ColorBLACK;
     SkSize shadowOffset{0,-3};
-
+    sk_sp<SkImageFilter> shadowFilter;
     SkMatrix transformMatrix;
 
     static SharedLayer Create(Client& layerClient, LayerType type = LAYER_TYPE_DEFAULT);

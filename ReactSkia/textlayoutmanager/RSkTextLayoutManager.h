@@ -15,6 +15,9 @@
 #include "modules/skparagraph/include/ParagraphBuilder.h"
 #include "modules/skparagraph/src/ParagraphBuilderImpl.h"
 
+#include "include/core/SkImageFilter.h"
+#include "include/effects/SkImageFilters.h"
+
 namespace facebook {
 namespace react {
 
@@ -35,6 +38,7 @@ public:
    uint32_t buildParagraph (SharedColor backGroundColor,
                                  AttributedString attributedString,
                                  ParagraphAttributes paragraphAttributes,
+                                 skia::textlayout::TextShadow shadow,
                                  bool fontDecorationRequired=false,
                                  std::shared_ptr<skia::textlayout::ParagraphBuilder> builder=nullptr) const;
 

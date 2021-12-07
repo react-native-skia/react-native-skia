@@ -96,9 +96,10 @@ TextMeasurement RSkTextLayoutManager::doMeasure (SharedColor backGroundColor,
     TextMeasurement::Attachments attachments;
     ParagraphStyle paraStyle;
     Size size;
+    TextShadow shadow;
 
     std::shared_ptr<ParagraphBuilder> builder = std::static_pointer_cast<ParagraphBuilder>(std::make_shared<ParagraphBuilderImpl>(paraStyle,collection_));
-    buildParagraph(backGroundColor, attributedString, paragraphAttributes, false, builder);
+    buildParagraph(backGroundColor, attributedString, paragraphAttributes, shadow, false, builder);
     auto paragraph = builder->Build();
     paragraph->layout(layoutConstraints.maximumSize.width);
 
@@ -134,6 +135,7 @@ TextMeasurement RSkTextLayoutManager::doMeasure (SharedColor backGroundColor,
 uint32_t RSkTextLayoutManager::buildParagraph (SharedColor backGroundColor,
                 AttributedString attributedString,
                 ParagraphAttributes paragraphAttributes,
+                TextShadow shadow,
                 bool fontDecorationRequired,
                 std::shared_ptr<ParagraphBuilder> builder) const {
     uint32_t attachmentCount = 0;
@@ -190,6 +192,12 @@ uint32_t RSkTextLayoutManager::buildParagraph (SharedColor backGroundColor,
         style.setDecoration(fragment.textAttributes.textDecorationLineType.has_value() ?
                                 convertDecoration(fragment.textAttributes.textDecorationLineType.value()) :
                                 TextDecoration::kNoDecoration);
+        if(!backGroundColor) {
+        /*TODO For text content shadow shadowOpacity to be handle*/
+            style.addShadow(shadow);
+            shadow.fOffset+=setShadowPoint.Make(fontShadowOffset.width,fontShadowOffset.height);
+            style.addShadow(shadow);
+        }
         style.addShadow(TextShadow(convertTextColor(fragment.textAttributes.textShadowColor ?
                                                     fragment.textAttributes.textShadowColor :
                                                     fragment.textAttributes.foregroundColor).getColor(),
