@@ -1,12 +1,12 @@
 #pragma once
+#include "include/core/SkCanvas.h"
+
+#include "react/renderer/mounting/ShadowView.h"
+#include "react/renderer/components/view/ViewProps.h"
 
 #include "ReactSkia/utils/RnsUtils.h"
 #include "ReactSkia/utils/RnsLog.h"
 #include "ReactSkia/sdk/RNSKeyCodeMapping.h"
-
-#include "include/core/SkCanvas.h"
-#include "react/renderer/mounting/ShadowView.h"
-#include "react/renderer/components/view/ViewProps.h"
 
 #include "rns_shell/compositor/layers/Layer.h"
 
@@ -14,6 +14,12 @@ namespace facebook {
 namespace react {
 
 using namespace RnsShell;
+
+enum PictureType {
+   PictureTypeShadow = 1,
+   PictureTypeBorder,
+   PictureTypeAll
+};
 
 enum ComponentUpdateMask {
   ComponentUpdateMaskNone = 0,
@@ -32,6 +38,7 @@ struct CommonProps{
     int pointerEvents;
     EdgeInsets hitSlop;
     int zIndex{};
+    bool scrollEnabled{false};
     /* TODO Add TVOS properties */
 };
 struct Component {
@@ -72,21 +79,33 @@ class RSkComponent : public RnsShell::Layer, public std::enable_shared_from_this
     const int index);
 
   virtual void updateComponentData(const ShadowView &newShadowView , const uint32_t updateMask , bool forceUpdate);
+
+  virtual RnsShell::LayerInvalidateMask updateComponentProps(const ShadowView &newShadowView,bool forceUpadate) = 0;
+
+  virtual RnsShell::LayerInvalidateMask updateComponentState(const ShadowView &newShadowView,bool forceUpadate) {
+     /* TODO Return default None here when state update is handled with proper mask */
+     return RnsShell::LayerInvalidateAll;
+  };
+
+  virtual void onHandleKey(rnsKey  eventKeyType,bool* stopPropagate){*stopPropagate=false;};
+
   Component getComponentData() { return component_;}
   std::shared_ptr<RnsShell::Layer> layer() { return layer_; }
   const SkIRect& getLayerAbsoluteFrame(){ return(layer_->absoluteFrame());}
   RSkComponent *getParent() {return parent_; };
- 
+
   void requiresLayer(const ShadowView &shadowView, Layer::Client& layerClient);
   RnsShell::LayerInvalidateMask updateProps(const ShadowView &newShadowView , bool forceUpdate);
-  virtual RnsShell::LayerInvalidateMask updateComponentProps(const ShadowView &newShadowView,bool forceUpadate) = 0;
-  virtual void onHandleKey(rnsKey  eventKeyType,bool* stopPropagate){*stopPropagate=false;};
+
+  void setScrollEnabled(bool scrollEnabled);
 
  protected:
   virtual void OnPaint(SkCanvas *canvas) = 0;
+  virtual void OnPaintShadow(SkCanvas *canvas);
+  virtual void OnPaintBorder(SkCanvas *canvas);
 
  private:
-  sk_sp<SkPicture> getPicture();
+  sk_sp<SkPicture> getPicture(PictureType type=PictureTypeAll);
   // RnsShell::Layer implementations
   void onPaint(SkCanvas*) override;
 

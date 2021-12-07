@@ -54,7 +54,7 @@ void RSkSpatialNavigator::addToNavList(std::shared_ptr<RSkComponent> newCandidat
     RNS_LOG_DEBUG("Add " << newCandData.componentName << "[" << newCandData.tag <<"] to Navigatable List : isTVSelectable["
                                     << viewProps.isTVSelectable << "]" << " focusable[" << viewProps.focusable << "] " <<
                                     "hasTVPreferredFocus[" << viewProps.hasTVPreferredFocus << "]" << " accessible[" << viewProps.accessible << "]");
-    if (viewProps.isTVSelectable == true || viewProps.focusable == true) {
+    if (viewProps.isTVSelectable == true || viewProps.focusable == true || newCandData.commonProps.scrollEnabled == true) {
         navComponentList_.push_back(newCandidate.get());
         if(viewProps.hasTVPreferredFocus == true) {
             if(currentFocus_)
@@ -69,7 +69,7 @@ void RSkSpatialNavigator::addToNavList(std::shared_ptr<RSkComponent> newCandidat
 void RSkSpatialNavigator::removeFromNavList(std::shared_ptr<RSkComponent> candidate) {
     Component canData = candidate.get()->getComponentData();
     auto const &viewProps = *std::static_pointer_cast<ViewProps const>(canData.props);
-    if (viewProps.isTVSelectable == true || viewProps.focusable == true) {
+    if (viewProps.isTVSelectable == true || viewProps.focusable == true || canData.commonProps.scrollEnabled == true) {
         CandidateList::iterator it;
         it = std::find(navComponentList_.begin(), navComponentList_.end(), candidate.get());
         if (it != navComponentList_.end()) {
@@ -91,7 +91,7 @@ void RSkSpatialNavigator::updateInNavList(std::shared_ptr<RSkComponent> candidat
 
     if (it != navComponentList_.end()) {
         // Candidate found in the navigatable list, Reset data if candidate's focusable props have changed
-        if (viewProps.isTVSelectable == false && viewProps.focusable == false) {
+        if (viewProps.isTVSelectable == false && viewProps.focusable == false && canData.commonProps.scrollEnabled == false) {
             if (currentFocus_ == candidate.get()) {
                 sendNotificationWithEventType("blur", currentFocus_->getComponentData().tag);
                 currentFocus_ = nullptr;

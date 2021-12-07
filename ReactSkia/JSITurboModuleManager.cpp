@@ -1,16 +1,16 @@
-#include "ReactSkia/JSITurboModuleManager.h"
-
-#include "ReactSkia/utils/RnsLog.h"
-#include "ReactSkia/version.h"
-#include "modules/RSkTVNavigationEventEmitter.h"
+#include <folly/io/async/ScopedEventBaseThread.h>
 
 #include "cxxreact/Instance.h"
 #include "jsi/JSIDynamic.h"
 
-#include <folly/io/async/ScopedEventBaseThread.h>
+#include "JSITurboModuleManager.h"
+#include "version.h"
+#include "core_modules/RSkTimingModule.h"
+#include "core_modules/RSkKeyboardObserver.h"
 #include "modules/platform/nopoll/RSkWebSocketModule.h"
 #include "modules/platform/libcurl/RSkNetworkingModule.h"
-#include "core_modules/RSkTimingModule.h"
+#include "modules/RSkTVNavigationEventEmitter.h"
+#include "utils/RnsLog.h"
 
 namespace facebook {
 namespace react {
@@ -134,7 +134,7 @@ JSITurboModuleManager::JSITurboModuleManager(Instance *bridgeInstance)
 
   staticModule =
       std::make_shared<StaticTurboModule>("PlatformConstants", jsInvoker);
-  auto rnVersion = folly::dynamic::object("major", 0)("minor", 0)("patch", 0);
+  auto rnVersion = folly::dynamic::object("major", RN_MAJOR_VERSION)("minor", RN_MINOR_VERSION)("patch", RN_PATCH_VERSION);
   staticModule->SetConstants(folly::dynamic::object("isTesting", true)(
       "reactNativeVersion", std::move(rnVersion)) ("osVersion",STRINGIFY(RNS_OS_VERSION))
 #if TARGET_OS_TV
@@ -154,12 +154,12 @@ JSITurboModuleManager::JSITurboModuleManager(Instance *bridgeInstance)
       std::make_shared<RSkTVNavigationEventEmitter>("TVNavigationEventEmitter",jsInvoker, bridgeInstance);
   modules_["AppState"] =
       std::make_shared<AppStateModule>("AppState", jsInvoker);
-
   modules_["Networking"] =
       std::make_shared<RSkNetworkingModule>("Networking", jsInvoker, bridgeInstance );
-
   modules_["WebSocketModule"] =
       std::make_shared<RSkWebSocketModule>("WebSocketModule", jsInvoker, bridgeInstance);
+  modules_["KeyboardObserver"] =
+      std::make_shared<RSkKeyboardObserver>("KeyboardObserver", jsInvoker, bridgeInstance);
 
   modules_["DevSettings"] =
       std::make_shared<UnimplementedTurboModule>("DevSettings", jsInvoker);
@@ -169,8 +169,6 @@ JSITurboModuleManager::JSITurboModuleManager(Instance *bridgeInstance)
       std::make_shared<UnimplementedTurboModule>("StatusBarManager", jsInvoker);
   modules_["Appearance"] =
       std::make_shared<UnimplementedTurboModule>("Appearance", jsInvoker);
-  modules_["KeyboardObserver"] =
-      std::make_shared<UnimplementedTurboModule>("KeyboardObserver", jsInvoker);
   modules_["NativeAnimatedModule"] = std::make_shared<UnimplementedTurboModule>(
       "NativeAnimatedModule", jsInvoker);
 

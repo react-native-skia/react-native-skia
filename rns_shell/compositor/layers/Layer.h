@@ -30,6 +30,7 @@ class Layer;
 enum LayerType {
     LAYER_TYPE_DEFAULT = 0, // Default layer type which which will use component specific APIs to paint.
     LAYER_TYPE_PICTURE, // SkPiture based layer.
+    LAYER_TYPE_SCROLL, // Scrolling functionality based layer.
     LAYER_TYPE_TEXTURED, // SkTexture based layer.
 };
 
@@ -67,6 +68,7 @@ public:
         static EmptyClient& singleton();
     };
 
+    SkColor backgroundColor;
     int  backfaceVisibility;
     float opacity{1.0};
 
@@ -112,6 +114,7 @@ public:
     const SkIRect& getFrame() const { return frame_; }
     void setFrame(const SkIRect& frame) { frame_ = frame; }
     void invalidate(LayerInvalidateMask mask = LayerInvalidateAll) { invalidateMask_ = mask; }
+    bool requireInvalidate() { return invalidateMask_ != LayerInvalidateNone; }
 
     const SkIRect& getBounds() const { return bounds_; }
     void setBounds(const SkIRect& bounds) { bounds_ = bounds; }
@@ -124,6 +127,7 @@ public:
 
 public:
     friend class PictureLayer;
+    friend class ScrollLayer;
 
 private:
     static uint64_t nextUniqueId();

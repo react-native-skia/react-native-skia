@@ -8,6 +8,7 @@
 
 #include "compositor/layers/Layer.h"
 #include "compositor/layers/PictureLayer.h"
+#include "compositor/layers/ScrollLayer.h"
 
 namespace RnsShell {
 
@@ -25,6 +26,8 @@ SharedLayer Layer::Create(Client& layerClient, LayerType type) {
     switch(type) {
         case LAYER_TYPE_PICTURE:
             return std::make_shared<PictureLayer>(layerClient);
+        case LAYER_TYPE_SCROLL:
+            return std::make_shared<ScrollLayer>(layerClient);
         case LAYER_TYPE_DEFAULT:
         default:
             RNS_LOG_ASSERT(false, "Default layers can be created only from RSkComponent constructor");

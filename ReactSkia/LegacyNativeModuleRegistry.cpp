@@ -164,6 +164,64 @@ class LegacyUIManagerModule : public NativeModule {
             "directEventTypes", std::move(directEventTypes));
 
         return {std::move(registry)};
+
+      } else if (args[0] == "RCTScrollContentView") {
+        auto nativeProps = folly::dynamic::object("onLayout", true);
+        auto registry =
+            folly::dynamic::object("NativeProps", std::move(nativeProps))("baseModuleName", "RCTView");
+        return {std::move(registry)};
+      } else if(args[0] == "RCTScrollView"){
+        auto nativeProps = folly::dynamic::object("alwaysBounceHorizontal", true)(
+              "alwaysBounceVertical", true)(
+              "automaticallyAdjustContentInsets", true)(
+              "bounces", true)(
+              "bouncesZoom", true)(
+              "canCancelContentTouches", true)(
+              "centerContent", true)(
+              "contentInsetAdjustmentBehavior", true)(
+              "decelerationRate", true)(
+              "directionalLockEnabled", true)(
+              "disableIntervalMomentum", true)(
+              "fadingEdgeLength", true)(
+              "indicatorStyle", true)(
+              "keyboardDismissMode", true)(
+              "maintainVisibleContentPosition", true)(
+              "maximumZoomScale", true)(
+              "minimumZoomScale", true)(
+              "nestedScrollEnabled", true)(
+              "onMomentumScrollBegin", true)(
+              "onMomentumScrollEnd", true)(
+              "onScroll", true)(
+              "onScrollBeginDrag", true)(
+              "onScrollEndDrag", true)(
+              "onScrollToTop", true)(
+              "overScrollMode", true)(
+              "pagingEnabled", true)(
+              "persistentScrollbar", true)(
+              "scrollEnabled", true)(
+              "scrollEventThrottle", true)(
+              "scrollToOverflowEnabled", true)(
+              "scrollsToTop", true)(
+              "sendMomentumEvents", true)(
+              "showsHorizontalScrollIndicator", true)(
+              "showsVerticalScrollIndicator", true)(
+              "snapToAlignment", true)(
+              "snapToEnd", true)(
+              "snapToInterval", true)(
+              "snapToOffsets", true)(
+              "snapToStart", true)(
+              "zoomScale", true);
+
+        auto directEventTypes = folly::dynamic::object(
+              "topScrollToTop",
+              folly::dynamic::object("registrationName", "onScrollToTop"));
+
+        auto registry = folly::dynamic::object(
+              "NativeProps", std::move(nativeProps))("baseModuleName", "RCTView")(
+              "bubblingEventTypes", folly::dynamic::object())(
+              "directEventTypes", std::move(directEventTypes));
+
+        return {std::move(registry)};
       }
       throw std::invalid_argument(
           "Invalid getConstantsForViewManager viewManagerName");

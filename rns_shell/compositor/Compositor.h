@@ -49,12 +49,12 @@ public:
 #ifdef RNS_SHELL_HAS_GPU_SUPPORT
     GrDirectContext* getDirectContext(); // interface to expose directcontext of gpu backend
 #endif
+    static SkRect beginClip(PaintContext& context);
 
 private:
 
     void createWindowContext();
     void renderLayerTree();
-    SkRect beginClip(SkCanvas *canvas);
 
     std::mutex isMutating; // Lock the renderLayer tree while updating and rendering
 

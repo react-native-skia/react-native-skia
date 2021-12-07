@@ -1,3 +1,5 @@
+#include <folly/io/async/ScopedEventBaseThread.h>
+
 #include "ReactSkia/RNInstance.h"
 
 #include "ReactSkia/ComponentViewRegistry.h"
@@ -7,9 +9,10 @@
 #include "ReactSkia/RSkSurfaceWindow.h"
 #include "ReactSkia/components/RSkComponentProviderImage.h"
 #include "ReactSkia/components/RSkComponentProviderRootView.h"
+#include "ReactSkia/components/RSkComponentProviderScrollView.h"
 #include "ReactSkia/components/RSkComponentProviderText.h"
-#include "ReactSkia/components/RSkComponentProviderView.h"
 #include "ReactSkia/components/RSkComponentProviderTextInput.h"
+#include "ReactSkia/components/RSkComponentProviderView.h"
 
 #if defined (OS_MACOSX)
 #include "ReactSkia/platform/macosx/MainRunLoopEventBeat.h"
@@ -35,8 +38,6 @@
 #include "react/renderer/scheduler/SchedulerToolbox.h"
 #include <react/renderer/scheduler/AsynchronousEventBeat.h>
 #include "react/utils/ContextContainer.h"
-
-#include <folly/io/async/ScopedEventBaseThread.h>
 
 #include "rns_shell/compositor/RendererDelegate.h"
 
@@ -231,6 +232,8 @@ void RNInstance::RegisterComponents() {
       std::make_unique<RSkComponentProviderParagraph>());
   componentViewRegistry_->Register(
       std::make_unique<RSkComponentProviderTextInput>());
+  componentViewRegistry_->Register(
+      std::make_unique<RSkComponentProviderScrollView>());
 }
 
 } // namespace react

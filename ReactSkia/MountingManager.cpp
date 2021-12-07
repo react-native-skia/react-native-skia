@@ -49,14 +49,16 @@ void MountingManager::schedulerDidFinishTransaction(
 void MountingManager::schedulerDidRequestPreliminaryViewAllocation(
     SurfaceId surfaceId,
     const ShadowView &shadowView) {
-  // Does nothing for now.
+  RNS_LOG_NOT_IMPL;
+  RNS_LOG_DEBUG("surfaceId:" << surfaceId << " shadowView tag[" << shadowView.tag <<  "] name["<< shadowView.componentName << "]");
 }
 
 void MountingManager::schedulerDidDispatchCommand(
     const ShadowView &shadowView,
     const std::string &commandName,
     const folly::dynamic args) {
-  // TODO
+  RNS_LOG_NOT_IMPL;
+  RNS_LOG_TODO("shadowView tag[" << shadowView.tag <<  "] name["<< shadowView.componentName << "] commandName [" << commandName <<"]");
 }
 
 void MountingManager::schedulerDidSetJSResponder(
@@ -64,11 +66,12 @@ void MountingManager::schedulerDidSetJSResponder(
     const ShadowView &shadowView,
     const ShadowView &initialShadowView,
     bool blockNativeResponder) {
-  // Does nothing for now.
+  RNS_LOG_NOT_IMPL;
+  RNS_LOG_TODO("surfaceId:" << surfaceId << "shadowView tag[" << shadowView.tag <<  "] name["<< shadowView.componentName << "] blockNativeResponder: " << blockNativeResponder);
 }
 
 void MountingManager::schedulerDidClearJSResponder() {
-  // Does nothing for now.
+  RNS_LOG_NOT_IMPL;
 }
 
 void MountingManager::ProcessMutations(
@@ -78,6 +81,18 @@ void MountingManager::ProcessMutations(
   nativeRenderDelegate_.begin();
 
   for (auto const &mutation : mutations) {
+    RNS_LOG_DEBUG("\n============\n Mutation type : "<< mutation.type <<
+                 "\n ParentShadowView" <<
+                 "\n\tTag:" << mutation.parentShadowView.tag <<
+                 "\n\tName:" << (mutation.parentShadowView.componentName?mutation.parentShadowView.componentName : "null") <<
+                 "\n OldChildShadowView" <<
+                 "\n\tTag:" << mutation.oldChildShadowView.tag <<
+                 "\n\tName:" << (mutation.oldChildShadowView.componentName?mutation.oldChildShadowView.componentName : "null") <<
+                 "\n NewChildShadowView" <<
+                 "\n\tTag:" << mutation.newChildShadowView.tag <<
+                 "\n\tName:" << (mutation.newChildShadowView.componentName?mutation.newChildShadowView.componentName : "null") <<
+                 "\n Mutation index : "<< mutation.index <<
+                 "\n============\n");
     switch (mutation.type) {
       case ShadowViewMutation::Create: {
         CreateMountInstruction(mutation, surfaceId);

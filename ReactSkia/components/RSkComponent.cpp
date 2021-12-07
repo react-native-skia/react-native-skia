@@ -1,17 +1,21 @@
-#include "ReactSkia/components/RSkComponent.h"
-#include "ReactSkia/views/common/RSkConversion.h"
-
 #include "include/core/SkPaint.h"
 #include "include/core/SkPictureRecorder.h"
 #include "include/core/SkSurface.h"
 #include "include/core/SkImageFilter.h"
 #include "include/effects/SkImageFilters.h"
+
+#include "ReactSkia/components/RSkComponent.h"
+#include "ReactSkia/views/common/RSkConversion.h"
+#include "ReactSkia/views/common/RSkDrawUtils.h"
+
 #include "rns_shell/compositor/layers/PictureLayer.h"
+#include "rns_shell/compositor/layers/ScrollLayer.h"
 
 namespace facebook {
 namespace react {
 
 using namespace RnsShell;
+using namespace RSkDrawUtils;
 
 RSkComponent::RSkComponent(const ShadowView &shadowView)
     : INHERITED(Layer::EmptyClient::singleton(), LAYER_TYPE_DEFAULT)
@@ -29,7 +33,7 @@ void RSkComponent::onPaint(SkCanvas* canvas) {
   }
 }
 
-sk_sp<SkPicture> RSkComponent::getPicture() {
+sk_sp<SkPicture> RSkComponent::getPicture(PictureType type) {
 
   SkPictureRecorder recorder;
   auto frame = component_.layoutMetrics.frame;
@@ -37,7 +41,18 @@ sk_sp<SkPicture> RSkComponent::getPicture() {
   auto *canvas = recorder.beginRecording(SkRect::MakeXYWH(0, 0, frame.size.width, frame.size.height));
 
   if(canvas) {
-    RNS_PROFILE_API_OFF("Recording " << component_.componentName << " Paint:", OnPaint(canvas));
+     switch(type) {
+       case PictureTypeShadow:
+          RNS_PROFILE_API_OFF("Recording Shadow Picture" << component_.componentName << " Paint:", OnPaintShadow(canvas));
+          break;
+       case PictureTypeBorder:
+          RNS_PROFILE_API_OFF("Recording Border Picture" << component_.componentName << " Paint:", OnPaintBorder(canvas));
+          break;
+       case PictureTypeAll:
+       default:
+          RNS_PROFILE_API_OFF("Recording " << component_.componentName << " Paint:", OnPaint(canvas));
+          break;
+    }
   } else {
     RNS_LOG_ERROR("Invalid canvas ??");
     return nullptr;
@@ -52,9 +67,14 @@ void RSkComponent::requiresLayer(const ShadowView &shadowView, Layer::Client& la
     if(strcmp(component_.componentName,"Paragraph") == 0) {
         layer_ = this->shared_from_this();
         layer_->setClient(layerClient); // Need to set client for Default layer type.
-    }
+    } else if (strcmp(component_.componentName,"ScrollView") == 0)
+        layer_ = Layer::Create(layerClient, LAYER_TYPE_SCROLL);
     else
         layer_ = Layer::Create(layerClient, LAYER_TYPE_PICTURE);
+}
+
+void RSkComponent::setScrollEnabled(bool isScrollEnabled) {
+  component_.commonProps.scrollEnabled = isScrollEnabled;
 }
 
 RnsShell::LayerInvalidateMask RSkComponent::updateProps(const ShadowView &newShadowView,bool forceUpdate) {
@@ -111,7 +131,7 @@ RnsShell::LayerInvalidateMask RSkComponent::updateProps(const ShadowView &newSha
    }
   //backgroundColor
    if ((forceUpdate) || (oldviewProps.backgroundColor != newviewProps.backgroundColor)) {
-      component_.commonProps.backgroundColor = RSkColorFromSharedColor(newviewProps.backgroundColor,SK_ColorTRANSPARENT);
+      layer_->backgroundColor = RSkColorFromSharedColor(newviewProps.backgroundColor,SK_ColorTRANSPARENT);
       /*TODO : To be tested and confirm updateMask need for this Prop*/
       updateMask =static_cast<RnsShell::LayerInvalidateMask>(updateMask | RnsShell::LayerInvalidateAll);
    }
@@ -168,7 +188,7 @@ void RSkComponent::updateComponentData(const ShadowView &newShadowView,const uin
    }
    if(updateMask & ComponentUpdateMaskState){
       RNS_LOG_DEBUG("\tUpdate State");
-      invalidateMask =static_cast<RnsShell::LayerInvalidateMask>(invalidateMask | RnsShell::LayerInvalidateAll);
+      invalidateMask =static_cast<RnsShell::LayerInvalidateMask>(invalidateMask | updateComponentState(newShadowView,forceUpdate));
       component_.state = newShadowView.state;
    }
    if(updateMask & ComponentUpdateMaskEventEmitter){
@@ -190,6 +210,9 @@ void RSkComponent::updateComponentData(const ShadowView &newShadowView,const uin
      layer_->invalidate(invalidateMask);
      if(layer_->type() == RnsShell::LAYER_TYPE_PICTURE) {
        RNS_PROFILE_API_OFF(component_.componentName << " getPicture :", static_cast<RnsShell::PictureLayer*>(layer_.get())->setPicture(getPicture()));
+     } else if(layer_->type() == RnsShell::LAYER_TYPE_SCROLL) {
+       RNS_PROFILE_API_OFF(component_.componentName << " getShadowPicture :", static_cast<RnsShell::ScrollLayer*>(layer_.get())->setShadowPicture(getPicture(PictureTypeShadow)));
+       RNS_PROFILE_API_OFF(component_.componentName << " getBorderPicture :", static_cast<RnsShell::ScrollLayer*>(layer_.get())->setBorderPicture(getPicture(PictureTypeBorder)));
      }
    } 
 }
@@ -218,6 +241,30 @@ void RSkComponent::unmountChildComponent(
     RNS_LOG_ASSERT((this->layer_ && oldChildComponent->layer_), "Layer Object cannot be null");
     if(this->layer_)
         this->layer_->removeChild(oldChildComponent->layer_.get(), index);
+}
+
+void RSkComponent::OnPaintBorder(SkCanvas *canvas) {
+  auto const &viewProps = *std::static_pointer_cast<ViewProps const>(component_.props);
+
+  /* apply view style props */
+  auto borderMetrics= viewProps.resolveBorderMetrics(component_.layoutMetrics);
+
+  Rect frame = component_.layoutMetrics.frame;
+  drawBorder(canvas,frame,borderMetrics,layer_->backgroundColor,layer_->opacity);
+}
+
+void RSkComponent::OnPaintShadow(SkCanvas *canvas) {
+  auto const &viewProps = *std::static_pointer_cast<ViewProps const>(component_.props);
+
+  /* apply view style props */
+  auto borderMetrics= viewProps.resolveBorderMetrics(component_.layoutMetrics);
+
+  Rect frame = component_.layoutMetrics.frame;
+
+  if(layer_->shadowOpacity && layer_->shadowFilter){
+      drawShadow(canvas,frame,borderMetrics,layer_->backgroundColor,layer_->shadowOpacity,layer_->shadowFilter);
+  }
+
 }
 
 } // namespace react

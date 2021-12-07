@@ -116,6 +116,8 @@ source_set("rns_shell") {
     "compositor/layers/Layer.cpp",
     "compositor/layers/PictureLayer.h",
     "compositor/layers/PictureLayer.cpp",
+    "compositor/layers/ScrollLayer.h",
+    "compositor/layers/ScrollLayer.cpp",
   ]
 
   if(gl_has_gpu) {

@@ -79,13 +79,13 @@ void Compositor::invalidate() {
     backBuffer_ = nullptr;
 }
 
-SkRect Compositor::beginClip(SkCanvas *canvas) {
+SkRect Compositor::beginClip(PaintContext& context) {
     SkRect clipBound = SkRect::MakeEmpty();
-    if(surfaceDamage_.size() == 0)
+    if(context.damageRect.size() == 0)
         return clipBound;
 
     SkPath clipPath = SkPath();
-    for (auto& rect : surfaceDamage_) {
+    for (auto& rect : context.damageRect) {
         RNS_LOG_DEBUG("Add Damage " << rect.x() << " " << rect.y() << " " << rect.width() << " " << rect.height());
         clipPath.addRect(rect.left(), rect.top(), rect.right(), rect.bottom());
     }
@@ -93,7 +93,7 @@ SkRect Compositor::beginClip(SkCanvas *canvas) {
     if(clipPath.getBounds().isEmpty())
         return clipBound;
 
-    canvas->clipPath(clipPath);
+    context.canvas->clipPath(clipPath);
     clipBound = clipPath.getBounds();
 
     return clipBound;
@@ -143,7 +143,7 @@ void Compositor::renderLayerTree() {
             nullptr, // GrDirectContext
         };
         RNS_PROFILE_API_OFF("Render Tree Pre-Paint", rootLayer_.get()->prePaint(paintContext));
-        clipBound = beginClip(canvas);
+        clipBound = beginClip(paintContext);
         RNS_PROFILE_API_OFF("Render Tree Paint", rootLayer_.get()->paint(paintContext));
         RNS_PROFILE_API_OFF("SkSurface Flush & Submit", backBuffer_->flushAndSubmit());
 #ifdef RNS_ENABLE_FRAME_RATE_CONTROL
@@ -165,13 +165,15 @@ void Compositor::renderLayerTree() {
 }
 
 void Compositor::begin() {
-    // Locke until render tree has rendered current tree
-    std::scoped_lock lock(isMutating);
+    // Lock until render tree has rendered current tree
+    isMutating.lock();
     surfaceDamage_.clear(); // Clear the previous damage rects.
 }
 
 void Compositor::commit() {
-
+    // Unlock here, to ensure updates and rendering of tree is synchronous
+    isMutating.unlock();
+    
     if(!windowContext_)
         return;
 
