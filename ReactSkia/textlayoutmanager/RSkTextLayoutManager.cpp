@@ -132,13 +132,12 @@ TextMeasurement RSkTextLayoutManager::doMeasure (SharedColor backGroundColor,
     return TextMeasurement{size, attachments};
 }
 
-uint32_t RSkTextLayoutManager::buildParagraph (SharedColor backGroundColor,
-                AttributedString attributedString,
-                ParagraphAttributes paragraphAttributes,
-                TextShadow shadow,
-                bool fontDecorationRequired,
-                std::shared_ptr<ParagraphBuilder> builder) const {
-    uint32_t attachmentCount = 0;
+void RSkTextLayoutManager::buildText (ParagraphAttributes paragraphAttributes,
+    TextAttributes textAttributes,
+    std::string textString,
+    TextShadow shadow,
+    bool fontDecorationRequired,
+    std::shared_ptr<ParagraphBuilder> builder) const {
     TextStyle style;
     ParagraphStyle paraStyle;
     auto fontSize = TextAttributes::defaultTextAttributes().fontSize;
@@ -148,7 +147,91 @@ uint32_t RSkTextLayoutManager::buildParagraph (SharedColor backGroundColor,
     double fontShadowRadius = 0;
     Size fontShadowOffset = {0,0};                         
     SkScalar fontLineHeight;
-    SkPoint setShadowPoint;  
+    SkPoint setShadowPoint; 
+
+    fontSize = (!std::isnan(textAttributes.fontSize)) && (textAttributes.fontSize > 0) ? 
+                            textAttributes.fontSize :
+                            TextAttributes::defaultTextAttributes().fontSize;textAttributes.
+
+    fontSizeMultiplier = !std::isnan(textAttributes.fontSizeMultiplier) ?
+                            textAttributes.fontSizeMultiplier :
+                            TextAttributes::defaultTextAttributes().fontSizeMultiplier;
+
+    fontWeight = textAttributes.fontWeight.has_value() ? 
+                            convertFontWeight(textAttributes.fontWeight.value()) : 
+                            SkFontStyle::kNormal_Weight;
+
+    fontStyle = textAttributes.fontStyle.has_value() ? 
+                            convertFontStyle(textAttributes.fontStyle.value()): 
+                            SkFontStyle::kUpright_Slant;
+
+    fontLineHeight = (!std::isnan(textAttributes.lineHeight)) && (textAttributes.lineHeight > 0) ?
+                            textAttributes.lineHeight :
+                            fontSize;
+
+    fontShadowOffset = textAttributes.textShadowOffset.has_value() ?
+                            textAttributes.textShadowOffset.value() : 
+                            fontShadowOffset;
+
+    fontShadowRadius = (!std::isnan(textAttributes.textShadowRadius)) && (textAttributes.textShadowRadius > 0) ?
+                            textAttributes.textShadowRadius :
+                            fontShadowRadius;
+
+    style.setFontSize((fontSize * fontSizeMultiplier));
+    style.setFontFamilies({SkString(textAttributes.fontFamily.c_str())});
+    style.setFontStyle(SkFontStyle{fontWeight, SkFontStyle::kNormal_Width, fontStyle});
+    style.setHeightOverride(true);
+    style.setHeight(fontLineHeight / fontSize);
+    style.setDecoration(textAttributes.textDecorationLineType.has_value() ?
+                            convertDecoration(textAttributes.textDecorationLineType.value()) :
+                            TextDecoration::kNoDecoration);
+
+    if(!textAttributes.backgroundColor) {
+        /*TODO For text content shadow shadowOpacity to be handle*/
+            style.addShadow(shadow);
+            shadow.fOffset+=setShadowPoint.Make(fontShadowOffset.width,fontShadowOffset.height);
+            style.addShadow(shadow);
+    }
+
+    style.addShadow(TextShadow(convertTextColor(textAttributes.textShadowColor ?
+                                                textAttributes.textShadowColor :
+                                                textAttributes.foregroundColor).getColor(),
+                                                setShadowPoint.Make(fontShadowOffset.width,fontShadowOffset.height),
+                                                fontShadowRadius));
+    style.setLetterSpacing(!std::isnan(textAttributes.letterSpacing) ?
+                            textAttributes.letterSpacing :
+                            0);
+
+    /* Build paragraph considering text decoration attributes*/
+    /* Required during text paint */
+    if(fontDecorationRequired) {
+        style.setForegroundColor(convertTextColor(textAttributes.foregroundColor ?
+                                                    textAttributes.foregroundColor :
+                                                    TextAttributes::defaultTextAttributes().foregroundColor));
+        style.setBackgroundColor(convertTextColor(textAttributes.backgroundColor ?
+                                                    textAttributes.backgroundColor :
+                                                    TextAttributes::defaultTextAttributes().backgroundColor));
+        style.setDecorationColor(convertTextColor(textAttributes.textDecorationColor ?
+                                                    textAttributes.textDecorationColor :
+                                                    textAttributes.foregroundColor).getColor());   
+    }
+
+    if(textAttributes.alignment.has_value())
+        paraStyle.setTextAlign(convertTextAlign(textAttributes.alignment.value()));
+
+    builder->setParagraphStyle(paraStyle);
+    builder->pushStyle(style);
+    builder->addText(textString.c_str(), std::strlen(textString.c_str()));
+    builder->pop();
+}
+
+uint32_t RSkTextLayoutManager::buildParagraph (SharedColor backGroundColor,
+                AttributedString attributedString,
+                ParagraphAttributes paragraphAttributes,
+                TextShadow shadow,
+                bool fontDecorationRequired,
+                std::shared_ptr<ParagraphBuilder> builder) const {
+    uint32_t attachmentCount = 0;  
 
     for(auto &fragment: attributedString.getFragments()) {
         if(fragment.isAttachment()) {
@@ -156,81 +239,12 @@ uint32_t RSkTextLayoutManager::buildParagraph (SharedColor backGroundColor,
            continue;
         }
 
-        fontSize = (!std::isnan(fragment.textAttributes.fontSize)) && (fragment.textAttributes.fontSize > 0) ? 
-                                fragment.textAttributes.fontSize :
-                                TextAttributes::defaultTextAttributes().fontSize;
-
-        fontSizeMultiplier = !std::isnan(fragment.textAttributes.fontSizeMultiplier) ?
-                                fragment.textAttributes.fontSizeMultiplier :
-                                TextAttributes::defaultTextAttributes().fontSizeMultiplier;
-
-        fontWeight = fragment.textAttributes.fontWeight.has_value() ? 
-                                convertFontWeight(fragment.textAttributes.fontWeight.value()) : 
-                                SkFontStyle::kNormal_Weight;
-
-        fontStyle = fragment.textAttributes.fontStyle.has_value() ? 
-                                convertFontStyle(fragment.textAttributes.fontStyle.value()): 
-                                SkFontStyle::kUpright_Slant;
-        
-        fontLineHeight = (!std::isnan(fragment.textAttributes.lineHeight)) && (fragment.textAttributes.lineHeight >= 0) ?
-                                fragment.textAttributes.lineHeight :
-                                fontSize;
-
-        fontShadowOffset = fragment.textAttributes.textShadowOffset.has_value() ?
-                                fragment.textAttributes.textShadowOffset.value() : 
-                                fontShadowOffset;
-
-        fontShadowRadius = (!std::isnan(fragment.textAttributes.textShadowRadius)) && (fragment.textAttributes.textShadowRadius > 0) ?
-                                fragment.textAttributes.textShadowRadius :
-                                fontShadowRadius;
-
-        style.setFontSize(fontSize * fontSizeMultiplier);
-        style.setFontFamilies({SkString(fragment.textAttributes.fontFamily.c_str())});
-        style.setFontStyle(SkFontStyle{fontWeight, SkFontStyle::kNormal_Width, fontStyle});
-        style.setHeightOverride(true);
-        style.setHeight(fontLineHeight / fontSize);
-        style.setDecoration(fragment.textAttributes.textDecorationLineType.has_value() ?
-                                convertDecoration(fragment.textAttributes.textDecorationLineType.value()) :
-                                TextDecoration::kNoDecoration);
-        if(!backGroundColor) {
-        /*TODO For text content shadow shadowOpacity to be handle*/
-            style.addShadow(shadow);
-            shadow.fOffset+=setShadowPoint.Make(fontShadowOffset.width,fontShadowOffset.height);
-            style.addShadow(shadow);
-        }
-        style.addShadow(TextShadow(convertTextColor(fragment.textAttributes.textShadowColor ?
-                                                    fragment.textAttributes.textShadowColor :
-                                                    fragment.textAttributes.foregroundColor).getColor(),
-                                                    setShadowPoint.Make(fontShadowOffset.width,fontShadowOffset.height),
-                                                    fontShadowRadius));
-        style.setLetterSpacing(!std::isnan(fragment.textAttributes.letterSpacing) ?
-                                fragment.textAttributes.letterSpacing :
-                                0); 
-
-        /* Build paragraph considering text decoration attributes*/
-        /* Required during text paint */
-        if(fontDecorationRequired) {
-            style.setForegroundColor(convertTextColor(fragment.textAttributes.foregroundColor ?
-                                                      fragment.textAttributes.foregroundColor :
-                                                      TextAttributes::defaultTextAttributes().foregroundColor));
-            style.setBackgroundColor(convertTextColor(backGroundColor ?
-                                                      backGroundColor :
-                                                      TextAttributes::defaultTextAttributes().backgroundColor));
-            style.setDecorationColor(convertTextColor(fragment.textAttributes.textDecorationColor ?
-                                                      fragment.textAttributes.textDecorationColor :
-                                                      fragment.textAttributes.foregroundColor).getColor());
-        }
-
-        if(fragment.textAttributes.alignment.has_value())
-            paraStyle.setTextAlign(convertTextAlign(fragment.textAttributes.alignment.value()));
-
-        if (paragraphAttributes.maximumNumberOfLines)
-            paraStyle.setMaxLines(paragraphAttributes.maximumNumberOfLines);
-
-        builder->setParagraphStyle(paraStyle);
-        builder->pushStyle(style);
-        builder->addText(fragment.string.c_str(),fragment.string.length());
-        builder->pop();
+        buildText (paragraphAttributes,
+                    fragment.textAttributes,
+                    fragment.string.c_str(),
+                    shadow,
+                    fontDecorationRequired,
+                    builder);
     }
 
     return attachmentCount;

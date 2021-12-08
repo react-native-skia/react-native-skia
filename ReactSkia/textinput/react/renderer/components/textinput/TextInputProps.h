@@ -1,5 +1,6 @@
 /*
  * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (C) 1994-2021 OpenTV, Inc. and Nagravision S.A.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -33,7 +34,7 @@ class TextInputProps final : public ViewProps, public BaseTextProps {
   ParagraphAttributes const paragraphAttributes{};
 
   std::string const defaultValue{};
-
+  std::string const value{};
   std::string const placeholder{};
   SharedColor const placeholderTextColor{};
 

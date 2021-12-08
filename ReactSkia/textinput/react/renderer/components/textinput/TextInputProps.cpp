@@ -29,6 +29,7 @@ TextInputProps::TextInputProps(
           "defaultValue",
           sourceProps.defaultValue,
           {})),
+      value(convertRawProp(rawProps, "value", sourceProps.value, {})),
       placeholder(
           convertRawProp(rawProps, "placeholder", sourceProps.placeholder, {})),
       placeholderTextColor(convertRawProp(

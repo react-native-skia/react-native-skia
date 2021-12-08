@@ -24,6 +24,9 @@ class RSkComponentTextInput final : public RSkComponent {
   void OnPaint(SkCanvas *canvas) override;
  private:
   bool isInEditingMode_;
+  std::string displayString_{}; // Text to be displayed on screen
+  std::string placeholderString_{}; // Placeholder Text
+  SharedColor placeholderColor_;  // Placeholder Text Color
 };
 
 } // namespace react

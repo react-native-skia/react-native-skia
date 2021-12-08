@@ -6,43 +6,79 @@
  */
 
 #include "include/core/SkPaint.h"
-#include "ReactSkia/components/RSkComponentTextInput.h"
-#include "ReactSkia/views/common/RSkDrawUtils.h"
-#include "ReactSkia/sdk/RNSKeyCodeMapping.h"
+#include "modules/skparagraph/include/TextStyle.h"
 #include "react/renderer/components/textinput/TextInputShadowNode.h"
-
+#include "ReactSkia/components/RSkComponentTextInput.h"
+#include "ReactSkia/components/RSkComponent.h"
+#include "ReactSkia/sdk/RNSKeyCodeMapping.h"
+#include "ReactSkia/textlayoutmanager/RSkTextLayoutManager.h"
+#include "ReactSkia/views/common/RSkDrawUtils.h"
+#include "ReactSkia/views/common/RSkConversion.h"
 #include <string.h>
 
 namespace facebook {
 namespace react {
 
 using namespace RSkDrawUtils;
+using namespace skia::textlayout;
+
+#define NUMBER_OF_LINES         1
+#define FONTSIZE_MULTIPLIER     10
 
 RSkComponentTextInput::RSkComponentTextInput(const ShadowView &shadowView)
     : RSkComponent(shadowView)
-    ,isInEditingMode_(false){RNS_LOG_INFO("called constructor");}
+    ,isInEditingMode_(false){}
+
+void drawTextInput(SkCanvas *canvas,
+  LayoutMetrics layout,
+  std::shared_ptr<ParagraphBuilder> &builder,
+  const TextInputProps& props) {
+  Rect frame = layout.frame;
+  ParagraphStyle paraStyle;
+  float yOffset;
+
+  // setParagraphStyle
+  paraStyle.setMaxLines(NUMBER_OF_LINES);
+  paraStyle.setEllipsis(u"\u2026");
+  builder->setParagraphStyle(paraStyle);
+
+  // buildParagraph
+  std::shared_ptr<Paragraph> paragraph = builder->Build();
+  paragraph->layout(layout.getContentFrame().size.width);
+
+  // clipRect and backgroundColor
+  canvas->clipRect(SkRect::MakeXYWH(frame.origin.x, frame.origin.y, frame.size.width, frame.size.height));
+  canvas->drawColor(RSkColorFromSharedColor(props.backgroundColor, SK_ColorTRANSPARENT));
+
+  // paintParagraph
+  yOffset = (layout.getContentFrame().size.height - paragraph->getHeight()) / 2;
+  paragraph->paint(canvas, frame.origin.x + layout.contentInsets.left, frame.origin.y + layout.contentInsets.top + yOffset);
+}
 
 void RSkComponentTextInput::OnPaint(SkCanvas *canvas) {
   auto component = getComponentData();
   auto const &textInputProps = *std::static_pointer_cast<TextInputProps const>(component.props);
-  /*Retrieve Shadow Props*/
-  RNS_LOG_TODO("shadow color,offset,opacity,Radius should be taken from layer and convet into the Skia formate and update here");
-  /* TODO shadow color,offset,opacity,Radius should be taken from layer and convet into the 
-  * Skia formate and update here.
-  ShadowMetrics shadowMetrics{};
-  shadowMetrics.shadowColor=layer()->shadowColor;
-  shadowMetrics.shadowOffset=layer()->shadowOffset;
-  shadowMetrics.shadowOpacity=layer()->shadowOpacity;
-  shadowMetrics.shadowRadius=layer()->shadowRadius;
-  */
-  /* apply view style props */
-  auto borderMetrics= textInputProps.resolveBorderMetrics(component.layoutMetrics);
-  Rect frame =  component.layoutMetrics.frame;
-  /*Draw Order : 1. Shadow 2. BackGround 3 Border*/
-  RNS_LOG_TODO("drawShadow & drawBackground");
-  //drawShadow(canvas,frame,borderMetrics,shadowMetrics);
-  //drawBackground(canvas,frame,borderMetrics,textInputProps.backgroundColor,textInputProps.opacity);
-  drawBorder(canvas,frame,borderMetrics,textInputProps.backgroundColor,textInputProps.opacity);
+  auto state = std::static_pointer_cast<TextInputShadowNode::ConcreteStateT const>(component.state);
+  auto data = state->getData();
+  auto borderMetrics = textInputProps.resolveBorderMetrics(component.layoutMetrics);
+  Rect frame = component.layoutMetrics.frame;
+  ParagraphStyle paraStyle;
+  TextShadow shadow;
+  TextAttributes textAttributes = textInputProps.getEffectiveTextAttributes(FONTSIZE_MULTIPLIER);
+  auto paraBuilder = std::static_pointer_cast<skia::textlayout::ParagraphBuilder>(
+                          std::make_shared<skia::textlayout::ParagraphBuilderImpl>(
+                          paraStyle, data.layoutManager->collection_));
+
+  if (0 == displayString_.size()) {
+    textAttributes.foregroundColor = placeholderColor_;
+    data.layoutManager->buildText(textInputProps.paragraphAttributes, textAttributes, placeholderString_, shadow, true, paraBuilder);
+  } else {
+    data.layoutManager->buildText(textInputProps.paragraphAttributes, textAttributes, displayString_, shadow, true, paraBuilder);
+  }
+
+  drawShadow(canvas, frame, borderMetrics, textInputProps.backgroundColor, layer()->shadowOpacity, layer()->shadowFilter);
+  drawTextInput(canvas, component.layoutMetrics, paraBuilder, textInputProps);
+  drawBorder(canvas, frame, borderMetrics, textInputProps.backgroundColor, textInputProps.opacity);
 }
 
 /*
@@ -92,8 +128,36 @@ void RSkComponentTextInput::onHandleKey(rnsKey  eventKeyType, bool* stopPropagat
   }
 }
 RnsShell::LayerInvalidateMask  RSkComponentTextInput::updateComponentProps(const ShadowView &newShadowView,bool forceUpadate){
-  // TODO
-  return RnsShell::LayerInvalidateNone;
+  auto const &textInputProps = *std::static_pointer_cast<TextInputProps const>(newShadowView.props);
+  int mask = RnsShell::LayerInvalidateNone;
+  std::string textString{};
+
+  if (textInputProps.value.size()) {
+    textString = textInputProps.value.c_str();
+  } else if (textInputProps.defaultValue.size()) {
+    textString = textInputProps.defaultValue.c_str();
+  }
+
+  if(textString != displayString_) {
+    displayString_ = textString;
+    mask |= LayerPaintInvalidate;
+  }
+
+  if ((textInputProps.placeholder.size()) && ((placeholderString_) != (textInputProps.placeholder))) {
+    placeholderString_ = textInputProps.placeholder.c_str();
+    if(!displayString_.size()) {
+      mask |= LayerPaintInvalidate;
+    }
+  }
+
+  if(textInputProps.placeholderTextColor != placeholderColor_ ) {
+    placeholderColor_ = textInputProps.placeholderTextColor;
+    if(!displayString_.size()) {
+      mask |= LayerPaintInvalidate;
+    }
+  }
+
+  return (RnsShell::LayerInvalidateMask)mask;
 }
 
 } // namespace react

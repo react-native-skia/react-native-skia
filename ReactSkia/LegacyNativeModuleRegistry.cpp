@@ -119,7 +119,8 @@ class LegacyUIManagerModule : public NativeModule {
         "multiline",true)(
         "numberOfLinesAndroid",true)(
         "placeholder",true)(
-        "placeholderTextColor",true)(
+        "placeholderTextColor","UIColor")(  /* Using of UIColor, since we are using platform type as iOS for app bundle , iOS type is been used. */
+        "text",true)(
         "returnKeyLabelAndroid",true)(
         "returnKeyType",true)(
         "rejectResponderTerminationiOS",true)(

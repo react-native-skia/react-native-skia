@@ -28,10 +28,17 @@ public:
    ~RSkTextLayoutManager(){};
 
    /* Measures attributedString layout using skia's skparagraph module */ 
-   TextMeasurement doMeasure (SharedColor backGroundColor,
+   TextMeasurement doMeasure (SharedColor backGroundColor, 
                                  AttributedString attributedString,
                                  ParagraphAttributes paragraphAttributes,
                                  LayoutConstraints layoutConstraints) const;
+   
+   void buildText (ParagraphAttributes paragraphAttributes,
+                     TextAttributes textAttributes,
+                     std::string textString,
+                     skia::textlayout::TextShadow shadow,
+                     bool fontDecorationRequired,
+                     std::shared_ptr<skia::textlayout::ParagraphBuilder> builder) const;
 
    /* Build attributedString  paragraph using skia's skparagraph module */ 
    /* Set fontDecorationRequired to true, to consider font paint & decoration attributes for paragraph build */
