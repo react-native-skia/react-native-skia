@@ -219,7 +219,7 @@ source_set("ReactSkia") {
 
   if (is_linux) {
     configs += ["//third_party/nopoll:nopoll_from_pkgconfig"]
-    configs += ["//third_party/libcurl:libcurl_from_pkgconfig"]
+    public_deps += ["//third_party/libcurl:libcurl"]
   }
 
 }

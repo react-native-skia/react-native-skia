@@ -21,6 +21,7 @@ vars = {
   # Note this revision should be updated with
   # third_party/boringssl/roll_boringssl.py, not roll-dep.
   'boringssl_revision': '430a7423039682e4bbc7b522e3b57b2c8dca5e3b',
+  'libcurl_revision': 'curl-7_77_0',
 
   # buildtools
   'gn_version': 'git_revision:7d7e8deea36d126397bda2cf924682504271f0e1',
@@ -82,6 +83,8 @@ deps = {
 
   # boringssl
   'src/third_party/boringssl/src'         : 'https://boringssl.googlesource.com/boringssl.git' + '@' + Var('boringssl_revision'),
+  # libcurl
+  'src/third_party/libcurl' : 'https://github.com/curl/curl.git' + '@' + Var('libcurl_revision'),  
 
   # buildtools
   'src/third_party/depot_tools': Var('chromium_git') + '/chromium/tools/depot_tools.git' + '@' + '0bfbd890c3e2f3aa734119507d14162248409664',

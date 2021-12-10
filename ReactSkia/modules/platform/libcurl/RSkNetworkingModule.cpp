@@ -105,6 +105,7 @@ void RSkNetworkingModule::processNetworkRequest(CURLM *curlMultiHandle) {
         struct NetworkRequest *networkRequest = connectionList_[requestId];
         // completionBlock
         if(networkRequest) {
+          networkRequest->downloadComplete_ = true;
           if(networkRequest->curl_ != NULL) {
             if(!(networkRequest->useIncrementalUpdates_ && (networkRequest->responseType_ == "text") ))
               sendData(networkRequest);
@@ -261,21 +262,21 @@ jsi::Value RSkNetworkingModule::abortRequest(folly::dynamic requestId) {
 }
 
 void RSkNetworkingModule::sendProgressEventwrapper(NetworkRequest *networkRequest, double dltotal,double dlnow, double ultotal, double ulnow) {
-  if(networkRequest->uploadComplete_ == false && ultotal != 0) {
+  if(networkRequest->uploadComplete_ == false && ultotal != 0.0) {
     sendEventWithName("didSendNetworkData", folly::dynamic::array(networkRequest->requestId_ , ulnow,ultotal ));
     if(ulnow >= ultotal)
       networkRequest->uploadComplete_ = true;
   }
-  if(networkRequest->downloadComplete_ == false && dltotal != 0) {
+  if(networkRequest->downloadComplete_ == false && dlnow != 0.0) {
     if(networkRequest->useIncrementalUpdates_) {
-      if(networkRequest->responseType_ == "text") {
-        // TODO: responseText property needs to get and pass the value in the didReceiveNetworkIncrementalData event
-        sendEventWithName("didReceiveNetworkIncrementalData", folly::dynamic::array(networkRequest->requestId_ , "", dlnow,dltotal ));
+      if(networkRequest->responseType_ == "text" && networkRequest->responseBufferOffset_ !=0) {
+        std::scoped_lock lock(networkRequest->bufferLock_);
+        sendEventWithName("didReceiveNetworkIncrementalData", folly::dynamic::array(networkRequest->requestId_ ,networkRequest->responseBuffer_, dlnow,dltotal ));
+        networkRequest->responseBufferOffset_ = 0;
       }else 
         sendEventWithName("didReceiveNetworkDataProgress", folly::dynamic::array(networkRequest->requestId_ , dlnow,dltotal ));
     }
-    if(dlnow >= dltotal)
-      networkRequest->downloadComplete_ = true;
+
   }
 }
 
@@ -297,6 +298,7 @@ void RSkNetworkingModule::headerCallbackWrapper(NetworkRequest *networkRequest, 
 }
 
 void RSkNetworkingModule::writeMemoryCallbackWrapper(NetworkRequest *networkRequest, char* writeMemoryBuffer, size_t realSize) {              
+  std::scoped_lock lock(networkRequest->bufferLock_);
   networkRequest->responseBuffer_  = (char *) realloc(networkRequest->responseBuffer_ , networkRequest->responseBufferOffset_+realSize+1);
   RNS_LOG_ASSERT((networkRequest->responseBuffer_), "responseBuffer cannot be null");
   memcpy(&(networkRequest->responseBuffer_ [networkRequest->responseBufferOffset_]), writeMemoryBuffer, realSize);

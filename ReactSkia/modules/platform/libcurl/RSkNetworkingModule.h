@@ -39,7 +39,8 @@ struct NetworkRequest {
   int responseBufferOffset_;
   char *headerBuffer_;
   int headerBufferOffset_;
-
+  
+  std::mutex bufferLock_;
   ~NetworkRequest() {
     if(curl_) {
       curl_easy_cleanup(curl_);
