@@ -11,7 +11,10 @@
 #include "react/renderer/components/textinput/TextInputEventEmitter.h"
 namespace facebook {
 namespace react {
-
+struct cursor{
+  int locationFromEnd;//Relative position from end
+  int end;// lentgh of the string
+};
 class RSkComponentTextInput final : public RSkComponent {
  public:
   RSkComponentTextInput(const ShadowView &shadowView);
@@ -27,6 +30,9 @@ class RSkComponentTextInput final : public RSkComponent {
   std::string displayString_{}; // Text to be displayed on screen
   std::string placeholderString_{}; // Placeholder Text
   SharedColor placeholderColor_;  // Placeholder Text Color
+  bool mutableFlag_ = false;
+  int eventCount_;
+  struct cursor cursor_;
 };
 
 } // namespace react

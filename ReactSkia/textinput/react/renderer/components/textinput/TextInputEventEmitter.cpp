@@ -21,7 +21,26 @@ static jsi::Value textInputMetricsPayload(
       jsi::String::createFromUtf8(runtime, textInputMetrics.text));
 
   payload.setProperty(runtime, "eventCount", textInputMetrics.eventCount);
-
+  {
+    auto contentSize = jsi::Object(runtime);
+    contentSize.setProperty(
+        runtime, "width", textInputMetrics.contentSize.width);
+    contentSize.setProperty(
+        runtime, "height", textInputMetrics.contentSize.height);
+    payload.setProperty(runtime, "contentSize", contentSize);
+  }
+  {
+     auto layoutEvent = jsi::Object(runtime);
+     layoutEvent.setProperty(
+        runtime, "width", textInputMetrics.contentSize.width);
+    layoutEvent.setProperty(
+        runtime, "height", textInputMetrics.contentSize.height);
+    layoutEvent.setProperty(
+        runtime, "x", textInputMetrics.contentOffset.x);
+    layoutEvent.setProperty(
+        runtime, "y", textInputMetrics.contentOffset.y);
+    payload.setProperty(runtime, "LayoutEvent", layoutEvent);
+  }
   {
     auto selection = jsi::Object(runtime);
     selection.setProperty(
@@ -44,12 +63,12 @@ static jsi::Value keyPressMetricsPayload(
   payload.setProperty(runtime, "eventCount", keyPressMetrics.eventCount);
 
   std::string key;
-  if (keyPressMetrics.text.empty()) {
+  if (keyPressMetrics.text == "back") {
     key = "Backspace";
   } else {
-    if (keyPressMetrics.text.front() == '\n') {
+    if (keyPressMetrics.text == "select") {
       key = "Enter";
-    } else if (keyPressMetrics.text.front() == '\t') {
+    } else if (keyPressMetrics.text == "tab") {
       key = "Tab";
     } else {
       key = keyPressMetrics.text.front();

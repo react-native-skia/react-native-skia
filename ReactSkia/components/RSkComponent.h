@@ -103,9 +103,8 @@ class RSkComponent : public RnsShell::Layer, public std::enable_shared_from_this
   virtual void OnPaint(SkCanvas *canvas) = 0;
   virtual void OnPaintShadow(SkCanvas *canvas);
   virtual void OnPaintBorder(SkCanvas *canvas);
-
- private:
   sk_sp<SkPicture> getPicture(PictureType type=PictureTypeAll);
+ private:
   // RnsShell::Layer implementations
   void onPaint(SkCanvas*) override;
 
