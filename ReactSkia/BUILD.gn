@@ -156,7 +156,7 @@ source_set("ReactSkia") {
   ]
 
   if (is_linux) {
-    configs += ["//third_party/libcurl:libcurl_from_pkgconfig"]
+    public_deps += ["//third_party/libcurl:libcurl"]
   }
 }
 

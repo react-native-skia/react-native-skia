@@ -132,6 +132,11 @@ component("boringssl") {
     configs -= [ "//build/config/compiler:default_optimization" ]
     configs += [ "//build/config/compiler:optimize_max" ]
   }
+   if (is_component_build) {
+        configs -= [ "//build/config/gcc:symbol_visibility_hidden" ]
+        configs += [ "//build/config/gcc:symbol_visibility_default" ]
+    }
+
 }
 
 # if (build_with_chromium) {
