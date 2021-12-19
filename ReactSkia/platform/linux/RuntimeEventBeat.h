@@ -25,7 +25,7 @@ class RuntimeEventBeat : public RunLoopObserver{
   void startObserving() const noexcept override;
   void stopObserving() const noexcept override;
   void beat();
-  folly::ScopedEventBaseThread baetThread_;
+  folly::ScopedEventBaseThread beatThread_;
   RunLoopObserver::Activity activities_;
 };
 
