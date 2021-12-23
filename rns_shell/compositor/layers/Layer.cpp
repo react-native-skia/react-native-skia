@@ -188,6 +188,13 @@ void Layer::paint(PaintContext& context) {
     SkAutoCanvasRestore save(context.canvas, true); // Save current clip and matrix state.
 
     context.canvas->setMatrix(absoluteTransformMatrix_); //Apply self & parent's combined transformation matrix before paint
+
+    if(opacity <= 0.0) return; //if transparent,paint self & children not required
+    if(opacity < 0xFF) {
+      SkRect layerBounds = SkRect::Make(absFrame_);
+      context.canvas->saveLayerAlpha(&layerBounds,opacity);
+    }
+
     paintSelf(context); // First paint self and then children if any
 
     if(masksToBounds_) { // Need to clip children.

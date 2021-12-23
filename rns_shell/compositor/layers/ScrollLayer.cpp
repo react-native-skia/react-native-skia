@@ -131,6 +131,12 @@ void ScrollLayer::paint(PaintContext& context) {
     RNS_LOG_DEBUG("Scroll Layer (" << layerId() << ") has " << children().size() << " childrens");
     SkAutoCanvasRestore save(context.canvas, true); // Save current clip and matrix state
 
+    if(opacity <= 0.0) return; //if transparent,paint self & children not required
+    if(opacity < 0xFF) {
+      SkRect layerBounds = SkRect::Make(absFrame_);
+      context.canvas->saveLayerAlpha(&layerBounds,opacity);
+    }
+
     PaintContext bitmapPaintContext = {
             scrollCanvas_.get(),  // canvas
             bitmapSurfaceDamage_, // damage rects

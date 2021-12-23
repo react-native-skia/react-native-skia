@@ -70,7 +70,7 @@ public:
 
     SkColor backgroundColor;
     int  backfaceVisibility;
-    float opacity{1.0};
+    float opacity{255.9999};
 
     float shadowOpacity{0};
     float shadowRadius{3};

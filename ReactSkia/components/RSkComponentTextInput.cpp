@@ -85,7 +85,7 @@ void RSkComponentTextInput::OnPaint(SkCanvas *canvas) {
 
   drawShadow(canvas, frame, borderMetrics, textInputProps.backgroundColor, layer()->shadowOpacity, layer()->shadowFilter);
   drawTextInput(canvas, component.layoutMetrics, paraBuilder, textInputProps);
-  drawBorder(canvas, frame, borderMetrics, textInputProps.backgroundColor, textInputProps.opacity);
+  drawBorder(canvas, frame, borderMetrics, textInputProps.backgroundColor);
 }
 
 /*

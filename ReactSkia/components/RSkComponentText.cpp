@@ -96,8 +96,7 @@ void RSkComponentParagraph::OnPaint(SkCanvas *canvas) {
                 drawBorder(canvas,
                             borderFrame,
                             parentBorderMetrics,
-                            parentProps.backgroundColor,
-                            parentProps.opacity);
+                            parentProps.backgroundColor);
             }
         }
     }
@@ -143,8 +142,7 @@ void RSkComponentParagraph::OnPaint(SkCanvas *canvas) {
             drawBorder(canvas,
                         borderFrame,
                         borderMetrics,
-                        props.backgroundColor,
-                        props.opacity);
+                        props.backgroundColor);
         }
     }
 }

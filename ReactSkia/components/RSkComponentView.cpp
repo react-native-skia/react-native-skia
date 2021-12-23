@@ -27,8 +27,8 @@ void RSkComponentView::OnPaint(SkCanvas *canvas) {
     if(layer()->shadowOpacity && layer()->shadowFilter){
         drawShadow(canvas,frame,borderMetrics,viewProps.backgroundColor,layer()->shadowOpacity,layer()->shadowFilter);
   }
-    drawBackground(canvas,frame,borderMetrics,viewProps.backgroundColor,viewProps.opacity);
-    drawBorder(canvas,frame,borderMetrics,viewProps.backgroundColor,viewProps.opacity);
+    drawBackground(canvas,frame,borderMetrics,viewProps.backgroundColor);
+    drawBorder(canvas,frame,borderMetrics,viewProps.backgroundColor);
 }
 
 } // namespace react

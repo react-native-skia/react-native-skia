@@ -21,13 +21,11 @@ namespace RSkDrawUtils{
   void drawBackground(SkCanvas *canvas,
                                Rect frame,
                                BorderMetrics borderMetrics,
-                               SharedColor bgColor,
-                               Float opacity);
+                               SharedColor bgColor);
   void drawBorder(SkCanvas *canvas,
                                Rect frame,
                                BorderMetrics borderMetrics,
-                               SharedColor bgColor,
-                               Float opacity);
+                               SharedColor bgColor);
   bool drawShadow(SkCanvas *canvas,
                                Rect frame,
                                BorderMetrics borderMetrics,

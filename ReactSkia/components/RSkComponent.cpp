@@ -250,7 +250,7 @@ void RSkComponent::OnPaintBorder(SkCanvas *canvas) {
   auto borderMetrics= viewProps.resolveBorderMetrics(component_.layoutMetrics);
 
   Rect frame = component_.layoutMetrics.frame;
-  drawBorder(canvas,frame,borderMetrics,layer_->backgroundColor,layer_->opacity);
+  drawBorder(canvas,frame,borderMetrics,layer_->backgroundColor);
 }
 
 void RSkComponent::OnPaintShadow(SkCanvas *canvas) {

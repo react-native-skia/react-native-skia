@@ -69,7 +69,7 @@ void RSkComponentImage::OnPaint(
     if(layer()->shadowOpacity && layer()->shadowFilter){
       contentShadow=drawShadow(canvas,frame,imageBorderMetrics,imageProps.backgroundColor,layer()->shadowOpacity,layer()->shadowFilter);
     }
-    drawBackground(canvas,frame,imageBorderMetrics,imageProps.backgroundColor,imageProps.opacity);
+    drawBackground(canvas,frame,imageBorderMetrics,imageProps.backgroundColor);
     SkPaint paint,shadowPaint;
    /*Draw Image Shadow*/
     if(contentShadow) {
@@ -103,7 +103,7 @@ void RSkComponentImage::OnPaint(
     canvas->drawImageRect(imageData,targetRect,&paint);
     if(needClipAndRestore)
         canvas->restore();
-    drawBorder(canvas,frame,imageBorderMetrics,imageProps.backgroundColor,imageProps.opacity);
+    drawBorder(canvas,frame,imageBorderMetrics,imageProps.backgroundColor);
   } else {
 /* Emitting Image Load failed Event*/
         imageEventEmitter->onError();
