@@ -7,8 +7,13 @@
 
 #pragma once
 
-#include "ReactSkia/components/RSkComponent.h"
+#include "modules/skparagraph/include/TextStyle.h"
+#include "react/renderer/components/textinput/TextInputShadowNode.h"
 #include "react/renderer/components/textinput/TextInputEventEmitter.h"
+#include "ReactSkia/components/RSkComponent.h"
+#include "ReactSkia/textlayoutmanager/RSkTextLayoutManager.h"
+
+
 namespace facebook {
 namespace react {
 struct cursor{
@@ -33,6 +38,13 @@ class RSkComponentTextInput final : public RSkComponent {
   bool mutableFlag_ = false;
   int eventCount_;
   struct cursor cursor_;
+  //Moved drawtextinput as private member of the class.
+  std::shared_ptr<skia::textlayout::Paragraph> paragraph_;
+  void drawTextInput(
+      SkCanvas *canvas,
+      LayoutMetrics layout,
+      std::shared_ptr<skia::textlayout::ParagraphBuilder> &builder,
+      const TextInputProps& props);
 };
 
 } // namespace react

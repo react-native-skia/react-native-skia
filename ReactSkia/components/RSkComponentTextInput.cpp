@@ -6,12 +6,9 @@
  */
 
 #include "include/core/SkPaint.h"
-#include "modules/skparagraph/include/TextStyle.h"
-#include "react/renderer/components/textinput/TextInputShadowNode.h"
 #include "ReactSkia/components/RSkComponentTextInput.h"
 #include "ReactSkia/components/RSkComponent.h"
 #include "ReactSkia/sdk/RNSKeyCodeMapping.h"
-#include "ReactSkia/textlayoutmanager/RSkTextLayoutManager.h"
 #include "ReactSkia/views/common/RSkDrawUtils.h"
 #include "ReactSkia/views/common/RSkConversion.h"
 #include "rns_shell/compositor/layers/PictureLayer.h"
@@ -34,9 +31,10 @@ RSkComponentTextInput::RSkComponentTextInput(const ShadowView &shadowView)
     ,eventCount_(0)
     ,cursor_({0,0}){
   RNS_LOG_DEBUG("called constructor");
+  paragraph_ = nullptr;
 }
 
-void drawTextInput(SkCanvas *canvas,
+void RSkComponentTextInput::drawTextInput(SkCanvas *canvas,
   LayoutMetrics layout,
   std::shared_ptr<ParagraphBuilder> &builder,
   const TextInputProps& props) {
@@ -50,16 +48,16 @@ void drawTextInput(SkCanvas *canvas,
   builder->setParagraphStyle(paraStyle);
 
   // buildParagraph
-  std::shared_ptr<Paragraph> paragraph = builder->Build();
-  paragraph->layout(layout.getContentFrame().size.width);
+  paragraph_ = builder->Build();
+  paragraph_->layout(layout.getContentFrame().size.width);
 
   // clipRect and backgroundColor
   canvas->clipRect(SkRect::MakeXYWH(frame.origin.x, frame.origin.y, frame.size.width, frame.size.height));
   canvas->drawColor(RSkColorFromSharedColor(props.backgroundColor, SK_ColorTRANSPARENT));
 
   // paintParagraph
-  yOffset = (layout.getContentFrame().size.height - paragraph->getHeight()) / 2;
-  paragraph->paint(canvas, frame.origin.x + layout.contentInsets.left, frame.origin.y + layout.contentInsets.top + yOffset);
+  yOffset = (layout.getContentFrame().size.height - paragraph_->getHeight()) / 2;
+  paragraph_->paint(canvas, frame.origin.x + layout.contentInsets.left, frame.origin.y + layout.contentInsets.top + yOffset);
 }
 
 void RSkComponentTextInput::OnPaint(SkCanvas *canvas) {
@@ -106,11 +104,12 @@ void RSkComponentTextInput::onHandleKey(rnsKey eventKeyType, bool *stopPropagati
   auto component = getComponentData();
   Rect frame = component.layoutMetrics.frame;
   auto textInputEventEmitter = std::static_pointer_cast<TextInputEventEmitter const>(component.eventEmitter);
-  textInputMetrics.contentSize = frame.size;
   textInputMetrics.contentOffset.x = frame.origin.x;
-  textInputMetrics.contentOffset.x = frame.origin.y;
+  textInputMetrics.contentOffset.y = frame.origin.y;
   if (isInEditingMode_ == false && eventKeyType == RNS_KEY_Select ) {
     RNS_LOG_DEBUG("onfocus need to here"<<textInputMetrics.text);
+    textInputMetrics.contentSize.width = paragraph_->getMaxIntrinsicWidth();
+    textInputMetrics.contentSize.height = paragraph_->getHeight();
     textInputEventEmitter->onFocus(textInputMetrics);
     isInEditingMode_ = true;
   } else if (isInEditingMode_) {
@@ -178,7 +177,7 @@ void RSkComponentTextInput::onHandleKey(rnsKey eventKeyType, bool *stopPropagati
     //is always 0 & selectionRange.location always end 
     textInputMetrics.selectionRange.location = cursor_.end ;
     textInputMetrics.selectionRange.length = 0;
-    if (mutableFlag_== true ){
+    if (mutableFlag_ == true ){
       /*Update the display string and set the layer invalidate mask*/
       if (displayString_ != textString){
         displayString_ = textString;
@@ -192,6 +191,8 @@ void RSkComponentTextInput::onHandleKey(rnsKey eventKeyType, bool *stopPropagati
     eventCount_++;
     *stopPropagation = true;
     RNS_LOG_DEBUG("TextInput text " << textString);
+    textInputMetrics.contentSize.width = paragraph_->getMaxIntrinsicWidth();
+    textInputMetrics.contentSize.height = paragraph_->getHeight();
     textInputMetrics.text = textString;
     textInputMetrics.eventCount = eventCount_;
     textInputEventEmitter->onKeyPress(keyPressMetrics);

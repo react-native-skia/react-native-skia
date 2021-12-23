@@ -22,25 +22,23 @@ static jsi::Value textInputMetricsPayload(
 
   payload.setProperty(runtime, "eventCount", textInputMetrics.eventCount);
   {
-    auto contentSize = jsi::Object(runtime);
-    contentSize.setProperty(
-        runtime, "width", textInputMetrics.contentSize.width);
-    contentSize.setProperty(
-        runtime, "height", textInputMetrics.contentSize.height);
-    payload.setProperty(runtime, "contentSize", contentSize);
+    auto selection = jsi::Object(runtime);
+    selection.setProperty(
+        runtime, "start", textInputMetrics.selectionRange.location);
+    selection.setProperty(
+        runtime,
+        "end",
+        textInputMetrics.selectionRange.location +
+            textInputMetrics.selectionRange.length);
+    payload.setProperty(runtime, "selection", selection);
   }
-  {
-     auto layoutEvent = jsi::Object(runtime);
-     layoutEvent.setProperty(
-        runtime, "width", textInputMetrics.contentSize.width);
-    layoutEvent.setProperty(
-        runtime, "height", textInputMetrics.contentSize.height);
-    layoutEvent.setProperty(
-        runtime, "x", textInputMetrics.contentOffset.x);
-    layoutEvent.setProperty(
-        runtime, "y", textInputMetrics.contentOffset.y);
-    payload.setProperty(runtime, "LayoutEvent", layoutEvent);
-  }
+
+  return payload;
+};
+static jsi::Value textInputMetricsSelectionPayload(
+    jsi::Runtime &runtime,
+    TextInputMetrics const &textInputMetrics) {
+  auto payload = jsi::Object(runtime);
   {
     auto selection = jsi::Object(runtime);
     selection.setProperty(
@@ -53,6 +51,53 @@ static jsi::Value textInputMetricsPayload(
     payload.setProperty(runtime, "selection", selection);
   }
 
+  return payload;
+};
+static jsi::Value textInputMetricsLayoutEventPayload(
+    jsi::Runtime &runtime,
+    TextInputMetrics const &textInputMetrics){
+  auto payload = jsi::Object(runtime);
+  {
+     auto layoutEvent = jsi::Object(runtime);
+     layoutEvent.setProperty(
+        runtime, "width", textInputMetrics.contentSize.width);
+    layoutEvent.setProperty(
+        runtime, "height", textInputMetrics.contentSize.height);
+    layoutEvent.setProperty(
+        runtime, "x", textInputMetrics.contentOffset.x);
+    layoutEvent.setProperty(
+        runtime, "y", textInputMetrics.contentOffset.y);
+    payload.setProperty(runtime, "LayoutEvent", layoutEvent);
+  }
+  return payload;
+};
+
+static jsi::Value textInputMetricsEditTextPayload(
+    jsi::Runtime &runtime,
+    TextInputMetrics const &textInputMetrics) {
+  auto payload = jsi::Object(runtime);
+
+  payload.setProperty(
+      runtime,
+      "text",
+      jsi::String::createFromUtf8(runtime, textInputMetrics.text));
+
+  payload.setProperty(runtime, "eventCount", textInputMetrics.eventCount);
+  return payload;
+};
+
+static jsi::Value textInputMetricsContentSizePayload(
+    jsi::Runtime &runtime,
+    TextInputMetrics const &textInputMetrics) {
+  auto payload = jsi::Object(runtime);
+  {
+    auto contentSize = jsi::Object(runtime);
+    contentSize.setProperty(
+        runtime, "width", textInputMetrics.contentSize.width);
+    contentSize.setProperty(
+        runtime, "height", textInputMetrics.contentSize.height);
+    payload.setProperty(runtime, "contentSize", contentSize);
+  }
   return payload;
 };
 
@@ -81,17 +126,32 @@ static jsi::Value keyPressMetricsPayload(
 
 void TextInputEventEmitter::onFocus(
     TextInputMetrics const &textInputMetrics) const {
-  dispatchTextInputEvent("focus", textInputMetrics);
+  dispatchEvent(
+      "focus",
+      [textInputMetrics](jsi::Runtime &runtime) {
+        return textInputMetricsLayoutEventPayload(runtime, textInputMetrics);
+      },
+      EventPriority::AsynchronousBatched);
 }
 
 void TextInputEventEmitter::onBlur(
     TextInputMetrics const &textInputMetrics) const {
-  dispatchTextInputEvent("blur", textInputMetrics);
+  dispatchEvent(
+      "blur",
+      [textInputMetrics](jsi::Runtime &runtime) {
+        return textInputMetricsEditTextPayload(runtime, textInputMetrics);
+      },
+      EventPriority::AsynchronousBatched);
 }
 
 void TextInputEventEmitter::onChange(
     TextInputMetrics const &textInputMetrics) const {
-  dispatchTextInputEvent("change", textInputMetrics);
+  dispatchEvent(
+      "change",
+      [textInputMetrics](jsi::Runtime &runtime) {
+        return textInputMetricsEditTextPayload(runtime, textInputMetrics);
+      },
+      EventPriority::AsynchronousBatched);
 }
 
 void TextInputEventEmitter::onChangeText(
@@ -101,22 +161,42 @@ void TextInputEventEmitter::onChangeText(
 
 void TextInputEventEmitter::onContentSizeChange(
     TextInputMetrics const &textInputMetrics) const {
-  dispatchTextInputEvent("contentSizeChange", textInputMetrics);
+  dispatchEvent(
+      "contentSizeChange",
+      [textInputMetrics](jsi::Runtime &runtime) {
+        return textInputMetricsContentSizePayload(runtime, textInputMetrics);
+      },
+      EventPriority::AsynchronousBatched);
 }
 
 void TextInputEventEmitter::onSelectionChange(
     TextInputMetrics const &textInputMetrics) const {
-  dispatchTextInputEvent("selectionChange", textInputMetrics);
+  dispatchEvent(
+      "selectionChange",
+      [textInputMetrics](jsi::Runtime &runtime) {
+        return textInputMetricsSelectionPayload(runtime, textInputMetrics);
+      },
+      EventPriority::AsynchronousBatched);
 }
 
 void TextInputEventEmitter::onEndEditing(
     TextInputMetrics const &textInputMetrics) const {
-  dispatchTextInputEvent("endEditing", textInputMetrics);
+  dispatchEvent(
+      "endEditing",
+      [textInputMetrics](jsi::Runtime &runtime) {
+        return textInputMetricsEditTextPayload(runtime, textInputMetrics);
+      },
+      EventPriority::AsynchronousBatched);
 }
 
 void TextInputEventEmitter::onSubmitEditing(
     TextInputMetrics const &textInputMetrics) const {
-  dispatchTextInputEvent("submitEditing", textInputMetrics);
+  dispatchEvent(
+      "submitEditing",
+      [textInputMetrics](jsi::Runtime &runtime) {
+        return textInputMetricsEditTextPayload(runtime, textInputMetrics);
+      },
+      EventPriority::AsynchronousBatched);
 }
 
 void TextInputEventEmitter::onKeyPress(
