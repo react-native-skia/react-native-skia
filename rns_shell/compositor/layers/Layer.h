@@ -58,6 +58,7 @@ public:
     public:
         virtual ~Client() = default;
         virtual void notifyFlushRequired() { }
+        virtual void notifyFlushBegin() { }
     };
 
     // Singleton defualt client used for default layers.

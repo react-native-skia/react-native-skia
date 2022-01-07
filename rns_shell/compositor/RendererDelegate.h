@@ -27,6 +27,7 @@ public:
 
     // Layer Client Implementation
     void notifyFlushRequired() override { scheduleRenderingUpdate(); }
+    void notifyFlushBegin() override { begin(); }
 
 protected:
     std::unique_ptr<LayerTreeHost> layerTreeHost_;
