@@ -54,7 +54,7 @@ void PictureLayer::paint(PaintContext& context) {
 
     if(opacity <= 0.0) return; //if transparent,paint self & children not required
     if(opacity < 0xFF) {
-      SkRect layerBounds = SkRect::Make(absFrame_);
+      SkRect layerBounds = SkRect::Make(bounds_);
       context.canvas->saveLayerAlpha(&layerBounds,opacity);
     }
 

@@ -118,7 +118,6 @@ public:
     bool requireInvalidate() { return invalidateMask_ != LayerInvalidateNone; }
 
     const SkIRect& getBounds() const { return bounds_; }
-    void setBounds(const SkIRect& bounds) { bounds_ = bounds; }
 
     const SkPoint& anchorPosition() const { return anchorPosition_; }
     void setAnchorPosition(const SkPoint& anchorPosition) { anchorPosition_ = anchorPosition; }
@@ -146,7 +145,7 @@ private:
     //Layer Geometry
     SkIRect frame_; //The frame bounds should include any transform performed by the layer itself in its parent's coordinate space
     SkIRect absFrame_; // Absolute frame include any transform performed by the layer itself in rootview's coordinate space
-    SkIRect bounds_; //The paint bounds in its own coordinate space
+    SkIRect bounds_; //The paint bounds of absFrame_ including shadow
     SkPoint anchorPosition_; // Position of Layer wrt anchor point in parents coordinate space. This will be used during the transformation.
     SkMatrix absoluteTransformMatrix_; // Combined Transformation Matrix of self & parent's
     //Layer’s Appearance

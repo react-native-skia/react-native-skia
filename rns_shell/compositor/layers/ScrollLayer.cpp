@@ -78,8 +78,8 @@ void ScrollLayer::prePaint(PaintContext& context, bool forceLayout) {
         if(forceBitmapReset_){
            layer->invalidate();
         }
-        if(forceBitmapReset_ || (dummy.intersect(visibleRect,layer->absoluteFrame()) && layer->requireInvalidate())){
-          RNS_LOG_DEBUG("Layer needs prePaint [" << layer->absoluteFrame().x() <<"," << layer->absoluteFrame().y() << "," << layer->absoluteFrame().width() <<"," << layer->absoluteFrame().height() << "]");
+        if(forceBitmapReset_ || (dummy.intersect(visibleRect,layer->getBounds()) && layer->requireInvalidate())){
+          RNS_LOG_DEBUG("Layer needs prePaint [" << layer->getBounds().x() <<"," << layer->getBounds().y() << "," << layer->getBounds().width() <<"," << layer->getBounds().height() << "]");
           layer->prePaint(bitmapPaintContext,forceChildrenLayout);
         }
     }
@@ -133,7 +133,7 @@ void ScrollLayer::paint(PaintContext& context) {
 
     if(opacity <= 0.0) return; //if transparent,paint self & children not required
     if(opacity < 0xFF) {
-      SkRect layerBounds = SkRect::Make(absFrame_);
+      SkRect layerBounds = SkRect::Make(bounds_);
       context.canvas->saveLayerAlpha(&layerBounds,opacity);
     }
 
@@ -148,7 +148,7 @@ void ScrollLayer::paint(PaintContext& context) {
     // First paint children and then self
     for (auto& layer : children()) {
         if(layer->needsPainting(bitmapPaintContext)) {
-            RNS_LOG_DEBUG("Layer needs paint [" << layer->absoluteFrame().x() <<"," << layer->absoluteFrame().y() << "," << layer->absoluteFrame().width() <<"," << layer->absoluteFrame().height() << "]");
+            RNS_LOG_DEBUG("Layer needs paint [" << layer->getBounds().x() <<"," << layer->getBounds().y() << "," << layer->getBounds().width() <<"," << layer->getBounds().height() << "]");
             layer->paint(bitmapPaintContext);
         }
     }

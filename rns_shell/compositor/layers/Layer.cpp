@@ -56,6 +56,7 @@ Layer::Layer(Client& layerClient, LayerType type)
     , client_(&layerClient)
     , frame_(SkIRect::MakeEmpty())
     , absFrame_(SkIRect::MakeEmpty())
+    , bounds_(SkIRect::MakeEmpty())
     , anchorPosition_(SkPoint::Make(0.5,0.5)) // Default anchor point as centre
     , invalidateMask_(LayerInvalidateAll) {
     RNS_LOG_DEBUG("Layer Constructed(" << this << ") with ID : " << layerId_ << " and LayerClient : " << client_);
@@ -113,46 +114,45 @@ void Layer::removeFromParent() {
 }
 
 void Layer::preRoll(PaintContext& context, bool forceLayout) {
-    // Layer Layout has changed or parent has forced Layout change for child. Need to recalculate absolute frame and update absFrame_
+    // Layer Layout has changed or parent has forced Layout change for child. Need to recalculate absolute frame and update absFrame_ & bounds
      if(forceLayout || (invalidateMask_ & LayerLayoutInvalidate)) {
         // Adjust absolute position w.r.t transformation matrix
         calculateTransformMatrix();
         SkRect mapRect=SkRect::Make(frame_);
         absoluteTransformMatrix_.mapRect(&mapRect);
-        SkIRect newAbsFrame;
+        absFrame_ = SkIRect::MakeXYWH(mapRect.x(), mapRect.y(), mapRect.width(), mapRect.height());
+        SkIRect newBounds = absFrame_;
         if(shadowFilter) {
             SkMatrix identityMatrix;
-            newAbsFrame = shadowFilter->filterBounds(
-            SkIRect::MakeXYWH(mapRect.x(),mapRect.y(),mapRect.width(),mapRect.height()) ,
+            newBounds = shadowFilter->filterBounds(
+            absFrame_,
             identityMatrix,
             SkImageFilter::kForward_MapDirection,
             nullptr);
-        } else {
-              newAbsFrame = SkIRect::MakeXYWH(mapRect.x(), mapRect.y(), mapRect.width(), mapRect.height());
         }
 #if USE(RNS_SHELL_PARTIAL_UPDATES)
         if((invalidateMask_ & LayerLayoutInvalidate)) {
-            // Add previous frame to damage rect only if layer layout was invalidated and new layout is different from old layout
+            // Add previous bounds to damage rect only if layer layout was invalidated and new layout is different from old layout
             if(context.supportPartialUpdate) {
-                if(absFrame_.isEmpty() != true && newAbsFrame.contains(absFrame_) != true ) {
-                    addDamageRect(context, absFrame_); // Previous frame rect
-                    RNS_LOG_DEBUG("New frame layout is different from previous frame. Add to damage rect..");
+                if(bounds_.isEmpty() != true && newBounds.contains(bounds_) != true ) {
+                    addDamageRect(context, bounds_); // Previous bounds
+                    RNS_LOG_DEBUG("New bounds is different from previous bounds. Add to damage rect..");
                 }
             }
             RNS_LOG_DEBUG("PreRoll Layer(ID:" << layerId_ << ", ParentID:" << (parent_ ? parent_->layerId() : -1) <<
                 ") Frame [" << frame_.x() << "," << frame_.y() << "," << frame_.width() << "," << frame_.height() <<
-                "], AbsFrame(Prev,New) ([" << absFrame_.x() << "," << absFrame_.y() << "," << absFrame_.width() << "," << absFrame_.height() << "]" <<
-                " - [" << newAbsFrame.x() << "," << newAbsFrame.y() << "," << newAbsFrame.width() << "," << newAbsFrame.height() << "])");
+                "], Bounds(Prev,New) ([" << bounds_.x() << "," << bounds_.y() << "," << bounds_.width() << "," << bounds_.height() << "]" <<
+                " - [" << newBounds.x() << "," << newBounds.y() << "," << newBounds.width() << "," << newBounds.height() << "])");
         }
 #endif
-        absFrame_ = newAbsFrame; // Save new absFrame
+        bounds_ = newBounds; // Save new bounds
     }
 
 #if USE(RNS_SHELL_PARTIAL_UPDATES)
     if(context.supportPartialUpdate && ( invalidateMask_ != LayerInvalidateNone)) {// As long as there is some invalidation , it creates a dirty rect.
         RNS_LOG_DEBUG("AddDamage Layer(ID:" << layerId_ <<
-            ") AbsFrame[" << absFrame_.x() << "," << absFrame_.y() << "," << absFrame_.width() << "," << absFrame_.height() << "]");
-        addDamageRect(context, absFrame_); // Previous frame rect
+            ") Bounds[" << bounds_.x() << "," << bounds_.y() << "," << bounds_.width() << "," << bounds_.height() << "]");
+        addDamageRect(context, bounds_); // new bounds
     }
 #endif
 }
@@ -191,7 +191,7 @@ void Layer::paint(PaintContext& context) {
 
     if(opacity <= 0.0) return; //if transparent,paint self & children not required
     if(opacity < 0xFF) {
-      SkRect layerBounds = SkRect::Make(absFrame_);
+      SkRect layerBounds = SkRect::Make(bounds_);
       context.canvas->saveLayerAlpha(&layerBounds,opacity);
     }
 
@@ -243,7 +243,7 @@ bool Layer::needsPainting(PaintContext& context) {
     // As long as paintBounds interset with one of the dirty rect, we will need repainting.
     SkIRect dummy;
     for (auto& dirtRect : context.damageRect) {
-        if(dummy.intersect(absFrame_, dirtRect)) { // this layer intersects with one of the dirty rect, so needs repainting
+        if(dummy.intersect(bounds_, dirtRect)) { // this layer intersects with one of the dirty rect, so needs repainting
             return true;
         }
     }
