@@ -136,6 +136,7 @@ void RNInstance::Start(RSkSurfaceWindow *surface, RendererDelegate &rendererDele
   component->requiresLayer({}, rendererDelegate);
   RNS_LOG_ASSERT(component->layer(), "Layer Cannot Be Null");
   rendererDelegate.setRootLayer(component->layer());
+  surface->navigator()->setRootContainer(component.get());
 }
 
 void RNInstance::Stop(RSkSurfaceWindow *surface) {

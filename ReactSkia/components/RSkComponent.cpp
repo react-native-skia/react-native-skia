@@ -20,7 +20,6 @@ using namespace RSkDrawUtils;
 RSkComponent::RSkComponent(const ShadowView &shadowView)
     : INHERITED(Layer::EmptyClient::singleton(), LAYER_TYPE_DEFAULT)
     , parent_(nullptr)
-    , absOrigin_(shadowView.layoutMetrics.frame.origin)
     , component_(shadowView) {}
 
 RSkComponent::~RSkComponent() {}
@@ -185,6 +184,11 @@ void RSkComponent::updateComponentData(const ShadowView &newShadowView,const uin
       RNS_LOG_DEBUG("\tUpdate Property");
       invalidateMask = static_cast<RnsShell::LayerInvalidateMask>(invalidateMask | updateProps(newShadowView,forceUpdate));
       component_.props = newShadowView.props;
+
+      //TODO only if TV related proeprties have changed ?
+      SpatialNavigator::Container *containerInUpdate = nearestAncestorContainer();
+      if(containerInUpdate)
+          containerInUpdate->updateComponent(this);
    }
    if(updateMask & ComponentUpdateMaskState){
       RNS_LOG_DEBUG("\tUpdate State");
@@ -214,7 +218,7 @@ void RSkComponent::updateComponentData(const ShadowView &newShadowView,const uin
        RNS_PROFILE_API_OFF(component_.componentName << " getShadowPicture :", static_cast<RnsShell::ScrollLayer*>(layer_.get())->setShadowPicture(getPicture(PictureTypeShadow)));
        RNS_PROFILE_API_OFF(component_.componentName << " getBorderPicture :", static_cast<RnsShell::ScrollLayer*>(layer_.get())->setBorderPicture(getPicture(PictureTypeBorder)));
      }
-   } 
+   }
 }
 
 void RSkComponent::mountChildComponent(
@@ -226,6 +230,18 @@ void RSkComponent::mountChildComponent(
         RNS_LOG_ASSERT((this->layer_ && newChildComponent->layer_), "Layer Object cannot be null");
         if(this->layer_)
             this->layer_->insertChild(newChildComponent->layer_, index);
+
+        SpatialNavigator::Container *containerToAdd = nullptr;
+        if(isContainer() == true || ((containerToAdd = nearestAncestorContainer()) == nullptr))
+            containerToAdd = this;
+
+        if(newChildComponent->isFocusable()) {
+            containerToAdd->addComponent(newChildComponent.get());
+            if(!newChildComponent->isContainer() && newChildComponent->navComponentList_.size() != 0)
+                containerToAdd->mergeComponent(newChildComponent->navComponentList_); // Move focusable decendents to parent
+        } else if(newChildComponent->navComponentList_.size() != 0) {
+            containerToAdd->mergeComponent(newChildComponent->navComponentList_); // Move focusable decendents to parent
+        }
     }
 }
 
@@ -233,14 +249,18 @@ void RSkComponent::unmountChildComponent(
     std::shared_ptr<RSkComponent> oldChildComponent,
     const int index) {
 
+    SpatialNavigator::Container *containerRemoveFrom = nullptr;
     if(oldChildComponent) {
-        oldChildComponent->parent_ = nullptr ;
-        oldChildComponent->absOrigin_ = oldChildComponent->component_.layoutMetrics.frame.origin;
-    }
+        containerRemoveFrom = oldChildComponent->nearestAncestorContainer();
+        if(containerRemoveFrom && oldChildComponent->isFocusable())
+            containerRemoveFrom->removeComponent(oldChildComponent.get());
 
-    RNS_LOG_ASSERT((this->layer_ && oldChildComponent->layer_), "Layer Object cannot be null");
-    if(this->layer_)
-        this->layer_->removeChild(oldChildComponent->layer_.get(), index);
+        oldChildComponent->parent_ = nullptr ;
+
+        RNS_LOG_ASSERT((this->layer_ && oldChildComponent->layer_), "Layer Object cannot be null");
+        if(this->layer_)
+            this->layer_->removeChild(oldChildComponent->layer_.get(), index);
+    }
 }
 
 void RSkComponent::OnPaintBorder(SkCanvas *canvas) {
@@ -264,7 +284,31 @@ void RSkComponent::OnPaintShadow(SkCanvas *canvas) {
   if(layer_->shadowOpacity && layer_->shadowFilter){
       drawShadow(canvas,frame,borderMetrics,layer_->backgroundColor,layer_->shadowOpacity,layer_->shadowFilter);
   }
+}
 
+bool RSkComponent::isFocusable() {
+  Component canData = getComponentData();
+  auto const &viewProps = *std::static_pointer_cast<ViewProps const>(canData.props);
+  if (viewProps.isTVSelectable == true || viewProps.focusable == true)
+    return true;
+  return false;
+}
+
+SpatialNavigator::Container* RSkComponent::nearestAncestorContainer() {
+  RSkComponent *container = nullptr;
+  for (container = parent_; container; container = container->getParent()) {
+    if (container->isContainer())
+      return container;
+  }
+  return nullptr;
+}
+
+bool RSkComponent::hasAncestor(const SpatialNavigator::Container* ancestor) {
+  for (RSkComponent *container = parent_; container; container = container->getParent()) {
+    if (container->isContainer() && container == ancestor)
+      return true;
+  }
+  return false;
 }
 
 } // namespace react

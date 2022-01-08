@@ -4,6 +4,8 @@
 #include "react/renderer/mounting/ShadowView.h"
 #include "react/renderer/components/view/ViewProps.h"
 
+#include "ReactSkia/core_modules/RSkSpatialNavigatorContainer.h"
+
 #include "ReactSkia/utils/RnsUtils.h"
 #include "ReactSkia/utils/RnsLog.h"
 #include "ReactSkia/sdk/RNSKeyCodeMapping.h"
@@ -62,7 +64,7 @@ struct Component {
 
 class RSkComponent;
 
-class RSkComponent : public RnsShell::Layer, public std::enable_shared_from_this<RSkComponent>  {
+class RSkComponent : public RnsShell::Layer , public SpatialNavigator::Container, public std::enable_shared_from_this<RSkComponent>  {
  public:
   RSkComponent(const ShadowView &shadowView);
   RSkComponent(RSkComponent &&) = default;
@@ -88,11 +90,16 @@ class RSkComponent : public RnsShell::Layer, public std::enable_shared_from_this
   };
 
   virtual void onHandleKey(rnsKey  eventKeyType,bool* stopPropagate){*stopPropagate=false;};
+  virtual bool isContainer() const { return false; }
 
   Component getComponentData() { return component_;}
   std::shared_ptr<RnsShell::Layer> layer() { return layer_; }
   const SkIRect& getLayerAbsoluteFrame(){ return(layer_->absoluteFrame());}
   RSkComponent *getParent() {return parent_; };
+
+  SpatialNavigator::Container *nearestAncestorContainer();
+  bool hasAncestor(const SpatialNavigator::Container* ancestor);
+  bool isFocusable();
 
   void requiresLayer(const ShadowView &shadowView, Layer::Client& layerClient);
   RnsShell::LayerInvalidateMask updateProps(const ShadowView &newShadowView , bool forceUpdate);
@@ -111,7 +118,6 @@ class RSkComponent : public RnsShell::Layer, public std::enable_shared_from_this
  private:
   RSkComponent *parent_;
   std::shared_ptr<RnsShell::Layer> layer_;
-  Point absOrigin_;
   Component component_;
 
   typedef Layer INHERITED;

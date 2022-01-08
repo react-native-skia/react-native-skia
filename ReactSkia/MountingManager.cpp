@@ -162,7 +162,6 @@ void MountingManager::InsertMountInstruction(
 
   if (parentComponent) {
       parentComponent->mountChildComponent(newChildComponent,mutation.index);
-      surface_->navigator()->addToNavList(newChildComponent);
   }
 
 }
@@ -176,7 +175,6 @@ void MountingManager::RemoveMountInstruction(
 
   if (parentComponent) {
       parentComponent->unmountChildComponent(oldChildComponent,mutation.index);
-      surface_->navigator()->removeFromNavList(oldChildComponent);
   }
 
 }
@@ -199,11 +197,8 @@ void MountingManager::UpdateMountInstruction(
     if(oldChildShadowView.layoutMetrics != newChildShadowView.layoutMetrics)
       updateMask |= ComponentUpdateMaskLayoutMetrics;
 
-    if(updateMask != ComponentUpdateMaskNone) {
+    if(updateMask != ComponentUpdateMaskNone)
       newChildComponent->updateComponentData(mutation.newChildShadowView,updateMask,false);
-      if(updateMask & ComponentUpdateMaskProps)
-        surface_->navigator()->updateInNavList(newChildComponent); //TODO only if TV related proeprties have changed ?
-    }
   }
 }
 

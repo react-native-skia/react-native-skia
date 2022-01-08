@@ -43,6 +43,14 @@ struct sortDirectionComparator;
 template <class T>
 using SortedCandidateList = sorted_vector_set<T*, sortDirectionComparator<T*>>;
 
+enum NavigatorStateOperation {
+    ComponentAdded = 1,
+    ComponentRemoved,
+    ComponentUpdated,
+};
+
+class Container;
+
 /*
  * This Class manages Spatial Navigation
  * Manages a list of current set of navigatable components on Screen: navList_
@@ -57,7 +65,7 @@ private:
     static std::mutex mutex_;
 
     // Currently focused component
-    RSkComponent *currentFocus_ = nullptr;
+    RSkComponent *currentFocus_{nullptr};
 
     // List of Navigatable Components
     CandidateList navComponentList_;
@@ -65,21 +73,26 @@ private:
     // Private constructor: Singleton class
     RSkSpatialNavigator();
 
+    Container *rootContainer_{nullptr};
+    Container *currentContainer_{nullptr};
+
     void navigateInDirection(rnsKey keyEvent);
+    bool advanceFocusInDirection(Container *container, rnsKey keyEvent);
+    RSkComponent* findFocusCandidateInContainer(Container *container, rnsKey keyEvent, bool visibleOnly);
+    RSkComponent* pickCandidateInDirection(rnsKey keyEvent, SortedCandidateList<RSkComponent>& overLapping, SortedCandidateList<RSkComponent>& nonOverLapping);
+    RSkComponent* findDefaultFocusInContainer(Container *container);
     void sendNotificationWithEventType(std::string eventType, int tag);
-    void moveTheFocusInDirection(rnsKey keyEvent, SortedCandidateList<RSkComponent>& overLapping, SortedCandidateList<RSkComponent>& nonOverLapping);
-    void setDefaultFocus();
 
 public:
     static RSkSpatialNavigator* sharedSpatialNavigator();
     ~RSkSpatialNavigator();
 
-    void addToNavList(std::shared_ptr<RSkComponent> candidate);
-    void removeFromNavList(std::shared_ptr<RSkComponent> candidate);
-    void updateInNavList(std::shared_ptr<RSkComponent> candidate);
+    void updateSpatialNavigatorState(NavigatorStateOperation operation, RSkComponent *candidate);
 
     void handleKeyEvent(rnsKey  eventType, rnsKeyAction eventKeyAction);
     RSkComponent* getCurrentFocusElement();
+
+    void setRootContainer(Container *container) { rootContainer_ = container; }
 };
 
 } // namespace SpatialNavigator
