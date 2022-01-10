@@ -14,7 +14,6 @@
 #include "rns_shell/compositor/layers/PictureLayer.h"
 
 #include <string.h>
-#include <iostream>
 
 namespace facebook {
 namespace react {
@@ -24,6 +23,7 @@ using namespace skia::textlayout;
 
 #define NUMBER_OF_LINES         1
 #define FONTSIZE_MULTIPLIER     10
+#define CURSOR_WIDTH 2
 
 RSkComponentTextInput::RSkComponentTextInput(const ShadowView &shadowView)
     : RSkComponent(shadowView)
@@ -32,6 +32,19 @@ RSkComponentTextInput::RSkComponentTextInput(const ShadowView &shadowView)
     ,cursor_({0,0}){
   RNS_LOG_DEBUG("called constructor");
   paragraph_ = nullptr;
+  cursorPaint_.setColor(SK_ColorBLUE);
+  cursorPaint_.setAntiAlias(true);
+  cursorPaint_.setStyle(SkPaint::kStroke_Style);
+  cursorPaint_.setStrokeWidth(CURSOR_WIDTH);
+}
+
+void RSkComponentTextInput::flushLayer(){
+  layer()->client().notifyFlushBegin();
+  layer()->invalidate( RnsShell::LayerPaintInvalidate);
+  if (layer()->type() == RnsShell::LAYER_TYPE_PICTURE) {
+    RNS_PROFILE_API_OFF(getComponentData().componentName << " getPicture :", static_cast<RnsShell::PictureLayer*>(layer().get())->setPicture(getPicture()));
+  }
+  layer()->client().notifyFlushRequired();
 }
 
 void RSkComponentTextInput::drawTextInput(SkCanvas *canvas,
@@ -41,6 +54,11 @@ void RSkComponentTextInput::drawTextInput(SkCanvas *canvas,
   Rect frame = layout.frame;
   ParagraphStyle paraStyle;
   float yOffset;
+  
+  //cursor
+  int position = 0;
+  SkRect cursorRect;
+  std::vector<TextBox> rects;
 
   // setParagraphStyle
   paraStyle.setMaxLines(NUMBER_OF_LINES);
@@ -58,6 +76,23 @@ void RSkComponentTextInput::drawTextInput(SkCanvas *canvas,
   // paintParagraph
   yOffset = (layout.getContentFrame().size.height - paragraph_->getHeight()) / 2;
   paragraph_->paint(canvas, frame.origin.x + layout.contentInsets.left, frame.origin.y + layout.contentInsets.top + yOffset);
+
+  // draw Cursor
+  if (!caretHidden_) {
+  position = cursor_.end - cursor_.locationFromEnd;
+  if (cursor_.locationFromEnd == cursor_.end) {
+    rects = paragraph_->getRectsForRange(0, position+1, RectHeightStyle::kTight, RectWidthStyle::kTight);
+    cursorRect.fLeft =  frame.origin.x + rects[0].rect.left() + layout.contentInsets.left;
+    cursorRect.fRight = cursorRect.fLeft;
+  } else {
+    rects = paragraph_->getRectsForRange(0, position, RectHeightStyle::kTight, RectWidthStyle::kTight);
+    cursorRect.fLeft =  frame.origin.x + rects[0].rect.right() + layout.contentInsets.left;
+    cursorRect.fRight = cursorRect.fLeft;
+  }
+  cursorRect.fTop = frame.origin.y + yOffset + layout.contentInsets.top;
+  cursorRect.fBottom = cursorRect.fTop + paragraph_->getHeight();
+  canvas->drawRect(cursorRect, cursorPaint_);
+  }
 }
 
 void RSkComponentTextInput::OnPaint(SkCanvas *canvas) {
@@ -95,8 +130,11 @@ void RSkComponentTextInput::OnPaint(SkCanvas *canvas) {
 */
 
 void RSkComponentTextInput::onHandleKey(rnsKey eventKeyType, bool *stopPropagation) {
-  std::string textString = displayString_;
   *stopPropagation = false;
+  if (!editable_) {
+    return;
+  }
+  std::string textString = displayString_;
   KeyPressMetrics keyPressMetrics;
   TextInputMetrics textInputMetrics;
   *stopPropagation = false;
@@ -142,6 +180,7 @@ void RSkComponentTextInput::onHandleKey(rnsKey eventKeyType, bool *stopPropagati
           }
           *stopPropagation = true;
           keyPressMetrics.eventCount = eventCount_;
+          flushLayer();
           textInputEventEmitter->onKeyPress(keyPressMetrics);
           return;
         case RNS_KEY_Right:
@@ -151,6 +190,7 @@ void RSkComponentTextInput::onHandleKey(rnsKey eventKeyType, bool *stopPropagati
           }
           *stopPropagation = true;
           keyPressMetrics.eventCount = eventCount_;
+          flushLayer();
           textInputEventEmitter->onKeyPress(keyPressMetrics);
           return;
         case RNS_KEY_Back:
@@ -170,7 +210,7 @@ void RSkComponentTextInput::onHandleKey(rnsKey eventKeyType, bool *stopPropagati
           *stopPropagation = true;
           return;
         default:
-         ;//noop
+          return;//noop
       }
     }
     //currently selection is not supported selectionRange length is 
@@ -181,11 +221,8 @@ void RSkComponentTextInput::onHandleKey(rnsKey eventKeyType, bool *stopPropagati
       /*Update the display string and set the layer invalidate mask*/
       if (displayString_ != textString){
         displayString_ = textString;
-        layer()->invalidate( RnsShell::LayerPaintInvalidate);
-        if (layer()->type() == RnsShell::LAYER_TYPE_PICTURE) {
-          RNS_PROFILE_API_OFF(component_.componentName << " getPicture :", static_cast<RnsShell::PictureLayer*>(layer().get())->setPicture(getPicture()));
-        }
-        layer()->client().notifyFlushRequired();
+        cursor_.end = textString.length();
+        flushLayer();
       }
     }
     eventCount_++;
@@ -207,6 +244,7 @@ RnsShell::LayerInvalidateMask  RSkComponentTextInput::updateComponentProps(const
   int mask = RnsShell::LayerInvalidateNone;
   std::string textString{};
   RNS_LOG_DEBUG("event count "<<textInputProps.mostRecentEventCount);
+  caretHidden_ = textInputProps.caretHidden;
   // Fixme mutableFlag must be update in mutation command.
   if (textInputProps.value.size() == 0){
     RNS_LOG_DEBUG("Mutable flag is set.");
@@ -235,6 +273,23 @@ RnsShell::LayerInvalidateMask  RSkComponentTextInput::updateComponentProps(const
     if(!displayString_.size()) {
       mask |= LayerPaintInvalidate;
     }
+  }
+
+  if (textInputProps.selectionColor != selectionColor_) {
+    selectionColor_ = textInputProps.selectionColor;
+    cursorPaint_.setColor(RSkColorFromSharedColor(selectionColor_, SK_ColorBLUE));
+    mask |= LayerPaintInvalidate;
+  }
+
+  if (textInputProps.editable != editable_) {
+    editable_ = textInputProps.editable;
+    mask |= LayerPaintInvalidate;
+  }
+
+  if (false == caretHidden_ && true == editable_){
+    caretHidden_ = false;
+  } else {
+    caretHidden_ = true;
   }
 
   return (RnsShell::LayerInvalidateMask)mask;

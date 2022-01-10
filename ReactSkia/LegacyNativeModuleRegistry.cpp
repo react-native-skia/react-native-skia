@@ -95,48 +95,48 @@ class LegacyUIManagerModule : public NativeModule {
         return {std::move(registry)};
       }else if (args[0] == "RCTSinglelineTextInputView") {
         auto nativeProps = folly::dynamic::object("allowFontScaling", true)(
-        "autoCompleteTypeAndroid",true)(
+        "autoComplete",true)(
         "autoCorrect",true)(
         "autoFocus",true)(
         "blurOnSubmit",true)(
         "caretHidden",true)(
-        "clearButtonModeiOS",true)(
-        "clearTextOnFocusiOS",true)(
+        "clearButtonMode",true)(
+        "clearTextOnFocus",true)(
         "contextMenuHidden",true)(
-        "dataDetectorTypesiOS",true)(
+        "dataDetectorTypes",true)(
         "defaultValue",true)(
-        "disableFullscreenUIAndroid",true)(
+        "disableFullscreenUI",true)(
         "editable",true)(
-        "enablesReturnKeyAutomaticallyiOS",true)(
-        "importantForAutofillAndroid",true)(
-        "inlineImageLeftAndroid",true)(
-        "inlineImagePaddingAndroid",true)(
-        "inputAccessoryViewIDiOS",true)(
-        "keyboardAppearanceiOS",true)(
+        "enablesReturnKeyAutomatically",true)(
+        "importantForAutofil",true)(
+        "inlineImageLeft",true)(
+        "inlineImagePadding",true)(
+        "inputAccessoryViewID",true)(
+        "keyboardAppearance",true)(
         "keyboardType",true)(
         "maxFontSizeMultiplier",true)(
         "maxLength",true)(
         "multiline",true)(
-        "numberOfLinesAndroid",true)(
+        "numberOfLines",true)(
         "placeholder",true)(
         "placeholderTextColor","UIColor")(  /* Using of UIColor, since we are using platform type as iOS for app bundle , iOS type is been used. */
         "text",true)(
-        "returnKeyLabelAndroid",true)(
+        "returnKeyLabel",true)(
         "returnKeyType",true)(
-        "rejectResponderTerminationiOS",true)(
-        "scrollEnablediOS",true)(
+        "rejectResponderTermination",true)(
+        "scrollEnabled",true)(
         "secureTextEntry",true)(
         "selection",true)(
-        "selectionColor",true)(
+        "selectionColor","UIColor")(
         "selectTextOnFocus",true)(
         "showSoftInputOnFocus",true)(
-        "spellCheckiOS",true)(
+        "spellCheck",true)(
         "textAlign",true)(
-        "textContentTypeiOS",true)(
-        "passwordRulesiOS",true)(
+        "textContentType",true)(
+        "passwordRules",true)(
         "style",true)(
-        "textBreakStrategyAndroid",true)(
-        "underlineColorAndroidAndroid",true)(
+        "textBreakStrategy",true)(
+        "underlineColorAndroid","UIColor")(
         "value",true);
         auto directEventTypes = folly::dynamic::object(
             "topBlur",folly::dynamic::object("registrationName", "onBlur"))(

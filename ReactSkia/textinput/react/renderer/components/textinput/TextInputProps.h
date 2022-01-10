@@ -37,6 +37,8 @@ class TextInputProps final : public ViewProps, public BaseTextProps {
   std::string const value{};
   std::string const placeholder{};
   SharedColor const placeholderTextColor{};
+  bool editable=true;
+  bool caretHidden=false;
 
   int maxLength{};
 

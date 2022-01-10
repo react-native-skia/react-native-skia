@@ -32,14 +32,18 @@ class RSkComponentTextInput final : public RSkComponent {
   void OnPaint(SkCanvas *canvas) override;
  private:
   bool isInEditingMode_;
+  bool mutableFlag_ = false;
+  bool editable_ = true;
+  bool caretHidden_ = false;
+  int eventCount_;
   std::string displayString_{}; // Text to be displayed on screen
   std::string placeholderString_{}; // Placeholder Text
   SharedColor placeholderColor_;  // Placeholder Text Color
-  bool mutableFlag_ = false;
-  int eventCount_;
+  SharedColor selectionColor_;
   struct cursor cursor_;
-  //Moved drawtextinput as private member of the class.
+  SkPaint cursorPaint_;
   std::shared_ptr<skia::textlayout::Paragraph> paragraph_;
+  void flushLayer();
   void drawTextInput(
       SkCanvas *canvas,
       LayoutMetrics layout,
