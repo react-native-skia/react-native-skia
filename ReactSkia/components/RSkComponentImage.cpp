@@ -1,12 +1,13 @@
-#include "include/core/SkBitmap.h"
-#include "include/core/SkData.h"
-#include "include/core/SkImageGenerator.h"
 #include "include/core/SkPaint.h"
+#include "include/core/SkClipOp.h"
+#include "include/core/SkImageFilter.h"
+#include "include/effects/SkImageFilters.h"
 
-#include "react/renderer/components/image/ImageShadowNode.h"
+#include "react/renderer/components/image/ImageEventEmitter.h"
 
 #include "ReactSkia/components/RSkComponentImage.h"
 #include "ReactSkia/views/common/RSkDrawUtils.h"
+#include "ReactSkia/views/common/RSkImageUtils.h"
 #include "ReactSkia/views/common/RSkImageCacheManager.h"
 #include "ReactSkia/utils/RnsLog.h"
 #include "ReactSkia/utils/RnsUtils.h"
@@ -16,7 +17,29 @@ namespace facebook {
 namespace react {
 
 using namespace RSkDrawUtils;
+using namespace RSkImageUtils;
 using namespace RSkImageCacheManager;
+
+namespace {
+
+sk_sp<SkImage> getLocalImage(ImageSource source) {
+  if ( !source.uri.empty() && !(source.uri.substr(0, 14) == "file://assets/")) {
+    return nullptr;
+  }
+  std::string path = "./" + source.uri.substr(7);
+  RNS_PROFILE_START(getImageData)
+  sk_sp<SkImage> imageData=getImageData(path.c_str());
+  RNS_PROFILE_END(path.c_str(),getImageData)
+  if(!imageData) {
+    RNS_LOG_ERROR("Draw Image Failed :" << path);
+  }
+  #ifdef RNS_IMAGE_CACHE_USAGE_DEBUG
+      printCacheUsage();
+  #endif //RNS_IMAGECACHING_DEBUG
+  return imageData;
+}
+
+}//namespace
 
 RSkComponentImage::RSkComponentImage(const ShadowView &shadowView)
     : RSkComponent(shadowView) {}
@@ -26,33 +49,37 @@ void RSkComponentImage::OnPaint(
   auto component = getComponentData();
   auto const &imageProps =
       *std::static_pointer_cast<ImageProps const>(component.props);
-  if (imageProps.sources.empty()) {
-    return;
+  sk_sp<SkImage> imageData = nullptr;
+  if (!imageProps.sources.empty() && imageProps.sources[0].type == ImageSource::Type::Local ) {
+    imageData=getLocalImage(imageProps.sources[0]);
   }
-  const auto source = imageProps.sources[0];
-
-  if (source.type == ImageSource::Type::Local && !source.uri.empty()) {
-    assert(source.uri.substr(0, 14) == "file://assets/");
-    std::string path = "./" + source.uri.substr(7);
-
+  auto imageEventEmitter = std::static_pointer_cast<ImageEventEmitter const>(component.eventEmitter);
+  if(imageData) {
+/* Emitting Load completed Event*/
+    imageEventEmitter->onLoad();
     Rect frame = component.layoutMetrics.frame;
-    SkRect rect = SkRect::MakeXYWH(frame.origin.x, frame.origin.y, frame.size.width, frame.size.height);
+    SkRect frameRect = SkRect::MakeXYWH(frame.origin.x, frame.origin.y, frame.size.width, frame.size.height);
     auto const &imageBorderMetrics=imageProps.resolveBorderMetrics(component.layoutMetrics);
-
- /* Draw order 1. Background 2. Image 3. Border*/
-    drawBackground(canvas,frame,imageBorderMetrics,imageProps.backgroundColor,imageProps.opacity);
-    RNS_PROFILE_START(drawImage)
-    sk_sp<SkImage> imageData=getImageData(path.c_str());
-    if(imageData) {
-      canvas->drawImageRect(imageData, rect, nullptr);
-    } else {
-      RNS_LOG_ERROR("Draw Image Failed for:" << path);
+    SkRect targetRect = computeTargetRect({imageData->width(),imageData->height()},frameRect,imageProps.resizeMode);
+    SkPaint paint;
+/* TO DO: Handle filter quality based on build time configuration. Setting Low Filter Quality as a default for now*/
+    paint.setFilterQuality(DEFAULT_IMAGE_FILTER_QUALITY);
+    if(imageProps.resizeMode == ImageResizeMode::Repeat){
+      sk_sp<SkImageFilter> imageFilter(SkImageFilters::Tile(targetRect,frameRect ,nullptr));
+      paint.setImageFilter(std::move(imageFilter));
     }
-    RNS_PROFILE_END(path.c_str(),drawImage)
-#ifdef RNS_IMAGE_CACHE_USAGE_DEBUG
-      printCacheUsage();
-#endif //RNS_IMAGECACHING_DEBUG
+/* Draw order 1. Background 2. Image 3. Border*/
+    drawBackground(canvas,frame,imageBorderMetrics,imageProps.backgroundColor,imageProps.opacity);
+    canvas->save();
+    if(( frameRect.width() < targetRect.width()) || ( frameRect.height() < targetRect.height())) {
+      canvas->clipRect(frameRect,SkClipOp::kIntersect);
+    }
+    canvas->drawImageRect(imageData,targetRect,&paint);
+    canvas->restore();
     drawBorder(canvas,frame,imageBorderMetrics,imageProps.backgroundColor,imageProps.opacity);
+  } else {
+/* Emitting Image Load failed Event*/
+    imageEventEmitter->onError();
   }
 }
 
