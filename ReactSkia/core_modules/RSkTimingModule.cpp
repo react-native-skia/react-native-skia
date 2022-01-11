@@ -77,7 +77,9 @@ void RSkTimingModule::createTimerForNextFrame(
   double targetDuration = jsDuration - jsSchedulingOverhead;
 
   SharedTimer timer = std::make_shared<RSkTimer>(callbackId, jsDuration, targetDuration, repeats);
+  timersLock_.lock();
   timers_[callbackId] = timer;
+  timersLock_.unlock();
 
   timerThread_.getEventBase()->runInEventBaseThread(
     [this, callbackId, jsDuration, targetDuration, repeats]() {
@@ -110,6 +112,7 @@ void RSkTimingModule::timerDidFire() {
   SysTimePoint nextScheduledTarget = now + milliseconds(static_cast<unsigned long long>(31536000000)); // Set 1 year ahead time from now
 
   // Loop timer list and list down all expired timer into a vector
+  timersLock_.lock();
   for (auto& timer : timers_) {
     if( timer.second->target_ <= now ) { // Expired timer
       // Insert in sorted order
@@ -124,6 +127,7 @@ void RSkTimingModule::timerDidFire() {
         nextScheduledTarget = timer.second->target_;
     }
   }
+  timersLock_.unlock();
 
   // Call expired callbacks
   if((timersToCall.size() > 0 ) && bridgeInstance_) {
@@ -142,6 +146,7 @@ void RSkTimingModule::timerDidFire() {
       if(timer->target_ < nextScheduledTarget)
         nextScheduledTarget = timer->target_;
     } else {
+      std::scoped_lock lock(timersLock_);
       timers_.erase(timer->callbackId_); // Remove expired callbacks which is already fired and doesnt repeat
     }
   }
@@ -154,6 +159,7 @@ void RSkTimingModule::timerDidFire() {
   }
 
   // Reschedule timer with nextScheduledTarget
+  timersLock_.lock();
   if(timers_.size() > 0) {
     HHWheelTimer& wheelTimer = timerThread_.getEventBase()->timer();
     duration<double, std::milli> remaining = nextScheduledTarget - system_clock::now(); // Remining duration to target from this point in time.
@@ -161,6 +167,7 @@ void RSkTimingModule::timerDidFire() {
     wheelTimer.scheduleTimeout(&timerCallback_, std::chrono::milliseconds(static_cast<unsigned long long>(targetDuration)));
     RNS_LOG_DEBUG("Rescheduled timer with shortest duration : " << targetDuration);
   }
+  timersLock_.unlock();
 }
 
 jsi::Value RSkTimingModule::deleteTimerWrapper(
@@ -180,7 +187,9 @@ jsi::Value RSkTimingModule::deleteTimerWrapper(
 
 jsi::Value RSkTimingModule::deleteTimer(double timerId) {
   RNS_LOG_DEBUG("Delete Timer for callbackId : " << timerId);
+  timersLock_.lock();
   timers_.erase(timerId);
+  timersLock_.unlock();
   return jsi::Value::undefined();
 }
 

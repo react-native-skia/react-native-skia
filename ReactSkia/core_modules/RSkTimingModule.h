@@ -102,6 +102,8 @@ class RSkTimingModule: public TurboModule {
   void createTimerForNextFrame(double callbackId, double jsDuration, SysTimePoint jsSchedulingTime, bool repeats);
 
   bool sendIdleEvents_;
+  std::mutex timersLock_;
+
   Instance *bridgeInstance_;
   ScopedEventBaseThread timerThread_;
   TimersMap timers_;
