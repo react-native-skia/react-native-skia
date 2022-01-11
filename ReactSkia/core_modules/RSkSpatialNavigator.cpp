@@ -91,8 +91,8 @@ struct sortDirectionComparator {
     bool operator()(const T& listItem, const T& newItem) const {
         Component listData = listItem->getComponentData();
         Component newData = newItem->getComponentData();
-        const SkIRect& listCandidate = listItem->getLayerAbsoluteFrame();
-        const SkIRect& newCandidate = newItem->getLayerAbsoluteFrame();
+        const SkIRect listCandidate = listItem->getScreenFrame();
+        const SkIRect newCandidate = newItem->getScreenFrame();
 
         // Rule 4. If both candidates are having same dimension (x,y,w,h) then select the one with higher zIndex, else higher tag if zIndex is same
         if(listCandidate == newCandidate) {
@@ -167,17 +167,17 @@ RSkComponent* RSkSpatialNavigator::pickCandidateInDirection(rnsKey keyEvent,
 #if defined(THIS_IS_NOT_DEFINED) && (!defined(GOOGLE_STRIP_LOG) || (GOOGLE_STRIP_LOG <= INFO))
     for (auto candidate = overLapping.begin(); candidate != overLapping.end(); candidate++) {
         RNS_LOG_INFO("OverLapping Tag[" << (*candidate)->getComponentData().tag << "] I[" <<
-                        (*candidate)->getLayerAbsoluteFrame().left() << " " <<
-                        (*candidate)->getLayerAbsoluteFrame().top() << " " <<
-                        (*candidate)->getLayerAbsoluteFrame().right() << " " <<
-                        (*candidate)->getLayerAbsoluteFrame().bottom() << "]");
+                        (*candidate)->getScreenFrame().left() << " " <<
+                        (*candidate)->getScreenFrame().top() << " " <<
+                        (*candidate)->getScreenFrame().right() << " " <<
+                        (*candidate)->getScreenFrame().bottom() << "]");
     }
     for (auto candidate = nonOverLapping.begin(); candidate != nonOverLapping.end(); candidate++) {
         RNS_LOG_INFO("NonOverLapping Tag[" << (*candidate)->getComponentData().tag << "] I[" <<
-                        (*candidate)->getLayerAbsoluteFrame().left() << " " <<
-                        (*candidate)->getLayerAbsoluteFrame().top() << " " <<
-                        (*candidate)->getLayerAbsoluteFrame().right() << " " <<
-                        (*candidate)->getLayerAbsoluteFrame().bottom() << "]");
+                        (*candidate)->getScreenFrame().left() << " " <<
+                        (*candidate)->getScreenFrame().top() << " " <<
+                        (*candidate)->getScreenFrame().right() << " " <<
+                        (*candidate)->getScreenFrame().bottom() << "]");
     }
 #endif
 
@@ -194,10 +194,10 @@ RSkComponent* RSkSpatialNavigator::pickCandidateInDirection(rnsKey keyEvent,
         auto front = nonOverLapping.begin();
         if(nextFocus) {
             if(keyEvent == RNS_KEY_Up) {
-                if(nextFocus->getLayerAbsoluteFrame().bottom() < (*front)->getLayerAbsoluteFrame().bottom())
+                if(nextFocus->getScreenFrame().bottom() < (*front)->getScreenFrame().bottom())
                     nextFocus = *front;
             } else if(keyEvent == RNS_KEY_Down) {
-                if(nextFocus->getLayerAbsoluteFrame().top() > (*front)->getLayerAbsoluteFrame().top())
+                if(nextFocus->getScreenFrame().top() > (*front)->getScreenFrame().top())
                     nextFocus = *front;
             }
         } else { // OverLapping set was empty, nothing to compare.
@@ -216,8 +216,8 @@ static inline bool isValidCandidate(rnsKey direction, RSkComponent *currentItem,
     if(!currentItem || !candidateItem)
         return false;
 
-    const SkIRect& current = currentItem->getLayerAbsoluteFrame();
-    const SkIRect& candidate = candidateItem->getLayerAbsoluteFrame();
+    const SkIRect current = currentItem->getScreenFrame();
+    const SkIRect candidate = candidateItem->getScreenFrame();
 
     // Rule 1. If the candidate has same dimention as the current focussed item then ignore.
     if (candidate == current) {
@@ -280,7 +280,7 @@ RSkComponent* RSkSpatialNavigator::findFocusCandidateInContainer(Container *cont
     RNS_LOG_ASSERT((currentFocus_ && container), "No current candidate or container");
 
     Component curData = currentFocus_->getComponentData();
-    const SkIRect& currentRect = currentFocus_->getLayerAbsoluteFrame();
+    const SkIRect currentRect = currentFocus_->getScreenFrame();
     RNS_LOG_DEBUG("Current Focus Tag[" << curData.tag << "] I[" <<
                     currentRect.left() << " " << currentRect.top() << " " << currentRect.right() << " " << currentRect.bottom() << "]");
 
@@ -292,7 +292,7 @@ RSkComponent* RSkSpatialNavigator::findFocusCandidateInContainer(Container *cont
 
     for (auto candidate = navComponentList.begin(); candidate != navComponentList.end(); candidate++) {
         Component canData = (*candidate)->getComponentData();
-        const SkIRect& candidateRect = (*candidate)->getLayerAbsoluteFrame();
+        const SkIRect candidateRect = (*candidate)->getScreenFrame();
 
         RNS_LOG_DEBUG("Possible Candidate Tag[" << canData.tag << "] I[" <<
                     candidateRect.left() << " " << candidateRect.top() << " " << candidateRect.right() << " " << candidateRect.bottom() << "]");

@@ -115,7 +115,7 @@ public:
     const SkIRect& getFrame() const { return frame_; }
     void setFrame(const SkIRect& frame) { frame_ = frame; }
     void invalidate(LayerInvalidateMask mask = LayerInvalidateAll) { invalidateMask_ = mask; }
-    bool requireInvalidate() { return invalidateMask_ != LayerInvalidateNone; }
+    bool requireInvalidate(bool skipChildren=true);
 
     const SkIRect& getBounds() const { return bounds_; }
 

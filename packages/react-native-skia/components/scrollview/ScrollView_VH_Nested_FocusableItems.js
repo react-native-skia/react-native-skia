@@ -1,0 +1,96 @@
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ * @format
+ * @flow
+ */
+
+'use strict';
+
+const React = require('react');
+
+const {
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  AppRegistry,
+} = require('react-native');
+
+const NUM_ITEMS = 20;
+
+class ScrollViewSimpleExample extends React.Component<{...}> {
+  makeItems: (nItems: number, styles: any) => Array<any> = (
+    nItems: number,
+    styles,
+  ): Array<any> => {
+    const items = [];
+    for (let i = 0; i < nItems; i++) {
+      if (i % 6 === 0) {
+        items[i] = (
+          <TouchableOpacity disabled accessible={false} key={i} style={styles}>
+            <Text style={{ color: '#a52a2a' }}>{'Inaccessible ' + i}</Text>
+          </TouchableOpacity>
+        );
+      } else if (i % 3 === 0) {
+        items[i] = (
+          <TouchableOpacity disabled key={i} style={styles}>
+            <Text style={{ color: '#a52a2a' }}>{'Disabled ' + i}</Text>
+          </TouchableOpacity>
+        );
+      } else {
+        items[i] = (
+          <TouchableOpacity key={i} style={styles}>
+            <Text>{'Item ' + i}</Text>
+          </TouchableOpacity>
+        );
+      }
+    }
+    return items;
+  };
+
+  render(): React.Node {
+    // One of the items is a horizontal scroll view
+    const items = this.makeItems(NUM_ITEMS, styles.itemWrapper);
+    items[4] = (
+      <ScrollView key={'scrollView'} horizontal={true}>
+        {this.makeItems(NUM_ITEMS, [
+          styles.itemWrapper,
+          styles.horizontalItemWrapper,
+        ])}
+      </ScrollView>
+    );
+
+    const verticalScrollView = (
+      <ScrollView style={styles.verticalScrollView}>{items}</ScrollView>
+    );
+
+    return verticalScrollView;
+  }
+}
+
+const styles = StyleSheet.create({
+  verticalScrollView: {
+    margin: 10,
+  },
+  itemWrapper: {
+    backgroundColor: '#dddddd',
+    alignItems: 'center',
+    borderRadius: 5,
+    borderWidth: 5,
+    borderColor: '#a52a2a',
+    padding: 30,
+    margin: 5,
+  },
+  horizontalItemWrapper: {
+    padding: 50,
+  },
+  horizontalPagingItemWrapper: {
+    width: 200,
+  },
+});
+
+AppRegistry.registerComponent('SimpleViewApp', () => ScrollViewSimpleExample);

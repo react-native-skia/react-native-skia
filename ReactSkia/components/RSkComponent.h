@@ -40,7 +40,6 @@ struct CommonProps{
     int pointerEvents;
     EdgeInsets hitSlop;
     int zIndex{};
-    bool scrollEnabled{false};
     /* TODO Add TVOS properties */
 };
 struct Component {
@@ -95,6 +94,7 @@ class RSkComponent : public RnsShell::Layer , public SpatialNavigator::Container
   Component getComponentData() { return component_;}
   std::shared_ptr<RnsShell::Layer> layer() { return layer_; }
   const SkIRect& getLayerAbsoluteFrame(){ return(layer_->absoluteFrame());}
+  const SkIRect getScreenFrame();
   RSkComponent *getParent() {return parent_; };
 
   SpatialNavigator::Container *nearestAncestorContainer();
@@ -103,8 +103,6 @@ class RSkComponent : public RnsShell::Layer , public SpatialNavigator::Container
 
   void requiresLayer(const ShadowView &shadowView, Layer::Client& layerClient);
   RnsShell::LayerInvalidateMask updateProps(const ShadowView &newShadowView , bool forceUpdate);
-
-  void setScrollEnabled(bool scrollEnabled);
 
  protected:
   virtual void OnPaint(SkCanvas *canvas) = 0;

@@ -32,6 +32,24 @@ void RSkComponent::onPaint(SkCanvas* canvas) {
   }
 }
 
+void RSkComponent::OnPaintBorder(SkCanvas *canvas) {
+  auto const &viewProps = *std::static_pointer_cast<ViewProps const>(component_.props);
+
+  /* apply view style props */
+  auto borderMetrics= viewProps.resolveBorderMetrics(component_.layoutMetrics);
+  drawBorder(canvas,component_.layoutMetrics.frame,borderMetrics,layer_->backgroundColor);
+}
+
+void RSkComponent::OnPaintShadow(SkCanvas *canvas) {
+  auto const &viewProps = *std::static_pointer_cast<ViewProps const>(component_.props);
+
+  /* apply view style props */
+  auto borderMetrics= viewProps.resolveBorderMetrics(component_.layoutMetrics);
+  if(layer_->shadowOpacity && layer_->shadowFilter){
+      drawShadow(canvas,component_.layoutMetrics.frame,borderMetrics,layer_->backgroundColor,layer_->shadowOpacity,layer_->shadowFilter);
+  }
+}
+
 sk_sp<SkPicture> RSkComponent::getPicture(PictureType type) {
 
   SkPictureRecorder recorder;
@@ -70,10 +88,6 @@ void RSkComponent::requiresLayer(const ShadowView &shadowView, Layer::Client& la
         layer_ = Layer::Create(layerClient, LAYER_TYPE_SCROLL);
     else
         layer_ = Layer::Create(layerClient, LAYER_TYPE_PICTURE);
-}
-
-void RSkComponent::setScrollEnabled(bool isScrollEnabled) {
-  component_.commonProps.scrollEnabled = isScrollEnabled;
 }
 
 RnsShell::LayerInvalidateMask RSkComponent::updateProps(const ShadowView &newShadowView,bool forceUpdate) {
@@ -263,33 +277,10 @@ void RSkComponent::unmountChildComponent(
     }
 }
 
-void RSkComponent::OnPaintBorder(SkCanvas *canvas) {
-  auto const &viewProps = *std::static_pointer_cast<ViewProps const>(component_.props);
-
-  /* apply view style props */
-  auto borderMetrics= viewProps.resolveBorderMetrics(component_.layoutMetrics);
-
-  Rect frame = component_.layoutMetrics.frame;
-  drawBorder(canvas,frame,borderMetrics,layer_->backgroundColor);
-}
-
-void RSkComponent::OnPaintShadow(SkCanvas *canvas) {
-  auto const &viewProps = *std::static_pointer_cast<ViewProps const>(component_.props);
-
-  /* apply view style props */
-  auto borderMetrics= viewProps.resolveBorderMetrics(component_.layoutMetrics);
-
-  Rect frame = component_.layoutMetrics.frame;
-
-  if(layer_->shadowOpacity && layer_->shadowFilter){
-      drawShadow(canvas,frame,borderMetrics,layer_->backgroundColor,layer_->shadowOpacity,layer_->shadowFilter);
-  }
-}
-
 bool RSkComponent::isFocusable() {
   Component canData = getComponentData();
   auto const &viewProps = *std::static_pointer_cast<ViewProps const>(canData.props);
-  if (viewProps.isTVSelectable == true || viewProps.focusable == true)
+  if (viewProps.isTVSelectable == true || viewProps.focusable == true || isContainer())
     return true;
   return false;
 }
@@ -309,6 +300,22 @@ bool RSkComponent::hasAncestor(const SpatialNavigator::Container* ancestor) {
       return true;
   }
   return false;
+}
+
+const SkIRect RSkComponent::getScreenFrame() {
+  SpatialNavigator::Container* container = nearestAncestorContainer();
+  SkIRect absFrame = getLayerAbsoluteFrame();
+
+  /* If ancestor container is not scrollable,return absFrame*/
+  /* else , returns containerScreenFrame + ( component absFrame - container scrollOffset)*/
+  if((container == nullptr) || (!container->isScrollable())) return absFrame;
+
+  SkIRect containerScreenFrame = static_cast<RSkComponent*>(container)->getScreenFrame();
+  SkPoint containerScrollOffset = container->getScrollOffset();
+  return absFrame.makeOffset(-containerScrollOffset.x(),
+                             -containerScrollOffset.y()).makeOffset(
+                              containerScreenFrame.x(),
+                              containerScreenFrame.y());
 }
 
 } // namespace react

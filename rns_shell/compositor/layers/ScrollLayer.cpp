@@ -58,7 +58,9 @@ void ScrollLayer::prePaint(PaintContext& context, bool forceLayout) {
     PaintContext bitmapPaintContext = {
             scrollCanvas_.get(),  // canvas
             bitmapSurfaceDamage_, // damage rects
+#if USE(RNS_SHELL_PARTIAL_UPDATES)
             true, // partialupdate support is required for bitmap
+#endif
             clipBound_, // combined clip bounds from surfaceDamage
             nullptr, // GrDirectContext
     };
@@ -78,7 +80,12 @@ void ScrollLayer::prePaint(PaintContext& context, bool forceLayout) {
         if(forceBitmapReset_){
            layer->invalidate();
         }
-        if(forceBitmapReset_ || (dummy.intersect(visibleRect,layer->getBounds()) && layer->requireInvalidate())){
+
+        /* Prepaint children in below conditions */
+        /* 1. bitmap size is updated */
+        /* 2. child has update and intersects with visible Area */
+        /* 3. child bounds is not calculated (happens when new child is added runtime)*/
+        if(forceBitmapReset_ || (dummy.intersect(visibleRect,layer->getBounds()) && layer->requireInvalidate(false)) || layer->getBounds().isEmpty()){
           RNS_LOG_DEBUG("Layer needs prePaint [" << layer->getBounds().x() <<"," << layer->getBounds().y() << "," << layer->getBounds().width() <<"," << layer->getBounds().height() << "]");
           layer->prePaint(bitmapPaintContext,forceChildrenLayout);
         }
@@ -88,6 +95,8 @@ void ScrollLayer::prePaint(PaintContext& context, bool forceLayout) {
 
     /* If child requires paint,then self needs to paint,so set invalidate self*/
     if(bitmapSurfaceDamage_.size() != 0) {
+       /* Clear area before paint */
+       scrollCanvas_->clear(backgroundColor);
        invalidate(static_cast<LayerInvalidateMask>(invalidateMask_|LayerPaintInvalidate));
     }
 
@@ -140,7 +149,9 @@ void ScrollLayer::paint(PaintContext& context) {
     PaintContext bitmapPaintContext = {
             scrollCanvas_.get(),  // canvas
             bitmapSurfaceDamage_, // damage rects
+#if USE(RNS_SHELL_PARTIAL_UPDATES)
             true, // partialupdate support is required for bitmap
+#endif
             clipBound_, // combined clip bounds from surfaceDamage
             nullptr, // GrDirectContext
     };

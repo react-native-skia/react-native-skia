@@ -24,6 +24,7 @@ class RSkComponentScrollView final : public RSkComponent {
  public:
   RSkComponentScrollView(const ShadowView &shadowView);
 
+  //RSkComponent override functions
   RnsShell::LayerInvalidateMask updateComponentProps(
     const ShadowView &newShadowView,
     bool forceUpadate) override;
@@ -32,19 +33,35 @@ class RSkComponentScrollView final : public RSkComponent {
     const ShadowView &newShadowView,
     bool forceUpadate) override;
 
-  void onHandleKey(
-    rnsKey  eventKeyType,
-    bool* stopPropagate) override;
+  bool isContainer() const override { return true; }
+
+  //RSkSpatialNavigatorContainer override functions
+  bool canScrollInDirection(rnsKey direction) override;
+  bool isVisible(RSkComponent* candidate) override;
+  bool isScrollable() override { return true;}
+  SkPoint getScrollOffset() override;
+
+  ScrollStatus scrollInDirection(
+    RSkComponent* candidate,
+    rnsKey direction) override;
 
  protected:
   void OnPaint(SkCanvas *canvas) override;
 
  private:
-  bool setScrollOffset(
+  bool scrollEnabled_{true};
+  std::vector<int> snapToOffsets_;
+
+  void calculateNextScrollOffset(
     ScrollDirectionType scrollDirection,
-    float containerLength,
-    float frameLength,
+    int containerLength,
+    int frameLength,
     int &scrollOfffset);
+
+  SkPoint getNextScrollPosition(rnsKey direction);
+  ScrollStatus handleSnapToOffsetScroll(rnsKey direction,RSkComponent* candidate);
+  ScrollStatus handleScroll(rnsKey direction,SkIRect candidateFrame);
+  ScrollStatus handleScroll(SkPoint scrollPos);
 
   bool isHorizontalScroll();
 

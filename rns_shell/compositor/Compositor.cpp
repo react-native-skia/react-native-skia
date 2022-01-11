@@ -144,6 +144,8 @@ void Compositor::renderLayerTree() {
         };
         RNS_PROFILE_API_OFF("Render Tree Pre-Paint", rootLayer_.get()->prePaint(paintContext));
         clipBound = beginClip(paintContext);
+        /* Check if paint required*/
+        if(!rootLayer_.get()->needsPainting(paintContext)) return;
         RNS_PROFILE_API_OFF("Render Tree Paint", rootLayer_.get()->paint(paintContext));
         RNS_PROFILE_API_OFF("SkSurface Flush & Submit", backBuffer_->flushAndSubmit());
 #ifdef RNS_ENABLE_FRAME_RATE_CONTROL

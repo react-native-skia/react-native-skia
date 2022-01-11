@@ -279,5 +279,14 @@ so starting from step 3 to step 1
     }
 }
 
+bool Layer::requireInvalidate(bool skipChildren) {
+    if(invalidateMask_ != LayerInvalidateNone) return true;
+    if(!skipChildren) {
+       for (auto &layer :children())
+          if(layer->requireInvalidate(skipChildren)) return true;
+    }
+    return false;
+}
+
 }   // namespace RnsShell
 
