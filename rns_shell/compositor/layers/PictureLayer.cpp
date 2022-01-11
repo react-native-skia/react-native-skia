@@ -50,8 +50,8 @@ void PictureLayer::paint(PaintContext& context) {
     RNS_LOG_DEBUG("Picture Layer (" << layerId() << ") has " << children().size() << " childrens");
     SkAutoCanvasRestore save(context.canvas, true); // Save current clip and matrix state
 
+    context.canvas->setMatrix(absoluteTransformMatrix_);
     paintSelf(context);// First paint self and then children if any
-    context.canvas->translate(frame_.x(), frame_.y());
 
     if(masksToBounds()) { // Need to clip children.
         SkRect intRect = SkRect::Make(getFrame());

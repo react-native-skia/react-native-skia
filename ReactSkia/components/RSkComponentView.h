@@ -8,7 +8,7 @@ namespace react {
 class RSkComponentView final : public RSkComponent {
  public:
   RSkComponentView(const ShadowView &shadowView);
-  void updateComponentProps(const ShadowView &newShadowView,bool forceUpdate) override;
+  RnsShell::LayerInvalidateMask updateComponentProps(const ShadowView &newShadowView,bool forceUpdate) override;
  protected:
   void OnPaint(SkCanvas *canvas) override;
 };

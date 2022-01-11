@@ -73,11 +73,10 @@ class RSkComponent : public RnsShell::Layer, public std::enable_shared_from_this
   std::shared_ptr<RnsShell::Layer> layer() { return layer_; }
   const SkIRect& getLayerAbsoluteFrame(){ return(layer_->absoluteFrame());}
   void requiresLayer(const ShadowView &shadowView);
-
   RSkComponent *getParent() {return parent_; };
 
-  void updateProps(const ShadowView &newShadowView , bool forceUpdate);
-  virtual void updateComponentProps(const ShadowView &newShadowView,bool forceUpadate) = 0;
+  RnsShell::LayerInvalidateMask updateProps(const ShadowView &newShadowView , bool forceUpdate);
+  virtual RnsShell::LayerInvalidateMask updateComponentProps(const ShadowView &newShadowView,bool forceUpadate) = 0;
  protected:
   virtual void OnPaint(SkCanvas *canvas) = 0;
 
