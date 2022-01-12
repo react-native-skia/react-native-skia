@@ -30,18 +30,6 @@ inline int getTextLines(std::vector<LineMetrics> metrics, float maxNumberOfLines
     }
     return numberOfLines;
 }
-
-inline SkScalar yPosOffset(AttributedString attributedString, SkScalar paraHeight, Float frameHeight ) {
-    for(auto &fragment: attributedString.getFragments()) {
-        if((paraHeight < frameHeight) && (!fragment.textAttributes.textAlignVertical.empty())) {
-            if(!strcmp(fragment.textAttributes.textAlignVertical.c_str(),"center"))
-                return (frameHeight - paraHeight)/2;
-            else if(!strcmp(fragment.textAttributes.textAlignVertical.c_str(),"bottom"))
-                return (frameHeight - paraHeight);
-        }
-    }
-    return 0;
-}
 } //namespace
 
 namespace RSkTextUtils{
@@ -90,11 +78,10 @@ void drawText(std::shared_ptr<Paragraph>& paragraph,
         canvas->drawColor(RSkColorFromSharedColor(props.backgroundColor, SK_ColorTRANSPARENT));
     }
     if (props.textAttributes.lineHeight) {
-        yOffset = yPosOffset(attributedString, paragraph->getHeight(), layout.getContentFrame().size.height);
         if (isParent)
-            paragraph->paint(canvas, layout.contentInsets.left, layout.contentInsets.top + yOffset);
+            paragraph->paint(canvas, layout.contentInsets.left, layout.contentInsets.top);
         else
-            paragraph->paint(canvas, frame.origin.x + layout.contentInsets.left, frame.origin.y + layout.contentInsets.top + yOffset);
+            paragraph->paint(canvas, frame.origin.x + layout.contentInsets.left, frame.origin.y + layout.contentInsets.top);
     }
 }
 } //RSkTextUtils
