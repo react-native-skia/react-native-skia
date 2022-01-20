@@ -5,11 +5,6 @@ typedef enum rnsKey{
     /*
      * RCU KEYS
      */
-    RNS_KEY_Right,
-    RNS_KEY_Left,
-    RNS_KEY_Up,
-    RNS_KEY_Down,
-    RNS_KEY_Select,
     RNS_KEY_PowerOff,
     RNS_KEY_AudioMedia,
     RNS_KEY_Menu,
@@ -22,7 +17,6 @@ typedef enum rnsKey{
     RNS_KEY_AudioStop,
     RNS_KEY_AudioPlay,
     RNS_KEY_AudioPause,
-    RNS_KEY_Back,
     RNS_KEY_AudioNext,
     RNS_KEY_AudioRewind,
     RNS_KEY_AudioForward,
@@ -37,10 +31,18 @@ typedef enum rnsKey{
     RNS_KEY_Cancel,
     RNS_KEY_Mute,
     RNS_KEY_Guia,
+    //Navigation Keys
+    
+    RNS_KEY_Up,
+    RNS_KEY_Down,
+    RNS_KEY_Select,
+    RNS_KEY_Right,
+    RNS_KEY_Left,
     /*
      * KeyBoard Keys
      */
     /*Numaric Key*/
+
     RNS_KEY_1,
     RNS_KEY_2,
     RNS_KEY_3,
@@ -105,6 +107,9 @@ typedef enum rnsKey{
     RNS_KEY_x,
     RNS_KEY_y,
     RNS_KEY_z,
+    //Delete and backSpace 
+    RNS_KEY_Delete,
+    RNS_KEY_Back,
     /*Modifer Keys chars*/
     RNS_KEY_Caps_Lock,
     RNS_KEY_Alt_L,
@@ -127,7 +132,6 @@ typedef enum rnsKey{
     RNS_KEY_ParenLeft,
     RNS_KEY_ParenRight,
     RNS_KEY_Underscore,
-    RNS_KEY_Delete,
     RNS_KEY_Page_Up,
     RNS_KEY_Page_Down,
     RNS_KEY_Shash,
@@ -169,11 +173,6 @@ typedef enum rnsKeyAction{
     RNS_KEY_Release
 }rnsKeyAction;
 static std::string RNSKeyMap[RNS_KEY_End]={
-    "right",
-    "left",
-    "up",
-    "down",
-    "select",
     "powerOff",
     "audioMedia",
     "menu",
@@ -186,7 +185,6 @@ static std::string RNSKeyMap[RNS_KEY_End]={
     "stop",
     "play",
     "pause",
-    "back",
     "next",
     "rewind",
     "fastForward",
@@ -201,6 +199,12 @@ static std::string RNSKeyMap[RNS_KEY_End]={
     "cancel",
     "mute",
     "guia",
+    //Navigation Keys   
+    "up",
+    "down",
+    "select",
+    "right",
+    "left",
     /*
      * KeyBoard Keys.
      */
@@ -269,6 +273,9 @@ static std::string RNSKeyMap[RNS_KEY_End]={
     "x",
     "y",
     "z",
+    //Delete and Back key
+    "delete", 
+    "back",
     /*Modfier Keys*/
     "capsLock",
     "altL",
@@ -291,7 +298,6 @@ static std::string RNSKeyMap[RNS_KEY_End]={
     "(",
     ")",
     "_",
-    "delete",
     "pageUp",
     "pageDown",
     "/",
