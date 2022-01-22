@@ -76,7 +76,7 @@ deps = {
   'src/third_party/freetype/src'          : Var('chromium_git') + '/chromium/src/third_party/freetype2.git' + '@' + '9ed5332fe632ada7de8fd345c9ef579b678c4042',
   'src/third_party/harfbuzz/src'          : Var('chromium_git') + '/external/github.com/harfbuzz/harfbuzz.git' + '@' + '9bd7ba5019381bb8584811ee63a0ba0cee7dca99',
   'src/third_party/icu'                   : Var('chromium_git') + '/chromium/deps/icu.git' + '@' + 'dbd3825b31041d782c5b504c59dcfb5ac7dda08c',
-  'src/third_party/libjpeg-turbo'         : Var('chromium_git') + '/chromium/deps/libjpeg_turbo.git' + '@' + '64fc43d52351ed52143208ce6a656c03db56462b',
+  'src/third_party/libjpeg-turbo'         : Var('chromium_git') + '/chromium/deps/libjpeg_turbo.git' + '@' + '49836d72bd22c7a78bc0250483f04162278cdc6a',
   'src/third_party/nasm'                  : Var('chromium_git') + '/chromium/deps/nasm.git' + '@' + '4fa54ca5f7fc3a15a8c78ac94688e64d3e4e4fa1',
   'src/third_party/libpng'                : Var('skia_git') + '/third_party/libpng.git' + '@' + '386707c6d19b974ca2e3db7f5c61873813c6fe44',
   'src/third_party/libwebp'               : Var('chromium_git') + '/webm/libwebp.git' + '@' + '0fe1a89dbf1930fc2554dbe76adad5d962054ead',
