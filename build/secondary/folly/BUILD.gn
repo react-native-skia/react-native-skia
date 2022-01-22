@@ -123,6 +123,7 @@ config("internal_configs") {
     "-Wno-sign-compare",
     "-Wno-unreachable-code",
     "-Wno-unused-local-typedef",
+    "-Wno-unreachable-code-return",
   ]
 
   if (is_clang) {
