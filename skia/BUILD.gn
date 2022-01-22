@@ -450,7 +450,7 @@ component("skia") {
   }
 
   if (is_mac || is_ios) {
-    set_sources_assignment_filter([])
+    # set_sources_assignment_filter([])
     sources += [
       "//third_party/skia/include/ports/SkFontMgr_mac_ct.h",
       "//third_party/skia/src/ports/SkFontMgr_mac_ct.cpp",
@@ -460,7 +460,7 @@ component("skia") {
       "//third_party/skia/src/ports/SkTypeface_mac_ct.cpp",
       "//third_party/skia/src/ports/SkTypeface_mac_ct.h",
     ]
-    set_sources_assignment_filter(sources_assignment_filter)
+    # set_sources_assignment_filter(sources_assignment_filter)
   }
 
   if (is_linux) {
@@ -576,7 +576,7 @@ component("skia") {
   if (is_mac) {
     deps += [ ":skia_metal" ]
     defines += [ "SK_METAL" ]
-    libs = [
+    frameworks = [
       "AppKit.framework",
       "CoreFoundation.framework",
       "CoreGraphics.framework",
@@ -590,7 +590,7 @@ component("skia") {
   }
   if (is_ios) {
     libs = [ "ImageIO.framework" ]
-    set_sources_assignment_filter([])
+    # set_sources_assignment_filter([])
     sources += [
       "//third_party/skia/src/utils/mac/SkCGBase.h",
       "//third_party/skia/src/utils/mac/SkCGGeometry.h",
@@ -598,7 +598,7 @@ component("skia") {
       "//third_party/skia/src/utils/mac/SkCTFontSmoothBehavior.h",
       "//third_party/skia/src/utils/mac/SkCreateCGImageRef.cpp",
     ]
-    set_sources_assignment_filter(sources_assignment_filter)
+    # set_sources_assignment_filter(sources_assignment_filter)
   }
 
   if (is_fuchsia) {
