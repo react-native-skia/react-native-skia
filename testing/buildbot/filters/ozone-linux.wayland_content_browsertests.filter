@@ -3,4 +3,3 @@
 -All/AuraWindowVideoCaptureDeviceBrowserTestP.CapturesContentChanges/3
 -EventLatencyBrowserTest.KeyPressOnButton
 -EventLatencyBrowserTest.KeyPressOnButtonWithAnimation
--OutOfProcessPPAPITest.TrueTypeFont
