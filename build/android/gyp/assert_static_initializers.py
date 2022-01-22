@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # Copyright 2017 The Chromium Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
@@ -23,8 +23,9 @@ _DUMP_STATIC_INITIALIZERS_PATH = os.path.join(build_utils.DIR_SOURCE_ROOT,
 
 
 def _RunReadelf(so_path, options, tool_prefix=''):
-  return subprocess.check_output([tool_prefix + 'readelf'] + options +
-                                 [so_path])
+  return subprocess.check_output(
+      [tool_prefix + 'readobj', '--elf-output-style=GNU'] + options +
+      [so_path]).decode('utf8')
 
 
 def _ParseLibBuildId(so_path, tool_prefix):
@@ -42,7 +43,8 @@ def _VerifyLibBuildIdsMatch(tool_prefix, *so_files):
 
 def _GetStaticInitializers(so_path, tool_prefix):
   output = subprocess.check_output(
-      [_DUMP_STATIC_INITIALIZERS_PATH, '-d', so_path, '-t', tool_prefix])
+      [_DUMP_STATIC_INITIALIZERS_PATH, '-d', so_path, '-t', tool_prefix],
+      encoding='utf-8')
   summary = re.search(r'Found \d+ static initializers in (\d+) files.', output)
   return output.splitlines()[:-1], int(summary.group(1))
 
@@ -146,7 +148,10 @@ def main():
   args = parser.parse_args()
 
   # TODO(crbug.com/838414): add support for files included via loadable_modules.
-  ignored_libs = {'libarcore_sdk_c.so', 'libcrashpad_handler_trampoline.so'}
+  ignored_libs = {
+      'libarcore_sdk_c.so', 'libcrashpad_handler_trampoline.so',
+      'libsketchology_native.so'
+  }
   # The chromium linker doesn't have static initializers, which makes the
   # regular check throw. It should not have any.
   no_initializers_libs = ['libchromium_android_linker.so']
@@ -171,7 +176,7 @@ def main():
       print('    //tools/binary_size/diagnose_bloat.py')
       print()
       print('For more information:')
-      print('    https://chromium.googlesource.com/chromium/src/+/master/docs/'
+      print('    https://chromium.googlesource.com/chromium/src/+/main/docs/'
             'static_initializers.md')
     sys.exit(1)
 

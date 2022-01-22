@@ -7,6 +7,8 @@ import os
 import subprocess
 import threading
 
+from common import SubprocessCallWithTimeout
+
 _SSH = ['ssh']
 _SCP = ['scp', '-C']  # Use gzip compression.
 _SSH_LOGGER = logging.getLogger('ssh')
@@ -40,7 +42,10 @@ class CommandRunner(object):
     self._port = port
 
   def _GetSshCommandLinePrefix(self):
-    return _SSH + ['-F', self._config_path, self._host, '-p', str(self._port)]
+    cmd_prefix = _SSH + ['-F', self._config_path, self._host]
+    if self._port:
+      cmd_prefix += ['-p', str(self._port)]
+    return cmd_prefix
 
   def RunCommand(self, command, silent, timeout_secs=None):
     """Executes an SSH command on the remote host and blocks until completion.
@@ -53,30 +58,10 @@ class CommandRunner(object):
     Returns the exit code from the remote command."""
 
     ssh_command = self._GetSshCommandLinePrefix() + command
+    logging.warning(ssh_command)
     _SSH_LOGGER.debug('ssh exec: ' + ' '.join(ssh_command))
-    if silent:
-      devnull = open(os.devnull, 'w')
-      process = subprocess.Popen(ssh_command, stdout=devnull, stderr=devnull)
-    else:
-      process = subprocess.Popen(ssh_command, stdout=subprocess.PIPE,
-                                 stderr=subprocess.STDOUT)
-
-    timeout_timer = None
-    if timeout_secs:
-      timeout_timer = threading.Timer(timeout_secs, process.kill)
-      timeout_timer.start()
-
-    if not silent:
-      for line in process.stdout:
-        print(line)
-
-    process.wait()
-    if timeout_timer:
-      timeout_timer.cancel()
-    if process.returncode == -9:
-      raise Exception('Timeout when executing \"%s\".' % ' '.join(command))
-
-    return process.returncode
+    retval, _, _ = SubprocessCallWithTimeout(ssh_command, silent, timeout_secs)
+    return retval
 
 
   def RunCommandPiped(self, command, stdout, stderr, ssh_args = None, **kwargs):
@@ -100,6 +85,7 @@ class CommandRunner(object):
       ssh_args = []
 
     ssh_command = self._GetSshCommandLinePrefix() + ssh_args + ['--'] + command
+    logging.warning(ssh_command)
     _SSH_LOGGER.debug(' '.join(ssh_command))
     return subprocess.Popen(ssh_command, stdout=stdout, stderr=stderr, **kwargs)
 
@@ -130,7 +116,9 @@ class CommandRunner(object):
     else:
       sources = ["%s:%s" % (host, source) for source in sources]
 
-    scp_command += ['-F', self._config_path, '-P', str(self._port)]
+    scp_command += ['-F', self._config_path]
+    if self._port:
+      scp_command += ['-P', str(self._port)]
     scp_command += sources
     scp_command += [dest]
 

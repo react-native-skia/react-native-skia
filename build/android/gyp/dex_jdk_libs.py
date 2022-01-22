@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #
 # Copyright 2020 The Chromium Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
@@ -24,17 +24,27 @@ def _ParseArgs(args):
       '--desugar-jdk-libs-json', help='Path to desugar_jdk_libs.json.')
   parser.add_argument(
       '--desugar-jdk-libs-jar', help='Path to desugar_jdk_libs.jar.')
+  parser.add_argument('--desugar-jdk-libs-configuration-jar',
+                      help='Path to desugar_jdk_libs_configuration.jar.')
   parser.add_argument('--min-api', help='minSdkVersion', required=True)
+  parser.add_argument('--warnings-as-errors',
+                      action='store_true',
+                      help='Treat all warnings as errors.')
   options = parser.parse_args(args)
   return options
 
 
-def DexJdkLibJar(r8_path, min_api, desugar_jdk_libs_json, desugar_jdk_libs_jar,
-                 keep_rule_file, output):
+def DexJdkLibJar(r8_path,
+                 min_api,
+                 desugar_jdk_libs_json,
+                 desugar_jdk_libs_jar,
+                 desugar_jdk_libs_configuration_jar,
+                 output,
+                 warnings_as_errors,
+                 config_paths=None):
   # TODO(agrieve): Spews a lot of stderr about missing classes.
   with build_utils.TempDir() as tmp_dir:
-    cmd = [
-        build_utils.JAVA_PATH,
+    cmd = build_utils.JavaCmd(warnings_as_errors) + [
         '-cp',
         r8_path,
         'com.android.tools.r8.L8',
@@ -46,12 +56,20 @@ def DexJdkLibJar(r8_path, min_api, desugar_jdk_libs_json, desugar_jdk_libs_jar,
         desugar_jdk_libs_json,
     ]
 
-    if keep_rule_file:
-      cmd += ['--pg-conf', keep_rule_file]
+    # If no desugaring is required, no keep rules are generated, and the keep
+    # file will not be created.
+    if config_paths is not None:
+      for path in config_paths:
+        cmd += ['--pg-conf', path]
 
-    cmd += ['--output', tmp_dir, desugar_jdk_libs_jar]
+    cmd += [
+        '--output', tmp_dir, desugar_jdk_libs_jar,
+        desugar_jdk_libs_configuration_jar
+    ]
 
-    subprocess.check_output(cmd, stderr=subprocess.STDOUT)
+    build_utils.CheckOutput(cmd,
+                            print_stdout=True,
+                            fail_on_output=warnings_as_errors)
     if os.path.exists(os.path.join(tmp_dir, 'classes2.dex')):
       raise Exception('Achievement unlocked: desugar_jdk_libs is multidex!')
 
@@ -66,7 +84,9 @@ def DexJdkLibJar(r8_path, min_api, desugar_jdk_libs_json, desugar_jdk_libs_jar,
 def main(args):
   options = _ParseArgs(args)
   DexJdkLibJar(options.r8_path, options.min_api, options.desugar_jdk_libs_json,
-               options.desugar_jdk_libs_jar, None, options.output)
+               options.desugar_jdk_libs_jar,
+               options.desugar_jdk_libs_configuration_jar, options.output,
+               options.warnings_as_errors)
 
 
 if __name__ == '__main__':

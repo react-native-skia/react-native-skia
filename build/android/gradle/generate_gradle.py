@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env vpython3
 # Copyright 2016 The Chromium Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
@@ -29,6 +29,9 @@ import jinja_template
 from util import build_utils
 from util import resource_utils
 
+sys.path.append(os.path.dirname(_BUILD_ANDROID))
+import gn_helpers
+
 _DEPOT_TOOLS_PATH = os.path.join(host_paths.DIR_SOURCE_ROOT, 'third_party',
                                  'depot_tools')
 _DEFAULT_ANDROID_MANIFEST_PATH = os.path.join(
@@ -54,6 +57,7 @@ _DEFAULT_TARGETS = [
     '//chrome/android:chrome_junit_tests',
     '//chrome/android:chrome_public_apk',
     '//chrome/android:chrome_public_test_apk',
+    '//chrome/android:chrome_public_unit_test_apk',
     '//content/public/android:content_junit_tests',
     '//content/shell/android:content_shell_apk',
     # Below must be included even with --all since they are libraries.
@@ -80,7 +84,7 @@ def _RebasePath(path_or_list, new_cwd=None, old_cwd=None):
   """
   if path_or_list is None:
     return []
-  if not isinstance(path_or_list, basestring):
+  if not isinstance(path_or_list, str):
     return [_RebasePath(p, new_cwd, old_cwd) for p in path_or_list]
   if old_cwd is None:
     old_cwd = constants.GetOutDirectory()
@@ -106,17 +110,8 @@ def _WriteFile(path, data):
     output_file.write(data)
 
 
-def _ReadPropertiesFile(path):
-  with open(path) as f:
-    return dict(l.rstrip().split('=', 1) for l in f if '=' in l)
-
-
 def _RunGnGen(output_dir, args=None):
-  cmd = [
-      os.path.join(_DEPOT_TOOLS_PATH, 'gn'),
-      'gen',
-      output_dir,
-  ]
+  cmd = [os.path.join(_DEPOT_TOOLS_PATH, 'gn'), 'gen', output_dir]
   if args:
     cmd.extend(args)
   logging.info('Running: %r', cmd)
@@ -126,36 +121,19 @@ def _RunGnGen(output_dir, args=None):
 def _RunNinja(output_dir, args):
   # Don't use version within _DEPOT_TOOLS_PATH, since most devs don't use
   # that one when building.
-  cmd = [
-      'autoninja',
-      '-C',
-      output_dir,
-  ]
+  cmd = ['autoninja', '-C', output_dir]
   cmd.extend(args)
   logging.info('Running: %r', cmd)
   subprocess.check_call(cmd)
 
 
 def _QueryForAllGnTargets(output_dir):
-  # Query ninja rather than GN since it's faster.
   cmd = [
-      'ninja',
-      '-C',
-      output_dir,
-      '-t',
-      'targets',
+      os.path.join(_BUILD_ANDROID, 'list_java_targets.py'), '--gn-labels',
+      '--nested', '--build', '--output-directory', output_dir
   ]
   logging.info('Running: %r', cmd)
-  ninja_output = build_utils.CheckOutput(cmd)
-  ret = []
-  SUFFIX_LEN = len('__build_config_crbug_908819')
-  for line in ninja_output.splitlines():
-    ninja_target = line.rsplit(':', 1)[0]
-    # Ignore root aliases by ensure a : exists.
-    if ':' in ninja_target and ninja_target.endswith(
-        '__build_config_crbug_908819'):
-      ret.append('//' + ninja_target[:-SUFFIX_LEN])
-  return ret
+  return subprocess.check_output(cmd, encoding='UTF-8').splitlines()
 
 
 class _ProjectEntry(object):
@@ -183,7 +161,7 @@ class _ProjectEntry(object):
   @classmethod
   def FromBuildConfigPath(cls, path):
     prefix = 'gen/'
-    suffix = '.build_config'
+    suffix = '.build_config.json'
     assert path.startswith(prefix) and path.endswith(suffix), path
     subdir = path[len(prefix):-len(suffix)]
     gn_target = '//%s:%s' % (os.path.split(subdir))
@@ -200,12 +178,6 @@ class _ProjectEntry(object):
 
   def NinjaTarget(self):
     return self._gn_target[2:]
-
-  def GnBuildConfigTarget(self):
-    return '%s__build_config_crbug_908819' % self._gn_target
-
-  def NinjaBuildConfigTarget(self):
-    return '%s__build_config_crbug_908819' % self.NinjaTarget()
 
   def GradleSubdir(self):
     """Returns the output subdirectory."""
@@ -224,9 +196,9 @@ class _ProjectEntry(object):
     return self.GradleSubdir().replace(os.path.sep, '.')
 
   def BuildConfig(self):
-    """Reads and returns the project's .build_config JSON."""
+    """Reads and returns the project's .build_config.json JSON."""
     if not self._build_config:
-      path = os.path.join('gen', self.GradleSubdir() + '.build_config')
+      path = os.path.join('gen', self.GradleSubdir() + '.build_config.json')
       with open(_RebasePath(path)) as jsonfile:
         self._build_config = json.load(jsonfile)
     return self._build_config
@@ -461,10 +433,10 @@ def _ComputeJavaSourceDirsAndExcludes(output_dir, java_files):
   if java_files:
     java_files = _RebasePath(java_files)
     computed_dirs = _ComputeJavaSourceDirs(java_files)
-    java_dirs = computed_dirs.keys()
+    java_dirs = list(computed_dirs.keys())
     all_found_java_files = set()
 
-    for directory, files in computed_dirs.iteritems():
+    for directory, files in computed_dirs.items():
       found_java_files = build_utils.FindInDirectory(directory, '*.java')
       all_found_java_files.update(found_java_files)
       unwanted_java_files = set(found_java_files) - set(files)
@@ -549,7 +521,7 @@ def _GenerateBaseVars(generator, build_vars):
   variables['compile_sdk_version'] = (
       'android-%s' % build_vars['compile_sdk_version'])
   target_sdk_version = build_vars['android_sdk_version']
-  if target_sdk_version.isalpha():
+  if str(target_sdk_version).isalpha():
     target_sdk_version = '"{}"'.format(target_sdk_version)
   variables['target_sdk_version'] = target_sdk_version
   variables['use_gradle_process_resources'] = (
@@ -596,7 +568,7 @@ def _GenerateGradleFile(entry, generator, build_vars, jinja_processor):
       test_entry = generator.Generate(e)
       test_entry['android_manifest'] = generator.GenerateManifest(e)
       variables['android_test'].append(test_entry)
-      for key, value in test_entry.iteritems():
+      for key, value in test_entry.items():
         if isinstance(value, list):
           test_entry[key] = sorted(set(value) - set(variables['main'][key]))
 
@@ -604,38 +576,41 @@ def _GenerateGradleFile(entry, generator, build_vars, jinja_processor):
       _TemplatePath(target_type.split('_')[0]), variables)
 
 
-def _IsTestDir(path):
-  return ('javatests/' in path or
-          'junit/' in path or
-          'test/' in path or
-          'testing/' in path)
-
-
 # Example: //chrome/android:monochrome
 def _GetNative(relative_func, target_names):
+  """Returns an object containing native c++ sources list and its included path
+
+  Iterate through all target_names and their deps to get the list of included
+  paths and sources."""
   out_dir = constants.GetOutDirectory()
   with open(os.path.join(out_dir, 'project.json'), 'r') as project_file:
     projects = json.load(project_file)
   project_targets = projects['targets']
   root_dir = projects['build_settings']['root_path']
-  targets = {}
   includes = set()
+  processed_target = set()
+  targets_stack = list(target_names)
+  sources = []
+
+  while targets_stack:
+    target_name = targets_stack.pop()
+    if target_name in processed_target:
+      continue
+    processed_target.add(target_name)
+    target = project_targets[target_name]
+    includes.update(target.get('include_dirs', []))
+    targets_stack.extend(target.get('deps', []))
+    # Ignore generated files
+    sources.extend(f for f in target.get('sources', [])
+                   if f.endswith('.cc') and not f.startswith('//out'))
+
   def process_paths(paths):
     # Ignores leading //
     return relative_func(
         sorted(os.path.join(root_dir, path[2:]) for path in paths))
-  for target_name in target_names:
-    target = project_targets[target_name]
-    includes.update(target.get('include_dirs', []))
-    sources = [f for f in target.get('sources', []) if f.endswith('.cc')]
-    if sources:
-      # CMake does not like forward slashes or colons for the target name.
-      filtered_name = target_name.replace('/', '.').replace(':', '-')
-      targets[filtered_name] = {
-          'sources': process_paths(sources),
-      }
+
   return {
-      'targets': targets,
+      'sources': process_paths(sources),
       'includes': process_paths(includes),
   }
 
@@ -654,8 +629,11 @@ def _GenerateModuleAll(gradle_output_dir, generator, build_vars,
   res_dirs = sorted(generator.processed_res_dirs)
   def Relativize(paths):
     return _RebasePath(paths, os.path.join(gradle_output_dir, _MODULE_ALL))
-  main_java_dirs = [d for d in java_dirs if not _IsTestDir(d)]
-  test_java_dirs = [d for d in java_dirs if _IsTestDir(d)]
+
+  # As after clank modularization, the java and javatests code will live side by
+  # side in the same module, we will list both of them in the main target here.
+  main_java_dirs = [d for d in java_dirs if 'junit/' not in d]
+  junit_test_java_dirs = [d for d in java_dirs if 'junit/' in d]
   variables['main'] = {
       'android_manifest': Relativize(_DEFAULT_ANDROID_MANIFEST_PATH),
       'java_dirs': Relativize(main_java_dirs),
@@ -664,7 +642,7 @@ def _GenerateModuleAll(gradle_output_dir, generator, build_vars,
       'res_dirs': Relativize(res_dirs),
   }
   variables['android_test'] = [{
-      'java_dirs': Relativize(test_java_dirs),
+      'java_dirs': Relativize(junit_test_java_dirs),
       'java_excludes': ['**/*.java'],
   }]
   if native_targets:
@@ -849,10 +827,11 @@ def main():
         for t in targets_from_args
     ]
     # Necessary after "gn clean"
-    if not os.path.exists(os.path.join(output_dir, 'build_vars.txt')):
+    if not os.path.exists(
+        os.path.join(output_dir, gn_helpers.BUILD_VARS_FILENAME)):
       _RunGnGen(output_dir)
 
-  build_vars = _ReadPropertiesFile(os.path.join(output_dir, 'build_vars.txt'))
+  build_vars = gn_helpers.ReadBuildVars(output_dir)
   jinja_processor = jinja_template.JinjaProcessor(_FILE_DIR)
   if args.beta:
     channel = 'beta'
@@ -869,9 +848,6 @@ def main():
       channel)
 
   main_entries = [_ProjectEntry.FromGnTarget(t) for t in targets]
-
-  logging.warning('Building .build_config files...')
-  _RunNinja(output_dir, [e.NinjaBuildConfigTarget() for e in main_entries])
 
   if args.all:
     # There are many unused libraries, so restrict to those that are actually

@@ -1,5 +1,5 @@
-#!/usr/bin/env python
-# encoding: utf-8
+#!/usr/bin/env python3
+#
 # Copyright (c) 2012 The Chromium Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
@@ -31,7 +31,6 @@ from xml.etree import ElementTree
 from util import build_utils
 from util import diff_utils
 from util import manifest_utils
-from util import md5_check
 from util import parallel
 from util import protoresources
 from util import resource_utils
@@ -60,31 +59,6 @@ def _ParseArgs(args):
       '--aapt2-path', required=True, help='Path to the Android aapt2 tool.')
   input_opts.add_argument(
       '--android-manifest', required=True, help='AndroidManifest.xml path.')
-  input_opts.add_argument(
-      '--expected-file',
-      help='Expected contents for the check. If'
-      '--android-manifest-verify-diff-base is set, this is a diff file. If'
-      'not, this is a AndroidManifest file.')
-  input_opts.add_argument(
-      '--android-manifest-normalized', help='Normalized manifest.')
-  input_opts.add_argument(
-      '--android-manifest-expectations-failure-file',
-      help='Write to this file if expected manifest contents do not match '
-      'final manifest contents.')
-  input_opts.add_argument(
-      '--fail-on-expectations',
-      action="store_true",
-      help='When passed, fails the build on AndroidManifest expectation '
-      'mismatches.')
-  input_opts.add_argument(
-      '--expected-manifest-base-expectation',
-      help='When we expect the actual normalized manifest is different from'
-      'the file from --android-manifest-expected, this file specifies the'
-      'difference.')
-  input_opts.add_argument(
-      '--only-verify-expectations',
-      action='store_true',
-      help='If passed, only verify the android manifest expectation and exit.')
   input_opts.add_argument(
       '--r-java-root-package-name',
       default='base',
@@ -147,11 +121,6 @@ def _ParseArgs(args):
       'must be identical.')
 
   input_opts.add_argument(
-      '--support-zh-hk',
-      action='store_true',
-      help='Use zh-rTW resources for zh-rHK.')
-
-  input_opts.add_argument(
       '--debuggable',
       action='store_true',
       help='Whether to add android:debuggable="true".')
@@ -185,6 +154,12 @@ def _ParseArgs(args):
       default='[]',
       help='GN list of globs that say which files to include even '
       'when --resource-exclusion-regex is set.')
+
+  input_opts.add_argument(
+      '--dependencies-res-zip-overlays',
+      help='GN list with subset of --dependencies-res-zips to use overlay '
+      'semantics for.')
+
   input_opts.add_argument(
       '--values-filter-rules',
       help='GN list of source_glob:regex for filtering resources after they '
@@ -202,27 +177,10 @@ def _ParseArgs(args):
       '--no-xml-namespaces',
       action='store_true',
       help='Whether to strip xml namespaces from processed xml resources.')
-  input_opts.add_argument(
-      '--short-resource-paths',
-      action='store_true',
-      help='Whether to shorten resource paths inside the apk or module.')
-  input_opts.add_argument(
-      '--strip-resource-names',
-      action='store_true',
-      help='Whether to strip resource names from the resource table of the apk '
-      'or module.')
 
   output_opts.add_argument('--arsc-path', help='Apk output for arsc format.')
   output_opts.add_argument('--proto-path', help='Apk output for proto format.')
   group = input_opts.add_mutually_exclusive_group()
-  group.add_argument(
-      '--optimized-arsc-path',
-      help='Output for `aapt2 optimize` for arsc format (enables the step).')
-  group.add_argument(
-      '--optimized-proto-path',
-      help='Output for `aapt2 optimize` for proto format (enables the step).')
-  input_opts.add_argument(
-      '--resources-config-path', help='Path to aapt2 resources config file.')
 
   output_opts.add_argument(
       '--info-path', help='Path to output info file for the partial apk.')
@@ -245,16 +203,21 @@ def _ParseArgs(args):
   output_opts.add_argument(
       '--emit-ids-out', help='Path to file produced by aapt2 --emit-ids.')
 
-  output_opts.add_argument(
-      '--resources-path-map-out-path',
-      help='Path to file produced by aapt2 that maps original resource paths '
-      'to shortened resource paths inside the apk or module.')
-
   input_opts.add_argument(
       '--is-bundle-module',
       action='store_true',
       help='Whether resources are being generated for a bundle module.')
 
+  input_opts.add_argument(
+      '--uses-split',
+      help='Value to set uses-split to in the AndroidManifest.xml.')
+
+  input_opts.add_argument(
+      '--extra-verification-manifest',
+      help='Path to AndroidManifest.xml which should be merged into base '
+      'manifest when performing verification.')
+
+  diff_utils.AddCommandLineFlags(parser)
   options = parser.parse_args(args)
 
   resource_utils.HandleCommonOptions(options)
@@ -264,21 +227,15 @@ def _ParseArgs(args):
       options.shared_resources_allowlist_locales)
   options.resource_exclusion_exceptions = build_utils.ParseGnList(
       options.resource_exclusion_exceptions)
+  options.dependencies_res_zip_overlays = build_utils.ParseGnList(
+      options.dependencies_res_zip_overlays)
   options.values_filter_rules = build_utils.ParseGnList(
       options.values_filter_rules)
   options.extra_main_r_text_files = build_utils.ParseGnList(
       options.extra_main_r_text_files)
 
-  if options.optimized_proto_path and not options.proto_path:
-    # We could write to a temp file, but it's simpler to require it.
-    parser.error('--optimized-proto-path requires --proto-path')
-
   if not options.arsc_path and not options.proto_path:
     parser.error('One of --arsc-path or --proto-path is required.')
-
-  if options.resources_path_map_out_path and not options.short_resource_paths:
-    parser.error(
-        '--resources-path-map-out-path requires --short-resource-paths')
 
   if options.package_id and options.shared_resources:
     parser.error('--package-id and --shared-resources are mutually exclusive')
@@ -290,20 +247,6 @@ def _IterFiles(root_dir):
   for root, _, files in os.walk(root_dir):
     for f in files:
       yield os.path.join(root, f)
-
-
-def _DuplicateZhResources(resource_dirs, path_info):
-  """Duplicate Taiwanese resources into Hong-Kong specific directory."""
-  for resource_dir in resource_dirs:
-    # We use zh-TW resources for zh-HK (if we have zh-TW resources).
-    for path in _IterFiles(resource_dir):
-      if 'zh-rTW' in path:
-        hk_path = path.replace('zh-rTW', 'zh-rHK')
-        build_utils.MakeDirectory(os.path.dirname(hk_path))
-        shutil.copyfile(path, hk_path)
-        path_info.RegisterRename(
-            os.path.relpath(path, resource_dir),
-            os.path.relpath(hk_path, resource_dir))
 
 
 def _RenameLocaleResourceDirs(resource_dirs, path_info):
@@ -321,22 +264,19 @@ def _RenameLocaleResourceDirs(resource_dirs, path_info):
     * Modern ISO 639-1 codes will be renamed to their obsolete variant
       for Indonesian, Hebrew and Yiddish (e.g. 'values-in/ -> values-id/).
 
-    * Norwegian macrolanguage strings will be renamed to Bokmål (main
+    * Norwegian macrolanguage strings will be renamed to Bokmal (main
       Norway language). See http://crbug.com/920960. In practice this
       means that 'values-no/ -> values-nb/' unless 'values-nb/' already
       exists.
 
     * BCP 47 langauge tags will be renamed to an equivalent ISO 639-1
       locale qualifier if possible (e.g. 'values-b+en+US/ -> values-en-rUS').
-      Though this is not necessary at the moment, because no third-party
-      package that Chromium links against uses these for the current list of
-      supported locales, this may change when the list is extended in the
-      future).
 
   Args:
     resource_dirs: list of top-level resource directories.
   """
   for resource_dir in resource_dirs:
+    ignore_dirs = {}
     for path in _IterFiles(resource_dir):
       locale = resource_utils.FindLocaleInStringResourceFilePath(path)
       if not locale:
@@ -350,10 +290,24 @@ def _RenameLocaleResourceDirs(resource_dirs, path_info):
         if path == path2:
           raise Exception('Could not substitute locale %s for %s in %s' %
                           (locale, locale2, path))
-        if os.path.exists(path2):
-          # This happens sometimes, e.g. some libraries provide both
-          # values-nb/ and values-no/ with the same content.
+
+        # Ignore rather than rename when the destination resources config
+        # already exists.
+        # e.g. some libraries provide both values-nb/ and values-no/.
+        # e.g. material design provides:
+        # * res/values-rUS/values-rUS.xml
+        # * res/values-b+es+419/values-b+es+419.xml
+        config_dir = os.path.dirname(path2)
+        already_has_renamed_config = ignore_dirs.get(config_dir)
+        if already_has_renamed_config is None:
+          # Cache the result of the first time the directory is encountered
+          # since subsequent encounters will find the directory already exists
+          # (due to the rename).
+          already_has_renamed_config = os.path.exists(config_dir)
+          ignore_dirs[config_dir] = already_has_renamed_config
+        if already_has_renamed_config:
           continue
+
         build_utils.MakeDirectory(os.path.dirname(path2))
         shutil.move(path, path2)
         path_info.RegisterRename(
@@ -361,13 +315,11 @@ def _RenameLocaleResourceDirs(resource_dirs, path_info):
             os.path.relpath(path2, resource_dir))
 
 
-def _ToAndroidLocales(locale_allowlist, support_zh_hk):
+def _ToAndroidLocales(locale_allowlist):
   """Converts the list of Chrome locales to Android config locale qualifiers.
 
   Args:
     locale_allowlist: A list of Chromium locale names.
-    support_zh_hk: True if we need to support zh-HK by duplicating
-      the zh-TW strings.
   Returns:
     A set of matching Android config locale qualifier names.
   """
@@ -381,14 +333,7 @@ def _ToAndroidLocales(locale_allowlist, support_zh_hk):
     language = locale.split('-')[0]
     ret.add(language)
 
-  # We don't actually support zh-HK in Chrome on Android, but we mimic the
-  # native side behavior where we use zh-TW resources when the locale is set to
-  # zh-HK. See https://crbug.com/780847.
-  if support_zh_hk:
-    assert not any('HK' in l for l in locale_allowlist), (
-        'Remove special logic if zh-HK is now supported (crbug.com/780847).')
-    ret.add('zh-rHK')
-  return set(ret)
+  return ret
 
 
 def _MoveImagesToNonMdpiFolders(res_root, path_info):
@@ -420,7 +365,7 @@ def _MoveImagesToNonMdpiFolders(res_root, path_info):
           os.path.relpath(dst_file, res_root))
 
 
-def _FixManifest(options, temp_dir):
+def _FixManifest(options, temp_dir, extra_manifest=None):
   """Fix the APK's AndroidManifest.xml.
 
   This adds any missing namespaces for 'android' and 'tools', and
@@ -430,10 +375,13 @@ def _FixManifest(options, temp_dir):
   Args:
     options: The command-line arguments tuple.
     temp_dir: A temporary directory where the fixed manifest will be written to.
+    extra_manifest: Path to an AndroidManifest.xml file which will get merged
+        into the application node of the base manifest.
   Returns:
     Tuple of:
      * Manifest path within |temp_dir|.
      * Original package_name.
+     * Manifest package name.
   """
   def maybe_extract_version(j):
     try:
@@ -460,6 +408,17 @@ def _FixManifest(options, temp_dir):
   doc, manifest_node, app_node = manifest_utils.ParseManifest(
       options.android_manifest)
 
+  if extra_manifest:
+    _, extra_manifest_node, extra_app_node = manifest_utils.ParseManifest(
+        extra_manifest)
+    for node in extra_app_node:
+      app_node.append(node)
+    for node in extra_manifest_node:
+      # DFM manifests have a bunch of tags we don't care about inside
+      # <manifest>, so only take <queries>.
+      if node.tag == 'queries':
+        manifest_node.append(node)
+
   manifest_utils.AssertUsesSdk(manifest_node, options.min_sdk_version,
                                options.target_sdk_version)
   # We explicitly check that maxSdkVersion is set in the manifest since we don't
@@ -474,50 +433,29 @@ def _FixManifest(options, temp_dir):
   manifest_node.set('platformBuildVersionName', version_name)
 
   orig_package = manifest_node.get('package')
+  fixed_package = orig_package
   if options.arsc_package_name:
     manifest_node.set('package', options.arsc_package_name)
+    fixed_package = options.arsc_package_name
 
   if options.debuggable:
     app_node.set('{%s}%s' % (manifest_utils.ANDROID_NAMESPACE, 'debuggable'),
                  'true')
 
+  if options.uses_split:
+    uses_split = ElementTree.SubElement(manifest_node, 'uses-split')
+    uses_split.set('{%s}name' % manifest_utils.ANDROID_NAMESPACE,
+                   options.uses_split)
+
+  # Make sure the min-sdk condition is not less than the min-sdk of the bundle.
+  for min_sdk_node in manifest_node.iter('{%s}min-sdk' %
+                                         manifest_utils.DIST_NAMESPACE):
+    dist_value = '{%s}value' % manifest_utils.DIST_NAMESPACE
+    if int(min_sdk_node.get(dist_value)) < int(options.min_sdk_version):
+      min_sdk_node.set(dist_value, options.min_sdk_version)
+
   manifest_utils.SaveManifest(doc, debug_manifest_path)
-  return debug_manifest_path, orig_package
-
-
-def _VerifyManifest(actual_manifest, expected_file, normalized_manifest,
-                    expected_manifest_base_expectation,
-                    unexpected_manifest_failure_file, fail_on_mismatch):
-  with build_utils.AtomicOutput(normalized_manifest) as normalized_output:
-    normalized_output.write(manifest_utils.NormalizeManifest(actual_manifest))
-
-  if expected_manifest_base_expectation:
-    with tempfile.NamedTemporaryFile() as generated_diff:
-      actual_diff_content = diff_utils.GenerateDiffWithOnlyAdditons(
-          expected_manifest_base_expectation, normalized_manifest)
-      generated_diff.write(actual_diff_content)
-      generated_diff.flush()
-
-      msg = diff_utils.DiffFileContents(expected_file, generated_diff.name)
-  else:
-    msg = diff_utils.DiffFileContents(expected_file, normalized_manifest)
-
-  if not msg:
-    return
-
-  msg_header = """\
-AndroidManifest.xml expectations file needs updating. For details see:
-https://chromium.googlesource.com/chromium/src/+/HEAD/chrome/android/java/README.md
-"""
-  sys.stderr.write(msg_header)
-  sys.stderr.write(msg)
-  if unexpected_manifest_failure_file:
-    build_utils.MakeDirectory(os.path.dirname(unexpected_manifest_failure_file))
-    with open(unexpected_manifest_failure_file, 'w') as f:
-      f.write(msg_header)
-      f.write(msg)
-  if fail_on_mismatch:
-    sys.exit(1)
+  return debug_manifest_path, orig_package, fixed_package
 
 
 def _CreateKeepPredicate(resource_exclusion_regex,
@@ -667,7 +605,8 @@ def _CreateValuesKeepPredicate(exclusion_rules, dep_subdir):
   return lambda x: not any(r.search(x) for r in regexes)
 
 
-def _CompileDeps(aapt2_path, dep_subdirs, temp_dir, exclusion_rules):
+def _CompileDeps(aapt2_path, dep_subdirs, dep_subdir_overlay_set, temp_dir,
+                 exclusion_rules):
   partials_dir = os.path.join(temp_dir, 'partials')
   build_utils.MakeDirectory(partials_dir)
 
@@ -677,11 +616,19 @@ def _CompileDeps(aapt2_path, dep_subdirs, temp_dir, exclusion_rules):
 
   # Filtering is slow, so ensure jobs with keep_predicate are started first.
   job_params.sort(key=lambda x: not x[2])
-  return list(
+  partials = list(
       parallel.BulkForkAndCall(_CompileSingleDep,
                                job_params,
                                aapt2_path=aapt2_path,
                                partials_dir=partials_dir))
+
+  partials_cmd = list()
+  for i, partial in enumerate(partials):
+    dep_subdir = job_params[i][1]
+    if dep_subdir in dep_subdir_overlay_set:
+      partials_cmd += ['-R']
+    partials_cmd += [partial]
+  return partials_cmd
 
 
 def _CreateResourceInfoFile(path_info, info_path, dependencies_res_zips):
@@ -715,8 +662,7 @@ def _RemoveUnwantedLocalizedStrings(dep_subdirs, options):
   # list provided by --locale-allowlist.
   wanted_locales = all_locales
   if options.locale_allowlist:
-    wanted_locales = _ToAndroidLocales(options.locale_allowlist,
-                                       options.support_zh_hk)
+    wanted_locales = _ToAndroidLocales(options.locale_allowlist)
 
   # Set B: shared resources locales, which is either set A
   # or the list provided by --shared-resources-allowlist-locales
@@ -728,7 +674,7 @@ def _RemoveUnwantedLocalizedStrings(dep_subdirs, options):
             options.shared_resources_allowlist))
 
     shared_resources_locales = _ToAndroidLocales(
-        options.shared_resources_allowlist_locales, options.support_zh_hk)
+        options.shared_resources_allowlist_locales)
 
   # Remove any file that belongs to a locale not covered by
   # either A or B.
@@ -777,12 +723,17 @@ def _PackageApk(options, build):
     The manifest package name for the APK.
   """
   logging.debug('Extracting resource .zips')
-  dep_subdirs = resource_utils.ExtractDeps(options.dependencies_res_zips,
-                                           build.deps_dir)
+  dep_subdirs = []
+  dep_subdir_overlay_set = set()
+  for dependency_res_zip in options.dependencies_res_zips:
+    extracted_dep_subdirs = resource_utils.ExtractDeps([dependency_res_zip],
+                                                       build.deps_dir)
+    dep_subdirs += extracted_dep_subdirs
+    if dependency_res_zip in options.dependencies_res_zip_overlays:
+      dep_subdir_overlay_set.update(extracted_dep_subdirs)
+
   logging.debug('Applying locale transformations')
   path_info = resource_utils.ResourceInfoFile()
-  if options.support_zh_hk:
-    _DuplicateZhResources(dep_subdirs, path_info)
   _RenameLocaleResourceDirs(dep_subdirs, path_info)
 
   logging.debug('Applying file-based exclusions')
@@ -805,7 +756,8 @@ def _PackageApk(options, build):
 
   logging.debug('Running aapt2 compile')
   exclusion_rules = [x.split(':', 1) for x in options.values_filter_rules]
-  partials = _CompileDeps(options.aapt2_path, dep_subdirs, build.temp_dir,
+  partials = _CompileDeps(options.aapt2_path, dep_subdirs,
+                          dep_subdir_overlay_set, build.temp_dir,
                           exclusion_rules)
 
   link_command = [
@@ -818,6 +770,8 @@ def _PackageApk(options, build):
       options.min_sdk_version,
       '--target-sdk-version',
       options.target_sdk_version,
+      '--output-text-symbols',
+      build.r_txt_path,
   ]
 
   for j in options.include_resources:
@@ -833,10 +787,6 @@ def _PackageApk(options, build):
     link_command += ['--proguard-main-dex', build.proguard_main_dex_path]
   if options.emit_ids_out:
     link_command += ['--emit-ids', build.emit_ids_path]
-  if options.r_text_in:
-    shutil.copyfile(options.r_text_in, build.r_txt_path)
-  else:
-    link_command += ['--output-text-symbols', build.r_txt_path]
 
   # Note: only one of --proto-format, --shared-lib or --app-as-shared-lib
   #       can be used with recent versions of aapt2.
@@ -853,8 +803,8 @@ def _PackageApk(options, build):
         '--allow-reserved-package-id',
     ]
 
-  fixed_manifest, desired_manifest_package_name = _FixManifest(
-      options, build.temp_dir)
+  fixed_manifest, desired_manifest_package_name, fixed_manifest_package = (
+      _FixManifest(options, build.temp_dir))
   if options.rename_manifest_package:
     desired_manifest_package_name = options.rename_manifest_package
 
@@ -867,17 +817,13 @@ def _PackageApk(options, build):
   # Also creates R.txt
   if options.use_resource_ids_path:
     _CreateStableIdsFile(options.use_resource_ids_path, build.stable_ids_path,
-                         desired_manifest_package_name)
+                         fixed_manifest_package)
     link_command += ['--stable-ids', build.stable_ids_path]
 
-  for partial in partials:
-    link_command += ['-R', partial]
+  link_command += partials
 
   # We always create a binary arsc file first, then convert to proto, so flags
   # such as --shared-lib can be supported.
-  arsc_path = build.arsc_path
-  if arsc_path is None:
-    _, arsc_path = tempfile.mkstmp()
   link_command += ['-o', build.arsc_path]
 
   logging.debug('Starting: aapt2 link')
@@ -900,7 +846,7 @@ def _PackageApk(options, build):
     # can call it in the case where the APK is being loaded as a library.
     with open(build.proguard_path, 'a') as proguard_file:
       keep_rule = '''
-                  -keep class {package}.R {{
+                  -keep,allowoptimization class {package}.R {{
                     public static void onResourcesLoaded(int);
                   }}
                   '''.format(package=desired_manifest_package_name)
@@ -925,85 +871,7 @@ def _PackageApk(options, build):
         build.arsc_path, build.proto_path
     ])
 
-  if build.arsc_path is None:
-    os.remove(arsc_path)
-
-  if options.optimized_proto_path:
-    _OptimizeApk(build.optimized_proto_path, options, build.temp_dir,
-                 build.proto_path, build.r_txt_path)
-  elif options.optimized_arsc_path:
-    _OptimizeApk(build.optimized_arsc_path, options, build.temp_dir,
-                 build.arsc_path, build.r_txt_path)
-
   return desired_manifest_package_name
-
-
-def _OptimizeApk(output, options, temp_dir, unoptimized_path, r_txt_path):
-  """Optimize intermediate .ap_ file with aapt2.
-
-  Args:
-    output: Path to write to.
-    options: The command-line options.
-    temp_dir: A temporary directory.
-    unoptimized_path: path of the apk to optimize.
-    r_txt_path: path to the R.txt file of the unoptimized apk.
-  """
-  optimize_command = [
-      options.aapt2_path,
-      'optimize',
-      unoptimized_path,
-      '-o',
-      output,
-  ]
-
-  # Optimize the resources.arsc file by obfuscating resource names and only
-  # allow usage via R.java constant.
-  if options.strip_resource_names:
-    # Resources of type ID are references to UI elements/views. They are used by
-    # UI automation testing frameworks. They are kept in so that they dont break
-    # tests, even though they may not actually be used during runtime. See
-    # https://crbug.com/900993
-    id_resources = _ExtractIdResources(r_txt_path)
-    gen_config_path = os.path.join(temp_dir, 'aapt2.config')
-    if options.resources_config_path:
-      shutil.copyfile(options.resources_config_path, gen_config_path)
-    with open(gen_config_path, 'a+') as config:
-      for resource in id_resources:
-        config.write('{}#no_obfuscate\n'.format(resource))
-
-    optimize_command += [
-        '--collapse-resource-names',
-        '--resources-config-path',
-        gen_config_path,
-    ]
-
-  if options.short_resource_paths:
-    optimize_command += ['--shorten-resource-paths']
-  if options.resources_path_map_out_path:
-    optimize_command += [
-        '--resource-path-shortening-map', options.resources_path_map_out_path
-    ]
-
-  logging.debug('Running aapt2 optimize')
-  build_utils.CheckOutput(
-      optimize_command, print_stdout=False, print_stderr=False)
-
-
-def _ExtractIdResources(rtxt_path):
-  """Extract resources of type ID from the R.txt file
-
-  Args:
-    rtxt_path: Path to R.txt file with all the resources
-  Returns:
-    List of id resources in the form of id/<resource_name>
-  """
-  id_resources = []
-  with open(rtxt_path) as rtxt:
-    for line in rtxt:
-      if ' id ' in line:
-        resource_name = line.split()[2]
-        id_resources.append('id/{}'.format(resource_name))
-  return id_resources
 
 
 @contextlib.contextmanager
@@ -1034,8 +902,6 @@ def _WriteOutputs(options, build):
       (options.r_text_out, build.r_txt_path),
       (options.arsc_path, build.arsc_path),
       (options.proto_path, build.proto_path),
-      (options.optimized_arsc_path, build.optimized_arsc_path),
-      (options.optimized_proto_path, build.optimized_proto_path),
       (options.proguard_file, build.proguard_path),
       (options.proguard_file_main_dex, build.proguard_main_dex_path),
       (options.emit_ids_out, build.emit_ids_path),
@@ -1048,17 +914,25 @@ def _WriteOutputs(options, build):
       shutil.move(temp, final)
 
 
-def _VerifyExpectations(options):
+def _CreateNormalizedManifestForVerification(options):
   with build_utils.TempDir() as tempdir:
-    fixed_manifest, _ = _FixManifest(options, tempdir)
-    _VerifyManifest(fixed_manifest, options.expected_file,
-                    options.android_manifest_normalized,
-                    options.expected_manifest_base_expectation,
-                    options.android_manifest_expectations_failure_file,
-                    options.fail_on_expectations)
+    fixed_manifest, _, _ = _FixManifest(
+        options, tempdir, extra_manifest=options.extra_verification_manifest)
+    with open(fixed_manifest) as f:
+      return manifest_utils.NormalizeManifest(f.read())
 
 
-def _OnStaleMd5(options):
+def main(args):
+  build_utils.InitLogging('RESOURCE_DEBUG')
+  args = build_utils.ExpandFileArgs(args)
+  options = _ParseArgs(args)
+
+  if options.expected_file:
+    actual_data = _CreateNormalizedManifestForVerification(options)
+    diff_utils.CheckExpectations(actual_data, options)
+    if options.only_verify_expectations:
+      return
+
   path = options.arsc_path or options.proto_path
   debug_temp_resources_dir = os.environ.get('TEMP_RESOURCES_DIR')
   if debug_temp_resources_dir:
@@ -1100,6 +974,12 @@ def _OnStaleMd5(options):
     custom_root_package_name = options.r_java_root_package_name
     grandparent_custom_package_name = None
 
+    # Always generate an R.java file for the package listed in
+    # AndroidManifest.xml because this is where Android framework looks to find
+    # onResourcesLoaded() for shared library apks. While not actually necessary
+    # for application apks, it also doesn't hurt.
+    apk_package_name = manifest_package_name
+
     if options.package_name and not options.arsc_package_name:
       # Feature modules have their own custom root package name and should
       # inherit from the appropriate base module package. This behaviour should
@@ -1108,18 +988,17 @@ def _OnStaleMd5(options):
       # apk under test.
       custom_root_package_name = options.package_name
       grandparent_custom_package_name = options.r_java_root_package_name
-
-    if options.shared_resources or options.app_as_shared_lib:
-      package_for_library = manifest_package_name
-    else:
-      package_for_library = None
+      # Feature modules have the same manifest package as the base module but
+      # they should not create an R.java for said manifest package because it
+      # will be created in the base module.
+      apk_package_name = None
 
     logging.debug('Creating R.srcjar')
     resource_utils.CreateRJavaFiles(
-        build.srcjar_dir, package_for_library, build.r_txt_path,
-        options.extra_res_packages, options.extra_r_text_files,
-        rjava_build_options, options.srcjar_out, custom_root_package_name,
-        grandparent_custom_package_name, options.extra_main_r_text_files)
+        build.srcjar_dir, apk_package_name, build.r_txt_path,
+        options.extra_res_packages, rjava_build_options, options.srcjar_out,
+        custom_root_package_name, grandparent_custom_package_name,
+        options.extra_main_r_text_files)
     build_utils.ZipDir(build.srcjar_path, build.srcjar_dir)
 
     # Sanity check that the created resources have the expected package ID.
@@ -1133,96 +1012,20 @@ def _OnStaleMd5(options):
     _, package_id = resource_utils.ExtractArscPackage(
         options.aapt2_path,
         build.arsc_path if options.arsc_path else build.proto_path)
-    if package_id != expected_id:
+    # When there are no resources, ExtractArscPackage returns (None, None), in
+    # this case there is no need to check for matching package ID.
+    if package_id is not None and package_id != expected_id:
       raise Exception(
           'Invalid package ID 0x%x (expected 0x%x)' % (package_id, expected_id))
 
     logging.debug('Copying outputs')
     _WriteOutputs(options, build)
 
-
-def main(args):
-  build_utils.InitLogging('RESOURCE_DEBUG')
-  args = build_utils.ExpandFileArgs(args)
-  options = _ParseArgs(args)
-
-  if options.expected_file:
-    _VerifyExpectations(options)
-  if options.only_verify_expectations:
-    return
-
-  depfile_deps = (
-      options.dependencies_res_zips + options.extra_main_r_text_files +
-      options.extra_r_text_files + options.include_resources)
-
-  possible_input_paths = depfile_deps + [
-      options.aapt2_path,
-      options.android_manifest,
-      options.expected_file,
-      options.expected_manifest_base_expectation,
-      options.resources_config_path,
-      options.shared_resources_allowlist,
-      options.use_resource_ids_path,
-      options.webp_binary,
-  ]
-  input_paths = [p for p in possible_input_paths if p]
-  input_strings = [
-      options.android_manifest_expectations_failure_file,
-      options.app_as_shared_lib,
-      options.arsc_package_name,
-      options.debuggable,
-      options.extra_res_packages,
-      options.include_resources,
-      options.locale_allowlist,
-      options.manifest_package,
-      options.max_sdk_version,
-      options.min_sdk_version,
-      options.no_xml_namespaces,
-      options.package_id,
-      options.package_name,
-      options.png_to_webp,
-      options.rename_manifest_package,
-      options.resource_exclusion_exceptions,
-      options.resource_exclusion_regex,
-      options.r_java_root_package_name,
-      options.shared_resources,
-      options.shared_resources_allowlist_locales,
-      options.short_resource_paths,
-      options.strip_resource_names,
-      options.support_zh_hk,
-      options.target_sdk_version,
-      options.values_filter_rules,
-      options.version_code,
-      options.version_name,
-      options.webp_cache_dir,
-  ]
-  output_paths = [options.srcjar_out]
-  possible_output_paths = [
-      options.android_manifest_normalized,
-      options.arsc_path,
-      options.emit_ids_out,
-      options.info_path,
-      options.optimized_arsc_path,
-      options.optimized_proto_path,
-      options.proguard_file,
-      options.proguard_file_main_dex,
-      options.proto_path,
-      options.resources_path_map_out_path,
-      options.r_text_out,
-  ]
-  output_paths += [p for p in possible_output_paths if p]
-
-  # Since we overspecify deps, this target depends on java deps that are not
-  # going to change its output. This target is also slow (6-12 seconds) and
-  # blocking the critical path. We want changes to java_library targets to not
-  # trigger re-compilation of resources, thus we need to use md5_check.
-  md5_check.CallAndWriteDepfileIfStale(
-      lambda: _OnStaleMd5(options),
-      options,
-      input_paths=input_paths,
-      input_strings=input_strings,
-      output_paths=output_paths,
-      depfile_deps=depfile_deps)
+  if options.depfile:
+    depfile_deps = (options.dependencies_res_zips +
+                    options.dependencies_res_zip_overlays +
+                    options.extra_main_r_text_files + options.include_resources)
+    build_utils.WriteDepfile(options.depfile, options.srcjar_out, depfile_deps)
 
 
 if __name__ == '__main__':

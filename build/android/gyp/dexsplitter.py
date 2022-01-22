@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #
 # Copyright 2018 The Chromium Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
@@ -48,8 +48,7 @@ def _ParseOptions(args):
 
 
 def _RunDexsplitter(options, output_dir):
-  cmd = [
-      build_utils.JAVA_PATH,
+  cmd = build_utils.JavaCmd() + [
       '-cp',
       options.r8_path,
       'com.android.tools.r8.dexsplitter.DexSplitter',
@@ -82,7 +81,7 @@ def main(args):
   options = _ParseOptions(args)
 
   input_paths = [options.input_dex_zip]
-  for feature_jars in options.features.itervalues():
+  for feature_jars in options.features.values():
     for feature_jar in feature_jars:
       input_paths.append(feature_jar)
 

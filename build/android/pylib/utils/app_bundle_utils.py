@@ -49,6 +49,7 @@ def GenerateBundleApks(bundle_path,
                        keystore_password,
                        keystore_alias,
                        mode=None,
+                       local_testing=False,
                        minimal=False,
                        minimal_sdk_version=None,
                        check_for_noop=True,
@@ -109,6 +110,9 @@ def GenerateBundleApks(bundle_path,
           '--overwrite',
       ]
 
+      if local_testing:
+        cmd_args += ['--local-testing']
+
       if mode is not None:
         if mode not in BUILD_APKS_MODES:
           raise Exception('Invalid mode parameter %s (should be in %s)' %
@@ -122,7 +126,7 @@ def GenerateBundleApks(bundle_path,
                           (mode, OPTIMIZE_FOR_OPTIONS))
         cmd_args += ['--optimize-for=' + optimize_for]
 
-      with tempfile.NamedTemporaryFile(suffix='.json') as spec_file:
+      with tempfile.NamedTemporaryFile(mode='w', suffix='.json') as spec_file:
         if device_spec:
           json.dump(device_spec, spec_file)
           spec_file.flush()
@@ -136,23 +140,23 @@ def GenerateBundleApks(bundle_path,
         build_utils.DoZip(files, f, base_dir=temp_dir)
 
   if check_for_noop:
-    # NOTE: BUNDLETOOL_JAR_PATH is added to input_strings, rather than
-    # input_paths, to speed up MD5 computations by about 400ms (the .jar file
-    # contains thousands of class files which are checked independently,
-    # resulting in an .md5.stamp of more than 60000 lines!).
-    input_paths = [bundle_path, aapt2_path, keystore_path]
+    input_paths = [
+        bundle_path,
+        bundletool.BUNDLETOOL_JAR_PATH,
+        aapt2_path,
+        keystore_path,
+    ]
     input_strings = [
         keystore_password,
         keystore_alias,
-        bundletool.BUNDLETOOL_JAR_PATH,
-        # NOTE: BUNDLETOOL_VERSION is already part of BUNDLETOOL_JAR_PATH, but
-        # it's simpler to assume that this may not be the case in the future.
-        bundletool.BUNDLETOOL_VERSION,
         device_spec,
     ]
     if mode is not None:
       input_strings.append(mode)
 
+    # Avoid rebuilding (saves ~20s) when the input files have not changed. This
+    # is essential when calling the apk_operations.py script multiple times with
+    # the same bundle (e.g. out/Debug/bin/monochrome_public_bundle run).
     md5_check.CallAndRecordIfStale(
         rebuild,
         input_paths=input_paths,

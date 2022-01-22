@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+
 # Copyright 2018 The Chromium Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
@@ -28,24 +29,24 @@ import shutil
 import subprocess
 import sys
 
+
+def LoadPList(path):
+  """Loads Plist at |path| and returns it as a dictionary."""
+  if sys.version_info.major == 2:
+    return plistlib.readPlist(path)
+  with open(path, 'rb') as f:
+    return plistlib.load(f)
+
+
+# This contains binaries from Xcode 12.5 12E262, along with the macOS 11 SDK.
 # To build these packages, see comments in build/xcode_binaries.yaml
 MAC_BINARIES_LABEL = 'infra_internal/ios/xcode/xcode_binaries/mac-amd64'
-MAC_BINARIES_TAG = {
-    # This contains binaries from Xcode 11.2.1, along with the 10.15 SDKs (aka
-    # 11B53).
-    'default': 'X5ZbqG_UKa-N64_XSBkAwShWPtzskeXhQRfpzc_1KUYC',
-    # This contains binaries from Xcode (Universal) 12 beta, along with the
-    # 11 SDK (aka 12A8158a).
-    'xcode_12_beta': '_tvvMQXaruqACKkcaZmqHR_7S-S2pHrXgcjTWfbI1qoC',
-}
+MAC_BINARIES_TAG = 'pBipKbKSkYGXpuOBm4-8zuvfIGeFtpGbQ4IHM9YW0xMC'
 
-# The toolchain will not be downloaded if the minimum OS version is not met.
-# 17 is the major version number for macOS 10.13.
-# 9E145 (Xcode 9.3) only runs on 10.13.2 and newer.
-MAC_MINIMUM_OS_VERSION = {
-    'default': [17],  # macOS 10.13+
-    'xcode_12_beta': [19, 4],  # macOS 10.15.4+
-}
+# The toolchain will not be downloaded if the minimum OS version is not met. 19
+# is the major version number for macOS 10.15. 12B5044c (Xcode 12.2rc) only runs
+# on 10.15.4 and newer.
+MAC_MINIMUM_OS_VERSION = [19, 4]
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 TOOLCHAIN_ROOT = os.path.join(BASE_DIR, 'mac_files')
@@ -59,9 +60,11 @@ TOOLCHAIN_BUILD_DIR = os.path.join(TOOLCHAIN_ROOT, 'Xcode.app')
 PARANOID_MODE = '$ParanoidMode CheckIntegrity\n'
 
 
-def PlatformMeetsHermeticXcodeRequirements(version):
-  needed = MAC_MINIMUM_OS_VERSION[version]
-  major_version = map(int, platform.release().split('.')[:len(needed)])
+def PlatformMeetsHermeticXcodeRequirements():
+  if sys.platform != 'darwin':
+    return True
+  needed = MAC_MINIMUM_OS_VERSION
+  major_version = [int(v) for v in platform.release().split('.')[:len(needed)]]
   return major_version >= needed
 
 
@@ -69,7 +72,7 @@ def _UseHermeticToolchain():
   current_dir = os.path.dirname(os.path.realpath(__file__))
   script_path = os.path.join(current_dir, 'mac/should_use_hermetic_xcode.py')
   proc = subprocess.Popen([script_path, 'mac'], stdout=subprocess.PIPE)
-  return '1' in proc.stdout.readline()
+  return '1' in proc.stdout.readline().decode()
 
 
 def RequestCipdAuthentication():
@@ -101,7 +104,7 @@ def PrintError(message):
   sys.stderr.flush()
 
 
-def InstallXcodeBinaries(version):
+def InstallXcodeBinaries():
   """Installs the Xcode binaries needed to build Chrome and accepts the license.
 
   This is the replacement for InstallXcode that installs a trimmed down version
@@ -114,40 +117,44 @@ def InstallXcodeBinaries(version):
     os.makedirs(binaries_root)
 
   # 'cipd ensure' is idempotent.
-  args = [
-      'cipd', 'ensure', '-root', binaries_root, '-ensure-file', '-'
-  ]
+  args = ['cipd', 'ensure', '-root', binaries_root, '-ensure-file', '-']
 
-  p = subprocess.Popen(
-      args, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-      stderr=subprocess.PIPE)
+  p = subprocess.Popen(args,
+                       universal_newlines=True,
+                       stdin=subprocess.PIPE,
+                       stdout=subprocess.PIPE,
+                       stderr=subprocess.PIPE)
   stdout, stderr = p.communicate(input=PARANOID_MODE + MAC_BINARIES_LABEL +
-                                 ' ' + MAC_BINARIES_TAG[version])
+                                 ' ' + MAC_BINARIES_TAG)
   if p.returncode != 0:
     print(stdout)
     print(stderr)
     RequestCipdAuthentication()
     return 1
 
+  if sys.platform != 'darwin':
+    return 0
+
   # Accept the license for this version of Xcode if it's newer than the
   # currently accepted version.
-  cipd_xcode_version_plist_path = os.path.join(
-      binaries_root, 'Contents/version.plist')
-  cipd_xcode_version_plist = plistlib.readPlist(cipd_xcode_version_plist_path)
+  cipd_xcode_version_plist_path = os.path.join(binaries_root,
+                                               'Contents/version.plist')
+  cipd_xcode_version_plist = LoadPList(cipd_xcode_version_plist_path)
   cipd_xcode_version = cipd_xcode_version_plist['CFBundleShortVersionString']
 
-  cipd_license_path = os.path.join(
-      binaries_root, 'Contents/Resources/LicenseInfo.plist')
-  cipd_license_plist = plistlib.readPlist(cipd_license_path)
+  cipd_license_path = os.path.join(binaries_root,
+                                   'Contents/Resources/LicenseInfo.plist')
+  cipd_license_plist = LoadPList(cipd_license_path)
   cipd_license_version = cipd_license_plist['licenseID']
 
   should_overwrite_license = True
   current_license_path = '/Library/Preferences/com.apple.dt.Xcode.plist'
   if os.path.exists(current_license_path):
-    current_license_plist = plistlib.readPlist(current_license_path)
-    xcode_version = current_license_plist['IDEXcodeVersionForAgreedToGMLicense']
-    if (pkg_resources.parse_version(xcode_version) >=
-        pkg_resources.parse_version(cipd_xcode_version)):
+    current_license_plist = LoadPList(current_license_path)
+    xcode_version = current_license_plist.get(
+        'IDEXcodeVersionForAgreedToGMLicense')
+    if (xcode_version is not None and pkg_resources.parse_version(xcode_version)
+        >= pkg_resources.parse_version(cipd_xcode_version)):
       should_overwrite_license = False
 
   if not should_overwrite_license:
@@ -156,19 +163,25 @@ def InstallXcodeBinaries(version):
   # Use puppet's sudoers script to accept the license if its available.
   license_accept_script = '/usr/local/bin/xcode_accept_license.py'
   if os.path.exists(license_accept_script):
-    args = ['sudo', license_accept_script, '--xcode-version',
-            cipd_xcode_version, '--license-version', cipd_license_version]
+    args = [
+        'sudo', license_accept_script, '--xcode-version', cipd_xcode_version,
+        '--license-version', cipd_license_version
+    ]
     subprocess.check_call(args)
     return 0
 
   # Otherwise manually accept the license. This will prompt for sudo.
   print('Accepting new Xcode license. Requires sudo.')
   sys.stdout.flush()
-  args = ['sudo', 'defaults', 'write', current_license_path,
-          'IDEXcodeVersionForAgreedToGMLicense', cipd_xcode_version]
+  args = [
+      'sudo', 'defaults', 'write', current_license_path,
+      'IDEXcodeVersionForAgreedToGMLicense', cipd_xcode_version
+  ]
   subprocess.check_call(args)
-  args = ['sudo', 'defaults', 'write', current_license_path,
-          'IDELastGMLicenseAgreedTo', cipd_license_version]
+  args = [
+      'sudo', 'defaults', 'write', current_license_path,
+      'IDELastGMLicenseAgreedTo', cipd_license_version
+  ]
   subprocess.check_call(args)
   args = ['sudo', 'plutil', '-convert', 'xml1', current_license_path]
   subprocess.check_call(args)
@@ -177,24 +190,18 @@ def InstallXcodeBinaries(version):
 
 
 def main():
-  if sys.platform != 'darwin':
-    return 0
-
   if not _UseHermeticToolchain():
     print('Skipping Mac toolchain installation for mac')
     return 0
 
   parser = argparse.ArgumentParser(description='Download hermetic Xcode.')
-  parser.add_argument('--xcode-version',
-                      choices=('default', 'xcode_12_beta'),
-                      default='default')
   args = parser.parse_args()
 
-  if not PlatformMeetsHermeticXcodeRequirements(args.xcode_version):
+  if not PlatformMeetsHermeticXcodeRequirements():
     print('OS version does not support toolchain.')
     return 0
 
-  return InstallXcodeBinaries(args.xcode_version)
+  return InstallXcodeBinaries()
 
 
 if __name__ == '__main__':

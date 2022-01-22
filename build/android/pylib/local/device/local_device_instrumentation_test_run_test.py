@@ -1,4 +1,4 @@
-#!/usr/bin/env vpython
+#!/usr/bin/env vpython3
 # Copyright 2017 The Chromium Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
@@ -6,6 +6,7 @@
 """Tests for local_device_instrumentation_test_run."""
 
 # pylint: disable=protected-access
+
 
 import unittest
 
@@ -142,6 +143,26 @@ class LocalDeviceInstrumentationTestRunTest(unittest.TestCase):
         'is_junit4': True,
     }
     self.assertFalse(local_device_instrumentation_test_run._IsRenderTest(test))
+
+  def testReplaceUncommonChars(self):
+    original = 'abc#edf'
+    self.assertEqual(
+        local_device_instrumentation_test_run._ReplaceUncommonChars(original),
+        'abc__edf')
+    original = 'abc#edf#hhf'
+    self.assertEqual(
+        local_device_instrumentation_test_run._ReplaceUncommonChars(original),
+        'abc__edf__hhf')
+    original = 'abcedfhhf'
+    self.assertEqual(
+        local_device_instrumentation_test_run._ReplaceUncommonChars(original),
+        'abcedfhhf')
+    original = None
+    with self.assertRaises(ValueError):
+      local_device_instrumentation_test_run._ReplaceUncommonChars(original)
+    original = ''
+    with self.assertRaises(ValueError):
+      local_device_instrumentation_test_run._ReplaceUncommonChars(original)
 
 
 if __name__ == '__main__':

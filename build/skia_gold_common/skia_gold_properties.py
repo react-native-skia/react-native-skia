@@ -11,8 +11,6 @@ Examples:
 
 import logging
 import os
-import subprocess
-import sys
 
 
 class SkiaGoldProperties(object):
@@ -29,11 +27,9 @@ class SkiaGoldProperties(object):
     self._local_pixel_tests = None
     self._no_luci_auth = None
     self._bypass_skia_gold_functionality = None
-
-    # Could in theory be configurable, but hard-coded for now since there's
-    # no plan to support anything else.
-    self._code_review_system = 'gerrit'
-    self._continuous_integration_system = 'buildbucket'
+    self._code_review_system = None
+    self._continuous_integration_system = None
+    self._local_png_directory = None
 
     self._InitializeProperties(args)
 
@@ -42,11 +38,11 @@ class SkiaGoldProperties(object):
 
   @property
   def continuous_integration_system(self):
-    return self._continuous_integration_system
+    return self._continuous_integration_system or 'buildbucket'
 
   @property
   def code_review_system(self):
-    return self._code_review_system
+    return self._code_review_system or 'gerrit'
 
   @property
   def git_revision(self):
@@ -63,6 +59,10 @@ class SkiaGoldProperties(object):
   @property
   def local_pixel_tests(self):
     return self._IsLocalRun()
+
+  @property
+  def local_png_directory(self):
+    return self._local_png_directory
 
   @property
   def no_luci_auth(self):
@@ -114,11 +114,20 @@ class SkiaGoldProperties(object):
       # If not set, will be automatically determined later if needed.
       self._local_pixel_tests = args.local_pixel_tests
 
+    if hasattr(args, 'skia_gold_local_png_write_directory'):
+      self._local_png_directory = args.skia_gold_local_png_write_directory
+
     if hasattr(args, 'no_luci_auth'):
       self._no_luci_auth = args.no_luci_auth
 
     if hasattr(args, 'bypass_skia_gold_functionality'):
       self._bypass_skia_gold_functionality = args.bypass_skia_gold_functionality
+
+    if hasattr(args, 'code_review_system'):
+      self._code_review_system = args.code_review_system
+
+    if hasattr(args, 'continuous_integration_system'):
+      self._continuous_integration_system = args.continuous_integration_system
 
     # Will be automatically determined later if needed.
     if not hasattr(args, 'git_revision') or not args.git_revision:

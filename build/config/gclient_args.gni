@@ -9,4 +9,5 @@ checkout_nacl = false
 checkout_oculus_sdk = false
 checkout_openxr = false
 mac_xcode_version = "default"
+generate_location_tags = false
 react_native_platform = "tvos"

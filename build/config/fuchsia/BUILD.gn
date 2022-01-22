@@ -2,6 +2,9 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("//build/config/chromecast_build.gni")
+import("//build/config/fuchsia/generate_runner_scripts.gni")
+
 assert(is_fuchsia)
 assert(!is_posix)
 
@@ -14,15 +17,53 @@ config("compiler") {
   # will be available. Raise to 8M which matches e.g. macOS.
   ldflags = [ "-Wl,-z,stack-size=0x800000" ]
 
-  if (target_cpu != "arm64") {
-    # TODO(https://crbug.com/1086134): RELR packing of dynamic relocations is
-    # enabled by default in the Fuchsia toolchain, but is not fully supported
-    # in Chromium builds except on ARM64.
-    ldflags += [ "-Wl,--pack-dyn-relocs=none" ]
+  # Allow this in chromium-only builds, but do not allow this in Chromecast
+  # builds.
+  if (!is_chromecast) {
+    cflags_cc = [ "-fexperimental-relative-c++-abi-vtables" ]
+    ldflags += [ "-fexperimental-relative-c++-abi-vtables" ]
   }
 }
 
 # Settings for executables.
 config("executable_config") {
   ldflags = [ "-pie" ]
+}
+
+# Files required to run on Fuchsia on isolated swarming clients.
+group("deployment_resources") {
+  data = [
+    "//.vpython",
+    "//build/fuchsia/",
+    "//build/util/lib/",
+    "//third_party/fuchsia-sdk/sdk/.build-id/",
+    "//third_party/fuchsia-sdk/sdk/bin/fpave.sh",
+    "//third_party/fuchsia-sdk/sdk/bin/fuchsia-common.sh",
+    "//third_party/fuchsia-sdk/sdk/meta/manifest.json",
+    "//third_party/fuchsia-sdk/sdk/tools/${test_host_cpu}/device-finder",
+    "//third_party/fuchsia-sdk/sdk/tools/${test_host_cpu}/ffx",
+    "//third_party/fuchsia-sdk/sdk/tools/${test_host_cpu}/fvm",
+    "//third_party/fuchsia-sdk/sdk/tools/${test_host_cpu}/merkleroot",
+    "//third_party/fuchsia-sdk/sdk/tools/${test_host_cpu}/pm",
+    "//third_party/fuchsia-sdk/sdk/tools/${test_host_cpu}/symbolizer",
+    "//third_party/fuchsia-sdk/sdk/tools/${test_host_cpu}/zbi",
+  ]
+  if (test_isolate_uses_emulator) {
+    data += [
+      "${boot_image_root}/qemu/qemu-kernel.kernel",
+      "${boot_image_root}/qemu/storage-full.blk",
+      "${boot_image_root}/qemu/zircon-a.zbi",
+      "//third_party/fuchsia-sdk/sdk/bin/device_launcher.version",
+      "//third_party/fuchsia-sdk/sdk/tools/${test_host_cpu}/fvdl",
+      "//third_party/qemu-${host_os}-${test_host_cpu}/",
+      "${aemu_root}/",
+    ]
+  }
+  foreach(fuchsia_additional_boot_image, fuchsia_additional_boot_images) {
+    data += [ "${fuchsia_additional_boot_image}/" ]
+  }
+
+  if (test_host_cpu == "x64") {
+    data_deps = [ "//build/config/clang:llvm-symbolizer_data($host_toolchain)" ]
+  }
 }

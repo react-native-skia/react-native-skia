@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #
 # Copyright 2016 The Chromium Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
@@ -16,37 +16,41 @@ from xml.etree import ElementTree
 import zipfile
 
 from util import build_utils
-from util import md5_check
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__),
                                              os.pardir, os.pardir)))
 import gn_helpers
 
 
-# Regular expression to extract -checkdiscard / -check* lines.
-# Does not support nested comments with "}" in them (oh well).
-_CHECKDISCARD_PATTERN = re.compile(r'^\s*?-check.*?}\s*',
-                                   re.DOTALL | re.MULTILINE)
-
 _PROGUARD_TXT = 'proguard.txt'
-_PROGUARD_CHECKS_TXT = 'proguard-checks.txt'
 
 
-def _IsManifestEmpty(manifest_str):
+def _GetManifestPackage(doc):
+  """Returns the package specified in the manifest.
+
+  Args:
+    doc: an XML tree parsed by ElementTree
+
+  Returns:
+    String representing the package name.
+  """
+  return doc.attrib['package']
+
+
+def _IsManifestEmpty(doc):
   """Decides whether the given manifest has merge-worthy elements.
 
   E.g.: <activity>, <service>, etc.
 
   Args:
-    manifest_str: Content of a manifiest XML.
+    doc: an XML tree parsed by ElementTree
 
   Returns:
     Whether the manifest has merge-worthy elements.
   """
-  doc = ElementTree.fromstring(manifest_str)
   for node in doc:
     if node.tag == 'application':
-      if node.getchildren():
+      if list(node):
         return False
     elif node.tag != 'uses-sdk':
       return False
@@ -74,8 +78,11 @@ def _CreateInfo(aar_file):
   data['has_native_libraries'] = False
   data['has_r_text_file'] = False
   with zipfile.ZipFile(aar_file) as z:
-    data['is_manifest_empty'] = (
-        _IsManifestEmpty(z.read('AndroidManifest.xml')))
+    manifest_xml = ElementTree.fromstring(z.read('AndroidManifest.xml'))
+    data['is_manifest_empty'] = _IsManifestEmpty(manifest_xml)
+    manifest_package = _GetManifestPackage(manifest_xml)
+    if manifest_package:
+      data['manifest_package'] = manifest_package
 
     for name in z.namelist():
       if name.endswith('/'):
@@ -106,33 +113,10 @@ def _CreateInfo(aar_file):
         # have no resources as well. We treat empty R.txt as having no R.txt.
         data['has_r_text_file'] = bool(z.read('R.txt').strip())
 
-    if data['has_proguard_flags']:
-      config = z.read(_PROGUARD_TXT)
-      if _CHECKDISCARD_PATTERN.search(config):
-        data['has_proguard_check_flags'] = True
-
   return data
 
 
-def _SplitProguardConfig(tmp_dir):
-  # Put -checkdiscard (and friends) into a separate proguard config.
-  # https://crbug.com/1093831
-  main_flag_path = os.path.join(tmp_dir, _PROGUARD_TXT)
-  check_flag_path = os.path.join(tmp_dir, _PROGUARD_CHECKS_TXT)
-  with open(main_flag_path) as f:
-    config_data = f.read()
-  with open(main_flag_path, 'w') as f:
-    MSG = ('# Check flag moved to proguard-checks.txt by '
-           '//build/android/gyp/aar.py\n')
-    f.write(_CHECKDISCARD_PATTERN.sub(MSG, config_data))
-  with open(check_flag_path, 'w') as f:
-    f.write('# Check flags extracted by //build/android/gyp/aar.py\n\n')
-    for m in _CHECKDISCARD_PATTERN.finditer(config_data):
-      f.write(m.group(0))
-
-
-def _PerformExtract(aar_file, output_dir, name_allowlist,
-                    has_proguard_check_flags):
+def _PerformExtract(aar_file, output_dir, name_allowlist):
   with build_utils.TempDir() as tmp_dir:
     tmp_dir = os.path.join(tmp_dir, 'staging')
     os.mkdir(tmp_dir)
@@ -141,9 +125,6 @@ def _PerformExtract(aar_file, output_dir, name_allowlist,
     # Write a breadcrumb so that SuperSize can attribute files back to the .aar.
     with open(os.path.join(tmp_dir, 'source.info'), 'w') as f:
       f.write('source={}\n'.format(aar_file))
-
-    if has_proguard_check_flags:
-      _SplitProguardConfig(tmp_dir)
 
     shutil.rmtree(output_dir, ignore_errors=True)
     shutil.move(tmp_dir, output_dir)
@@ -201,20 +182,7 @@ def main():
       if args.ignore_resources:
         names = [n for n in names if not n.startswith('res')]
 
-    has_proguard_check_flags = aar_info.get('has_proguard_check_flags')
-    output_paths = [os.path.join(args.output_dir, n) for n in names]
-    output_paths.append(os.path.join(args.output_dir, 'source.info'))
-    if has_proguard_check_flags:
-      output_paths.append(os.path.join(args.output_dir, _PROGUARD_CHECKS_TXT))
-
-    def on_stale_md5():
-      _PerformExtract(args.aar_file, args.output_dir, set(names),
-                      has_proguard_check_flags)
-
-    md5_check.CallAndRecordIfStale(on_stale_md5,
-                                   input_strings=[aar_info],
-                                   input_paths=[args.aar_file],
-                                   output_paths=output_paths)
+    _PerformExtract(args.aar_file, args.output_dir, set(names))
 
   elif args.command == 'list':
     aar_output_present = args.output != '-' and os.path.isfile(args.output)

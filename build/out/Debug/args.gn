@@ -1,6 +1,0 @@
-skia_use_dng_sdk = false
-skia_use_sfntly = false
-skia_enable_pdf = false
-skia_use_x11 = false
-skia_use_wuffs = true
-skia_use_expat = false
