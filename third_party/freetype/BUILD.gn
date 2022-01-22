@@ -4,7 +4,7 @@
 
 import("//build/config/chromecast_build.gni")
 import("//build/config/freetype/freetype.gni")
-import("//third_party/harfbuzz-ng/harfbuzz.gni")
+import("//third_party/harfbuzz/harfbuzz.gni")
 
 assert(!use_system_freetype, "Not used when using system freetype.")
 
@@ -146,9 +146,9 @@ source_set("freetype_source") {
   defines += [ "FT2_BUILD_LIBRARY" ]
 
   if (use_system_harfbuzz) {
-    configs += [ "//third_party/harfbuzz-ng:harfbuzz_from_pkgconfig" ]
+    configs += [ "//third_party/harfbuzz:harfbuzz_from_pkgconfig" ]
   } else {
-    configs += [ "//third_party/harfbuzz-ng:harfbuzz_config" ]
+    configs += [ "//third_party/harfbuzz:harfbuzz_config" ]
   }
   configs -= [ "//build/config/compiler:chromium_code" ]
   configs += [ "//build/config/compiler:no_chromium_code" ]

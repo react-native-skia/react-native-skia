@@ -8,7 +8,7 @@ import("//build/config/features.gni")
 import("//build/config/freetype/freetype.gni")
 import("//build/config/ui.gni")
 import("//testing/libfuzzer/fuzzer_test.gni")
-import("//third_party/harfbuzz-ng/harfbuzz.gni")
+import("//third_party/harfbuzz/harfbuzz.gni")
 
 if (use_system_harfbuzz) {
   import("//build/config/linux/pkg_config.gni")
