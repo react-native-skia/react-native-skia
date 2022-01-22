@@ -80,12 +80,12 @@ class EmptyStringConverter {
 };
 
 void EmptyStringConverter::SetupMatchers(MatchFinder* match_finder) {
-  const clang::ast_matchers::StatementMatcher& constructor_call = id(
-      "call",
+  const clang::ast_matchers::StatementMatcher& constructor_call =
       cxxConstructExpr(
           hasDeclaration(cxxMethodDecl(ofClass(hasName("std::basic_string")))),
-          argumentCountIs(2), hasArgument(0, id("literal", stringLiteral())),
-          hasArgument(1, cxxDefaultArgExpr())));
+          argumentCountIs(2), hasArgument(0, stringLiteral().bind("literal")),
+          hasArgument(1, cxxDefaultArgExpr()))
+          .bind("call");
 
   // Note that expr(has()) in the matcher is significant; the Clang AST wraps
   // calls to the std::string constructor with exprWithCleanups nodes. Without

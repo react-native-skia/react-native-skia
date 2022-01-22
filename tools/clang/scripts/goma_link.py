@@ -36,8 +36,8 @@ except NameError:
 
 # Type returned by analyze_args.
 AnalyzeArgsResult = namedtuple('AnalyzeArgsResult', [
-    'output', 'linker', 'compiler', 'splitfile', 'index_params', 'codegen',
-    'codegen_params', 'final_params'
+    'output', 'linker', 'compiler', 'splitfile', 'index_inputs', 'index_params',
+    'codegen', 'codegen_params', 'final_inputs', 'final_params'
 ])
 
 
@@ -181,9 +181,15 @@ def parse_args(args):
   # that set some values for this script. If these optional options are
   # present, they must be followed by '--'.
   ap = argparse.ArgumentParser()
+  ap.add_argument('--generate',
+                  action='store_true',
+                  help='generate ninja file, but do not invoke it.')
   ap.add_argument('--gomacc', help='path to gomacc.')
   ap.add_argument('--jobs', '-j', help='maximum number of concurrent jobs.')
   ap.add_argument('--no-gomacc', action='store_true', help='do not use gomacc.')
+  ap.add_argument('--allowlist',
+                  action='store_true',
+                  help='act as if the target is on the allow list.')
   try:
     splitpos = args.index('--')
   except:
@@ -223,16 +229,30 @@ class GomaLinkBase(object):
   FUNCTION_SECTIONS_RE = re.compile('-f(no-)?function-sections|[-/]Gy(-)?',
                                     re.IGNORECASE)
   LIB_RE = re.compile('.*\\.(?:a|lib)', re.IGNORECASE)
+  # LTO_RE matches flags we want to pass in the thin link step but not in the
+  # native link step.
+  # Continue to pass -flto and -fsanitize flags in the native link even though
+  # they're not normally necessary because clang needs them to build with CFI.
   LTO_RE = re.compile('|'.join((
-      '-fsanitize=cfi.*',
-      '-flto.*',
-      '-fthin.*',
       '-Wl,-plugin-opt=.*',
       '-Wl,--lto.*',
       '-Wl,--thin.*',
   )))
-  MLLVM_RE = re.compile('(?:-Wl,)?([-/]mllvm)[:=]?(.*)', re.IGNORECASE)
+  MLLVM_RE = re.compile('(?:-Wl,)?([-/]mllvm)[:=,]?(.*)', re.IGNORECASE)
   OBJ_RE = re.compile('(.*)\\.(o(?:bj)?)', re.IGNORECASE)
+
+  def _no_codegen(self, args):
+    """
+    Helper function for the case where no distributed code generation
+    is necessary. It invokes the original command, unless --generate
+    was passed, in which case it informs the user that no code generation
+    is necessary.
+    """
+    if args.generate:
+      sys.stderr.write(
+          'No code generation required; no ninja file generated.\n')
+      return 5  # Indicates no code generation required.
+    return subprocess.call([args.linker] + args.linker_args)
 
   def transform_codegen_param(self, param):
     return self.transform_codegen_param_common(param)
@@ -378,12 +398,14 @@ class GomaLinkBase(object):
       obj_dir = gen_dir
 
     common_index = common_dir + '/empty.thinlto.bc'
+    index_inputs = set()
     index_params = []
     codegen = []
     codegen_params = [
         '-Wno-unused-command-line-argument',
         '-Wno-override-module',
     ]
+    final_inputs = set()
     final_params = []
     in_mllvm = [False]
 
@@ -455,6 +477,7 @@ class GomaLinkBase(object):
         return
       index_params.append(param)
       if os.path.exists(param):
+        index_inputs.add(param)
         match = self.OBJ_RE.match(param)
         if match and is_bitcode_file(param):
           native = obj_dir + '/' + match.group(1) + '.' + match.group(2)
@@ -465,6 +488,7 @@ class GomaLinkBase(object):
             ensure_file(index)
           codegen.append((os.path.normpath(native), param, index))
         else:
+          final_inputs.add(param)
           final_params.append(param)
       elif not self.LTO_RE.match(param):
         final_params.append(param)
@@ -497,11 +521,12 @@ class GomaLinkBase(object):
       splitfile = None
       for tup in codegen:
         final_params.append(tup[0])
+      index_inputs = []
     else:
       splitfile = gen_dir + '/' + output + '.split' + self.OBJ_SUFFIX
       final_params.append(splitfile)
       index_params.append(self.WL + self.OBJ_PATH + splitfile)
-      used_obj_file = gen_dir + '/' + output + '.objs'
+      used_obj_file = gen_dir + '/' + os.path.basename(output) + '.objs'
       final_params.append('@' + used_obj_file)
 
     return AnalyzeArgsResult(
@@ -509,13 +534,15 @@ class GomaLinkBase(object):
         linker=linker,
         compiler=compiler,
         splitfile=splitfile,
+        index_inputs=index_inputs,
         index_params=index_params,
         codegen=codegen,
         codegen_params=codegen_params,
+        final_inputs=final_inputs,
         final_params=final_params,
     )
 
-  def gen_ninja(self, ninjaname, params, objs):
+  def gen_ninja(self, ninjaname, params, gen_dir):
     """
     Generates a ninja build file at path ninjaname, using original command line
     params and with objs being a list of bitcode files for which to generate
@@ -525,69 +552,71 @@ class GomaLinkBase(object):
       gomacc_prefix = ninjaenc(self.gomacc) + ' '
     else:
       gomacc_prefix = ''
+    base = gen_dir + '/' + os.path.basename(params.output)
+    ensure_dir(gen_dir)
     ensure_dir(os.path.dirname(ninjaname))
+    codegen_cmd = ('%s%s -c %s -fthinlto-index=$index %s$bitcode -o $native' %
+                   (gomacc_prefix, ninjaenc(params.compiler),
+                    ninjajoin(params.codegen_params), self.XIR))
+    if params.index_inputs:
+      used_obj_file = base + '.objs'
+      index_rsp = base + '.index.rsp'
+      ensure_dir(os.path.dirname(used_obj_file))
+      if params.splitfile:
+        ensure_dir(os.path.dirname(params.splitfile))
+        # We use grep here to only codegen native objects which are actually
+        # used by the native link step. Ninja 1.10 introduced a dyndep feature
+        # which allows for a more elegant implementation, but Chromium still
+        # uses an older ninja version which doesn't have this feature.
+        codegen_cmd = '( ! grep -qF $native %s || %s)' % (
+            ninjaenc(used_obj_file), codegen_cmd)
+
     with open(ninjaname, 'w') as f:
+      if params.index_inputs:
+        self.write_rsp(index_rsp, params.index_params)
+        f.write('\nrule index\n  command = %s %s %s @$rspfile\n' %
+                (ninjaenc(params.linker),
+                 ninjaenc(self.WL + self.TLTO + '-index-only' + self.SEP) +
+                 '$out', self.WL + self.TLTO + '-emit-imports-files'))
+
       f.write(('\nrule native-link\n  command = %s @$rspname'
                '\n  rspfile = $rspname\n  rspfile_content = $params\n') %
               (ninjaenc(params.linker), ))
 
-      f.write(('\nrule codegen\n  command = %s%s -c %s'
-               ' -fthinlto-index=$index %s$bitcode -o $out\n') %
-              (gomacc_prefix, ninjaenc(params.compiler),
-               ninjajoin(params.codegen_params), self.XIR))
+      f.write('\nrule codegen\n  command = %s && touch $out\n' %
+              (codegen_cmd, ))
+
+      native_link_deps = []
+      if params.index_inputs:
+        f.write(
+            ('\nbuild %s | %s : index %s\n'
+             '  rspfile = %s\n'
+             '  rspfile_content = %s\n') %
+            (ninjaenc(used_obj_file), ninjajoin(
+                [x[2] for x in params.codegen]), ninjajoin(params.index_inputs),
+             ninjaenc(index_rsp), ninjajoin(params.index_params)))
+        native_link_deps.append(used_obj_file)
 
       for tup in params.codegen:
         obj, bitcode, index = tup
-        f.write('\nbuild %s : codegen %s %s\n  bitcode = %s\n  index = %s\n' %
-                tuple(map(ninjaenc, (obj, bitcode, index, bitcode, index))))
+        stamp = obj + '.stamp'
+        native_link_deps.append(obj)
+        f.write(
+            ('\nbuild %s : codegen %s %s\n'
+             '  bitcode = %s\n'
+             '  index = %s\n'
+             '  native = %s\n'
+             '\nbuild %s : phony %s\n') % tuple(
+                 map(ninjaenc,
+                     (stamp, bitcode, index, bitcode, index, obj, obj, stamp))))
 
-      f.write('\nbuild %s : native-link %s\n  rspname = %s\n  params = %s\n' %
-              (ninjaenc(params.output), ninjajoin(objs),
-               ninjaenc(params.output + '.final.rsp'),
-               ninjajoin(params.final_params)))
+      f.write(('\nbuild %s : native-link %s\n'
+               '  rspname = %s\n  params = %s\n') %
+              (ninjaenc(params.output),
+               ninjajoin(list(params.final_inputs) + native_link_deps),
+               ninjaenc(base + '.final.rsp'), ninjajoin(params.final_params)))
 
       f.write('\ndefault %s\n' % (ninjaenc(params.output), ))
-
-  def thin_link(self, params, gen_dir):
-    """
-    Performs the thin link step.
-    This generates the index files, imports files, split LTO object,
-    and used object file.
-    Returns a list of native objects we need to generate from bitcode
-    files for the final link step.
-    """
-    used_obj_file = gen_dir + '/' + params.output + '.objs'
-    index_rsp = gen_dir + '/' + params.output + '.index.rsp'
-    ensure_dir(gen_dir)
-    ensure_dir(os.path.dirname(used_obj_file))
-    if params.splitfile:
-      ensure_dir(os.path.dirname(params.splitfile))
-    self.write_rsp(index_rsp, params.index_params)
-    index_cmd = [
-        params.linker,
-        self.WL + self.TLTO + '-index-only' + self.SEP + used_obj_file,
-        self.WL + self.TLTO + '-emit-imports-files', '@' + index_rsp
-    ]
-    report_run(index_cmd)
-    with open(used_obj_file) as f:
-      codegen_objs = [
-          os.path.normpath(x) for x in f.read().split('\n') if len(x) > 0
-      ]
-    return codegen_objs
-
-  def codegen_and_link(self, params, gen_dir, objs):
-    """
-    Performs code generation for selected bitcode files and
-    the final link step.
-    objs should be the list of native object files expected to be generated
-    (as returned by thin_link()).
-    """
-    ninjaname = gen_dir + '/build.ninja'
-    self.gen_ninja(ninjaname, params, objs)
-    cmd = [autoninja(), '-f', ninjaname]
-    if self.jobs:
-      cmd.extend(['-j', str(self.jobs)])
-    report_run(cmd)
 
   def do_main(self, argv):
     """
@@ -598,7 +627,7 @@ class GomaLinkBase(object):
     args = parse_args(argv)
     args.output = self.output_path(argv[1:])
     if args.output is None:
-      return subprocess.call([args.linker] + args.linker_args)
+      return self._no_codegen(args)
     if args.gomacc:
       self.gomacc = args.gomacc
     if args.no_gomacc:
@@ -607,7 +636,7 @@ class GomaLinkBase(object):
       self.jobs = int(args.jobs)
 
     basename = os.path.basename(args.output)
-    # Only generate tailored native object files for whitelisted targets.
+    # Only generate tailored native object files for targets on the allow list.
     # TODO: Find a better way to structure this. There are three different
     # ways we can perform linking: Local ThinLTO, distributed ThinLTO,
     # and distributed ThinLTO with common object files.
@@ -616,20 +645,26 @@ class GomaLinkBase(object):
     # Currently, we don't detect this situation. We could, but it might
     # be better to instead move this logic out of this script and into
     # the build system.
-    use_common_objects = basename not in self.WHITELISTED_TARGETS
+    use_common_objects = not (args.allowlist or basename in self.ALLOWLIST)
     common_dir = 'common_objs'
     gen_dir = 'lto.' + basename
     params = self.analyze_args(args, gen_dir, common_dir, use_common_objects)
     # If we determined that no distributed code generation need be done, just
     # invoke the original command.
     if params is None:
-      return subprocess.call([args.linker] + args.linker_args)
+      return self._no_codegen(args)
     if use_common_objects:
       objs = [x[0] for x in params.codegen]
       ensure_file(common_dir + '/empty.thinlto.bc')
+    ninjaname = gen_dir + '/build.ninja'
+    self.gen_ninja(ninjaname, params, gen_dir)
+    if args.generate:
+      sys.stderr.write('Generated ninja file %s\n' % (shquote(ninjaname), ))
     else:
-      objs = self.thin_link(params, gen_dir)
-    self.codegen_and_link(params, gen_dir, objs)
+      cmd = [autoninja(), '-f', ninjaname]
+      if self.jobs:
+        cmd.extend(['-j', str(self.jobs)])
+      report_run(cmd)
     return 0
 
   def main(self, argv):
@@ -654,13 +689,13 @@ class GomaLinkWindows(GomaLinkBase):
   PREFIX_REPLACE = TLTO + '-prefix-replace' + SEP
   XIR = ''
 
-  WHITELISTED_TARGETS = {
+  ALLOWLIST = {
       'chrome.exe',
       'chrome.dll',
       'chrome_child.dll',
-      # TODO: The following targets have been whitelisted because the
+      # TODO: The following targets are on the allow list because the
       # common objects flow does not link them successfully. This should
-      # be fixed, after which they can be removed from the whitelist.
+      # be fixed, after which they can be removed from the list.
       'tls_edit.exe',
   }
 

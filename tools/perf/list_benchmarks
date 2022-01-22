@@ -1,0 +1,41 @@
+#!/usr/bin/env vpython
+# Copyright 2017 The Chromium Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+from __future__ import print_function
+
+import optparse
+import sys
+
+from core import path_util
+path_util.AddTelemetryToPath()
+
+from core import benchmark_finders
+from telemetry import decorators
+
+
+def _CreateParser():
+  parser = optparse.OptionParser()
+  parser.add_option('--include-contrib', action='store_true', default=False,
+                    help="also list contrib (non-waterfall) benchmarks")
+  return parser
+
+def main(args):
+  parser = _CreateParser()
+  options, extra_args = parser.parse_args(args)
+
+  if extra_args:
+    parser.error('Unexpected command line arguments')
+
+  if options.include_contrib:
+    benchmarks = benchmark_finders.GetAllBenchmarks()
+  else:
+    benchmarks = benchmark_finders.GetOfficialBenchmarks()
+
+  for b in benchmarks:
+    print('{:<60}'.format(b.Name()))
+
+
+if __name__ == '__main__':
+  sys.exit(main(sys.argv[1:]))

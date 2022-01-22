@@ -1,13 +1,11 @@
 ==== BEGIN EDITS ====
-include-user-header:::/usr/local/google/home/lukasza/src/chromium4/src/tools/clang/rewrite_raw_ptr_fields/tests/gen-char-actual.cc:::-1:::-1:::base/memory/checked_ptr.h
-r:::/usr/local/google/home/lukasza/src/chromium4/src/tools/clang/rewrite_raw_ptr_fields/tests/gen-char-actual.cc:::1343:::6:::CheckedPtr<char> 
-r:::/usr/local/google/home/lukasza/src/chromium4/src/tools/clang/rewrite_raw_ptr_fields/tests/gen-char-actual.cc:::1361:::12:::CheckedPtr<const char> 
-r:::/usr/local/google/home/lukasza/src/chromium4/src/tools/clang/rewrite_raw_ptr_fields/tests/gen-char-actual.cc:::1391:::9:::CheckedPtr<wchar_t> 
-r:::/usr/local/google/home/lukasza/src/chromium4/src/tools/clang/rewrite_raw_ptr_fields/tests/gen-char-actual.cc:::1417:::15:::CheckedPtr<const wchar_t> 
+include-user-header:::gen-char-actual.cc:::-1:::-1:::base/memory/raw_ptr.h
+r:::gen-char-actual.cc:::1478:::12:::raw_ptr<const char>
+r:::gen-char-actual.cc:::1508:::15:::raw_ptr<const wchar_t>
+r:::gen-char-actual.cc:::1995:::6:::raw_ptr<char>
+r:::gen-char-actual.cc:::2013:::9:::raw_ptr<wchar_t>
 ==== END EDITS ====
 ==== BEGIN FIELD FILTERS ====
-MyStruct::char_ptr  # char
-MyStruct::const_char_ptr  # char
-MyStruct::const_wide_char_ptr  # char
-MyStruct::wide_char_ptr  # char
+MyStruct::const_char_ptr  # const-char
+MyStruct::const_wide_char_ptr  # const-char
 ==== END FIELD FILTERS ====

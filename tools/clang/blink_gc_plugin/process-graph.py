@@ -4,8 +4,12 @@
 # found in the LICENSE file.
 
 from __future__ import print_function
-from StringIO import StringIO
 import argparse, os, sys, json, subprocess, pickle
+
+try:
+  from StringIO import StringIO  # Python 2
+except:
+  from io import StringIO
 
 parser = argparse.ArgumentParser(
   description =
@@ -360,6 +364,8 @@ def read_ignored_cycles():
 gc_bases = (
   'blink::GarbageCollected',
   'blink::GarbageCollectedMixin',
+  'cppgc::GarbageCollected',
+  'cppgc::GarbageCollectedMixin',
 )
 ref_bases = (
   'WTF::RefCounted',
@@ -414,7 +420,8 @@ def print_stats():
          % (
              stats['ref'] == 0 and stats['ref-mixins'] == 0 and "*" or " ",
              total == 0 and 100 or stats['mem'] * 100 / total,
-             node.name.replace('blink::', ''),
+             node.name.replace('blink::', '').replace(
+                 'cppgc::subtle::', '').replace('cppgc::', ''),
              stats['classes'],
              stats['mem'],
              stats['ref'],
