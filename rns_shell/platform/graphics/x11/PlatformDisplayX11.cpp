@@ -66,7 +66,7 @@ void PlatformDisplayX11::initializeEGLDisplay()
             eglDisplay_ = getPlatformDisplay(EGL_PLATFORM_X11_KHR, display_, nullptr);
     } else
 #endif
-    eglDisplay_ = eglGetDisplay(display_);
+    eglDisplay_ = eglGetDisplay(reinterpret_cast<EGLNativeDisplayType>(display_));
 
     PlatformDisplay::initializeEGLDisplay();
 }
