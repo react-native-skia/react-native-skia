@@ -1,3 +1,5 @@
 buildconfig = "//build/config/BUILDCONFIG.gn"
 
 secondary_source = "//build/secondary/"
+
+script_executable = "vpython3"
