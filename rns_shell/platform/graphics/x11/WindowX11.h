@@ -39,11 +39,21 @@ public:
             , visualInfo_(nullptr)
 #endif
             , MSAASampleCount_(1) {}
-    ~WindowX11() override { this->closeWindow(); }
+
+    ~WindowX11() override {
+        if(this == mainWindow_)
+            mainWindow_ = nullptr;
+        this->closeWindow();
+    }
 
     bool initWindow(PlatformDisplay* display);
 
     uint64_t nativeWindowHandle() override {return (uint64_t) window_; }
+    SkSize getWindowSize() override {
+        XWindowAttributes winAttr = {0,};
+        XGetWindowAttributes(display_, window_, &winAttr);
+        return {winAttr.width, winAttr.height};
+    }
 
     bool handleEvent(const XEvent& event);
     void setTitle(const char*) override;

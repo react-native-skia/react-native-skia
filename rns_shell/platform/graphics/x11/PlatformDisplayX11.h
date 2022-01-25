@@ -27,6 +27,7 @@ private:
     PlatformDisplayX11(Display*, bool);
 
     Type type() const override { return PlatformDisplay::Type::X11; }
+    SkSize screenSize() override;
 
 #if USE(EGL)
     void initializeEGLDisplay() override;

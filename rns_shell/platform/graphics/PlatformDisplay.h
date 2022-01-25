@@ -9,6 +9,8 @@
 
 #include <iostream>
 
+#include "include/core/SkSize.h"
+
 #include "ReactSkia/utils/RnsLog.h"
 #include "ReactSkia/utils/RnsUtils.h"
 
@@ -38,6 +40,7 @@ public:
     };
 
     virtual Type type() const = 0;
+    virtual SkSize screenSize() = 0;
 
 #if USE(EGL) || USE(GLX)
     RNS_EXPORT GLWindowContext* sharingGLContext();

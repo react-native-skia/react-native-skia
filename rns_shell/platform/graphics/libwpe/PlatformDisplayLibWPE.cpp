@@ -67,6 +67,16 @@ bool PlatformDisplayLibWPE::initialize(int hostFd) {
 #endif
 }
 
+SkSize PlatformDisplayLibWPE::screenSize() {
+    SkSize size = SkSize::MakeEmpty();
+    uint32_t width = 0, height = 0;
+
+    if(wpe_renderer_backend_egl_get_screen_size(rendererBackend_, &width, &height) == 0)
+        size.set(width, height);
+
+    return size;
+}
+
 } // namespace RnsShell
 
 #endif // USE(WPE_RENDERER) && USE(EGL)

@@ -69,6 +69,16 @@ void PlatformDisplayX11::initializeEGLDisplay()
 }
 #endif // USE(EGL)
 
+SkSize PlatformDisplayX11::screenSize() {
+    Screen *screen = nullptr;
+    SkSize size = SkSize::MakeEmpty();
+
+    if(ScreenCount(display_) > 0 && (screen = ScreenOfDisplay(display_, 0))) {
+        size.set(screen->width, screen->height);
+    }
+    return size;
+}
+
 } // namespace RnsShell
 
 #endif // PLATFORM(X11)

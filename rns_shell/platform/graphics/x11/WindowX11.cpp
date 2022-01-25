@@ -25,6 +25,8 @@
 namespace RnsShell {
 
 SkTDynamicHash<WindowX11, XWindow> WindowX11::gWindowMap;
+Window* Window::mainWindow_;
+
 const long kEventMask = ExposureMask | StructureNotifyMask |
                         KeyPressMask | KeyReleaseMask |
                         PointerMotionMask | ButtonPressMask | ButtonReleaseMask;
@@ -39,6 +41,8 @@ Window* Window::createNativeWindow(void* platformData) {
         delete window;
         return nullptr;
     }
+    if(!mainWindow_)
+        mainWindow_ = window;
     return window;
 }
 

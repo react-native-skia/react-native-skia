@@ -43,10 +43,16 @@ public:
             , viewWidth_(-1)
             , viewHeight_(-1)
             , MSAASampleCount_(1) {}
-    ~WindowLibWPE() override { this->closeWindow(); }
+
+    ~WindowLibWPE() override {
+        if(this == mainWindow_)
+            mainWindow_ = nullptr;
+        this->closeWindow();
+    }
 
     bool initWindow(PlatformDisplay* display);
     uint64_t nativeWindowHandle() override {return (uint64_t) window_; }
+    SkSize getWindowSize() override { return {viewWidth_, viewHeight_}; }
 
     bool handleEvent();
     void setTitle(const char*) override;

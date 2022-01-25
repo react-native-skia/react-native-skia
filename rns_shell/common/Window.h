@@ -8,6 +8,7 @@
 #pragma once
 
 #include "include/core/SkRect.h"
+#include "include/core/SkSize.h"
 #include "include/core/SkTypes.h"
 #include "include/private/SkTDArray.h"
 
@@ -28,12 +29,18 @@ class Window {
 public:
     static Window* createNativeWindow(void* platformData);
     static void createEventLoop(Application* app);
+    static SkSize getMainWindowSize() {
+        if(mainWindow_)
+            return mainWindow_->getWindowSize();
+        return SkSize::MakeEmpty();
+    }
 
     virtual ~Window();
 
     virtual void setTitle(const char*) = 0;
     virtual void show() = 0;
     virtual uint64_t nativeWindowHandle() = 0;
+    virtual SkSize getWindowSize() = 0;
 
     enum BackendType {
         kNativeGL_BackendType,
@@ -44,9 +51,6 @@ public:
     enum {
         kBackendTypeCount = kLast_BackendType + 1
     };
-
-    int width() const;
-    int height() const;
 
     virtual const DisplayParams& getRequestedDisplayParams() { return requestedDisplayParams_; }
     virtual void setRequestedDisplayParams(const DisplayParams&, bool allowReattach = true);
@@ -62,6 +66,7 @@ public:
 
 protected:
     Window();
+    static Window *mainWindow_;
 
     DisplayParams          requestedDisplayParams_;
 };

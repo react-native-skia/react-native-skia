@@ -15,6 +15,8 @@ using namespace std;
 namespace RnsShell {
 
 SkTDynamicHash<WindowLibWPE, WPEWindowID> WindowLibWPE::gWindowMap;
+Window* Window::mainWindow_;
+
 GMainLoop       *WindowLibWPE::mainLoop_;
 Application     *WindowLibWPE::mainApp_;
 
@@ -147,6 +149,8 @@ Window* Window::createNativeWindow(void* platformData) {
         delete window;
         return nullptr;
     }
+    if(!mainWindow_)
+        mainWindow_ = window;
     return window;
 }
 
@@ -185,7 +189,7 @@ bool WindowLibWPE::initWindow(PlatformDisplay *platformDisplay) {
     // add to hashtable of windows
     gWindowMap.add(this);
 
-    if(WindowLibWPE::mainApp_)
+    if(WindowLibWPE::mainApp_) // TODO Only for main window
         WindowLibWPE::mainApp_->sizeChanged(viewWidth_, viewHeight_);
 
     return true;
