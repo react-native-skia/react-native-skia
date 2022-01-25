@@ -36,7 +36,9 @@ class RSkComponentTextInput final : public RSkComponent {
   bool editable_ = true;
   bool caretHidden_ = false;
   bool isTextInputInFocus_=false;
+  bool secureTextEntry_=false;
   int eventCount_;
+  int maxLength_;
   std::string displayString_{}; // Text to be displayed on screen
   std::string placeholderString_{}; // Placeholder Text
   SharedColor placeholderColor_;  // Placeholder Text Color

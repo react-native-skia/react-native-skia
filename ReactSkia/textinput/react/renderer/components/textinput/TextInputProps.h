@@ -39,7 +39,7 @@ class TextInputProps final : public ViewProps, public BaseTextProps {
   SharedColor const placeholderTextColor{};
   bool editable=true;
   bool caretHidden=false;
-
+  bool secureTextEntry=false;
   int maxLength{};
 
   /*

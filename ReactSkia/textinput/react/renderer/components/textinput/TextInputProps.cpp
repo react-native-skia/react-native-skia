@@ -39,6 +39,7 @@ TextInputProps::TextInputProps(
           {})),
       editable(convertRawProp(rawProps, "editable", sourceProps.editable, {})),
       caretHidden(convertRawProp(rawProps, "caretHidden", sourceProps.caretHidden, {})),
+      secureTextEntry(convertRawProp(rawProps, "secureTextEntry", sourceProps.secureTextEntry, {})),
       maxLength(
           convertRawProp(rawProps, "maxLength", sourceProps.maxLength, {})),
       cursorColor(

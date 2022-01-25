@@ -124,7 +124,12 @@ void RSkComponentTextInput::OnPaint(SkCanvas *canvas) {
     textAttributes.foregroundColor = placeholderColor_;
     data.layoutManager->buildText(textInputProps.paragraphAttributes, textAttributes, placeholderString_, shadow, true, paraBuilder);
   } else {
-    data.layoutManager->buildText(textInputProps.paragraphAttributes, textAttributes, displayString_, shadow, true, paraBuilder);
+    if (secureTextEntry_) {
+      std::string secureTextString(displayString_);
+      data.layoutManager->buildText(textInputProps.paragraphAttributes, textAttributes, secureTextString.replace( secureTextString.begin(), secureTextString.end(), secureTextString.size(), '*'), shadow, true, paraBuilder);
+    } else {
+      data.layoutManager->buildText(textInputProps.paragraphAttributes, textAttributes, displayString_, shadow, true, paraBuilder);
+    }
   }
 
   drawShadow(canvas, frame, borderMetrics, textInputProps.backgroundColor, layer()->shadowOpacity, layer()->shadowFilter);
@@ -215,6 +220,7 @@ void RSkComponentTextInput::processEventKey (rnsKey eventKeyType,bool* stopPropa
   KeyPressMetrics keyPressMetrics;
   TextInputMetrics textInputMetrics;
   std::string textString = displayString_;
+  int textLengthBeforeEdit  = textString.length();
   auto component = getComponentData();
   Rect frame = component.layoutMetrics.frame;
   auto textInputEventEmitter = std::static_pointer_cast<TextInputEventEmitter const>(component.eventEmitter);
@@ -275,12 +281,17 @@ void RSkComponentTextInput::processEventKey (rnsKey eventKeyType,bool* stopPropa
     //is always 0 & selectionRange.location always end 
     textInputMetrics.selectionRange.location = cursor_.end ;
     textInputMetrics.selectionRange.length = 0;
+    int textLengthAfterEdit = textString.length();
     if (updateString) {
-      if (displayString_ != textString){
-        displayString_ = textString;
-        cursor_.end = textString.length();
-        flushLayer();
+      if (displayString_ != textString) {
+        if ((maxLength_) && (textLengthAfterEdit > maxLength_) && (textLengthAfterEdit > textLengthBeforeEdit )) {
+          std::copy_n(textString.begin(), textLengthBeforeEdit , displayString_.begin());
+        } else {
+          displayString_ = textString;
+        }
       }
+      cursor_.end = displayString_.length();
+      flushLayer();
     }
     eventCount_++;
     *stopPropagation = true;
@@ -290,9 +301,11 @@ void RSkComponentTextInput::processEventKey (rnsKey eventKeyType,bool* stopPropa
     textInputMetrics.text = textString;
     textInputMetrics.eventCount = eventCount_;
     textInputEventEmitter->onKeyPress(keyPressMetrics);
-    textInputEventEmitter->onChange(textInputMetrics);
-    textInputEventEmitter->onContentSizeChange(textInputMetrics);
-    textInputEventEmitter->onSelectionChange(textInputMetrics);
+    if (!(maxLength_ && (textLengthAfterEdit > maxLength_))) {
+      textInputEventEmitter->onChange(textInputMetrics);
+      textInputEventEmitter->onContentSizeChange(textInputMetrics);
+      textInputEventEmitter->onSelectionChange(textInputMetrics);
+    }
 }
 
 void RSkComponentTextInput::keyEventProcessingThread(){
@@ -328,6 +341,8 @@ RnsShell::LayerInvalidateMask  RSkComponentTextInput::updateComponentProps(const
   std::string textString{};
   RNS_LOG_DEBUG("event count "<<textInputProps.mostRecentEventCount);
   textString = textInputProps.text;
+  caretHidden_ = textInputProps.caretHidden;
+  maxLength_ = textInputProps.maxLength;
   if (textString != displayString_) {
     privateVarProtectorMutex.lock();
     displayString_ = textString;
@@ -345,6 +360,11 @@ RnsShell::LayerInvalidateMask  RSkComponentTextInput::updateComponentProps(const
     if(!displayString_.size()) {
       mask |= LayerPaintInvalidate;
     }
+  }
+
+  if (secureTextEntry_ != textInputProps.secureTextEntry) {
+    secureTextEntry_ = textInputProps.secureTextEntry;
+    mask |= LayerPaintInvalidate;
   }
 
   if(textInputProps.placeholderTextColor != placeholderColor_ ) {
