@@ -5,6 +5,7 @@
 
 #include "JSITurboModuleManager.h"
 #include "version.h"
+#include "core_modules/RSkDeviceInfo.h"
 #include "core_modules/RSkTimingModule.h"
 #include "core_modules/RSkKeyboardObserver.h"
 #include "modules/platform/nopoll/RSkWebSocketModule.h"
@@ -160,6 +161,8 @@ JSITurboModuleManager::JSITurboModuleManager(Instance *bridgeInstance)
       std::make_shared<RSkWebSocketModule>("WebSocketModule", jsInvoker, bridgeInstance);
   modules_["KeyboardObserver"] =
       std::make_shared<RSkKeyboardObserver>("KeyboardObserver", jsInvoker, bridgeInstance);
+  modules_["DeviceInfo"] =
+      std::make_shared<RSkDeviceInfoModule>("DeviceInfo", jsInvoker, bridgeInstance);
 
   modules_["DevSettings"] =
       std::make_shared<UnimplementedTurboModule>("DevSettings", jsInvoker);
@@ -171,17 +174,6 @@ JSITurboModuleManager::JSITurboModuleManager(Instance *bridgeInstance)
       std::make_shared<UnimplementedTurboModule>("Appearance", jsInvoker);
   modules_["NativeAnimatedModule"] = std::make_shared<UnimplementedTurboModule>(
       "NativeAnimatedModule", jsInvoker);
-
-  staticModule = std::make_shared<StaticTurboModule>("DeviceInfo", jsInvoker);
-  auto windowMetrics = folly::dynamic::object("width", 1024)("height", 768)(
-      "scale", 1)("fontScale", 1);
-  auto screenMetrics = folly::dynamic::object("width", 1024)("height", 768)(
-      "scale", 1)("fontScale", 1);
-  auto dimension = folly::dynamic::object("window", std::move(windowMetrics))(
-      "screen", std::move(screenMetrics));
-  staticModule->SetConstants(
-      folly::dynamic::object("Dimensions", std::move(dimension)));
-  modules_["DeviceInfo"] = std::move(staticModule);
 }
 
 TurboModuleProviderFunctionType JSITurboModuleManager::GetProvider() {
