@@ -28,7 +28,11 @@ static const char* gEGLAPIName = "OpenGL";
 static const EGLenum gEGLAPIVersion = EGL_OPENGL_API;
 #endif
 
+#if defined(EGL_EXT_swap_buffers_with_damage) && EGL_EXT_swap_buffers_with_damage
 static PFNEGLSWAPBUFFERSWITHDAMAGEEXTPROC eglSwapBuffersWithDamage = nullptr;
+#else
+static void* eglSwapBuffersWithDamage = nullptr;
+#endif
 
 const char* GLWindowContextEGL::errorString(int statusCode) {
     static_assert(sizeof(int) >= sizeof(EGLint), "EGLint must not be wider than int");
@@ -428,6 +432,7 @@ void GLWindowContextEGL::swapInterval() {
             RNS_LOG_INFO("EGL_KHR_partial_update extenstion supported....");
         }
 
+#if defined(EGL_EXT_swap_buffers_with_damage) && EGL_EXT_swap_buffers_with_damage
         if (isExtensionSupported(extensions, "EGL_EXT_swap_buffers_with_damage")) {
             RNS_LOG_INFO("EGL_EXT_swap_buffers_with_damage extenstion supported....");
             eglSwapBuffersWithDamage =  reinterpret_cast<PFNEGLSWAPBUFFERSWITHDAMAGEEXTPROC>(eglGetProcAddress("eglSwapBuffersWithDamageEXT"));
@@ -435,6 +440,7 @@ void GLWindowContextEGL::swapInterval() {
             RNS_LOG_INFO("EGL_KHR_swap_buffers_with_damage extenstion supported....");
             eglSwapBuffersWithDamage =  reinterpret_cast<PFNEGLSWAPBUFFERSWITHDAMAGEEXTPROC>(eglGetProcAddress("eglSwapBuffersWithDamageKHR"));
         }
+#endif
     }
 
     eglSwapInterval(platformDisplay_.eglDisplay(), displayParams_.disableVsync_ ? 0 : 1);
