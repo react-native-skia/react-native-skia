@@ -21,13 +21,14 @@ public:
 #endif
     SkSize viewPort();
     void scheduleRenderingUpdate();
+    void beginRenderingUpdate();
     void setRootLayer(SharedLayer rootLayer);
     void commit();
     void begin();
 
     // Layer Client Implementation
     void notifyFlushRequired() override { scheduleRenderingUpdate(); }
-    void notifyFlushBegin() override { begin(); }
+    void notifyFlushBegin() override { beginRenderingUpdate(); }
 
 protected:
     std::unique_ptr<LayerTreeHost> layerTreeHost_;

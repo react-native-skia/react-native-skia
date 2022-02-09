@@ -36,8 +36,11 @@ void RendererDelegate::setRootLayer(SharedLayer rootLayer) {
 }
 
 void RendererDelegate::scheduleRenderingUpdate() {
-  RNS_LOG_NOT_IMPL;
   commit();
+}
+
+void RendererDelegate::beginRenderingUpdate() {
+  begin();
 }
 
 

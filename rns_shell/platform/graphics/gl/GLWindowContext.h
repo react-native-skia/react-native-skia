@@ -12,7 +12,9 @@
 #define GL_GLEXT_PROTOTYPES 1
 #if USE(OPENGL_ES)
 #include <GLES2/gl2.h>
+#if defined(GL_ES_VERSION_3_0) && GL_ES_VERSION_3_0
 #include <GLES3/gl3.h>
+#endif
 #include <GLES2/gl2ext.h>
 #else
 #include <GL/gl.h>
