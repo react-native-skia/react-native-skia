@@ -650,7 +650,7 @@
 /* #undef HAVE_STRNICMP */
 
 /* Define to 1 if you have the <stropts.h> header file. */
-#define HAVE_STROPTS_H 1
+/* #define HAVE_STROPTS_H 1 */
 
 /* Define to 1 if you have the strstr function. */
 #define HAVE_STRSTR 1
