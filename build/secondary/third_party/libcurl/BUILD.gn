@@ -6,7 +6,6 @@ import("//build/config/buildflags_paint_preview.gni")
 import("//build/config/chrome_build.gni")
 import("//build/config/features.gni")
 import("//build/config/ui.gni")
-import("//third_party/third_party.gni")
 import("BUILD.generated.gni")
 
 declare_args() {
