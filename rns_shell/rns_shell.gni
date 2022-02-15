@@ -21,7 +21,7 @@ declare_args() {
     gl_has_gpu = true
 
     # Use partial updates ( dirty region painting and swaping) if system support.
-    rns_enable_partial_updates = false
+    rns_enable_partial_updates = true
   }
 }
 
