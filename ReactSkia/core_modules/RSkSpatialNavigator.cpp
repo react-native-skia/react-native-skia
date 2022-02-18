@@ -394,16 +394,17 @@ bool RSkSpatialNavigator::advanceFocusInDirection(Container *container, rnsKey k
     if(advanceFocusInDirection(focusCandidate, keyEvent))
       return true;
   }
-
   // Focus the candidate and update the spatial navigator states
-  if(currentFocus_) // First Blur the existing focus component
-    sendNotificationWithEventType("blur", currentFocus_->getComponentData().tag);
-  sendNotificationWithEventType("focus", focusCandidate->getComponentData().tag);
-  RNS_LOG_DEBUG("Blur : [" << ((currentFocus_) ? currentFocus_->getComponentData().tag : -1) << "], Focus :[" << focusCandidate->getComponentData().tag << "]");
-  currentFocus_ = focusCandidate;
-  currentContainer_ = currentFocus_->isContainer() ? currentFocus_ : currentFocus_->nearestAncestorContainer();
-
+  updateFocusCandidate(focusCandidate);
   return true;
+}
+void RSkSpatialNavigator::updateFocusCandidate(RSkComponent* focusCandidate){
+   if(currentFocus_) // First Blur the existing focus component
+     sendNotificationWithEventType("blur", currentFocus_->getComponentData().tag);
+   sendNotificationWithEventType("focus", focusCandidate->getComponentData().tag);
+   RNS_LOG_DEBUG("Blur : [" << ((currentFocus_) ? currentFocus_->getComponentData().tag : -1) << "], Focus :[" << focusCandidate->getComponentData().tag << "]");
+   currentFocus_ = focusCandidate;
+   currentContainer_ = currentFocus_->isContainer() ? currentFocus_ : currentFocus_->nearestAncestorContainer(); 
 }
 
 void RSkSpatialNavigator::navigateInDirection(rnsKey keyEvent) {

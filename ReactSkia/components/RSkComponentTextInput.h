@@ -54,6 +54,8 @@ class RSkComponentTextInput final : public RSkComponent {
       const TextInputProps& props);
   void processEventKey(rnsKey eventKeyType,bool* stopPropagation,bool *waitForupdateProps, bool updateString);
   void keyEventProcessingThread();
+  void requestForEditingMode();
+  void resignFromEditingMode();
 };
 
 } // namespace react

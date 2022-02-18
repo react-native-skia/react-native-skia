@@ -57,12 +57,11 @@ void MountingManager::schedulerDidDispatchCommand(
     const ShadowView &shadowView,
     const std::string &commandName,
     const folly::dynamic args) {
-  RNS_LOG_NOT_IMPL;
-  RNS_LOG_TODO("shadowView tag[" << shadowView.tag <<  "] name["<< shadowView.componentName << "] commandName [" << commandName <<"]");
+  RNS_LOG_DEBUG("shadowView tag[" << shadowView.tag <<  "] name["<< shadowView.componentName << "] commandName [" << commandName <<"]");
   auto component = GetComponent(shadowView);
   if( component != NULL ){
     component->handleCommand(commandName,args);
-  } 
+  }
 }
 
 void MountingManager::schedulerDidSetJSResponder(

@@ -8,6 +8,7 @@
 #include "include/core/SkPaint.h"
 #include "ReactSkia/components/RSkComponentTextInput.h"
 #include "ReactSkia/components/RSkComponent.h"
+#include "ReactSkia/core_modules/RSkSpatialNavigator.h"
 #include "ReactSkia/sdk/RNSKeyCodeMapping.h"
 #include "ReactSkia/views/common/RSkDrawUtils.h"
 #include "ReactSkia/views/common/RSkConversion.h"
@@ -47,6 +48,7 @@ RSkComponentTextInput::RSkComponentTextInput(const ShadowView &shadowView)
   cursorPaint_.setAntiAlias(true);
   cursorPaint_.setStyle(SkPaint::kStroke_Style);
   cursorPaint_.setStrokeWidth(CURSOR_WIDTH);
+  
 }
 
 void RSkComponentTextInput::flushLayer(){
@@ -226,7 +228,8 @@ void RSkComponentTextInput::processEventKey (rnsKey eventKeyType,bool* stopPropa
   auto textInputEventEmitter = std::static_pointer_cast<TextInputEventEmitter const>(component.eventEmitter);
   auto const &textInputProps = *std::static_pointer_cast<TextInputProps const>(component.props);
   keyPressMetrics.text = RNSKeyMap[eventKeyType];
-    if ((eventKeyType >= RNS_KEY_1 && eventKeyType <= RNS_KEY_z)) {
+    //Displayable Charector Range
+    if ((eventKeyType >= RNS_KEY_1 && eventKeyType <= RNS_KEY_Less)) {
       if (cursor_.locationFromEnd != 0){
         textString.insert(cursor_.end-cursor_.locationFromEnd,keyPressMetrics.text);
       } else {
@@ -277,35 +280,35 @@ void RSkComponentTextInput::processEventKey (rnsKey eventKeyType,bool* stopPropa
           return;//noop
       }
     }
-    //currently selection is not supported selectionRange length is 
-    //is always 0 & selectionRange.location always end 
-    textInputMetrics.selectionRange.location = cursor_.end ;
-    textInputMetrics.selectionRange.length = 0;
-    int textLengthAfterEdit = textString.length();
-    if (updateString) {
-      if (displayString_ != textString) {
-        if ((maxLength_) && (textLengthAfterEdit > maxLength_) && (textLengthAfterEdit > textLengthBeforeEdit )) {
-          std::copy_n(textString.begin(), textLengthBeforeEdit , displayString_.begin());
-        } else {
-          displayString_ = textString;
-        }
+  //currently selection is not supported selectionRange length is
+  //is always 0 & selectionRange.location always end
+  textInputMetrics.selectionRange.location = cursor_.end ;
+  textInputMetrics.selectionRange.length = 0;
+  int textLengthAfterEdit = textString.length();
+  if (updateString) {
+    if (displayString_ != textString) {
+      if ((maxLength_) && (textLengthAfterEdit > maxLength_) && (textLengthAfterEdit > textLengthBeforeEdit )) {
+        std::copy_n(textString.begin(), textLengthBeforeEdit , displayString_.begin());
+      } else {
+        displayString_ = textString;
       }
-      cursor_.end = displayString_.length();
-      flushLayer();
     }
-    eventCount_++;
-    *stopPropagation = true;
-    RNS_LOG_DEBUG("TextInput text " << textString);
-    textInputMetrics.contentSize.width = paragraph_->getMaxIntrinsicWidth();
-    textInputMetrics.contentSize.height = paragraph_->getHeight();
-    textInputMetrics.text = textString;
-    textInputMetrics.eventCount = eventCount_;
-    textInputEventEmitter->onKeyPress(keyPressMetrics);
-    if (!(maxLength_ && (textLengthAfterEdit > maxLength_))) {
-      textInputEventEmitter->onChange(textInputMetrics);
-      textInputEventEmitter->onContentSizeChange(textInputMetrics);
-      textInputEventEmitter->onSelectionChange(textInputMetrics);
-    }
+    cursor_.end = displayString_.length();
+    flushLayer();
+  }
+  eventCount_++;
+  *stopPropagation = true;
+  RNS_LOG_DEBUG("TextInput text " << textString);
+  textInputMetrics.contentSize.width = paragraph_->getMaxIntrinsicWidth();
+  textInputMetrics.contentSize.height = paragraph_->getHeight();
+  textInputMetrics.text = textString;
+  textInputMetrics.eventCount = eventCount_;
+  textInputEventEmitter->onKeyPress(keyPressMetrics);
+  if (!(maxLength_ && (textLengthAfterEdit > maxLength_))) {
+    textInputEventEmitter->onChange(textInputMetrics);
+    textInputEventEmitter->onContentSizeChange(textInputMetrics);
+    textInputEventEmitter->onSelectionChange(textInputMetrics);
+  }
 }
 
 void RSkComponentTextInput::keyEventProcessingThread(){
@@ -393,8 +396,9 @@ RnsShell::LayerInvalidateMask  RSkComponentTextInput::updateComponentProps(const
 
   return (RnsShell::LayerInvalidateMask)mask;
 }
+
 void RSkComponentTextInput::handleCommand(std::string commandName,folly::dynamic args){
-  if(commandName == "setTextAndSelection"){
+  if (commandName == "setTextAndSelection") {
     RNS_LOG_DEBUG("Calling Dyanic args"<<args[1].getString());
     privateVarProtectorMutex.lock();
     displayString_ = args[1].getString();
@@ -403,9 +407,66 @@ void RSkComponentTextInput::handleCommand(std::string commandName,folly::dynamic
     flushLayer();
     if(isTextInputInFocus_)
       sem_post(&jsUpdateMutex);
-  } else { 
+  }else if (commandName == "focus") {
+    RNS_LOG_DEBUG("commandName === "<< commandName);
+    requestForEditingMode();
+  }else if (commandName == "blur") {
+    RNS_LOG_DEBUG("commandName === "<< commandName);
+    resignFromEditingMode();
+  } else {
     RNS_LOG_NOT_IMPL;
   }
 }
+
+void RSkComponentTextInput::requestForEditingMode(){
+  RNS_LOG_DEBUG("[requestForEditingMode] ENTRY");
+  // check if textinput is already in Editing
+  if ( isInEditingMode_ )
+    return;
+  RNS_LOG_TODO("[requestForEditingMode] Launch OnScreen Keyboard");
+  auto spatialNavigator =  SpatialNavigator::RSkSpatialNavigator::sharedSpatialNavigator();
+  auto previousFocusedCandidate = spatialNavigator->getCurrentFocusElement();
+  auto candidateToFocus = getComponentData();
+  auto textInputEventEmitter = std::static_pointer_cast<TextInputEventEmitter const>(candidateToFocus.eventEmitter);
+  auto const &textInputProps = *std::static_pointer_cast<TextInputProps const>(candidateToFocus.props);
+  TextInputMetrics textInputMetrics;
+  //TODO
+  //check layout event expects absolute frame or relative frame
+  Rect frame = candidateToFocus.layoutMetrics.frame;
+  textInputMetrics.contentOffset.x = frame.origin.x;
+  textInputMetrics.contentOffset.y = frame.origin.y;
+  textInputMetrics.contentSize.width = paragraph_->getMaxIntrinsicWidth();
+  textInputMetrics.contentSize.height = paragraph_->getHeight();
+  // Resign the editing mode
+  if(previousFocusedCandidate)
+    ((RSkComponentTextInput*)previousFocusedCandidate)->resignFromEditingMode();
+  //SpatialNavigtor API which is responsible
+  //for changing focus to respective textinput.
+  spatialNavigator->updateFocusCandidate(this);
+  isInEditingMode_ = true;
+  textInputEventEmitter->onFocus(textInputMetrics);
+  RNS_LOG_DEBUG("[requestForEditingMode] END");
+}
+
+void RSkComponentTextInput::resignFromEditingMode() {
+  RNS_LOG_DEBUG("[requestFromEditingMode] ENTER");
+  if (!this->isInEditingMode_)
+    return;
+  RNS_LOG_TODO("[requestForEditingMode] Exit OnScreen Keyboard");
+  std::string componentName = "TextInput";
+  TextInputMetrics textInputMetrics;
+  auto component = this->getComponentData();
+  if ( component.componentName == componentName ) {
+    textInputMetrics.text = this->displayString_;
+    textInputMetrics.eventCount = this->eventCount_;
+    this->isInEditingMode_ = false;
+    auto textInputEventEmitter = std::static_pointer_cast<TextInputEventEmitter const>(component.eventEmitter);
+    textInputEventEmitter->onSubmitEditing(textInputMetrics);
+    textInputEventEmitter->onEndEditing(textInputMetrics);
+    textInputEventEmitter->onBlur(textInputMetrics);
+  }
+  RNS_LOG_DEBUG("[requestForEditingMode] END");
+}
+
 } // namespace react
 } // namespace facebook

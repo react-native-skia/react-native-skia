@@ -132,7 +132,7 @@ rnsKey  RnsShell::WindowX11::keyIdentifierForX11KeyCode(KeySym keycode){
     case XK_equal: return RNS_KEY_Equal;
     case XK_percent: return RNS_KEY_Percent;
     case XK_plus: return RNS_KEY_Plus;
-    case XK_greater: return RNS_KEY_Grater;
+    case XK_greater: return RNS_KEY_Greater;
     case XK_less: return RNS_KEY_Less;
 
     default: return RNS_KEY_UnKnown;

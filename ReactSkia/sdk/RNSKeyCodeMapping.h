@@ -33,14 +33,15 @@ typedef enum rnsKey{
     RNS_KEY_Guia,
     //Navigation Keys
     
+    RNS_KEY_Select,
     RNS_KEY_Up,
     RNS_KEY_Down,
-    RNS_KEY_Select,
     RNS_KEY_Right,
     RNS_KEY_Left,
     /*
      * KeyBoard Keys
      */
+    /*Displayable Keys statart*/
     /*Numaric Key*/
 
     RNS_KEY_1,
@@ -107,19 +108,7 @@ typedef enum rnsKey{
     RNS_KEY_x,
     RNS_KEY_y,
     RNS_KEY_z,
-    //Delete and backSpace 
-    RNS_KEY_Delete,
-    RNS_KEY_Back,
-    /*Modifer Keys chars*/
-    RNS_KEY_Caps_Lock,
-    RNS_KEY_Alt_L,
-    RNS_KEY_Alt_R,
-    RNS_KEY_Shift_L,
-    RNS_KEY_Shift_R,
-    RNS_KEY_Control_L,
-    RNS_KEY_Control_R,
-    /*Special char*/
-    RNS_KEY_Tab,
+    RNS_KEY_Space,
     RNS_KEY_Grave,
     RNS_KEY_Asciitilde,
     RNS_KEY_Exclam,
@@ -132,8 +121,6 @@ typedef enum rnsKey{
     RNS_KEY_ParenLeft,
     RNS_KEY_ParenRight,
     RNS_KEY_Underscore,
-    RNS_KEY_Page_Up,
-    RNS_KEY_Page_Down,
     RNS_KEY_Shash,
     RNS_KEY_Period,
     RNS_KEY_Comma,
@@ -148,18 +135,34 @@ typedef enum rnsKey{
     RNS_KEY_BraceRight,
     RNS_KEY_BracketLeft,
     RNS_KEY_BracketRight,
-    RNS_KEY_Escape,
-    RNS_KEY_Space,
-    RNS_KEY_Home,
-    RNS_KEY_EndKey,
-    RNS_KEY_Insert,
-    /*Arthematic */
+        /*Arthematic */
     RNS_KEY_Minus,
     RNS_KEY_Equal,
     RNS_KEY_Percent,
     RNS_KEY_Plus,
-    RNS_KEY_Grater,
+    RNS_KEY_Greater,
     RNS_KEY_Less,
+    /*Displayable Keys end*/
+    //Delete and backSpace 
+    RNS_KEY_Delete,
+    RNS_KEY_Back,
+    /*Modifer Keys chars*/
+    RNS_KEY_Caps_Lock,
+    RNS_KEY_Alt_L,
+    RNS_KEY_Alt_R,
+    RNS_KEY_Shift_L,
+    RNS_KEY_Shift_R,
+    RNS_KEY_Control_L,
+    RNS_KEY_Control_R,
+    /*Special char*/
+    RNS_KEY_Tab,
+    RNS_KEY_Page_Up,
+    RNS_KEY_Page_Down,
+    RNS_KEY_Escape,
+    RNS_KEY_Home,
+    RNS_KEY_EndKey,
+    RNS_KEY_Insert,
+
     /*
      * Un mapped key
      */
@@ -199,10 +202,10 @@ static std::string RNSKeyMap[RNS_KEY_End]={
     "cancel",
     "mute",
     "guia",
-    //Navigation Keys   
+    //Navigation Keys
+    "select",   
     "up",
     "down",
-    "select",
     "right",
     "left",
     /*
@@ -273,19 +276,7 @@ static std::string RNSKeyMap[RNS_KEY_End]={
     "x",
     "y",
     "z",
-    //Delete and Back key
-    "delete", 
-    "back",
-    /*Modfier Keys*/
-    "capsLock",
-    "altL",
-    "altR",
-    "shiftL",
-    "shiftR",
-    "controlL",
-    "controlR",
-    /*Special chars*/
-    "tab",
+    " ",
     "`",
     "~",
     "!",
@@ -298,8 +289,6 @@ static std::string RNSKeyMap[RNS_KEY_End]={
     "(",
     ")",
     "_",
-    "pageUp",
-    "pageDown",
     "/",
     ".",
     ",",
@@ -314,12 +303,7 @@ static std::string RNSKeyMap[RNS_KEY_End]={
     "}",
     "[",
     "]",
-    "escape",
-    " ",
-    "home",
-    "end",
-    "insert",
-    /*
+        /*
      * Arthematic Opps
      */
     "-",
@@ -328,7 +312,26 @@ static std::string RNSKeyMap[RNS_KEY_End]={
     "+",
     ">",
     "<",
-
+    //Delete and Back key
+    "delete", 
+    "back",
+    /*Modfier Keys*/
+    "capsLock",
+    "altL",
+    "altR",
+    "shiftL",
+    "shiftR",
+    "controlL",
+    "controlR",
+    /*Special chars*/
+    "tab",
+    /*PageUP and PageUP*/
+    "pageUp",
+    "pageDown",
+    "escape",
+    "home",
+    "end",
+    "insert",
     "unKnown"
 };
 #endif// __RNSKeyCodeMapping_h__

@@ -169,7 +169,7 @@ rnsKey  RnsShell::WindowLibWPE::keyIdentifierForWPEKeyCode(int keyCode){
     case WPE_KEY_equal: return RNS_KEY_Equal;
     case WPE_KEY_percent: return RNS_KEY_Percent;
     case WPE_KEY_plus: return RNS_KEY_Plus;
-    case WPE_KEY_greater: return RNS_KEY_Grater;
+    case WPE_KEY_greater: return RNS_KEY_Greater;
     case WPE_KEY_less : return RNS_KEY_Less;
     /*UnKnownKey*/
     default: return RNS_KEY_UnKnown;
