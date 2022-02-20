@@ -9,4 +9,4 @@ checkout_nacl = false
 checkout_oculus_sdk = false
 checkout_openxr = false
 mac_xcode_version = "default"
-react_native_target = "default"
+react_native_platform = "default"
