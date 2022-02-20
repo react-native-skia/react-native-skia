@@ -12,7 +12,11 @@ rn_cxx_component("view") {
     "YogaLayoutableShadowNode.cpp",
     "YogaStylableProps.cpp",
   ]
-
+  if( react_native_platform == "tvos") {
+    sources += [
+      "TVViewProps.cpp",
+    ]
+  }
   defines = [
     "LOG_TAG=ReactNative",
   ]

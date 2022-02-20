@@ -1,3 +1,4 @@
+import("//build/config/gclient_args.gni")
 template("rn_cxx_component") {
   with_exceptions = false
   if (defined(invoker.with_exceptions)) {
