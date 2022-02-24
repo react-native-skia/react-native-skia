@@ -51,7 +51,7 @@ RSkComponentTextInput::RSkComponentTextInput(const ShadowView &shadowView)
   
 }
 
-void RSkComponentTextInput::flushLayer(){
+void RSkComponentTextInput::drawAndSubmit(){
   layer()->client().notifyFlushBegin();
   layer()->invalidate( RnsShell::LayerPaintInvalidate);
   if (layer()->type() == RnsShell::LAYER_TYPE_PICTURE) {
@@ -91,7 +91,7 @@ void RSkComponentTextInput::drawTextInput(SkCanvas *canvas,
   paragraph_->paint(canvas, frame.origin.x + layout.contentInsets.left, frame.origin.y + layout.contentInsets.top + yOffset);
 
   // draw Cursor
-  if (!caretHidden_) {
+  if (isInEditingMode_ && !caretHidden_) {
   position = cursor_.end - cursor_.locationFromEnd;
   if (cursor_.locationFromEnd == cursor_.end) {
     rects = paragraph_->getRectsForRange(0, position+1, RectHeightStyle::kTight, RectWidthStyle::kTight);
@@ -170,6 +170,9 @@ void RSkComponentTextInput::onHandleKey(rnsKey eventKeyType, bool *stopPropagati
     textInputMetrics.contentSize.height = paragraph_->getHeight();
     textInputEventEmitter->onFocus(textInputMetrics);
     isInEditingMode_ = true;
+    if (!caretHidden_) {
+      drawAndSubmit();
+    }
   } else if (isInEditingMode_) {
     // Logic to update the textinput string.
     // Requirement: Textinput is in Editing mode.
@@ -200,6 +203,9 @@ void RSkComponentTextInput::onHandleKey(rnsKey eventKeyType, bool *stopPropagati
         *stopPropagation = true;
         isTextInputInFocus_ = false;
         isInEditingMode_ = false;
+        if (!caretHidden_) {
+          drawAndSubmit();
+        }
         privateVarProtectorMutex.lock();
         while (!inputQueue.empty()) {
           inputQueue.pop();
@@ -244,7 +250,9 @@ void RSkComponentTextInput::processEventKey (rnsKey eventKeyType,bool* stopPropa
           }
           *stopPropagation = true;
           keyPressMetrics.eventCount = eventCount_;
-          flushLayer();
+          if (!caretHidden_) {
+            drawAndSubmit();
+          }
           textInputEventEmitter->onKeyPress(keyPressMetrics);
           *waitForupdateProps = false;
           return;
@@ -255,7 +263,9 @@ void RSkComponentTextInput::processEventKey (rnsKey eventKeyType,bool* stopPropa
           }
           *stopPropagation = true;
           keyPressMetrics.eventCount = eventCount_;
-          flushLayer();
+          if (!caretHidden_) {
+            drawAndSubmit();
+          }
           textInputEventEmitter->onKeyPress(keyPressMetrics);
           *waitForupdateProps = false;
           return;
@@ -274,6 +284,9 @@ void RSkComponentTextInput::processEventKey (rnsKey eventKeyType,bool* stopPropa
           textInputEventEmitter->onBlur(textInputMetrics);
           isInEditingMode_ = false;
           *stopPropagation = true;
+          if (!caretHidden_) {
+            drawAndSubmit();
+          }
           return;
         default:
           *waitForupdateProps = false;
@@ -294,7 +307,7 @@ void RSkComponentTextInput::processEventKey (rnsKey eventKeyType,bool* stopPropa
       }
     }
     cursor_.end = displayString_.length();
-    flushLayer();
+    drawAndSubmit();
   }
   eventCount_++;
   *stopPropagation = true;
@@ -404,7 +417,7 @@ void RSkComponentTextInput::handleCommand(std::string commandName,folly::dynamic
     displayString_ = args[1].getString();
     cursor_.end = displayString_.length();
     privateVarProtectorMutex.unlock();
-    flushLayer();
+    drawAndSubmit();
     if(isTextInputInFocus_)
       sem_post(&jsUpdateMutex);
   }else if (commandName == "focus") {
@@ -445,6 +458,9 @@ void RSkComponentTextInput::requestForEditingMode(){
   spatialNavigator->updateFocusCandidate(this);
   isInEditingMode_ = true;
   textInputEventEmitter->onFocus(textInputMetrics);
+  if (!caretHidden_) {
+    drawAndSubmit();
+  }
   RNS_LOG_DEBUG("[requestForEditingMode] END");
 }
 
@@ -464,6 +480,9 @@ void RSkComponentTextInput::resignFromEditingMode() {
     textInputEventEmitter->onSubmitEditing(textInputMetrics);
     textInputEventEmitter->onEndEditing(textInputMetrics);
     textInputEventEmitter->onBlur(textInputMetrics);
+    if (!caretHidden_) {
+      drawAndSubmit();
+    }
   }
   RNS_LOG_DEBUG("[requestForEditingMode] END");
 }

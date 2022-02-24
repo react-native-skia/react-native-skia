@@ -46,7 +46,7 @@ class RSkComponentTextInput final : public RSkComponent {
   struct cursor cursor_;
   SkPaint cursorPaint_;
   std::shared_ptr<skia::textlayout::Paragraph> paragraph_;
-  void flushLayer();
+  void drawAndSubmit();
   void drawTextInput(
       SkCanvas *canvas,
       LayoutMetrics layout,
