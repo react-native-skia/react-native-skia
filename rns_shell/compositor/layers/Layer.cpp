@@ -161,12 +161,24 @@ void Layer::prePaint(PaintContext& context, bool forceLayout) {
     //Adjust absolute Layout frame and dirty rects
     bool forceChildrenLayout = (forceLayout || (invalidateMask_ & LayerLayoutInvalidate));
     preRoll(context, forceLayout);
-    invalidateMask_ = LayerInvalidateNone;
+    invalidateMask_ = static_cast<LayerInvalidateMask>(invalidateMask_ & LayerRemoveInvalidate) ;
 
     // prePaint children recursively
+    size_t index = 0;
+    std::map <size_t , SharedLayer> recycleChildList;
     for (auto& layer : children()) {
         layer->prePaint(context, forceChildrenLayout);
+        if(layer->invalidateMask_ == LayerRemoveInvalidate){
+            recycleChildList[index] = layer;
+        }
+        index++;
     }
+
+    //remove children marked with remove mask from parent list
+    for(auto recycleChildIter = recycleChildList.rbegin();recycleChildIter != recycleChildList.rend();++recycleChildIter)
+         removeChild(recycleChildIter->second.get(),recycleChildIter->first);
+
+    recycleChildList.clear();
 }
 
 void Layer::paintSelf(PaintContext& context) {
@@ -187,13 +199,13 @@ void Layer::paint(PaintContext& context) {
 
     SkAutoCanvasRestore save(context.canvas, true); // Save current clip and matrix state.
 
-    context.canvas->setMatrix(absoluteTransformMatrix_); //Apply self & parent's combined transformation matrix before paint
-
     if(opacity <= 0.0) return; //if transparent,paint self & children not required
     if(opacity < 0xFF) {
       SkRect layerBounds = SkRect::Make(bounds_);
       context.canvas->saveLayerAlpha(&layerBounds,opacity);
     }
+
+    context.canvas->setMatrix(absoluteTransformMatrix_); //Apply self & parent's combined transformation matrix before paint
 
     paintSelf(context); // First paint self and then children if any
 
@@ -255,7 +267,7 @@ bool Layer::needsPainting(PaintContext& context) {
 void Layer::calculateTransformMatrix() {
 
 /* Step 1: calculate transform matrix set by parent */
-    if(parent_) {
+    if((!skipParentMatrix_) && parent_) {
         absoluteTransformMatrix_=parent_->absoluteTransformMatrix_;
         absoluteTransformMatrix_.preTranslate(parent_->frame_.x(),parent_->frame_.y());
     }

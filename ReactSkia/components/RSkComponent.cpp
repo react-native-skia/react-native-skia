@@ -272,8 +272,8 @@ void RSkComponent::unmountChildComponent(
         oldChildComponent->parent_ = nullptr ;
 
         RNS_LOG_ASSERT((this->layer_ && oldChildComponent->layer_), "Layer Object cannot be null");
-        if(this->layer_)
-            this->layer_->removeChild(oldChildComponent->layer_.get(), index);
+        if(oldChildComponent->layer_)
+            oldChildComponent->layer_->invalidate(RnsShell::LayerRemoveInvalidate);
     }
 }
 

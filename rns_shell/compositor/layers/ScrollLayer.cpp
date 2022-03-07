@@ -69,13 +69,14 @@ void ScrollLayer::prePaint(PaintContext& context, bool forceLayout) {
     /* Child for prepaint is selected based on below condition */
     /* 1. If bitmap is reset due to content size change,force child to prepaint */
     /* 2. If child frame intersects with visible region and requires an update */
-    SkIRect visibleRect = SkIRect::MakeXYWH(scrollOffsetX,scrollOffsetY,frame_.width(),frame_.height());
+    size_t index = 0;
     SkIRect dummy;
+    SkIRect visibleRect = SkIRect::MakeXYWH(scrollOffsetX,scrollOffsetY,frame_.width(),frame_.height());
+    std::map <size_t , SharedLayer > recycleChildList;
     for (auto& layer : children()) {
-        /*setting parent to null is a hack to avoid adding parent abs frame to child frame*/
+        /*avoid adding parent abs frame to child frame*/
         /*As childrens of this layer are painted on bitmap canvas,we do not need parent frame here*/
-        /*TODO Find proper place/better way to avoid it */
-        layer->setParent(nullptr);
+        layer->setSkipParentMatrix(true);
 
         if(forceBitmapReset_){
            layer->invalidate();
@@ -88,8 +89,17 @@ void ScrollLayer::prePaint(PaintContext& context, bool forceLayout) {
         if(forceBitmapReset_ || (dummy.intersect(visibleRect,layer->getBounds()) && layer->requireInvalidate(false)) || layer->getBounds().isEmpty()){
           RNS_LOG_DEBUG("Layer needs prePaint [" << layer->getBounds().x() <<"," << layer->getBounds().y() << "," << layer->getBounds().width() <<"," << layer->getBounds().height() << "]");
           layer->prePaint(bitmapPaintContext,forceChildrenLayout);
+          if(layer->invalidateMask_ == LayerRemoveInvalidate) {
+              recycleChildList[index] = layer;
+          }
         }
+
+        index++;
     }
+
+    //remove children marked with remove mask from parent list
+    for(auto recycleChildIter = recycleChildList.rbegin();recycleChildIter != recycleChildList.rend();++recycleChildIter)
+       removeChild(recycleChildIter->second.get(),recycleChildIter->first);
 
     clipBound_ = Compositor::beginClip(bitmapPaintContext);
 
@@ -103,6 +113,7 @@ void ScrollLayer::prePaint(PaintContext& context, bool forceLayout) {
     preRoll(context, forceLayout);
     invalidateMask_ = LayerInvalidateNone;
     forceBitmapReset_ = false;
+    recycleChildList.clear();
 }
 
 void ScrollLayer::paintSelf(PaintContext& context) {

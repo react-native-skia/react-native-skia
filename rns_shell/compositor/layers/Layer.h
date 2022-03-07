@@ -11,6 +11,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <array>
+#include <map>
 #include <memory>
 #include <set>
 #include <string>
@@ -38,6 +39,7 @@ enum LayerInvalidateMask {
     LayerInvalidateNone = 0,
     LayerPaintInvalidate = 1 << 0,
     LayerLayoutInvalidate = 1 << 1,
+    LayerRemoveInvalidate = 1 << 2,
     LayerInvalidateAll = LayerPaintInvalidate | LayerLayoutInvalidate
 };
 
@@ -133,6 +135,7 @@ private:
     static uint64_t nextUniqueId();
 
     void setParent(Layer* layer);
+    void setSkipParentMatrix(bool skipParentMatrix) {skipParentMatrix_ = skipParentMatrix;}
 
     void calculateTransformMatrix();
 
@@ -151,6 +154,7 @@ private:
     //Layer’s Appearance
     bool isHidden_ = { false }; // Wheather layer is hidden
     bool masksToBounds_ = { false }; // Clip childrens
+    bool skipParentMatrix_ = {false}; // skip including parent's absolute transformation matrix
     //Borders & Shadows ?
 
     LayerInvalidateMask invalidateMask_;
