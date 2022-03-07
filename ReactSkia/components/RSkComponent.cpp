@@ -131,11 +131,13 @@ RnsShell::LayerInvalidateMask RSkComponent::updateProps(const ShadowView &newSha
       updateMask =static_cast<RnsShell::LayerInvalidateMask>(updateMask | RnsShell::LayerInvalidateAll);
       createShadowFilter=true;
    }
-   if((layer_->shadowFilter==NULL) || createShadowFilter) {
+   if(layer_->shadowOpacity && createShadowFilter) {
        layer_->shadowFilter= SkImageFilters::DropShadowOnly(
                               layer_->shadowOffset.width(), layer_->shadowOffset.height(),
                               layer_->shadowRadius, layer_->shadowRadius,
                               layer_->shadowColor, nullptr);
+   } else if (layer_->shadowFilter != nullptr) {
+       layer_->shadowFilter.reset();
    }
   //backfaceVisibility
    if ((forceUpdate) || (oldviewProps.backfaceVisibility != newviewProps.backfaceVisibility)) {

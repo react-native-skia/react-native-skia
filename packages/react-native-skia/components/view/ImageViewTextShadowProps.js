@@ -1,7 +1,12 @@
 import * as React from 'react';
+import {useState} from 'react';
 import { View, AppRegistry, Image, Text } from 'react-native';
 
 const SimpleViewApp = React.Node = () => {
+  let [opacity,setOpacity] = useState(1);
+  setTimeout(() => {
+     setOpacity(!opacity);
+  },5000);
   return (
    <>
       <View
@@ -17,7 +22,7 @@ const SimpleViewApp = React.Node = () => {
                        borderBottomWidth:10,
                        borderColor:'black',
                        shadowColor:'aqua',
-                       shadowOpacity:1,
+                       shadowOpacity:opacity,
                        shadowOffset:{
                                      width:10,
                                      height:10
@@ -29,7 +34,7 @@ const SimpleViewApp = React.Node = () => {
                          height: 200 ,
                          shadowColor: "yellow",
                          shadowRadius: 1,
-                         shadowOpacity: 1,
+                         shadowOpacity: opacity,
                          borderWidth:5,
                          borderColor:'#ff0000',
                          shadowOffset: {
@@ -45,7 +50,7 @@ const SimpleViewApp = React.Node = () => {
                      borderBottomWidth:10,
                      borderColor:'black',
                      shadowColor:'cyan',
-                     shadowOpacity:1,
+                     shadowOpacity:opacity,
                      backgroundColor:'cornsilk',
                      shadowOffset:{
                                    width:10,
@@ -58,7 +63,7 @@ const SimpleViewApp = React.Node = () => {
                          height: 200,
                          shadowColor:"yellow",
                          shadowRadius:1,
-                         shadowOpacity:1,
+                         shadowOpacity:opacity,
                          borderWidth:5,
                          backgroundColor:'#ffe4e1',
                          borderColor:'red',
@@ -82,7 +87,7 @@ const SimpleViewApp = React.Node = () => {
                     backgroundColor:"mistyrose",
                     shadowColor: "red",
                     shadowRadius: 0,
-                    shadowOpacity: 1,
+                    shadowOpacity: opacity,
                     shadowOffset: {
                                   width: 2,
                                   height: 2},
@@ -101,7 +106,7 @@ const SimpleViewApp = React.Node = () => {
                     fontSize: 40,
                     shadowColor: "red",
                     shadowRadius: 0,
-                    shadowOpacity: 1,
+                    shadowOpacity: opacity,
                     shadowOffset: {
                                   width: 4,
                                   height: 4},
@@ -121,7 +126,7 @@ const SimpleViewApp = React.Node = () => {
                     fontSize: 40,
                     shadowColor: "red",
                     shadowRadius: 0,
-                    shadowOpacity: 1,
+                    shadowOpacity: opacity,
                     shadowOffset: {
                                   width: 10,
                                   height: 10},

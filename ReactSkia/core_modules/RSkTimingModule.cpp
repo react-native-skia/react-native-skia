@@ -74,7 +74,7 @@ void RSkTimingModule::createTimerForNextFrame(
   // Correcting scheduling overhead and finding actual targetDuration
   duration<double, std::milli> elapsed = system_clock::now() - jsSchedulingTime;
   double jsSchedulingOverhead = std::max(elapsed.count(), 0.0);
-  double targetDuration = jsDuration - jsSchedulingOverhead;
+  double targetDuration = std::max((jsDuration - jsSchedulingOverhead), 0.0);
 
   SharedTimer timer = std::make_shared<RSkTimer>(callbackId, jsDuration, targetDuration, repeats);
   timers_[callbackId] = timer;

@@ -132,7 +132,7 @@ ScrollStatus RSkComponentScrollView::scrollInDirection(RSkComponent* candidate, 
   SkIRect visibleRect = SkIRect::MakeXYWH(scrollPos.x(),scrollPos.y(),frame.width(),frame.height());
 
   SkIRect candidateFrame = candidate->getLayerAbsoluteFrame();
-  if(!visibleRect.contains(candidateFrame)) return handleScroll(scrollPos);
+  if(!visibleRect.intersect(candidateFrame)) return handleScroll(scrollPos);
 
   return handleScroll(direction,candidateFrame);
 }
