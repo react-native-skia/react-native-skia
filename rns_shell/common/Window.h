@@ -64,6 +64,14 @@ public:
     GrDirectContext* directContext() const;
     virtual void didRenderFrame() {};
 
+    SkSize getWindowDimension() { return currentWindowDimension_; }
+
+    void setWindowDimension(int width,int height) {
+        currentWindowDimension_.set(width,height);
+    }
+private:
+    SkSize currentWindowDimension_;
+
 protected:
     Window();
     static Window *mainWindow_;

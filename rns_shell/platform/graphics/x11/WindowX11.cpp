@@ -38,11 +38,15 @@ Window* Window::createNativeWindow(void* platformData) {
 
     WindowX11* window = new WindowX11();
     if (!window->initWindow(pDisplay)) {
+
         delete window;
         return nullptr;
     }
-    if(!mainWindow_)
+    if(!mainWindow_) {
+        Display* display = dynamic_cast<PlatformDisplayX11*>(pDisplay)->native();
+        XSelectInput (display, DefaultRootWindow(display), ExposureMask | StructureNotifyMask); // Root window is used to monitor screen resolution change in X11
         mainWindow_ = window;
+    }
     return window;
 }
 
@@ -53,18 +57,45 @@ void Window::createEventLoop(Application* app) {
     const int x11_fd = ConnectionNumber(display);
 
     bool done = false;
+
     while (!done) {
         if (int count = XPending(display)) {
             while (count-- && !done) {
                 XEvent event;
                 XNextEvent(display, &event);
-
                 switch (event.type) {
-                    case ConfigureNotify:
-                        RNS_LOG_INFO("Resize Request with (Width x Height) : (" << event.xconfigurerequest.width <<
+                    case ConfigureNotify:{
+
+                        if(event.xconfigurerequest.window == DefaultRootWindow(display)) {
+                            RNS_LOG_INFO(" ROOT Window(Screen) Size :" << event.xconfigurerequest.width << "x" << event.xconfigurerequest.height);
+                            auto screenSize = pDisplay.getCurrentScreenSize();
+
+                            if(((screenSize.width()!=event.xconfigurerequest.width) ||
+                                (screenSize.height()!=event.xconfigurerequest.height))) {
+
+                                pDisplay.setCurrentScreenSize(event.xconfigurerequest.width,event.xconfigurerequest.height);
+                                NotificationCenter::defaultCenter().emit("dimensionEventNotification");
+
+                            }
+
+                        } else {
+                                RNS_LOG_INFO("Resize Request with (Width x Height) : (" << event.xconfigurerequest.width <<
                                     " x " << event.xconfigurerequest.height << ")");
-                        app->sizeChanged(event.xconfigurerequest.width, event.xconfigurerequest.height);
+                                WindowX11* win = WindowX11::gWindowMap.find(event.xconfigurerequest.window);
+                                if(win){
+                                    auto windowDimension = win->getWindowDimension();
+
+                                    if((windowDimension.width()!=event.xconfigurerequest.width) ||
+                                    (windowDimension.height()!=event.xconfigurerequest.height)) {
+
+                                        win->setWindowDimension(event.xconfigurerequest.width,event.xconfigurerequest.height);
+                                        app->sizeChanged(event.xconfigurerequest.width, event.xconfigurerequest.height);
+                                        NotificationCenter::defaultCenter().emit("dimensionEventNotification");
+                                    }
+                                }
+                        }
                         break;
+                    }
                     default:
                         WindowX11* win = WindowX11::gWindowMap.find(event.xany.window);
                         if (win->handleEvent(event)) {

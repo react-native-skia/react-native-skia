@@ -41,6 +41,8 @@ public:
 
     virtual Type type() const = 0;
     virtual SkSize screenSize() = 0;
+    SkSize getCurrentScreenSize();
+    void setCurrentScreenSize(int,int);
 
 #if USE(EGL) || USE(GLX)
     RNS_EXPORT GLWindowContext* sharingGLContext();
@@ -67,6 +69,7 @@ protected:
 
 private:
     static std::unique_ptr<PlatformDisplay> createPlatformDisplay();
+    SkSize currentScreenSize_;
 
 #if USE(EGL)
     void terminateEGLDisplay();

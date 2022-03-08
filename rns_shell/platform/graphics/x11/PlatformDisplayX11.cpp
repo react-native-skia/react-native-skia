@@ -39,6 +39,9 @@ std::unique_ptr<PlatformDisplay> PlatformDisplayX11::create(Display* display) {
 PlatformDisplayX11::PlatformDisplayX11(Display* display, bool displayOwned)
     : PlatformDisplay(displayOwned)
     , display_(display) {
+    SkSize screenDimension = screenSize();
+
+    setCurrentScreenSize(screenDimension.width(),screenDimension.height());
 }
 
 PlatformDisplayX11::~PlatformDisplayX11() {
@@ -70,12 +73,13 @@ void PlatformDisplayX11::initializeEGLDisplay()
 #endif // USE(EGL)
 
 SkSize PlatformDisplayX11::screenSize() {
-    Screen *screen = nullptr;
+    XWindowAttributes winAttr;
+    Window rootWin = DefaultRootWindow(display_); // Root Window always returns the updated screen size.
     SkSize size = SkSize::MakeEmpty();
 
-    if(ScreenCount(display_) > 0 && (screen = ScreenOfDisplay(display_, 0))) {
-        size.set(screen->width, screen->height);
-    }
+    XGetWindowAttributes(display_, rootWin, &winAttr);
+    size.set(winAttr.width, winAttr.height);
+
     return size;
 }
 
