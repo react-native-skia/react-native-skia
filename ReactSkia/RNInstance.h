@@ -2,8 +2,14 @@
 
 #include "cxxreact/Instance.h"
 
+namespace RnsShell {
+  class RendererDelegate;
+}
+
 namespace facebook {
 namespace react {
+
+using namespace RnsShell;
 
 class ComponentViewRegistry;
 class JSITurboModuleManager;
@@ -13,16 +19,16 @@ class RSkSurfaceWindow;
 
 class RNInstance {
  public:
-  RNInstance();
+  RNInstance(RendererDelegate &rendererDelegate);
   ~RNInstance();
   RNInstance(RNInstance &&) = default;
 
-  void Start(RSkSurfaceWindow *surface);
-  void Stop();
+  void Start(RSkSurfaceWindow *surface, RendererDelegate &rendererDelegate);
+  void Stop(RSkSurfaceWindow *surface);
 
  private:
   void InitializeJSCore();
-  void InitializeFabric();
+  void InitializeFabric(RendererDelegate &rendererDelegate);
   void RegisterComponents();
 
  private:

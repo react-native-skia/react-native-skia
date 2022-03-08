@@ -4,15 +4,22 @@
 #include "react/renderer/scheduler/SchedulerDelegate.h"
 #include "ReactSkia/ComponentViewRegistry.h"
 
+namespace RnsShell {
+  class RendererDelegate;
+}
+
 namespace facebook {
 namespace react {
 
+using namespace RnsShell;
+
 class ComponentViewRegistry;
 class RSkSurfaceWindow;
+class ReactSkiaApp;
 
 class MountingManager : public SchedulerDelegate {
  public:
-  MountingManager(ComponentViewRegistry *componentViewRegistry);
+  MountingManager(ComponentViewRegistry *componentViewRegistry, RendererDelegate &rendererDelegate);
   MountingManager(MountingManager &&) = default;
 
   void BindSurface(RSkSurfaceWindow *surface);
@@ -83,6 +90,7 @@ class MountingManager : public SchedulerDelegate {
 
 
  private:
+  RendererDelegate& nativeRenderDelegate_;
   ComponentViewRegistry *componentViewRegistry_;
   RSkSurfaceWindow *surface_;
 };

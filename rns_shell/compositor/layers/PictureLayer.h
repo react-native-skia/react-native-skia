@@ -19,8 +19,8 @@ using SharedPictureLayer = std::shared_ptr<PictureLayer>;
 class PictureLayer : public Layer {
 public:
 
-    static SharedPictureLayer Create();
-    PictureLayer();
+    static SharedPictureLayer Create(Client& layerClient);
+    PictureLayer(Client& layerClient);
     virtual ~PictureLayer() {};
 
     SkPicture* picture() const { return picture_.get(); }

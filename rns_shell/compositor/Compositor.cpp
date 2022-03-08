@@ -22,26 +22,31 @@
 
 namespace RnsShell {
 
-std::unique_ptr<Compositor> Compositor::create(SkRect& viewPort, float scaleFactor) {
-    return std::make_unique<Compositor>(viewPort, scaleFactor);
+std::unique_ptr<Compositor> Compositor::create(Client& compositorClient, PlatformDisplayID displayID, SkSize& viewPortSize, float scaleFactor) {
+    RNS_LOG_INFO("Create New Compositor");
+    return std::make_unique<Compositor>(compositorClient, displayID, viewPortSize, scaleFactor);
 }
 
-Compositor::Compositor(SkRect& viewportSize, float scaleFactor)
-    :rootLayer_(nullptr)
-    ,window_(Window::createNativeWindow(&PlatformDisplay::sharedDisplayForCompositing())) {
+Compositor::Compositor(Client& client, PlatformDisplayID displayID, SkSize& viewportSize, float scaleFactor)
+    :client_(client)
+    ,rootLayer_(nullptr) {
 
-    nativeWindowHandle_ = window_ ? window_->nativeWindowHandle() : 0;
+    nativeWindowHandle_ = client_.nativeSurfaceHandle();
     if(nativeWindowHandle_) {
        createWindowContext();
     }
 
     if(windowContext_) {
         backBuffer_ = windowContext_->getBackbufferSurface();
+    } else {
+        RNS_LOG_ERROR("Invalid windowContext for nativeWindowHandle : " << nativeWindowHandle_);
+        return;
     }
+
     {
         //locker(attributes_.lock);
         if(viewportSize.isEmpty())
-            attributes_.viewportSize = SkRect::MakeWH(windowContext_->width(), windowContext_->height());
+            attributes_.viewportSize = SkSize::Make(windowContext_->width(), windowContext_->height());
         else
             attributes_.viewportSize = viewportSize;
         attributes_.scaleFactor = scaleFactor;
@@ -59,6 +64,7 @@ Compositor::~Compositor() {
 }
 
 void Compositor::createWindowContext() {
+    RNS_LOG_ASSERT((nativeWindowHandle_), "Invalid Native Window Handle");
     windowContext_ = WCF::createContextForWindow(reinterpret_cast<GLNativeWindowType>(nativeWindowHandle_),
                         &PlatformDisplay::sharedDisplayForCompositing(), DisplayParams());
 
@@ -107,7 +113,7 @@ void Compositor::renderLayerTree() {
     if(backBuffer_ == nullptr || rootLayer_.get() == nullptr) {
         RNS_LOG_ERROR("No backbuffer : " << backBuffer_ << " or rootlayer" << rootLayer_.get());
     } else {
-        SkRect viewportSize;
+        SkSize viewportSize;
         float scaleFactor;
         bool needsResize;
         {
@@ -154,7 +160,7 @@ void Compositor::renderLayerTree() {
         }
 #endif
         RNS_PROFILE_API_OFF("SwapBuffers", windowContext_->swapBuffers(surfaceDamage_));
-        window_->didRenderFrame();
+        client_.didRenderFrame();
     }
 }
 
@@ -183,7 +189,7 @@ void Compositor::setRootLayer(SharedLayer rootLayer) {
   rootLayer_ = rootLayer;
 }
 
-void Compositor::setViewportSize(const SkRect& viewportSize) {
+void Compositor::setViewportSize(const SkSize& viewportSize) {
     //locker(attributes_.lock);
     if(viewportSize.width() == attributes_.viewportSize.width() &&
         viewportSize.height() == attributes_.viewportSize.height()) {
