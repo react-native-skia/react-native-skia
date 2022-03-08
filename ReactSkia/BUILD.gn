@@ -5,10 +5,14 @@ declare_args() {
   rns_enable_api_profiling = false
 }
 
+import("//build/config/gclient_args.gni")
 config("ReactSkia_config") {
   defines = []
   if(rns_enable_api_profiling) {
     defines += ["RNS_ENABLE_API_PERF"]
+  }
+  if( react_native_platform == "tvos") {
+     defines += ["TARGET_OS_TV=1"]
   }
 }
 
