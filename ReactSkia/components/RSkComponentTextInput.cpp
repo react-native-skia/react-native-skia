@@ -196,7 +196,7 @@ void RSkComponentTextInput::onHandleKey(rnsKey eventKeyType, bool *stopPropagati
       }
       
       //We need to Handle the StopPrpagation & select in the onHandle.
-      if ((eventKeyType >= RNS_KEY_Right && eventKeyType <= RNS_KEY_Back)) {
+      if ((eventKeyType >= RNS_KEY_Up && eventKeyType <= RNS_KEY_Back)) {
         *stopPropagation = true;
         inputQueue.push(eventKeyType);
       } else if (eventKeyType ==  RNS_KEY_Select) {
@@ -269,11 +269,18 @@ void RSkComponentTextInput::processEventKey (rnsKey eventKeyType,bool* stopPropa
           textInputEventEmitter->onKeyPress(keyPressMetrics);
           *waitForupdateProps = false;
           return;
+        case RNS_KEY_Up:
+        case RNS_KEY_Down:
+          *stopPropagation = true;
+          *waitForupdateProps = false;
+          return;
         case RNS_KEY_Back:
         case RNS_KEY_Delete:
           if (!textString.empty() && (cursor_.end!=cursor_.locationFromEnd))
             textString.erase(textString.begin()+(cursor_.end-cursor_.locationFromEnd-1)); //acts like a backspace.
-            RNS_LOG_DEBUG("After removing a charector in string = "<<textString); 
+          else
+            *waitForupdateProps = false;
+          RNS_LOG_DEBUG("After removing a charector in string = "<<textString);
           break;
         case RNS_KEY_Select:
           eventCount_++;

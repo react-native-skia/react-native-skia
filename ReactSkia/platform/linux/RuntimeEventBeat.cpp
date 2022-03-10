@@ -9,7 +9,7 @@
 #include "RuntimeEventBeat.h"
 #include "ReactSkia/utils/RnsLog.h"
 
-#define BEAT_INTERVAL  1000 /*unit ms. Beat interval Set to:1 sec as temp fix*/
+#define BEAT_INTERVAL  10 /*unit ms. Beat interval Set to:10 milli sec as temp fix*/
 
 namespace facebook {
 namespace react {
