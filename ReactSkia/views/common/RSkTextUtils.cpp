@@ -45,27 +45,24 @@ inline SkScalar yPosOffset(AttributedString attributedString, SkScalar paraHeigh
 } //namespace
 
 namespace RSkTextUtils{
-void setTextLines(std::shared_ptr<Paragraph>& paragraph,
-            std::shared_ptr<ParagraphBuilder>& builder,
+void setTextLines(struct RSkSkTextLayout &textLayout,
             LayoutMetrics layout,
-            ParagraphAttributes paragraphAttributes,
-            bool isParent) {
+            ParagraphAttributes paragraphAttributes) {
     int numberOfLines = 0;
-    ParagraphStyle paraStyle;
     std::vector<LineMetrics> metrics;
 
-    paragraph->layout(layout.getContentFrame().size.width);
-    paragraph->getLineMetrics(metrics);
+    textLayout.paragraph->layout(layout.getContentFrame().size.width);
+    textLayout.paragraph->getLineMetrics(metrics);
     numberOfLines = getTextLines(metrics, paragraphAttributes.maximumNumberOfLines, layout.getContentFrame().size.height);
     if (numberOfLines) {
+        textLayout.paraStyle.setMaxLines(numberOfLines);
         if (paragraphAttributes.maximumNumberOfLines) {
             if ((EllipsizeMode::Tail) == (paragraphAttributes.ellipsizeMode))
-                paraStyle.setEllipsis(u"\u2026");
+                textLayout.paraStyle.setEllipsis(u"\u2026");
         }
-        paraStyle.setMaxLines(numberOfLines);
-        builder->setParagraphStyle(paraStyle);
-        paragraph = builder->Build();
-        paragraph->layout(layout.getContentFrame().size.width);
+        textLayout.builder->setParagraphStyle(textLayout.paraStyle);
+        textLayout.paragraph = textLayout.builder->Build();
+        textLayout.paragraph->layout(layout.getContentFrame().size.width);
     }
 }
 
@@ -89,7 +86,7 @@ void drawText(std::shared_ptr<Paragraph>& paragraph,
             canvas->clipRect(SkRect::MakeXYWH(frame.origin.x, frame.origin.y, frame.size.width, frame.size.height));
         canvas->drawColor(RSkColorFromSharedColor(props.backgroundColor, SK_ColorTRANSPARENT));
     }
-    if (props.textAttributes.lineHeight) {
+    if (fontLineHeight) {
         yOffset = yPosOffset(attributedString, paragraph->getHeight(), layout.getContentFrame().size.height);
         if (isParent)
             paragraph->paint(canvas, layout.contentInsets.left, layout.contentInsets.top + yOffset);

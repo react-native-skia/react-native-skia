@@ -31,7 +31,6 @@ void RSkComponentRawText::OnPaint(SkCanvas *canvas) {}
 
 RSkComponentParagraph::RSkComponentParagraph(const ShadowView &shadowView)
     : RSkComponent(shadowView)
-    , paraBuilder(nullptr)
     , expectedAttachmentCount(0)
     , currentAttachmentCount(0){}
 
@@ -48,11 +47,10 @@ void RSkComponentParagraph::OnPaint(SkCanvas *canvas) {
     auto state = std::static_pointer_cast<ParagraphShadowNode::ConcreteStateT const>(component.state);
     auto const &props = *std::static_pointer_cast<ParagraphProps const>(component.props);
     auto data = state->getData();
-    ParagraphStyle paraStyle;
     auto borderMetrics = props.resolveBorderMetrics(component.layoutMetrics);
     Rect borderFrame = component.layoutMetrics.frame;
     bool isParent = false;
-    TextShadow shadow;
+
 
     /* Check if this component has parent Paragraph component */
     RSkComponentParagraph* parent = getParentParagraph();
@@ -65,28 +63,26 @@ void RSkComponentParagraph::OnPaint(SkCanvas *canvas) {
         auto const &parentProps = *std::static_pointer_cast<ParagraphProps const>(parentComponent.props);
         auto parentBorderMetrics = parentProps.resolveBorderMetrics(parentComponent.layoutMetrics);
         
-        if (parent->paraBuilder) {
+        if (parent->textLayout.builder) {
             isParent = true;
-            parent->expectedAttachmentCount += data.layoutManager->buildParagraph(props.backgroundColor,
-                                                            data.attributedString,
-                                                            paragraphAttributes_,
-                                                            shadow,
-                                                            true,
-                                                            parent->paraBuilder);
-            std::shared_ptr<Paragraph> para = parent->paraBuilder->Build();
+            textLayout.builder = parent->textLayout.builder;
+            parent->expectedAttachmentCount += data.layoutManager->buildParagraph(textLayout,
+                                                                                    props.backgroundColor,
+                                                                                    data.attributedString,
+                                                                                    paragraphAttributes_,
+                                                                                    true);
+            textLayout.paragraph = parent->textLayout.builder->Build();
             parent->currentAttachmentCount++;
             borderFrame = parentComponent.layoutMetrics.frame;
             borderFrame.origin.x=0;
             borderFrame.origin.y=0;
 
             if(!parent->expectedAttachmentCount || (parent->expectedAttachmentCount == parent->currentAttachmentCount)) {
-                setTextLines(para,
-                            parent->paraBuilder,
+                setTextLines(textLayout,
                             parentComponent.layoutMetrics,
-                            paragraphAttributes_,
-                            isParent);
+                            paragraphAttributes_);
 
-                drawText(para,
+                drawText(textLayout.paragraph,
                             canvas,
                             data.attributedString,
                             parentComponent.layoutMetrics,
@@ -103,16 +99,21 @@ void RSkComponentParagraph::OnPaint(SkCanvas *canvas) {
     else {
         /* If previously created builder is available,using it will append the text in builder*/
         /* If it reaches here,means there is an update in text.So create new paragraph builder*/
-        if(nullptr != paraBuilder) {
-            paraBuilder.reset();
+        if(nullptr != textLayout.builder) {
+            textLayout.builder.reset();
         }
-        paraBuilder = std::static_pointer_cast<ParagraphBuilder>(std::make_shared<ParagraphBuilderImpl>(paraStyle,data.layoutManager->collection_));
+        textLayout.builder = std::static_pointer_cast<ParagraphBuilder>(std::make_shared<ParagraphBuilderImpl>(textLayout.paraStyle,data.layoutManager->collection_));
         if(layer()->shadowOpacity && layer()->shadowFilter) {
-            shadow={layer()->shadowColor,SkPoint::Make(layer()->shadowOffset.width(),layer()->shadowOffset.height()),layer()->shadowRadius};
+            textLayout.shadow={layer()->shadowColor,SkPoint::Make(layer()->shadowOffset.width(),layer()->shadowOffset.height()),layer()->shadowRadius};
         }
-        expectedAttachmentCount = data.layoutManager->buildParagraph(props.backgroundColor, data.attributedString, paragraphAttributes_,shadow,true, paraBuilder);
+
+        expectedAttachmentCount = data.layoutManager->buildParagraph(textLayout,
+                                                                        props.backgroundColor,
+                                                                        data.attributedString,
+                                                                        paragraphAttributes_,
+                                                                        true);
         currentAttachmentCount = 0;
-        std::shared_ptr<Paragraph> para = paraBuilder->Build();
+        textLayout.paragraph = textLayout.builder->Build();
 
         /* If the count is 0,means we have no fragment attachments.So paint right away*/
         if(!expectedAttachmentCount) {
@@ -126,13 +127,11 @@ void RSkComponentParagraph::OnPaint(SkCanvas *canvas) {
                           layer()->shadowFilter);
             }
 
-            setTextLines(para,
-                        paraBuilder,
+            setTextLines(textLayout,
                         component.layoutMetrics,
-                        paragraphAttributes_,
-                        isParent);
+                        paragraphAttributes_);
 
-            drawText(para,
+            drawText(textLayout.paragraph,
                         canvas,
                         data.attributedString,
                         component.layoutMetrics,

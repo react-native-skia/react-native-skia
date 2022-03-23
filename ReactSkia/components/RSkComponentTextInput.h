@@ -50,8 +50,8 @@ class RSkComponentTextInput final : public RSkComponent {
   void drawTextInput(
       SkCanvas *canvas,
       LayoutMetrics layout,
-      std::shared_ptr<skia::textlayout::ParagraphBuilder> &builder,
-      const TextInputProps& props);
+      const TextInputProps& props,
+      struct RSkSkTextLayout &textLayout);
   void processEventKey(rnsKey eventKeyType,bool* stopPropagation,bool *waitForupdateProps, bool updateString);
   void keyEventProcessingThread();
   void requestForEditingMode();

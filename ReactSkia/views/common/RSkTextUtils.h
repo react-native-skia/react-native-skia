@@ -18,11 +18,9 @@ namespace facebook {
 namespace react {
 namespace RSkTextUtils {
 
-void setTextLines(std::shared_ptr<Paragraph>& paragraph,
-            std::shared_ptr<ParagraphBuilder>& builder,
+void setTextLines(struct RSkSkTextLayout &textLayout,
             LayoutMetrics layoutout,
-            ParagraphAttributes paragraphAttributes,
-            bool isParent);
+            ParagraphAttributes paragraphAttributes);
 
 void drawText(std::shared_ptr<Paragraph>& paragraph,
             SkCanvas *canvas,

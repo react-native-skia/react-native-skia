@@ -94,18 +94,17 @@ TextMeasurement RSkTextLayoutManager::doMeasure (SharedColor backGroundColor,
                 ParagraphAttributes paragraphAttributes,
                 LayoutConstraints layoutConstraints) const {
     TextMeasurement::Attachments attachments;
-    ParagraphStyle paraStyle;
+    struct RSkSkTextLayout textLayout;
     Size size;
-    TextShadow shadow;
 
-    std::shared_ptr<ParagraphBuilder> builder = std::static_pointer_cast<ParagraphBuilder>(std::make_shared<ParagraphBuilderImpl>(paraStyle,collection_));
-    buildParagraph(backGroundColor, attributedString, paragraphAttributes, shadow, false, builder);
-    auto paragraph = builder->Build();
+    textLayout.builder = std::static_pointer_cast<ParagraphBuilder>(std::make_shared<ParagraphBuilderImpl>(textLayout.paraStyle,collection_));
+    buildParagraph(textLayout, backGroundColor, attributedString, paragraphAttributes, false);
+    auto paragraph = textLayout.builder->Build();
     paragraph->layout(layoutConstraints.maximumSize.width);
 
     size.width = paragraph->getMaxIntrinsicWidth() < paragraph->getMaxWidth() ?
-	                                                          paragraph->getMaxIntrinsicWidth() :
-								  paragraph->getMaxWidth();
+	                                        paragraph->getMaxIntrinsicWidth() :
+								            paragraph->getMaxWidth();
     size.height = paragraph->getHeight(); 
 
     Point attachmentPoint = calculateFramePoint({0,0}, size, layoutConstraints.maximumSize.width);
@@ -132,14 +131,13 @@ TextMeasurement RSkTextLayoutManager::doMeasure (SharedColor backGroundColor,
     return TextMeasurement{size, attachments};
 }
 
-void RSkTextLayoutManager::buildText (ParagraphAttributes paragraphAttributes,
+void RSkTextLayoutManager::buildText (struct RSkSkTextLayout &textLayout,
+    SharedColor backGroundColor,
+    ParagraphAttributes paragraphAttributes,
     TextAttributes textAttributes,
     std::string textString,
-    TextShadow shadow,
-    bool fontDecorationRequired,
-    std::shared_ptr<ParagraphBuilder> builder) const {
+    bool fontDecorationRequired) const {
     TextStyle style;
-    ParagraphStyle paraStyle;
     auto fontSize = TextAttributes::defaultTextAttributes().fontSize;
     auto fontSizeMultiplier = TextAttributes::defaultTextAttributes().fontSizeMultiplier;
     int fontWeight = SkFontStyle::kNormal_Weight;
@@ -188,9 +186,9 @@ void RSkTextLayoutManager::buildText (ParagraphAttributes paragraphAttributes,
 
     if(!textAttributes.backgroundColor) {
         /*TODO For text content shadow shadowOpacity to be handle*/
-            style.addShadow(shadow);
-            shadow.fOffset+=setShadowPoint.Make(fontShadowOffset.width,fontShadowOffset.height);
-            style.addShadow(shadow);
+            style.addShadow(textLayout.shadow);
+            textLayout.shadow.fOffset+=setShadowPoint.Make(fontShadowOffset.width,fontShadowOffset.height);
+            style.addShadow(textLayout.shadow);
     }
 
     style.addShadow(TextShadow(convertTextColor(textAttributes.textShadowColor ?
@@ -208,8 +206,8 @@ void RSkTextLayoutManager::buildText (ParagraphAttributes paragraphAttributes,
         style.setForegroundColor(convertTextColor(textAttributes.foregroundColor ?
                                                     textAttributes.foregroundColor :
                                                     TextAttributes::defaultTextAttributes().foregroundColor));
-        style.setBackgroundColor(convertTextColor(textAttributes.backgroundColor ?
-                                                    textAttributes.backgroundColor :
+        style.setBackgroundColor(convertTextColor(backGroundColor ?
+                                                    backGroundColor :
                                                     TextAttributes::defaultTextAttributes().backgroundColor));
         style.setDecorationColor(convertTextColor(textAttributes.textDecorationColor ?
                                                     textAttributes.textDecorationColor :
@@ -217,20 +215,19 @@ void RSkTextLayoutManager::buildText (ParagraphAttributes paragraphAttributes,
     }
 
     if(textAttributes.alignment.has_value())
-        paraStyle.setTextAlign(convertTextAlign(textAttributes.alignment.value()));
+        textLayout.paraStyle.setTextAlign(convertTextAlign(textAttributes.alignment.value()));
 
-    builder->setParagraphStyle(paraStyle);
-    builder->pushStyle(style);
-    builder->addText(textString.c_str(), std::strlen(textString.c_str()));
-    builder->pop();
+    textLayout.builder->setParagraphStyle(textLayout.paraStyle);
+    textLayout.builder->pushStyle(style);
+    textLayout.builder->addText(textString.c_str(), std::strlen(textString.c_str()));
+    textLayout.builder->pop();
 }
 
-uint32_t RSkTextLayoutManager::buildParagraph (SharedColor backGroundColor,
+uint32_t RSkTextLayoutManager::buildParagraph (struct RSkSkTextLayout &textLayout,
+                SharedColor backGroundColor,
                 AttributedString attributedString,
                 ParagraphAttributes paragraphAttributes,
-                TextShadow shadow,
-                bool fontDecorationRequired,
-                std::shared_ptr<ParagraphBuilder> builder) const {
+                bool fontDecorationRequired) const {
     uint32_t attachmentCount = 0;  
 
     for(auto &fragment: attributedString.getFragments()) {
@@ -239,12 +236,12 @@ uint32_t RSkTextLayoutManager::buildParagraph (SharedColor backGroundColor,
            continue;
         }
 
-        buildText (paragraphAttributes,
+        buildText (textLayout,
+                    backGroundColor,
+                    paragraphAttributes,
                     fragment.textAttributes,
                     fragment.string.c_str(),
-                    shadow,
-                    fontDecorationRequired,
-                    builder);
+                    fontDecorationRequired);
     }
 
     return attachmentCount;

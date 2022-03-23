@@ -62,10 +62,9 @@ void RSkComponentTextInput::drawAndSubmit(){
 
 void RSkComponentTextInput::drawTextInput(SkCanvas *canvas,
   LayoutMetrics layout,
-  std::shared_ptr<ParagraphBuilder> &builder,
-  const TextInputProps& props) {
+  const TextInputProps& props,
+  struct RSkSkTextLayout &textLayout) {
   Rect frame = layout.frame;
-  ParagraphStyle paraStyle;
   float yOffset;
   
   //cursor
@@ -74,12 +73,12 @@ void RSkComponentTextInput::drawTextInput(SkCanvas *canvas,
   std::vector<TextBox> rects;
 
   // setParagraphStyle
-  paraStyle.setMaxLines(NUMBER_OF_LINES);
-  paraStyle.setEllipsis(u"\u2026");
-  builder->setParagraphStyle(paraStyle);
+  textLayout.paraStyle.setMaxLines(NUMBER_OF_LINES);
+  textLayout.paraStyle.setEllipsis(u"\u2026");
+  textLayout.builder->setParagraphStyle(textLayout.paraStyle);
 
   // buildParagraph
-  paragraph_ = builder->Build();
+  paragraph_ = textLayout.builder->Build();
   paragraph_->layout(layout.getContentFrame().size.width);
 
   // clipRect and backgroundColor
@@ -115,27 +114,27 @@ void RSkComponentTextInput::OnPaint(SkCanvas *canvas) {
   auto data = state->getData();
   auto borderMetrics = textInputProps.resolveBorderMetrics(component.layoutMetrics);
   Rect frame = component.layoutMetrics.frame;
-  ParagraphStyle paraStyle;
-  TextShadow shadow;
+  struct RSkSkTextLayout textLayout;
   TextAttributes textAttributes = textInputProps.getEffectiveTextAttributes(FONTSIZE_MULTIPLIER);
-  auto paraBuilder = std::static_pointer_cast<skia::textlayout::ParagraphBuilder>(
+  textLayout.builder = std::static_pointer_cast<skia::textlayout::ParagraphBuilder>(
                           std::make_shared<skia::textlayout::ParagraphBuilderImpl>(
-                          paraStyle, data.layoutManager->collection_));
+                          textLayout.paraStyle, data.layoutManager->collection_));
+
 
   if (0 == displayString_.size()) {
     textAttributes.foregroundColor = placeholderColor_;
-    data.layoutManager->buildText(textInputProps.paragraphAttributes, textAttributes, placeholderString_, shadow, true, paraBuilder);
+    data.layoutManager->buildText(textLayout, textInputProps.backgroundColor, textInputProps.paragraphAttributes, textAttributes, placeholderString_, true);
   } else {
     if (secureTextEntry_) {
       std::string secureTextString(displayString_);
-      data.layoutManager->buildText(textInputProps.paragraphAttributes, textAttributes, secureTextString.replace( secureTextString.begin(), secureTextString.end(), secureTextString.size(), '*'), shadow, true, paraBuilder);
+      data.layoutManager->buildText(textLayout, textInputProps.backgroundColor, textInputProps.paragraphAttributes, textAttributes, secureTextString.replace( secureTextString.begin(), secureTextString.end(), secureTextString.size(), '*'), true);
     } else {
-      data.layoutManager->buildText(textInputProps.paragraphAttributes, textAttributes, displayString_, shadow, true, paraBuilder);
+      data.layoutManager->buildText(textLayout, textInputProps.backgroundColor, textInputProps.paragraphAttributes, textAttributes, displayString_, true);
     }
   }
 
   drawShadow(canvas, frame, borderMetrics, textInputProps.backgroundColor, layer()->shadowOpacity, layer()->shadowFilter);
-  drawTextInput(canvas, component.layoutMetrics, paraBuilder, textInputProps);
+  drawTextInput(canvas, component.layoutMetrics, textInputProps, textLayout);
   drawBorder(canvas, frame, borderMetrics, textInputProps.backgroundColor);
 }
 

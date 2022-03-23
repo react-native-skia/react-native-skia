@@ -5,10 +5,10 @@ const SimpleViewApp = React.Node = () => {
   return (
     <>
         <Text style= {{textAlign:'auto'}}>textAlign:'auto'</Text>
-        <Text style= {{textAlign:'left'}}>textAlign:'auto'</Text>
-        <Text style= {{textAlign:'center'}}>textAlign:'auto'</Text>
-        <Text style= {{textAlign:'right'}}>textAlign:'auto'</Text>
-        <Text style= {{textAlign:'justify'}}>textAlign:'auto'</Text>      
+        <Text style= {{textAlign:'left'}}>textAlign:'left'</Text>
+        <Text style= {{textAlign:'center'}}>textAlign:'center'</Text>
+        <Text style= {{textAlign:'right'}}>textAlign:'right'</Text>
+        <Text style= {{textAlign:'justify'}}>textAlign:'justify'</Text>      
     </>
   );
 }
