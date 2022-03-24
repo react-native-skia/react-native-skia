@@ -216,11 +216,9 @@ uint32_t RSkTextLayoutManager::buildParagraph (SharedColor backGroundColor,
                                                       fragment.textAttributes.foregroundColor).getColor());
         }
 
-        if(fragment.textAttributes.alignment.has_value())
+        if(fragment.textAttributes.alignment.has_value()) {
             paraStyle.setTextAlign(convertTextAlign(fragment.textAttributes.alignment.value()));
-
-        if (paragraphAttributes.maximumNumberOfLines)
-            paraStyle.setMaxLines(paragraphAttributes.maximumNumberOfLines);
+        }
 
         builder->setParagraphStyle(paraStyle);
         builder->pushStyle(style);
