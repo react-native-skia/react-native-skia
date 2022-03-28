@@ -278,6 +278,17 @@ bool WindowX11::handleEvent(const XEvent& event) {
      *    a. shift ON  --> UpperCase
      *    b. shift OFF --> LowerCase
      */
+    if (event.type == KeyRelease && XEventsQueued(display_, QueuedAfterReading)) {
+        XEvent nev;
+        XPeekEvent(display_, &nev);
+        if (nev.type == KeyPress && nev.xkey.time == event.xkey.time &&
+            nev.xkey.keycode == event.xkey.keycode){
+            //Unlike wpe backend, X11 sends both key press and release when key-repeat is on. 
+            //this code is for ignoring key release when keyrepeat is on
+            RNS_LOG_DEBUG("[handleEvent] KeyRelease is ignored in Key Repeate mode");
+            return false;
+        }
+    }
     KeySym keysym = XkbKeycodeToKeysym(display_, event.xkey.keycode,0,(shiftLevel^capsLock));
     switch (event.type) {
         case MapNotify:
@@ -291,6 +302,7 @@ bool WindowX11::handleEvent(const XEvent& event) {
             break;
 
         case KeyRelease:
+            RNS_LOG_DEBUG("[handleEvent] Actual KeyRelease");
         case KeyPress:
             onKey( keyIdentifierForX11KeyCode(keysym), (event.type == KeyRelease ) ? RNS_KEY_Release : RNS_KEY_Press);
             break; 

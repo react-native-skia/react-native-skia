@@ -23,7 +23,8 @@ struct cursor{
 class RSkComponentTextInput final : public RSkComponent {
  public:
   RSkComponentTextInput(const ShadowView &shadowView);
-  void onHandleKey(rnsKey  eventKeyType,bool *stopPropagate)override;
+  ~RSkComponentTextInput();
+  void onHandleKey(rnsKey eventKeyType, bool keyRepeat, bool *stopPropagation)override;
   RnsShell::LayerInvalidateMask updateComponentProps(const ShadowView &newShadowView,bool forceUpdate) override;
   /*
     TODO  Need to Add command function to Handle Command.

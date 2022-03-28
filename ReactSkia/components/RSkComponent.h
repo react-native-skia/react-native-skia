@@ -88,7 +88,7 @@ class RSkComponent : public RnsShell::Layer , public SpatialNavigator::Container
      return RnsShell::LayerInvalidateAll;
   };
   virtual void handleCommand(std::string commandName,folly::dynamic args){RNS_LOG_NOT_IMPL;};
-  virtual void onHandleKey(rnsKey  eventKeyType,bool* stopPropagate){*stopPropagate=false;};
+  virtual void onHandleKey(rnsKey  eventKeyType, bool keyRepeat, bool* stopPropagate){*stopPropagate=false;};
   virtual bool isContainer() const { return false; }
 
   Component getComponentData() { return component_;}

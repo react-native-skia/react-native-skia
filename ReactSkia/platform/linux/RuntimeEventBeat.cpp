@@ -36,6 +36,7 @@ void RuntimeEventBeat::startObserving() const noexcept
 
 void RuntimeEventBeat::beat(){
   this->activityDidChange(activities_);
+  RNS_LOG_DEBUG("!!!!!! [RunLoopObserver][Activity]see Timestamp !!!!! ");
   beatThread_.getEventBase()->scheduleAt(std::bind(&RuntimeEventBeat::beat,this), \
            std::chrono::steady_clock::now() + std::chrono::milliseconds(BEAT_INTERVAL));
 }
