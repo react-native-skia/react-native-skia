@@ -75,6 +75,7 @@ RSkComponent* Container::firstInContainer(bool visible, bool skipChildren) {
   return firstCandidate;
 }
 
+#if defined(TARGET_OS_TV) && TARGET_OS_TV
 RSkComponent* Container::preferredFocusInContainer() {
   RSkComponent *preferredFocus = nullptr;
   std::vector<RSkComponent*>::reverse_iterator i;
@@ -99,5 +100,6 @@ RSkComponent* Container::preferredFocusInContainer() {
   }
   return preferredFocus;
 }
+#endif //TARGET_OS_TV
 
 } // namespace SpatialNavigator

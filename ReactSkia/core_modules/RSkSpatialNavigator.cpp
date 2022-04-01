@@ -55,6 +55,7 @@ void RSkSpatialNavigator::updateSpatialNavigatorState(NavigatorStateOperation op
 
     switch(operation) {
         case ComponentAdded:
+#if defined(TARGET_OS_TV) && TARGET_OS_TV
             if(viewProps.hasTVPreferredFocus == true) { // Newly added item has Tv Preferred Focus, update the state
                 if(currentFocus_)
                     sendNotificationWithEventType("blur", currentFocus_->getComponentData().tag);
@@ -63,6 +64,7 @@ void RSkSpatialNavigator::updateSpatialNavigatorState(NavigatorStateOperation op
                 currentFocus_ = candidate;
                 currentContainer_ = currentFocus_->nearestAncestorContainer();
             }
+#endif //TARGET_OS_TV
             break;
         case ComponentRemoved:
             if (currentFocus_ == candidate) {
@@ -262,7 +264,9 @@ RSkComponent* RSkSpatialNavigator::findDefaultFocusInContainer(Container *contai
     if(container == nullptr)
       return nullptr;
 
+#if defined(TARGET_OS_TV) && TARGET_OS_TV
     nextFocus = container->preferredFocusInContainer();
+#endif //TARGET_OS_TV
     // Didn't find any element with hasTVPreferredFocus so choose the first element as default focus
     if(nextFocus == nullptr) {
       nextFocus = container->firstInContainer();
@@ -399,9 +403,11 @@ bool RSkSpatialNavigator::advanceFocusInDirection(Container *container, rnsKey k
   return true;
 }
 void RSkSpatialNavigator::updateFocusCandidate(RSkComponent* focusCandidate){
+#if defined(TARGET_OS_TV) && TARGET_OS_TV
    if(currentFocus_) // First Blur the existing focus component
      sendNotificationWithEventType("blur", currentFocus_->getComponentData().tag);
    sendNotificationWithEventType("focus", focusCandidate->getComponentData().tag);
+#endif //TARGET_OS_TV
    RNS_LOG_DEBUG("Blur : [" << ((currentFocus_) ? currentFocus_->getComponentData().tag : -1) << "], Focus :[" << focusCandidate->getComponentData().tag << "]");
    currentFocus_ = focusCandidate;
    currentContainer_ = currentFocus_->isContainer() ? currentFocus_ : currentFocus_->nearestAncestorContainer(); 

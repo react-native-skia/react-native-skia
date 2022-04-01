@@ -47,7 +47,9 @@ public:
   CandidateList& navigationCandidates() { return navComponentList_; }
 
   RSkComponent* firstInContainer(bool visible = true, bool skipChildren = false);
+#if defined(TARGET_OS_TV) && TARGET_OS_TV
   RSkComponent* preferredFocusInContainer(); // Find the default preferred focus in the container
+#endif //TARGET_OS_TV
 };
 
 } // namespace SpatialNavigator

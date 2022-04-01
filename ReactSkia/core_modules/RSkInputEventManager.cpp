@@ -49,10 +49,12 @@ void RSkInputEventManager::keyHandler(rnsKey eventKeyType, rnsKeyAction eventKey
       return;//don't propagate key further
     }
   }
+#if defined(TARGET_OS_TV) && TARGET_OS_TV
   sendNotificationWithEventType(
       RNSKeyMap[eventKeyType],
       currentFocused ? currentFocused->getComponentData().tag : -1,
       eventKeyAction);
+#endif //TARGET_OS_TV
   spatialNavigator_->handleKeyEvent(eventKeyType,eventKeyAction);
 }
 
@@ -63,6 +65,7 @@ RSkInputEventManager* RSkInputEventManager::getInputKeyEventManager(){
   return sharedInputEventManager_;
 }
 
+#if defined(TARGET_OS_TV) && TARGET_OS_TV
 void RSkInputEventManager::sendNotificationWithEventType(std::string eventType, int tag, rnsKeyAction keyAction) {
   if(eventType.c_str() == nullptr)
     return;
@@ -74,6 +77,7 @@ void RSkInputEventManager::sendNotificationWithEventType(std::string eventType, 
       ("target", tag)
       ));
 }
+#endif //TARGET_OS_TV
 
 }//react
 }//facebook

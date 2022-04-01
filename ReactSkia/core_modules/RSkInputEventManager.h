@@ -18,7 +18,9 @@ class RSkInputEventManager{
  public:
   static RSkInputEventManager* getInputKeyEventManager();
   void keyHandler(rnsKey key, rnsKeyAction eventKeyAction);
+#if defined(TARGET_OS_TV) && TARGET_OS_TV
   void sendNotificationWithEventType(std::string eventType, int tag, rnsKeyAction keyAction = RNS_KEY_UnknownAction);
+#endif //TARGET_OS_TV
 };
 
 } // namespace react

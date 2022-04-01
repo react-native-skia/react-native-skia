@@ -280,10 +280,15 @@ void RSkComponent::unmountChildComponent(
 }
 
 bool RSkComponent::isFocusable() {
+#if defined(TARGET_OS_TV) && TARGET_OS_TV
   Component canData = getComponentData();
   auto const &viewProps = *std::static_pointer_cast<ViewProps const>(canData.props);
   if (viewProps.isTVSelectable == true || viewProps.focusable == true || isContainer())
     return true;
+#else
+  if (isContainer())
+    return true;
+#endif //TARGET_OS_TV
   return false;
 }
 

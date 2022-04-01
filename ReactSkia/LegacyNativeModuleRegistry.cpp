@@ -38,11 +38,11 @@ class LegacyUIManagerModule : public NativeModule {
     if (reactMethodId == 0) {
       if (args[0] == "RCTView") {
         auto nativeProps = folly::dynamic::object("onLayout", true)("pointerEvents", true)("overflow", true)
-#if TARGET_OS_TV
+#if defined(TARGET_OS_TV) && TARGET_OS_TV
             ("focusable", true)("isTVSelectable", true)
             ("hasTVPreferredFocus", true)("tvParallaxProperties", true)("nextFocusUp", true)
             ("nextFocusDown", true)("nextFocusLeft", true)("nextFocusRight", true)
-#endif
+#endif //TARGET_OS_TV
         ;
         auto directEventTypes = folly::dynamic::object(
             "topLayout",

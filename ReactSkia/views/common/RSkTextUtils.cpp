@@ -31,6 +31,8 @@ inline int getTextLines(std::vector<LineMetrics> metrics, float maxNumberOfLines
     return numberOfLines;
 }
 
+#if defined(TARGET_OS_TV) && TARGET_OS_TV
+// The textAlignVertical property is available only in the TVOS RN repo
 inline SkScalar yPosOffset(AttributedString attributedString, SkScalar paraHeight, Float frameHeight ) {
     for(auto &fragment: attributedString.getFragments()) {
         if((paraHeight < frameHeight) && (!fragment.textAttributes.textAlignVertical.empty())) {
@@ -42,6 +44,8 @@ inline SkScalar yPosOffset(AttributedString attributedString, SkScalar paraHeigh
     }
     return 0;
 }
+#endif //TARGET_OS_TV
+
 } //namespace
 
 namespace RSkTextUtils{
@@ -87,7 +91,9 @@ void drawText(std::shared_ptr<Paragraph>& paragraph,
         canvas->drawColor(RSkColorFromSharedColor(props.backgroundColor, SK_ColorTRANSPARENT));
     }
     if (fontLineHeight) {
+#if defined(TARGET_OS_TV) && TARGET_OS_TV
         yOffset = yPosOffset(attributedString, paragraph->getHeight(), layout.getContentFrame().size.height);
+#endif //TARGET_OS_TV
         if (isParent)
             paragraph->paint(canvas, layout.contentInsets.left, layout.contentInsets.top + yOffset);
         else

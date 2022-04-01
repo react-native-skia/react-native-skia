@@ -138,11 +138,11 @@ JSITurboModuleManager::JSITurboModuleManager(Instance *bridgeInstance)
   auto rnVersion = folly::dynamic::object("major", RN_MAJOR_VERSION)("minor", RN_MINOR_VERSION)("patch", RN_PATCH_VERSION);
   staticModule->SetConstants(folly::dynamic::object("isTesting", true)(
       "reactNativeVersion", std::move(rnVersion)) ("osVersion",STRINGIFY(RNS_OS_VERSION))
-#if TARGET_OS_TV
+#if defined(TARGET_OS_TV) && TARGET_OS_TV
       ("interfaceIdiom", STRINGIFY(tv))
 #else
       ("interfaceIdiom", STRINGIFY(unknown))
-#endif
+#endif //TARGET_OS_TV
     );
   modules_["PlatformConstants"] = std::move(staticModule);
 
@@ -151,8 +151,6 @@ JSITurboModuleManager::JSITurboModuleManager(Instance *bridgeInstance)
 
   modules_["Timing"] =
       std::make_shared<RSkTimingModule>("Timing", jsInvoker, bridgeInstance);
-  modules_["TVNavigationEventEmitter"] =
-      std::make_shared<RSkTVNavigationEventEmitter>("TVNavigationEventEmitter",jsInvoker, bridgeInstance);
   modules_["AppState"] =
       std::make_shared<AppStateModule>("AppState", jsInvoker);
   modules_["Networking"] =
@@ -163,6 +161,11 @@ JSITurboModuleManager::JSITurboModuleManager(Instance *bridgeInstance)
       std::make_shared<RSkKeyboardObserver>("KeyboardObserver", jsInvoker, bridgeInstance);
   modules_["DeviceInfo"] =
       std::make_shared<RSkDeviceInfoModule>("DeviceInfo", jsInvoker, bridgeInstance);
+
+#if defined(TARGET_OS_TV) && TARGET_OS_TV
+  modules_["TVNavigationEventEmitter"] =
+      std::make_shared<RSkTVNavigationEventEmitter>("TVNavigationEventEmitter",jsInvoker, bridgeInstance);
+#endif //TARGET_OS_TV
 
   modules_["DevSettings"] =
       std::make_shared<UnimplementedTurboModule>("DevSettings", jsInvoker);
