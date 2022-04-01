@@ -10,12 +10,12 @@ gclient_gn_args = [
   'checkout_oculus_sdk',
   'checkout_openxr',
   'mac_xcode_version',
+  'react_native_platform',
 ]
 
 vars = {
-  'react_native_revision': 'e599d6c5d338c1b4d1a0d988e0d9ff83c179fb54',
+  'react_native_default_revision': 'deb66012fe550d536420931e47f5573e798e048a',
   'react_native_tvos_revision': 'tvos-v0.64.2',
-
   'skia_revision': 'chrome/m86',
 
   # Note this revision should be updated with
@@ -30,7 +30,8 @@ vars = {
   'libcxxabi_revision':    '196ba1aaa8ac285d94f4ea8d9836390a45360533',
   'libunwind_revision':    'd999d54f4bca789543a2eb6c995af2d9b5a1f3ed',
 
-  'react_native_git': 'https://github.com/facebook/react-native.git',
+  'react_native_default_git': 'https://github.com/Kudo/react-native.git',
+  'react_native_tvos_git': 'https://github.com/nagra-opentv/react-native-tvos.git',
   'chromium_git': 'https://chromium.googlesource.com',
   'skia_git': 'https://skia.googlesource.com',
   'fuchsia_git': 'https://fuchsia.googlesource.com',
@@ -45,16 +46,16 @@ vars = {
   'checkout_oculus_sdk' : False,
   'checkout_openxr' : False,
   'mac_xcode_version': 'default',
+
+  'react_native_platform':'tvos',
+  'react_native_platform_git':'react_native_tvos_git',
+  'react_native_platform_revision':'react_native_tvos_revision',
 }
 
 deps = {
-  # 'src/react-native'                      : Var('react_native_git') + '@' + Var('react_native_revision'),
-  # react-native patch to fix cxx textlayoutmanager build break
-  #'src/react-native'                      : 'https://github.com/Kudo/react-native.git' + '@' + 'deb66012fe550d536420931e47f5573e798e048a',
-  # react-native-tvos + patch to fix gcc compilation build break
-  'src/react-native'                      : 'https://github.com/nagra-opentv/react-native-tvos.git' + '@' + Var('react_native_tvos_revision'),
-  
-# 'src/folly'                             : 'https://github.com/facebook/folly.git' + '@' + 'v2020.01.13.00',
+  'src/react-native'                      : Var(Var('react_native_platform_git')) + '@' + Var(Var('react_native_platform_revision')),
+
+  # 'src/folly'                             : 'https://github.com/facebook/folly.git' + '@' + 'v2020.01.13.00',
   # folly custom patch to support boringssl, might not be necessary after we replace folly/async with flutter/fml
   'src/folly'                             : 'https://github.com/Kudo/folly.git' + '@' + '2b9b7144fdafcc7c78d09465449f1c3a72386ac5',
 

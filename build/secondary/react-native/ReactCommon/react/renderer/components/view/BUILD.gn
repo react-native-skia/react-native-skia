@@ -6,14 +6,17 @@ rn_cxx_component("view") {
     "Touch.cpp",
     "TouchEvent.cpp",
     "TouchEventEmitter.cpp",
-    "TVViewProps.cpp",
     "ViewEventEmitter.cpp",
     "ViewProps.cpp",
     "ViewShadowNode.cpp",
     "YogaLayoutableShadowNode.cpp",
     "YogaStylableProps.cpp",
   ]
-
+  if( react_native_platform == "tvos") {
+    sources += [
+      "TVViewProps.cpp",
+    ]
+  }
   defines = [
     "LOG_TAG=ReactNative",
   ]

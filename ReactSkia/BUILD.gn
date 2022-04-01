@@ -5,13 +5,17 @@ declare_args() {
   rns_enable_api_profiling = false
 }
 
+import("//build/config/gclient_args.gni")
 config("ReactSkia_config") {
   include_dirs = [
      "//ReactSkia/core_modules"
   ]
-  defines = ["TARGET_OS_TV=1"]
+  defines = []
   if(rns_enable_api_profiling) {
     defines += ["RNS_ENABLE_API_PERF"]
+  }
+  if( react_native_platform == "tvos") {
+     defines += ["TARGET_OS_TV=1"]
   }
 }
 
@@ -139,8 +143,6 @@ source_set("ReactSkia") {
     "modules/RSkWebSocketModuleBase.cpp",
     "modules/RSkNetworkingModuleBase.h",
     "modules/RSkNetworkingModuleBase.cpp",
-    "modules/RSkTVNavigationEventEmitter.cpp",
-    "modules/RSkTVNavigationEventEmitter.h",
     "views/common/RSkDrawUtils.cpp",
     "views/common/RSkDrawUtils.h",
     "views/common/RSkTextUtils.cpp",
@@ -150,7 +152,12 @@ source_set("ReactSkia") {
     "views/common/RSkImageUtils.cpp",
     "views/common/RSkImageUtils.h",
   ]
-
+  if( react_native_platform == "tvos") {
+    sources += [
+      "modules/RSkTVNavigationEventEmitter.cpp",
+      "modules/RSkTVNavigationEventEmitter.h",
+    ]
+  }
   if (is_mac) {
     sources += [
       "platform/macosx/MainRunLoopEventBeat.h",
