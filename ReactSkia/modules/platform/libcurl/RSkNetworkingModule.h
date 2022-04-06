@@ -9,50 +9,30 @@
 #include <semaphore.h>
 
 #include "ReactSkia/modules/RSkNetworkingModuleBase.h"
+ #include "ReactSkia/sdk/CurlNetworking.h"
 
 namespace facebook {
 namespace react {
 class RSkNetworkingModule;
 struct NetworkRequest {
   NetworkRequest(bool useIncrementalUpdates,  std::string responseType, RSkNetworkingModule *self)
-    :curl_(nullptr)
-    ,self_(self)
+    :self_(self)
     ,useIncrementalUpdates_(useIncrementalUpdates)
     ,responseType_(responseType)
     ,uploadComplete_(false)
     ,downloadComplete_(false)
-    ,responseBuffer_(nullptr)
-    ,contentSize_(0)
-    ,responseBufferOffset_(0)
-    ,headerBuffer_(nullptr)
-    ,headerBufferOffset_(0)
     {}
-  CURL* curl_;
-  int requestId_;
   RSkNetworkingModule *self_;
+  int requestId_;
   bool useIncrementalUpdates_;
   std::string responseType_;
   bool uploadComplete_;
   bool downloadComplete_;
-  char *responseBuffer_;
-  size_t contentSize_;
-  int responseBufferOffset_;
-  char *headerBuffer_;
-  int headerBufferOffset_;
+  CurlRequest* curlRequest_;
   
-  std::mutex bufferLock_;
   ~NetworkRequest() {
-    if(curl_) {
-      curl_easy_cleanup(curl_);
-      curl_ = NULL;
-    }
-    if(responseBuffer_) {
-      free(responseBuffer_);
-      responseBuffer_ = NULL;
-    }
-    if(headerBuffer_) {
-      free(headerBuffer_);
-      headerBuffer_ = NULL;
+    if(curlRequest_){
+      delete curlRequest_;
     }
   }
 };
@@ -74,11 +54,10 @@ class RSkNetworkingModule:  public RSkNetworkingModuleBase {
    jsi::Value abortRequest(
        folly::dynamic) override;
 
-  void sendData(NetworkRequest*);
-  bool preparePostRequest(CURL*, folly::dynamic, folly::dynamic );
-  void sendProgressEventwrapper(NetworkRequest*,double,double,double,double);
-  void headerCallbackWrapper(NetworkRequest*, char*, size_t);
-  void writeMemoryCallbackWrapper(NetworkRequest*, char*, size_t);
+  void sendData(CurlResponse*, NetworkRequest*);
+  void sendProgressEventwrapper(double, double, double, double, NetworkRequest*);
+  void headerCallbackWrapper(void*, NetworkRequest*);
+  void writeMemoryCallbackWrapper(void*, char*, size_t);
   better::map <int , NetworkRequest*> connectionList_;
   void processNetworkRequest(CURLM *cm);
   static size_t writeMemoryCallback(void *contents, size_t size, size_t nmemb, void *userp);
@@ -88,10 +67,7 @@ class RSkNetworkingModule:  public RSkNetworkingModuleBase {
  private:
   std::mutex connectionListLock_;
   uint64_t nextUniqueId();
-  bool exitLoop_ = false;
-  CURLM* curlMultiHandle_ = nullptr;
-  std::thread multiNetworkThread_;
-  sem_t networkRequestSem_;
+  CurlNetworking* sharedCurlNetworking_;
 
 };
 

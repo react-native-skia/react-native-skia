@@ -98,6 +98,8 @@ source_set("ReactSkia") {
     "RNInstance.h",
     "sdk/NotificationCenter.cpp",
     "sdk/NotificationCenter.h",
+    "sdk/CurlNetworking.h",
+    "sdk/CurlNetworking.cpp",
     "core_modules/RSkDeviceInfo.cpp",
     "core_modules/RSkDeviceInfo.h",
     "core_modules/RSkEventEmitter.cpp",
