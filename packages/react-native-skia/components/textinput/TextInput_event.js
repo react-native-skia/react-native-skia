@@ -51,7 +51,10 @@ const SimpleViewApp = () => {
        onSubmitEditing={onSubmitEditing}
        onContentSizeChange={onContentSizeChange}
        onSelectionChange={onSelectionChange}
-       style={styles.input}/>
+       style={styles.input}
+       underlineColorAndroid={"red"}
+       clearTextOnFocus={true}
+       />
 
        <TextInput
        placeholderTextColor="red"
