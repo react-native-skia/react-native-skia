@@ -74,6 +74,89 @@ RnsShell::LayerInvalidateMask RSkComponentScrollView::updateComponentState(
   return RnsShell::LayerInvalidateNone;
 }
 
+void RSkComponentScrollView::handleCommand(std::string commandName,folly::dynamic args){
+  if(commandName == "scrollToEnd") {
+    if(args.size() != 1 ) {
+      RNS_LOG_ERROR("Command scrollToEnd received " << args.size() << " arguments,expected 1");
+      return;
+    }
+
+    RNS_LOG_DEBUG("handleCommand commandName[scrollToEnd] args[" << args[0] <<"]");
+
+    RnsShell::ScrollLayer* scrollLayer= SCROLL_LAYER_HANDLE;
+    SkISize contentSize = scrollLayer->getContentSize();
+    SkIRect frameRect = scrollLayer->getFrame();
+    SkPoint lastScrollOffset = SkPoint::Make(0,0);
+
+    if(isHorizontalScroll()) {
+      if(contentSize.width() <= frameRect.width()) {
+         RNS_LOG_DEBUG("No scrollable content to scroll");
+         return;
+      }
+      lastScrollOffset.fX = contentSize.width() - frameRect.width();
+    } else {
+      if(contentSize.height() <= frameRect.height()) {
+         RNS_LOG_DEBUG("No scrollable content to scroll");
+         return;
+      }
+      lastScrollOffset.fY = contentSize.height() - frameRect.height();
+    }
+
+    if(lastScrollOffset.equals(scrollLayer->scrollOffsetX,scrollLayer->scrollOffsetY)) {
+      RNS_LOG_DEBUG("Scroll position is already at end");
+      return;
+    }
+
+    if(args[0].getBool()) RNS_LOG_TODO("Animated not supported,fallback to scroll immediately");
+    handleScroll(lastScrollOffset);
+    return;
+
+  } else if(commandName == "scrollTo") {
+    if(args.size() != 3 ) {
+      RNS_LOG_ERROR("Command scrollTo received " << args.size() << " arguments,expected 3");
+      return;
+    }
+
+    RNS_LOG_DEBUG("handleCommand commandName[scrollTo] args[" << args[0] <<"," << args[1] << "," << args[2] <<"]");
+
+    int x = static_cast<int>(args[0].getDouble());
+    int y = static_cast<int>(args[1].getDouble());
+
+    RnsShell::ScrollLayer * scrollLayer = SCROLL_LAYER_HANDLE;
+    SkISize contentSize = scrollLayer->getContentSize();
+    SkIRect frameRect = scrollLayer->getFrame();
+    SkPoint scrollOffset = SkPoint::Make(0,0);
+
+    if(isHorizontalScroll()) {
+      if(contentSize.width() <= frameRect.width()) {
+         RNS_LOG_DEBUG("No scrollable content to scroll");
+         return;
+      }
+      scrollOffset.fX = std::min(std::max(0,x),(contentSize.width()-frameRect.width()));
+    } else {
+      if(contentSize.height() <= frameRect.height()) {
+         RNS_LOG_DEBUG("No scrollable content to scroll");
+         return;
+      }
+      scrollOffset.fY = std::min(std::max(0,y),(contentSize.height()-frameRect.height()));
+    }
+
+    if(scrollOffset.equals(scrollLayer->scrollOffsetX,scrollLayer->scrollOffsetY)) {
+      RNS_LOG_DEBUG("Scroll position is already at same offset");
+      return;
+    }
+
+    if(args[2].getBool()) RNS_LOG_TODO("Animated not supported,fallback to scroll immediately");
+
+    handleScroll(scrollOffset);
+    return;
+
+  } else {
+    RNS_LOG_TODO("handleCommand commandName[" << commandName << "] args size[" << args.size() << "]");
+  }
+}
+
+
 // RSkSpatialNavigatorContainer functions
 
 bool RSkComponentScrollView::canScrollInDirection(rnsKey direction){

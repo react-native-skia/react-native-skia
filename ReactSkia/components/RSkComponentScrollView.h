@@ -33,6 +33,10 @@ class RSkComponentScrollView final : public RSkComponent {
     const ShadowView &newShadowView,
     bool forceUpadate) override;
 
+  void handleCommand(
+    std::string commandName,
+    folly::dynamic args) override;
+
   bool isContainer() const override { return true; }
 
   //RSkSpatialNavigatorContainer override functions

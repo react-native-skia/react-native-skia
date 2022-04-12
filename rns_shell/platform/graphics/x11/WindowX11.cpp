@@ -98,7 +98,7 @@ void Window::createEventLoop(Application* app) {
                     }
                     default:
                         WindowX11* win = WindowX11::gWindowMap.find(event.xany.window);
-                        if (win->handleEvent(event)) {
+                        if (win && win->handleEvent(event)) {
                             done = true;
                         }
                         break;

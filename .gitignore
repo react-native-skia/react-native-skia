@@ -19,6 +19,7 @@
 /third_party/zlib/
 /third_party/swiftshader/
 /third_party/depot_tools/
+/third_party/libcurl/
 
 # Build output
 /out*/
