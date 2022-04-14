@@ -140,7 +140,11 @@ void RSkComponentTextInput::OnPaint(SkCanvas *canvas) {
 
   drawShadow(canvas, frame, borderMetrics, textInputProps.backgroundColor, layer()->shadowOpacity, layer()->shadowFilter);
   drawTextInput(canvas, component.layoutMetrics, textInputProps, textLayout);
+  if (textInputProps.underlineColorAndroid.has_value()){
+    drawUnderline(canvas,frame,textInputProps.underlineColorAndroid.value());
+  }
   drawBorder(canvas, frame, borderMetrics, textInputProps.backgroundColor);
+
 }
 
 /*
@@ -174,7 +178,14 @@ void RSkComponentTextInput::onHandleKey(rnsKey eventKeyType, bool keyRepeat, boo
     textInputMetrics.contentSize.height = paragraph_->getHeight();
     textInputEventEmitter->onFocus(textInputMetrics);
     isInEditingMode_ = true;
-    if (!caretHidden_) {
+    if (!caretHidden_ || textInputProps.clearTextOnFocus ) {
+      privateVarProtectorMutex.lock();
+      if(textInputProps.clearTextOnFocus && !displayString_.empty()){
+        displayString_.clear();
+        cursor_.locationFromEnd = 0;
+        cursor_.end = 0;
+      }
+      privateVarProtectorMutex.unlock();
       drawAndSubmit();
     }
   } else if (isInEditingMode_) {
@@ -504,7 +515,14 @@ void RSkComponentTextInput::requestForEditingMode(){
   spatialNavigator->updateFocusCandidate(this);
   isInEditingMode_ = true;
   textInputEventEmitter->onFocus(textInputMetrics);
-  if (!caretHidden_) {
+  if (!caretHidden_ || textInputProps.clearTextOnFocus) {
+    privateVarProtectorMutex.lock();
+    if(textInputProps.clearTextOnFocus && !displayString_.empty()){
+      displayString_.clear();
+      cursor_.locationFromEnd = 0;
+      cursor_.end = 0;
+    }
+    privateVarProtectorMutex.unlock();
     drawAndSubmit();
   }
   RNS_LOG_DEBUG("[requestForEditingMode] END");

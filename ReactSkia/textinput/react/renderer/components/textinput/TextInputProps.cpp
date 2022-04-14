@@ -62,6 +62,8 @@ TextInputProps::TextInputProps(
           {})),
       autoFocus(
           convertRawProp(rawProps, "autoFocus", sourceProps.autoFocus, {})),
+      clearTextOnFocus(
+          convertRawProp(rawProps, "clearTextOnFocus", sourceProps.clearTextOnFocus, {})),
       inputAccessoryViewID(convertRawProp(
           rawProps,
           "inputAccessoryViewID",

@@ -48,7 +48,7 @@ class TextInputProps final : public ViewProps, public BaseTextProps {
   SharedColor const cursorColor{};
   SharedColor const selectionColor{};
   // TODO: Rename to `tintColor` and make universal.
-  SharedColor const underlineColorAndroid{};
+  better::optional<SharedColor> underlineColorAndroid{};
 
   /*
    * "Private" (only used by TextInput.js) props
@@ -57,6 +57,7 @@ class TextInputProps final : public ViewProps, public BaseTextProps {
   int const mostRecentEventCount{0};
 
   bool autoFocus{false};
+  bool clearTextOnFocus{false};
 
   std::string const inputAccessoryViewID{};
 

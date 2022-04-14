@@ -32,6 +32,7 @@ namespace RSkDrawUtils{
                                SharedColor bgColor,
                                Float shadowOpacity,
                                sk_sp<SkImageFilter> shadowFilter);
+  void drawUnderline(SkCanvas *canvas,Rect frame,SharedColor underlineColor);
 
 }//namespace RSkDrawUtils
 } // namespace react

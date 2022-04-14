@@ -16,6 +16,8 @@
 
 
 #define DEFAULT_COLOUR   SK_ColorBLACK /*Black*/
+#define UNDERLINEWIDTH   1
+#define BOTTOMALIGNMENT 3
 
 namespace facebook {
 namespace react {
@@ -403,6 +405,17 @@ bool  drawShadow(SkCanvas *canvas,Rect frame,
         return true;
     }
     return true;
+}
+
+void drawUnderline(SkCanvas *canvas,Rect frame,SharedColor underlineColor){
+    SkPaint paint;
+    setColor(underlineColor, &paint);
+    paint.setAntiAlias(true);
+    paint.setStyle(SkPaint::kStroke_Style);
+    paint.setStrokeWidth(UNDERLINEWIDTH);
+    auto frameOrigin = frame.origin;
+    auto frameSize = frame.size;
+    canvas->drawLine(frameOrigin.x,frameOrigin.y+frameSize.height-BOTTOMALIGNMENT,frameOrigin.x+frameSize.width,frameOrigin.y+frameSize.height-BOTTOMALIGNMENT, paint);
 }
 } // namespace RSkDrawUtils
 } // namespace react
