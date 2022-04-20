@@ -25,7 +25,7 @@ ReactSkiaApp::ReactSkiaApp(int argc, char **argv) {
   rnInstance_ = std::make_unique<facebook::react::RNInstance>(*this);
   rnInstance_->Start(surface_.get(), *this);
 
-  RSkImageCacheManager::configure();//Needs to be called after Gpu backend created,So calling here
+  RSkImageCacheManager::init();//Needs to be called after Gpu backend created,So calling here
 }
 
 ReactSkiaApp::~ReactSkiaApp() {
