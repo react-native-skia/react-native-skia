@@ -5,7 +5,10 @@ import { View, AppRegistry, Image, Text } from 'react-native';
 const SimpleViewApp = React.Node = () => {
   let [opacity,setOpacity] = useState(1);
   setTimeout(() => {
-     setOpacity(!opacity);
+     if(opacity == 0)
+       setOpacity(1);
+     else
+        setOpacity(opacity-0.25);
   },5000);
   return (
    <>

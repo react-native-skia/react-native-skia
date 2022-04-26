@@ -48,7 +48,7 @@ void MountingManager::schedulerDidFinishTransaction(
 void MountingManager::schedulerDidRequestPreliminaryViewAllocation(
     SurfaceId surfaceId,
     const ShadowView &shadowView) {
-  RNS_LOG_NOT_IMPL;
+  /* TODO : Needs implementation*/
   RNS_LOG_DEBUG("surfaceId:" << surfaceId << " shadowView tag[" << shadowView.tag <<  "] name["<< shadowView.componentName << "]");
 }
 

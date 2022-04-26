@@ -109,6 +109,7 @@ RnsShell::LayerInvalidateMask RSkComponent::updateProps(const ShadowView &newSha
       layer_->shadowOpacity = ((newviewProps.shadowOpacity > 1.0) ? 1.0:newviewProps.shadowOpacity)*MAX_8BIT;
       /*TODO : To be tested and confirm updateMask need for this Prop*/
       updateMask =static_cast<RnsShell::LayerInvalidateMask>(updateMask | RnsShell::LayerInvalidateAll);
+      createShadowFilter=true;
    }
   //shadowRadius
    if ((forceUpdate) || (oldviewProps.shadowRadius != newviewProps.shadowRadius)) {
@@ -131,18 +132,16 @@ RnsShell::LayerInvalidateMask RSkComponent::updateProps(const ShadowView &newSha
       updateMask =static_cast<RnsShell::LayerInvalidateMask>(updateMask | RnsShell::LayerInvalidateAll);
       createShadowFilter=true;
    }
+
+   /* Reset shadow filter - if valid and shadow opacity is 0.0 */
+   /* Create shadow filter - shadow opacity is not 0 and change in any props of shadow - opacity,offset,radius */
    if(layer_->shadowOpacity && createShadowFilter) {
        layer_->shadowFilter= SkImageFilters::DropShadowOnly(
                               layer_->shadowOffset.width(), layer_->shadowOffset.height(),
                               layer_->shadowRadius, layer_->shadowRadius,
                               layer_->shadowColor, nullptr);
-   } else if (layer_->shadowFilter != nullptr) {
+   } else if ((layer_->shadowFilter != nullptr) && (layer_->shadowOpacity == 0.0)) {
        layer_->shadowFilter.reset();
-   }
-  //backfaceVisibility
-   if ((forceUpdate) || (oldviewProps.backfaceVisibility != newviewProps.backfaceVisibility)) {
-      RNS_LOG_NOT_IMPL;
-      layer_->backfaceVisibility = (int)newviewProps.backfaceVisibility;
    }
   //backgroundColor
    if ((forceUpdate) || (oldviewProps.backgroundColor != newviewProps.backgroundColor)) {
@@ -150,20 +149,27 @@ RnsShell::LayerInvalidateMask RSkComponent::updateProps(const ShadowView &newSha
       /*TODO : To be tested and confirm updateMask need for this Prop*/
       updateMask =static_cast<RnsShell::LayerInvalidateMask>(updateMask | RnsShell::LayerInvalidateAll);
    }
+  //transform
+   if ((forceUpdate) || (oldviewProps.transform != newviewProps.transform)) {
+      layer_->transformMatrix = RSkTransformTo2DMatrix(newviewProps.transform);
+      updateMask =static_cast<RnsShell::LayerInvalidateMask>(updateMask | RnsShell::LayerLayoutInvalidate);
+   }
+
+  /* TODO : Following properties needs implementation and update invalidate mask accordingly*/
   //foregroundColor
    if ((forceUpdate) || (oldviewProps.foregroundColor != newviewProps.foregroundColor)) {
-      RNS_LOG_NOT_IMPL;
       component_.commonProps.foregroundColor = RSkColorFromSharedColor(newviewProps.foregroundColor,SK_ColorTRANSPARENT);
    }
-  /* TODO To be verified when implemented*/
+  //backfaceVisibility
+   if ((forceUpdate) || (oldviewProps.backfaceVisibility != newviewProps.backfaceVisibility)) {
+      layer_->backfaceVisibility = (int)newviewProps.backfaceVisibility;
+   }
   //pointerEvents
    if ((forceUpdate) || (oldviewProps.pointerEvents != newviewProps.pointerEvents)) {
-      RNS_LOG_NOT_IMPL;
       component_.commonProps.pointerEvents = (int)newviewProps.pointerEvents;
    }
   //hitslop
    if ((forceUpdate) || (oldviewProps.hitSlop != newviewProps.hitSlop)) {
-      RNS_LOG_NOT_IMPL;
       component_.commonProps.hitSlop = newviewProps.hitSlop;
    }
   //overflow
@@ -177,11 +183,6 @@ RnsShell::LayerInvalidateMask RSkComponent::updateProps(const ShadowView &newSha
       component_.commonProps.zIndex = newviewProps.zIndex.value_or(0);
       /*TODO : To be tested and confirm updateMask need for this Prop*/
       updateMask =static_cast<RnsShell::LayerInvalidateMask>(updateMask | RnsShell::LayerInvalidateAll);
-   }
-  //transform
-   if ((forceUpdate) || (oldviewProps.transform != newviewProps.transform)) {
-      layer_->transformMatrix = RSkTransformTo2DMatrix(newviewProps.transform);
-      updateMask =static_cast<RnsShell::LayerInvalidateMask>(updateMask | RnsShell::LayerLayoutInvalidate);
    }
     /* TODO Add TVOS properties */
    /*TODO : Return UpdateMask instead of RnsShell::LayerInvalidateAll, once the shadow handling moved to layer

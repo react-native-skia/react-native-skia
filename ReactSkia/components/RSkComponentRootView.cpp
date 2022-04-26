@@ -22,7 +22,6 @@ bool RSkComponentRootView::isVisible(RSkComponent* candidate) {
   const SkIRect& rootRect = getLayerAbsoluteFrame();
   const SkIRect& candidateRect = candidate->getLayerAbsoluteFrame();
 
-  RNS_LOG_TODO("Should use screenFrame for calculations");
   RNS_LOG_DEBUG("Visible Check : RootContainer [" << rootRect.x() << "," << rootRect.y() << "," << rootRect.width() << "," << rootRect.height() <<
                 "] Candidtae [" << candidateRect.x() << "," << candidateRect.y() << "," << candidateRect.width() << "," << candidateRect.height() << "]");
 

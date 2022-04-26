@@ -141,7 +141,7 @@ RnsShell::LayerInvalidateMask RSkComponentImage::updateComponentProps(const Shad
       updateMask =static_cast<RnsShell::LayerInvalidateMask>(updateMask | RnsShell::LayerInvalidateAll);
     }
     if((forceUpdate) || (oldimageProps.tintColor != newimageProps.tintColor )) {
-      RNS_LOG_NOT_IMPL;
+      /* TODO : Needs implementation*/
       imageProps.tintColor = RSkColorFromSharedColor(newimageProps.tintColor,SK_ColorTRANSPARENT);
     }
     return updateMask;

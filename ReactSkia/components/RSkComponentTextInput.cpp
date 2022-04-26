@@ -409,7 +409,7 @@ void RSkComponentTextInput::keyEventProcessingThread(){
   }
 }
 
-RnsShell::LayerInvalidateMask  RSkComponentTextInput::updateComponentProps(const ShadowView &newShadowView,bool forceUpadate){
+RnsShell::LayerInvalidateMask  RSkComponentTextInput::updateComponentProps(const ShadowView &newShadowView,bool forceUpdate){
   auto const &textInputProps = *std::static_pointer_cast<TextInputProps const>(newShadowView.props);
   int mask = RnsShell::LayerInvalidateNone;
   std::string textString{};
@@ -417,7 +417,14 @@ RnsShell::LayerInvalidateMask  RSkComponentTextInput::updateComponentProps(const
   textString = textInputProps.text;
   caretHidden_ = textInputProps.caretHidden;
   maxLength_ = textInputProps.maxLength;
-  if (textString != displayString_) {
+
+  /* Update display string in below conditions */
+  /* 1. If props has value defined */
+  /* 2. If props has defaultValue defined + its first time update */
+  if ((textString != displayString_)
+      && (textInputProps.value.has_value()
+           || (textInputProps.defaultValue.has_value() && forceUpdate))) {
+
     privateVarProtectorMutex.lock();
     displayString_ = textString;
     cursor_.end = textString.length();

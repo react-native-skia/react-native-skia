@@ -33,7 +33,7 @@ class TextInputProps final : public ViewProps, public BaseTextProps {
   TextInputTraits const traits{};
   ParagraphAttributes const paragraphAttributes{};
 
-  std::string const defaultValue{};
+  better::optional<std::string> const defaultValue{};
   better::optional<std::string> value{};
   std::string const placeholder{};
   SharedColor const placeholderTextColor{};
