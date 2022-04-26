@@ -44,9 +44,9 @@ void LayerTreeHost::begin() {
   compositor_->begin();
 }
 
-void LayerTreeHost::commitScene() {
+void LayerTreeHost::commitScene(bool immediate) {
   // TODO Check compositor state idle, progress, scheduled
-  compositor_->commit();
+  compositor_->commit(immediate);
 }
 
 void LayerTreeHost::setRootCompositingLayer(SharedLayer rootLayer) {

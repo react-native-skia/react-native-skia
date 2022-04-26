@@ -178,13 +178,21 @@ void Compositor::begin() {
     surfaceDamage_.clear(); // Clear the previous damage rects.
 }
 
-void Compositor::commit() {
+void Compositor::commit(bool immediate=false) {
+    if(!windowContext_) {
+        isMutating.unlock();
+        return;
+    }
+
+    if(immediate) {
+       RNS_PROFILE_API_OFF("RenderTree :", renderLayerTree());
+       // Unlock here, after rendering of tree is done for immediate rendering
+       isMutating.unlock();
+       return;
+    }
+
     // Unlock here, to ensure updates and rendering of tree is synchronous
     isMutating.unlock();
-    
-    if(!windowContext_)
-        return;
-
     TaskLoop::main().dispatch([&]() {
         std::scoped_lock lock(isMutating); // Lock to make sure render tree is not mutated during the rendering
         RNS_PROFILE_API_OFF("RenderTree :", renderLayerTree());

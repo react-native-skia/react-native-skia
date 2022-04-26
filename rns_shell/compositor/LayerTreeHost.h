@@ -21,7 +21,7 @@ class LayerTreeHost {
 
   void setRootCompositingLayer(SharedLayer rootLayer);
   void begin();
-  void commitScene();
+  void commitScene(bool immediate);
   void sizeDidChange(SkSize& size);
 
   PlatformDisplayID displayID() const { return displayID_; }

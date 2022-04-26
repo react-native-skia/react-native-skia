@@ -20,7 +20,7 @@ class ReactSkiaApp;
 class MountingManager : public SchedulerDelegate {
  public:
   MountingManager(ComponentViewRegistry *componentViewRegistry, RendererDelegate &rendererDelegate);
-  MountingManager(MountingManager &&) = default;
+  MountingManager(MountingManager &&);
 
   void BindSurface(RSkSurfaceWindow *surface);
 
@@ -47,6 +47,9 @@ class MountingManager : public SchedulerDelegate {
   void schedulerDidClearJSResponder() override;
 
  private:
+  void performTransaction(
+    MountingCoordinator::Shared const &mountingCoordinator);
+
   void ProcessMutations(
       ShadowViewMutationList const &mutations,
       SurfaceId surfaceId);
@@ -93,6 +96,8 @@ class MountingManager : public SchedulerDelegate {
   RendererDelegate& nativeRenderDelegate_;
   ComponentViewRegistry *componentViewRegistry_;
   RSkSurfaceWindow *surface_;
+  std::atomic <bool> followUpTransactionRequired_{false};
+  std::atomic <bool> transactionInFlight_{false};
 };
 
 } // namespace react

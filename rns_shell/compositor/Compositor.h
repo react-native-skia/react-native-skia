@@ -39,8 +39,7 @@ public:
     SkSize& viewport() { return attributes_.viewportSize; }
     void invalidate();
     void begin(); // Call this before modifying render layer tree
-    void commit(); // Commit the changes in render layer tree
-
+    void commit(bool immediate); // Commit the changes in render layer tree - immediately/schedule
 #if USE(RNS_SHELL_PARTIAL_UPDATES)
     bool supportsPartialUpdates() { return supportPartialUpdate_; } // Wheather compositor can support partial paint and update
     void addDamageRect(SkIRect damage) { if(supportPartialUpdate_ && !damage.isEmpty()) surfaceDamage_.push_back(damage); }

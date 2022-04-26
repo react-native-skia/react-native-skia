@@ -27,8 +27,8 @@ void RendererDelegate::begin() {
   layerTreeHost_->begin();
 }
 
-void RendererDelegate::commit() {
-  layerTreeHost_->commitScene();
+void RendererDelegate::commit(bool immediate) {
+  layerTreeHost_->commitScene(immediate);
 }
 
 void RendererDelegate::setRootLayer(SharedLayer rootLayer) {
@@ -36,7 +36,7 @@ void RendererDelegate::setRootLayer(SharedLayer rootLayer) {
 }
 
 void RendererDelegate::scheduleRenderingUpdate() {
-  commit();
+  commit(false);
 }
 
 void RendererDelegate::beginRenderingUpdate() {
