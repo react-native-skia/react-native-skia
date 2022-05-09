@@ -15,6 +15,10 @@
 namespace facebook {
 namespace react {
 
+#define SCROLL_LAYER_HANDLE static_cast<RnsShell::ScrollLayer*>(layer().get())
+#define SCROLL_LAYER(x) SCROLL_LAYER_HANDLE->x
+#define SCROLLVIEW_DEFAULT_ZOOMSCALE 1
+
 enum ScrollDirectionType {
    ScrollDirectionForward = 1,
    ScrollDirectionBackward
@@ -68,7 +72,7 @@ class RSkComponentScrollView final : public RSkComponent {
   ScrollStatus handleScroll(SkPoint scrollPos);
 
   bool isHorizontalScroll();
-
+  void dispatchOnScrollEvent(SkPoint scrollPos);
 };
 
 } // namespace react

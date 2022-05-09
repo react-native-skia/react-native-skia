@@ -75,10 +75,14 @@ const SimpleViewApp = React.Node = () => {
       svRef.current.flashScrollIndicators();
    }
 
+   const onScrollEvent = (e) => {
+      console.log("ScrollEvent : " , e.nativeEvent);
+   }
+
     const scrollView = () => {
       return(
          <>
-          <ScrollView ref={svRef} style={styles.scrollView} horizontal={isHorizontal}>
+          <ScrollView ref={svRef} style={styles.scrollView} horizontal={isHorizontal} onScroll={onScrollEvent}>
              {items}
           </ScrollView>
 

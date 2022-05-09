@@ -17,10 +17,6 @@
 namespace facebook {
 namespace react {
 
-#define SCROLL_LAYER_HANDLE static_cast<RnsShell::ScrollLayer*>(layer().get())
-#define SCROLL_LAYER(x) SCROLL_LAYER_HANDLE->x
-
-
 RSkComponentScrollView::RSkComponentScrollView(const ShadowView &shadowView)
     : RSkComponent(shadowView) {
 }
@@ -333,25 +329,24 @@ ScrollStatus RSkComponentScrollView::handleSnapToOffsetScroll(rnsKey direction,R
   /* TODO */
   /* If candidate is null/this : smooth scroll to nextOffset/prevOffset */
   /* If candidate available : smooth scroll between next & prev Offset */
-  scrollLayer->client().notifyFlushBegin();
+  SkPoint nextScrollPos = SkPoint::Make(scrollLayer->scrollOffsetX,scrollLayer->scrollOffsetY);
   switch(direction) {
      case RNS_KEY_Right:
-        scrollLayer->scrollOffsetX = nextOffset;
+        nextScrollPos.fX = nextOffset;
         break;
      case RNS_KEY_Left:
-        scrollLayer->scrollOffsetX = prevOffset;
+        nextScrollPos.fX = prevOffset;
         break;
      case RNS_KEY_Down:
-        scrollLayer->scrollOffsetY = nextOffset;
+        nextScrollPos.fY = nextOffset;
         break;
      case RNS_KEY_Up:
-        scrollLayer->scrollOffsetY = prevOffset;
+        nextScrollPos.fY = prevOffset;
         break;
     default: RNS_LOG_WARN("Invalid key :" << direction);
   }
 
-  scrollLayer->invalidate(LayerPaintInvalidate);
-  scrollLayer->client().notifyFlushRequired();
+  handleScroll(nextScrollPos);
   return status;
 
 }
@@ -359,26 +354,25 @@ ScrollStatus RSkComponentScrollView::handleSnapToOffsetScroll(rnsKey direction,R
 ScrollStatus RSkComponentScrollView::handleScroll(rnsKey direction,SkIRect candidateFrame) {
   RnsShell::ScrollLayer* scrollLayer= SCROLL_LAYER_HANDLE;
   SkIRect frame = scrollLayer->getFrame();
+  SkPoint nextScrollPos = SkPoint::Make(scrollLayer->scrollOffsetX,scrollLayer->scrollOffsetY);
 
-  scrollLayer->client().notifyFlushBegin();
   switch(direction) {
      case RNS_KEY_Right:
-        scrollLayer->scrollOffsetX = candidateFrame.right()-frame.width();
+        nextScrollPos.fX = candidateFrame.right()-frame.width();
         break;
      case RNS_KEY_Left:
-        scrollLayer->scrollOffsetX = candidateFrame.left();
+        nextScrollPos.fX = candidateFrame.left();
         break;
      case RNS_KEY_Down:
-        scrollLayer->scrollOffsetY = candidateFrame.bottom()-frame.height();
+        nextScrollPos.fY = candidateFrame.bottom()-frame.height();
         break;
      case RNS_KEY_Up:
-        scrollLayer->scrollOffsetY = candidateFrame.top();
+        nextScrollPos.fY = candidateFrame.top();
         break;
      default: RNS_LOG_WARN("Invalid key :" << direction);
   }
 
-  scrollLayer->invalidate(LayerPaintInvalidate);
-  scrollLayer->client().notifyFlushRequired();
+  handleScroll(nextScrollPos);
   return scrollToFocus;
 }
 
@@ -393,7 +387,25 @@ ScrollStatus RSkComponentScrollView::handleScroll(SkPoint scrollPos) {
 
   scrollLayer->invalidate(LayerPaintInvalidate);
   scrollLayer->client().notifyFlushRequired();
+
+  dispatchOnScrollEvent(scrollPos);
   return scrollOnly;
+}
+
+void RSkComponentScrollView::dispatchOnScrollEvent(SkPoint scrollPos) {
+
+  RnsShell::ScrollLayer* scrollLayer= SCROLL_LAYER_HANDLE;
+
+  ScrollViewMetrics scrollMetrics;
+
+  scrollMetrics.contentSize = Size{scrollLayer->getContentSize().width(),scrollLayer->getContentSize().height()};
+  scrollMetrics.contentOffset = Point{scrollPos.x(),scrollPos.y()};
+  scrollMetrics.containerSize = Size{scrollLayer->getFrame().width(),scrollLayer->getFrame().height()};
+  scrollMetrics.zoomScale = SCROLLVIEW_DEFAULT_ZOOMSCALE;
+  /* TODO Need to send contentInset value when contentInset prop is handled*/
+  //scrollMetrics.contentInset = contentInset_;
+
+  std::static_pointer_cast<ScrollViewEventEmitter const>(getComponentData().eventEmitter)->onScroll(scrollMetrics);
 }
 
 } // namespace react
