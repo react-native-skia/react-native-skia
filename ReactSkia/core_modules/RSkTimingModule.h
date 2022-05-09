@@ -1,22 +1,18 @@
 /*
-* Copyright (C) 1994-2021 OpenTV, Inc. and Nagravision S.A.
+* Copyright (C) 1994-2022 OpenTV, Inc. and Nagravision S.A.
 *
-* Use of this source code is governed by a BSD-style license that can be
-* found in the LICENSE file.
+* This source code is licensed under the MIT license found in the
+* LICENSE file in the root directory of this source tree.
 */
 
 #pragma once
 
 #include <better/map.h>
 
-#include <folly/portability/SysTypes.h>
-#include <folly/executors/ScheduledExecutor.h>
-#include <folly/io/async/ScopedEventBaseThread.h>
-#include <folly/io/async/HHWheelTimer.h>
-
 #include "cxxreact/Instance.h"
 #include "ReactCommon/TurboModule.h"
 
+#include "ReactSkia/sdk/FollyTimer.h"
 #include "ReactSkia/utils/RnsLog.h"
 #include "ReactSkia/utils/RnsUtils.h"
 
@@ -25,27 +21,15 @@ namespace react {
 
 using namespace std::chrono;
 using namespace folly;
-typedef std::chrono::system_clock::time_point SysTimePoint;
-typedef std::chrono::microseconds DurationUs;
+using namespace rns::sdk;
 
-class RSkTimer;
-using SharedTimer = std::shared_ptr<RSkTimer>;
-typedef better::map <double, SharedTimer> TimersMap;
+class RSkJsTimer;
+using SharedJsTimer = std::shared_ptr<RSkJsTimer>;
+typedef better::map <double, SharedJsTimer> JsTimersMap;
 
-class TimingCallback : public HHWheelTimer::Callback {
+class RSkJsTimer {
  public:
-  TimingCallback() {}
-
-  void timeoutExpired() noexcept override {
-    if (cb)
-      cb();
-  }
-  std::function<void()> cb;
-};
-
-class RSkTimer {
- public:
-  RSkTimer(
+  RSkJsTimer(
       double callbackId,
       double duration,
       double targetDuration,
@@ -93,7 +77,6 @@ class RSkTimingModule: public TurboModule {
       const jsi::Value *args,
       size_t count);
 
-  void immediatelyCallTimer(double callbackId);
   void timerDidFire();
 
   jsi::Value createTimer(double callbackId, double duration, double jsSchedulingTime, bool repeats);
@@ -103,9 +86,9 @@ class RSkTimingModule: public TurboModule {
 
   bool sendIdleEvents_;
   Instance *bridgeInstance_;
-  ScopedEventBaseThread timerThread_;
-  TimersMap timers_;
-  TimingCallback timerCallback_;
+  Timer * timer_{nullptr};
+  JsTimersMap jsTimers_;
+  std::mutex jsTimerList_;
 };
 
 } // namespace react
