@@ -1,11 +1,26 @@
 /*  * Copyright (C) 1994-2021 OpenTV, Inc. and Nagravision S.A.  
 *  * This source code is licensed under the MIT license found in the  
 * LICENSE file in the root directory of this source tree.  */
-#include <nopoll.h>
+
 #include "ReactSkia/modules/RSkWebSocketModuleBase.h"
+#include "ReactSkia/sdk/NopollWebsocket.h"
 
 namespace facebook {
 namespace react {
+class RSkWebSocketModule;
+typedef struct WebsocketRequest {
+  RSkWebSocketModule* self_;
+  NopollRequest* nopollRequest_;
+  int socketID;
+  ~WebsocketRequest() {
+    if(nopollRequest_->url)
+      free(nopollRequest_->url);
+    if(nopollRequest_)
+      delete nopollRequest_;
+
+  }
+}WebsocketRequest;
+
 class RSkWebSocketModule:  public RSkWebSocketModuleBase {
   public:
 	RSkWebSocketModule(
@@ -37,13 +52,12 @@ class RSkWebSocketModule:  public RSkWebSocketModuleBase {
             int) override;
 
     std::thread wsMessageThread_;
-    better::map <int , noPollConn*> connectionList_;
+    better::map <int , WebsocketRequest*> connectionList_;
     std::vector<std::string> events_ = {"websocketOpen","websocketClosed",
                                     "websocketMessage","websocketFailed"};
   private:
-    std::string* parseUrl(std::string&);
-    noPollCtx* ctx_;
-
+   NopollWebsocket* sharedNopollWebsocket_;
+   std::mutex connectionListLock_;
 };
 }
 }

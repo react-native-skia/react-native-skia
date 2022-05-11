@@ -102,6 +102,8 @@ source_set("ReactSkia") {
     "sdk/CurlNetworking.cpp",
     "sdk/FollyTimer.h",
     "sdk/FollyTimer.cpp",
+    "sdk/NopollWebsocket.cpp",
+    "sdk/NopollWebsocket.h",
     "core_modules/RSkDeviceInfo.cpp",
     "core_modules/RSkDeviceInfo.h",
     "core_modules/RSkEventEmitter.cpp",
