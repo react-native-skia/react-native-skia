@@ -43,6 +43,7 @@ class Timer {
   ~Timer() { abort(); }
   void start();
   void reschedule(double duration,bool repeats);
+  void scheduleImmediate(std::function<void()> cb);
   void abort();
   void scheduleTimerTimeout();
   double getTimeRemaining();

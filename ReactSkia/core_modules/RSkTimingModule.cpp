@@ -53,7 +53,15 @@ jsi::Value RSkTimingModule::createTimer(
   RNS_LOG_DEBUG("Create Timer for callbackId : " << callbackId << ", jsSchedulingTime : " << jsSchedulingTime << ", Duration : " << duration);
   SysTimePoint schedulingTime{std::chrono::milliseconds(static_cast<unsigned long long>(jsSchedulingTime))};
 
-  createTimerForNextFrame(callbackId, duration, schedulingTime, repeats);
+  if(timer_ == nullptr) {
+      timer_ = new Timer(duration,false, [this](){timerDidFire();},false);
+  }
+
+  if(duration == 0 && repeats == false) {
+    timer_->scheduleImmediate(std::bind(&RSkTimingModule::immediatelyCallTimer, this, callbackId));
+  } else {
+    createTimerForNextFrame(callbackId, duration, schedulingTime, repeats);
+  }
   return jsi::Value::undefined();
 }
 
@@ -69,13 +77,8 @@ void RSkTimingModule::createTimerForNextFrame(
   double targetDuration = std::max((jsDuration - jsSchedulingOverhead), 0.0);
 
   SharedJsTimer jstimer = std::make_shared<RSkJsTimer>(callbackId, jsDuration, targetDuration, repeats);
-  if(timer_ == nullptr) {
-      timer_ = new Timer(targetDuration,false, [this](){timerDidFire();},true);
-  } else {
-      double remainingDuration = timer_->getTimeRemaining();
-      if((remainingDuration == 0) || (targetDuration < remainingDuration))
-          timer_->reschedule(targetDuration,false);
-  }
+  timer_->reschedule(targetDuration,false);
+
   jsTimerList_.lock();
   jsTimers_[callbackId] = jstimer;
   jsTimerList_.unlock();
@@ -139,6 +142,13 @@ void RSkTimingModule::timerDidFire() {
     double targetDuration = std::max(remaining.count(), 0.0);
     timer_->reschedule(targetDuration,false);
     RNS_LOG_DEBUG("Rescheduled timer with shortest duration : " << targetDuration);
+  }
+}
+
+void RSkTimingModule::immediatelyCallTimer(double callbackId) {
+  if(bridgeInstance_) {
+    RNS_LOG_DEBUG("--> immediatelyCallTimer - callbackId=" << callbackId << ", duration=0");
+    bridgeInstance_->callJSFunction("JSTimers", "callTimers", folly::dynamic::array(folly::dynamic::array(callbackId)));
   }
 }
 

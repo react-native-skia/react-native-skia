@@ -71,12 +71,11 @@ void Timer::reschedule(double duration, bool repeats) {
   }
 
   repeats_ = repeats;
-  targetDuration_ = duration;
 
   auto timeoutCb = std::bind(&Timer::scheduleTimerTimeout, this);
   // For super fast, on-off timers, just enqueue them immediately rather than waiting
   // If any previous timers scheduled,abort it.
-  if(targetDuration_ < 1) {
+  if(duration < 1) {
     if(timerCallback_.isScheduled())
         abort();
     timerThread_.getEventBase()->runInEventBaseThread(timeoutCb);
@@ -87,11 +86,14 @@ void Timer::reschedule(double duration, bool repeats) {
      timerCallback_.cb = timeoutCb;
 
   timerThread_.getEventBase()->runInEventBaseThread(
-     [this]() {
+     [this,duration]() {
         std::scoped_lock lock(timerCallback_.cbLock);
         if(timerCallback_.cb) {
             HHWheelTimer& wheelTimer = timerThread_.getEventBase()->timer();
-            wheelTimer.scheduleTimeout(&timerCallback_, std::chrono::milliseconds(static_cast<unsigned long long>(targetDuration_)));
+            if(timerCallback_.isScheduled() == false || duration < getTimeRemaining()) {
+              wheelTimer.scheduleTimeout(&timerCallback_, std::chrono::milliseconds(static_cast<unsigned long long>(duration)));
+              targetDuration_ = duration;
+            }
         }
      }
   );
@@ -156,6 +158,10 @@ double Timer::getTimeRemaining() {
 
 SysTimePoint Timer::getFutureTime() {
   return system_clock::now() + milliseconds(static_cast<unsigned long long>(31536000000)); // Set 1 year ahead time from now
+}
+
+void Timer::scheduleImmediate(std::function<void()> cb) {
+  timerThread_.getEventBase()->runInEventBaseThread(cb);
 }
 
 } // namespace rns

@@ -78,6 +78,7 @@ class RSkTimingModule: public TurboModule {
       size_t count);
 
   void timerDidFire();
+  void immediatelyCallTimer(double callbackId);
 
   jsi::Value createTimer(double callbackId, double duration, double jsSchedulingTime, bool repeats);
   jsi::Value deleteTimer(double timerId);
