@@ -13,7 +13,6 @@ class SimpleViewApp extends React.Component {
 
   loadTimeOutRequest() {
     this.xhr && this.xhr.abort();
-
     const xhr = this.xhr || new XMLHttpRequest();
 
     xhr.onerror = () => {
@@ -32,12 +31,31 @@ class SimpleViewApp extends React.Component {
       console.log('Abort', xhr.responseText);
     };
 
+    xhr.onreadystatechange = function() {
+       if(this.readyState == this.HEADERS_RECEIVED) {
 
+        // Get the raw header string
+         var headers = xhr.getAllResponseHeaders();
+        console.log("Headers:",headers);
+        // Convert the header string into an array
+        // of individual headers
+        var arr = headers.trim().split(/[\r\n]+/);
 
-	  xhr.open('POST', 'https://jsnplaceholder.typicode.com/'); // request to take 5 seconds to load
-//    xhr.timeout = 200; // request times out in 2 seconds
-    xhr.send("1");
-    xhr.abort();
+        // Create a map of header names to values
+        var headerMap = {};
+        arr.forEach(function (line) {
+          var parts = line.split(': ');
+          var header = parts.shift();
+          var value = parts.join(': ');
+          headerMap[header] = value;
+        });
+      }
+    }
+
+    //xhr.open('GET', 'https://reactnative.dev/'); // request to take 5 seconds to load
+    //xhr.open('GET', 'https://pngimg.com/uploads/lion/lion_PNG23269.png'); // request to take 5 seconds to load
+    xhr.open('GET', 'https://github.com/facebook/folly/tree/main/folly/io/async'); // request to take 5 seconds to load
+    xhr.send();
     this.xhr = xhr;
 
   }

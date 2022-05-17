@@ -49,15 +49,12 @@ CurlRequest::CurlRequest(CURL *lhandle, const char* lURL,size_t ltimeout,const c
   {}
 
 CurlRequest::~CurlRequest() {
-  if(curlResponse.headerBuffer){
-    free(curlResponse.headerBuffer);
-    curlResponse.headerBuffer = NULL;
-  }
   if(curlResponse.responseBuffer){
     free(curlResponse.responseBuffer);
     curlResponse.responseBuffer = NULL;
   }
-}    
+  curlResponse.headerBuffer.erase(curlResponse.headerBuffer.items().begin(),curlResponse.headerBuffer.items().end());
+}
 
 CurlNetworking::~CurlNetworking() {
   exitLoop_ = true;
@@ -176,20 +173,28 @@ size_t CurlNetworking::progressCallbackCurlWrapper(void *clientp, double dltotal
 } 
 size_t CurlNetworking::headerCallbackCurlWrapper(char* buffer, size_t size, size_t nitems, void* userData) {
   CurlRequest *curlRequest = (CurlRequest *)userData;
-  curlRequest->curlResponse.headerBuffer  = (char *) realloc(curlRequest->curlResponse.headerBuffer , curlRequest->curlResponse.headerBufferOffset+nitems+1); 
-  RNS_LOG_ASSERT(curlRequest->curlResponse.headerBuffer  , "headerBuffer cannot be null");
-  // Each headerInfo line comes as a seperate callback, so append all here
-  memcpy(&(curlRequest->curlResponse.headerBuffer[curlRequest->curlResponse.headerBufferOffset]), buffer, nitems);
-  curlRequest->curlResponse.headerBufferOffset+= nitems;
+  // Each headerInfo line comes as a seperate callback
+  std::string str((unsigned char*)buffer, (unsigned char*)buffer + nitems);
+  size_t keyEndpos = str.find(": ");
+  // Each headerInfo line ends with \r\n character,so we dont consider these characters in our headerData
+  size_t valueEndpos = str.find('\r',keyEndpos);
+  if (keyEndpos != std::string::npos) {
+    curlRequest->curlResponse.headerBuffer[str.substr(0, keyEndpos)] = str.substr(keyEndpos + 2 , valueEndpos-keyEndpos-2);
+  }
   // headerInfo ends with \r and \n
   if(nitems == 2 && buffer[0] == 13 && buffer[1] == 10  ) {
     long response_code = 0;
     char *url = NULL;
     curl_easy_getinfo(curlRequest->handle, CURLINFO_EFFECTIVE_URL, &url);
     curl_easy_getinfo(curlRequest->handle, CURLINFO_RESPONSE_CODE, &response_code);
-    curlRequest->curlResponse.headerBuffer[curlRequest->curlResponse.headerBufferOffset] = 0;
     curlRequest->curlResponse.responseurl= url;
     curlRequest->curlResponse.statusCode = response_code;
+
+#if !defined(GOOGLE_STRIP_LOG) || (GOOGLE_STRIP_LOG <= INFO)
+    RNS_LOG_DEBUG("Header buffer content size:" << curlRequest->curlResponse.headerBuffer.size());
+    for( auto const &header : curlRequest->curlResponse.headerBuffer.items())
+       RNS_LOG_DEBUG("KEY[" << header.first << "] Value["<< header.second << "]");
+#endif
     curlRequest->curldelegator.CURLNetworkingHeaderCallback(&curlRequest->curlResponse,curlRequest->curldelegator.delegatorData);
   }
   return size*nitems;

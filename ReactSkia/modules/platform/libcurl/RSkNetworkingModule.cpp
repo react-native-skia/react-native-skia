@@ -58,8 +58,6 @@ jsi::Value RSkNetworkingModule::sendRequest(
   // Add the request object to list and notify app using callback function.
 
   CurlRequest* curlRequest = new CurlRequest(nullptr,url.c_str(),timeout,method.c_str());
-  curlRequest->curlResponse.headerBuffer = (char*)malloc(1);
-  curlRequest->curlResponse.responseBuffer = (char*)malloc(1);
 
   auto headerCallback = [&](void* curlResponse,void *userdata) -> size_t {
     struct NetworkRequest *networkRequest = ((struct NetworkRequest *)userdata);

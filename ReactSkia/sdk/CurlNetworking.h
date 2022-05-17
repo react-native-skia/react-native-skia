@@ -28,15 +28,14 @@ typedef struct Curldelegator {
 
 typedef struct CurlResponse {
   CurlResponse()
-  :headerBuffer(nullptr),
-  headerBufferOffset(0),
-  responseBuffer(nullptr),
-  responseBufferOffset(0),
-  contentSize(0),
-  responseurl(nullptr)
-  {}
-  char* headerBuffer;
-  int headerBufferOffset;
+   :responseBuffer(nullptr),
+    responseBufferOffset(0),
+    contentSize(0),
+    responseurl(nullptr){
+
+    headerBuffer = folly::dynamic::object();
+  }
+  folly::dynamic headerBuffer;
   char* responseBuffer;
   int responseBufferOffset;
   int contentSize;
