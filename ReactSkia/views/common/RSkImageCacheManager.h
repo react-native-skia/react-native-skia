@@ -10,15 +10,22 @@
 #include "include/core/SkGraphics.h"
 #include "include/gpu/GrDirectContext.h"
 
+#include "ReactSkia/sdk/FollyTimer.h"
+
 #define SKIA_CPU_IMAGE_CACHE_LIMIT  50*1024*1024 // 52,428,800 bytes
 #define SKIA_GPU_IMAGE_CACHE_LIMIT  50*1024*1024 // 52,428,800 bytes
 
 using namespace std;
-
+using namespace rns::sdk;
 namespace facebook {
 namespace react {
 
-typedef facebook::better::map <string,sk_sp<SkImage>> ImageCacheMap;
+typedef struct decodedimageCacheData {
+  sk_sp<SkImage> imageData;
+  double expiryTime;
+}decodedimageCacheData;
+
+typedef better::map <string,decodedimageCacheData> ImageCacheMap;
 
 class RSkImageCacheManager {
  public:
@@ -26,16 +33,17 @@ class RSkImageCacheManager {
   static RSkImageCacheManager* getImageCacheManagerInstance();
   static void init();
   sk_sp<SkImage> findImageDataInCache(const char* path);
-  bool imageDataInsertInCache(const char* path,sk_sp<SkImage> imageData);
+  bool imageDataInsertInCache(const char* path,decodedimageCacheData imageCacheData);
  private:
   static std::mutex mutex_;
   static RSkImageCacheManager *imageCacheManagerInstance_;
   ImageCacheMap imageCache_;
+  double scheduleTimeExpiry_;
   RSkImageCacheManager();
-
+  Timer * timer_{nullptr};
   void getCacheUsage(size_t usageArr[]);
   bool evictAsNeeded();
-
+  void expiryTimeCallback();
 #ifdef RNS_IMAGE_CACHE_USAGE_DEBUG
   void printCacheUsage();
 #endif

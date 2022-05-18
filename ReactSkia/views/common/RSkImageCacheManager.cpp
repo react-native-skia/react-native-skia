@@ -74,7 +74,7 @@ bool RSkImageCacheManager::evictAsNeeded() {
     if( evictCount >= EVICT_COUNT){
       break;
     }
-    if((it->second)->unique()) {
+    if((it->second.imageData)->unique()) {
       it=imageCache_.erase(it);
       evictCount++;
     } else {
@@ -114,19 +114,56 @@ void printCacheUsage() {
 }
 #endif//RNS_IMAGE_CACHE_USAGE_DEBUG
 
+void RSkImageCacheManager::expiryTimeCallback() {
+  ImageCacheMap::iterator it =imageCache_.begin();
+  double currentTime = SkTime::GetMSecs();
+  std::chrono::duration<double, std::milli> milliseconds = Timer::getFutureTime().time_since_epoch();
+  double scheduleTimeExpiry = milliseconds.count();
+  while(it != imageCache_.end()) {
+    if(it->second.expiryTime <= currentTime){
+     RNS_LOG_DEBUG("erase imageData :"<<it->first<<std::endl);
+     it = imageCache_.erase(it);
+    } else{
+      if (scheduleTimeExpiry > it->second.expiryTime)
+        scheduleTimeExpiry = it->second.expiryTime;
+      it++;
+    }
+  }
+  if(imageCache_.size()){
+    scheduleTimeExpiry_ = scheduleTimeExpiry;
+    timer_->reschedule((scheduleTimeExpiry_ - SkTime::GetMSecs()),0);
+  } else {
+    scheduleTimeExpiry_ = 0;
+  }
+}
+
 sk_sp<SkImage> RSkImageCacheManager::findImageDataInCache(const char* path) {
   std::scoped_lock lock(imageCacheLock);
   sk_sp<SkImage> imageData{nullptr};
   ImageCacheMap::iterator it = imageCache_.find(path);
-  imageData= ((it != imageCache_.end()) ? it->second : nullptr);
+  imageData = ((it != imageCache_.end()) ? it->second.imageData : nullptr);
   return imageData;
 }
 
-bool RSkImageCacheManager::imageDataInsertInCache(const char* path,sk_sp<SkImage> imageData) {
+bool RSkImageCacheManager::imageDataInsertInCache(const char* path,decodedimageCacheData imageCacheData) {
   std::scoped_lock lock(imageCacheLock);
-  if(imageData && evictAsNeeded()) {
-    imageCache_.insert(std::pair<std::string, sk_sp<SkImage>>(path,imageData));
-    RNS_LOG_DEBUG("New Entry in Map..."<<" file :"<<path);
+  double currentTime = SkTime::GetMSecs();
+  if(imageCacheData.imageData && evictAsNeeded()) {
+    imageCache_.insert(std::pair<std::string, decodedimageCacheData>(path,imageCacheData));
+    RNS_LOG_INFO("New Entry in Map..."<<" file :"<<path<< "  expiryTime :"<<imageCacheData.expiryTime);
+    if(imageCache_.size() == 1) {
+      scheduleTimeExpiry_ = imageCacheData.expiryTime;
+      if(timer_ == nullptr) {
+        auto callback = std::bind(&RSkImageCacheManager::expiryTimeCallback,this);
+        timer_ = new Timer(scheduleTimeExpiry_ - currentTime,0,callback,true);
+      }else {
+        timer_->reschedule( scheduleTimeExpiry_ - currentTime,0);
+      }
+    } else if (imageCacheData.expiryTime < scheduleTimeExpiry_) {
+      scheduleTimeExpiry_ = imageCacheData.expiryTime;
+      double duration = scheduleTimeExpiry_ - currentTime;
+      timer_->reschedule(duration,0);
+    }
     return true;
   } else {
     RNS_LOG_ERROR("Insert image data to cache failed... :"<<" file :" << path);
