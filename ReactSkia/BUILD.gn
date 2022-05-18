@@ -88,8 +88,6 @@ source_set("ReactSkia") {
   sources = [
     "ComponentViewRegistry.cpp",
     "ComponentViewRegistry.h",
-    "LegacyNativeModuleRegistry.cpp",
-    "LegacyNativeModuleRegistry.h",
     "JSITurboModuleManager.cpp",
     "JSITurboModuleManager.h",
     "MountingManager.cpp",
@@ -133,6 +131,8 @@ source_set("ReactSkia") {
     "components/RSkComponentProviderText.h",
     "components/RSkComponentProviderTextInput.cpp",
     "components/RSkComponentProviderTextInput.h",
+    "components/RSkComponentProviderUnimplementedView.cpp",
+    "components/RSkComponentProviderUnimplementedView.h",
     "components/RSkComponentProviderView.cpp",
     "components/RSkComponentProviderView.h",
     "components/RSkComponentRootView.cpp",
@@ -143,6 +143,8 @@ source_set("ReactSkia") {
     "components/RSkComponentText.h",
     "components/RSkComponentTextInput.cpp",
     "components/RSkComponentTextInput.h",
+    "components/RSkComponentUnimplementedView.cpp",
+    "components/RSkComponentUnimplementedView.h",
     "components/RSkComponentView.cpp",
     "components/RSkComponentView.h",
     "modules/RSkWebSocketModuleBase.h",
@@ -158,12 +160,24 @@ source_set("ReactSkia") {
     "views/common/RSkImageUtils.cpp",
     "views/common/RSkImageUtils.h",
   ]
+
   if( react_native_platform == "tvos") {
     sources += [
       "modules/RSkTVNavigationEventEmitter.cpp",
       "modules/RSkTVNavigationEventEmitter.h",
     ]
   }
+
+  # Legace Native modules and viewManager
+  sources += [
+    "LegacyNativeModules/LegacyNativeModuleRegistry.cpp",
+    "LegacyNativeModules/LegacyNativeModuleRegistry.h",
+    "LegacyNativeModules/LegacyNativeModule.cpp",
+    "LegacyNativeModules/LegacyNativeModule.h",
+    "LegacyNativeModules/uimanager/UiManagerModule.cpp",
+    "LegacyNativeModules/uimanager/UiManagerModule.h",
+  ]
+
   if (is_mac) {
     sources += [
       "platform/macosx/MainRunLoopEventBeat.h",
@@ -249,6 +263,7 @@ executable("ReactSkiaApp") {
 
   deps = [
     ":ReactSkia",
+    "//react-native/ReactCommon/react/renderer/components/unimplementedview",
   ]
 
   configs -= [ "//build/config/compiler:chromium_code" ]

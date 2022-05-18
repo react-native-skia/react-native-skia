@@ -44,6 +44,7 @@ class RSkComponentProvider {
   better::map<Tag, std::shared_ptr<RSkComponent>> registry_;
 
 };
+using RSkComponentProviderProtocol = RSkComponentProvider *(*)();
 
 } // namespace react
 } // namespace facebook
