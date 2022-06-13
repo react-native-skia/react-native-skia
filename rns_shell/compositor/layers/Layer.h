@@ -116,7 +116,7 @@ public:
     SkIRect& absoluteFrame() { return absFrame_; }
     const SkIRect& getFrame() const { return frame_; }
     void setFrame(const SkIRect& frame) { frame_ = frame; }
-    void invalidate(LayerInvalidateMask mask = LayerInvalidateAll) { invalidateMask_ = mask; }
+    void invalidate(LayerInvalidateMask mask = LayerInvalidateAll) { invalidateMask_ = static_cast<RnsShell::LayerInvalidateMask>(invalidateMask_ | mask); }
     bool requireInvalidate(bool skipChildren=true);
 
     const SkIRect& getBounds() const { return bounds_; }

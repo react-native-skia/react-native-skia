@@ -57,9 +57,10 @@ void RSkSpatialNavigator::updateSpatialNavigatorState(NavigatorStateOperation op
         case ComponentAdded:
 #if defined(TARGET_OS_TV) && TARGET_OS_TV
             if(viewProps.hasTVPreferredFocus == true) { // Newly added item has Tv Preferred Focus, update the state
-                if(currentFocus_)
+                if(currentFocus_){
                     sendNotificationWithEventType("blur", currentFocus_->getComponentData().tag);
-
+                    currentFocus_->onHandleBlur();
+                }
                 sendNotificationWithEventType("focus", candidateData.tag);
                 currentFocus_ = candidate;
                 currentContainer_ = currentFocus_->nearestAncestorContainer();
@@ -404,13 +405,17 @@ bool RSkSpatialNavigator::advanceFocusInDirection(Container *container, rnsKey k
 }
 void RSkSpatialNavigator::updateFocusCandidate(RSkComponent* focusCandidate){
 #if defined(TARGET_OS_TV) && TARGET_OS_TV
-   if(currentFocus_) // First Blur the existing focus component
-     sendNotificationWithEventType("blur", currentFocus_->getComponentData().tag);
-   sendNotificationWithEventType("focus", focusCandidate->getComponentData().tag);
+  if( !focusCandidate || (currentFocus_ == focusCandidate))
+    return ;
+  if(currentFocus_){ // First Blur the existing focus component
+    sendNotificationWithEventType("blur", currentFocus_->getComponentData().tag);
+    currentFocus_->onHandleBlur();
+  }
+  sendNotificationWithEventType("focus", focusCandidate->getComponentData().tag);
 #endif //TARGET_OS_TV
-   RNS_LOG_DEBUG("Blur : [" << ((currentFocus_) ? currentFocus_->getComponentData().tag : -1) << "], Focus :[" << focusCandidate->getComponentData().tag << "]");
-   currentFocus_ = focusCandidate;
-   currentContainer_ = currentFocus_->isContainer() ? currentFocus_ : currentFocus_->nearestAncestorContainer(); 
+  RNS_LOG_DEBUG("Blur : [" << ((currentFocus_) ? currentFocus_->getComponentData().tag : -1) << "], Focus :[" << focusCandidate->getComponentData().tag << "]");
+  currentFocus_ = focusCandidate;
+  currentContainer_ = currentFocus_->isContainer() ? currentFocus_ : currentFocus_->nearestAncestorContainer(); 
 }
 
 void RSkSpatialNavigator::navigateInDirection(rnsKey keyEvent) {

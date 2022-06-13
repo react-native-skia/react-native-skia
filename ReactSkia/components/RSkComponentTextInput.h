@@ -30,14 +30,16 @@ class RSkComponentTextInput final : public RSkComponent {
     TODO  Need to Add command function to Handle Command.
   */
   void handleCommand(std::string commandName,folly::dynamic args)override;
+  void onHandleBlur()override;
  protected:
   void OnPaint(SkCanvas *canvas) override;
  private:
-  bool isInEditingMode_;
+  std::atomic<bool> isInEditingMode_;
   bool editable_ = true;
   bool caretHidden_ = false;
   bool isTextInputInFocus_=false;
   bool secureTextEntry_=false;
+  bool hasToSetFocus_=false;
   int eventCount_;
   int maxLength_;
   std::string displayString_{}; // Text to be displayed on screen
@@ -47,7 +49,7 @@ class RSkComponentTextInput final : public RSkComponent {
   struct cursor cursor_;
   SkPaint cursorPaint_;
   std::shared_ptr<skia::textlayout::Paragraph> paragraph_;
-  void drawAndSubmit();
+  void drawAndSubmit(bool isFlushDisplay=true);
   void drawTextInput(
       SkCanvas *canvas,
       LayoutMetrics layout,
@@ -55,8 +57,9 @@ class RSkComponentTextInput final : public RSkComponent {
       struct RSkSkTextLayout &textLayout);
   void processEventKey(rnsKey eventKeyType,bool* stopPropagation,bool *waitForupdateProps, bool updateString);
   void keyEventProcessingThread();
-  void requestForEditingMode();
-  void resignFromEditingMode();
+  void requestForEditingMode(bool isFlushDisplay = true);
+  void resignFromEditingMode(bool isFlushDisplay = true);
+  void drawCursor(SkCanvas *canvas, LayoutMetrics layout);
 };
 
 } // namespace react

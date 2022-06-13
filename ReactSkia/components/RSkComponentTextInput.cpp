@@ -38,7 +38,6 @@ std::mutex privateVarProtectorMutex;
 std::mutex inputQueueMutex;
 static bool isKeyRepeateOn;
 unsigned int keyRepeateStartIndex;
-
 RSkComponentTextInput::RSkComponentTextInput(const ShadowView &shadowView)
     : RSkComponent(shadowView)
     ,isInEditingMode_(false)
@@ -55,13 +54,15 @@ RSkComponentTextInput::RSkComponentTextInput(const ShadowView &shadowView)
   isKeyRepeateOn=false;
 }
 
-void RSkComponentTextInput::drawAndSubmit(){
-  layer()->client().notifyFlushBegin();
+void RSkComponentTextInput::drawAndSubmit(bool isFlushDisplay){
+  if(isFlushDisplay)
+    layer()->client().notifyFlushBegin();
   layer()->invalidate( RnsShell::LayerPaintInvalidate);
   if (layer()->type() == RnsShell::LAYER_TYPE_PICTURE) {
     RNS_PROFILE_API_OFF(getComponentData().componentName << " getPicture :", static_cast<RnsShell::PictureLayer*>(layer().get())->setPicture(getPicture()));
   }
-  layer()->client().notifyFlushRequired();
+  if(isFlushDisplay)
+    layer()->client().notifyFlushRequired();
 }
 
 void RSkComponentTextInput::drawTextInput(SkCanvas *canvas,
@@ -71,11 +72,6 @@ void RSkComponentTextInput::drawTextInput(SkCanvas *canvas,
   Rect frame = layout.frame;
   ParagraphStyle paraStyle;
   float yOffset;
-
-  //cursor
-  int position = 0;
-  SkRect cursorRect;
-  std::vector<TextBox> rects;
 
   // setParagraphStyle
   textLayout.paraStyle.setMaxLines(NUMBER_OF_LINES);
@@ -93,25 +89,32 @@ void RSkComponentTextInput::drawTextInput(SkCanvas *canvas,
   // paintParagraph
   yOffset = (layout.getContentFrame().size.height - paragraph_->getHeight()) / 2;
   paragraph_->paint(canvas, frame.origin.x + layout.contentInsets.left, frame.origin.y + layout.contentInsets.top + yOffset);
+  drawCursor(canvas, layout);
 
+}
+void RSkComponentTextInput::drawCursor(SkCanvas *canvas, LayoutMetrics layout){
   // draw Cursor
-  if (isInEditingMode_ && !caretHidden_) {
-  position = cursor_.end - cursor_.locationFromEnd;
-  if (cursor_.locationFromEnd == cursor_.end) {
-    rects = paragraph_->getRectsForRange(0, position+1, RectHeightStyle::kTight, RectWidthStyle::kTight);
-    cursorRect.fLeft =  frame.origin.x + rects[0].rect.left() + layout.contentInsets.left;
-    cursorRect.fRight = cursorRect.fLeft;
-  } else {
-    rects = paragraph_->getRectsForRange(0, position, RectHeightStyle::kTight, RectWidthStyle::kTight);
-    cursorRect.fLeft =  frame.origin.x + rects[0].rect.right() + layout.contentInsets.left;
-    cursorRect.fRight = cursorRect.fLeft;
-  }
-  cursorRect.fTop = frame.origin.y + yOffset + layout.contentInsets.top;
-  cursorRect.fBottom = cursorRect.fTop + paragraph_->getHeight();
-  canvas->drawRect(cursorRect, cursorPaint_);
+  Rect frame = layout.frame;
+  SkRect cursorRect;
+  float yOffset;
+  std::vector<TextBox> rects;
+  if ( ( isInEditingMode_ || hasToSetFocus_ ) && !caretHidden_ ) {
+    int position = cursor_.end - cursor_.locationFromEnd;
+    if (cursor_.locationFromEnd == cursor_.end) {
+      rects = paragraph_->getRectsForRange(0, position+1, RectHeightStyle::kTight, RectWidthStyle::kTight);
+      cursorRect.fLeft =  frame.origin.x + rects[0].rect.left() + layout.contentInsets.left;
+      cursorRect.fRight = cursorRect.fLeft;
+    } else {
+      rects = paragraph_->getRectsForRange(0, position, RectHeightStyle::kTight, RectWidthStyle::kTight);
+      cursorRect.fLeft =  frame.origin.x + rects[0].rect.right() + layout.contentInsets.left;
+      cursorRect.fRight = cursorRect.fLeft;
+    }
+    yOffset = (layout.getContentFrame().size.height - paragraph_->getHeight()) / 2;
+    cursorRect.fTop = frame.origin.y + yOffset + layout.contentInsets.top;
+    cursorRect.fBottom = cursorRect.fTop + paragraph_->getHeight();
+    canvas->drawRect(cursorRect, cursorPaint_);
   }
 }
-
 void RSkComponentTextInput::OnPaint(SkCanvas *canvas) {
   auto component = getComponentData();
   auto const &textInputProps = *std::static_pointer_cast<TextInputProps const>(component.props);
@@ -124,8 +127,6 @@ void RSkComponentTextInput::OnPaint(SkCanvas *canvas) {
   textLayout.builder = std::static_pointer_cast<skia::textlayout::ParagraphBuilder>(
                           std::make_shared<skia::textlayout::ParagraphBuilderImpl>(
                           textLayout.paraStyle, data.layoutManager->collection_));
-
-
   if (0 == displayString_.size()) {
     textAttributes.foregroundColor = placeholderColor_;
     data.layoutManager->buildText(textLayout, textInputProps.backgroundColor, textInputProps.paragraphAttributes, textAttributes, placeholderString_, true);
@@ -137,9 +138,12 @@ void RSkComponentTextInput::OnPaint(SkCanvas *canvas) {
       data.layoutManager->buildText(textLayout, textInputProps.backgroundColor, textInputProps.paragraphAttributes, textAttributes, displayString_, true);
     }
   }
-
   drawShadow(canvas, frame, borderMetrics, textInputProps.backgroundColor, layer()->shadowOpacity, layer()->shadowFilter);
   drawTextInput(canvas, component.layoutMetrics, textInputProps, textLayout);
+  if(hasToSetFocus_){
+    requestForEditingMode(false);
+    hasToSetFocus_ = false;
+  }
   if (textInputProps.underlineColorAndroid.has_value()){
     drawUnderline(canvas,frame,textInputProps.underlineColorAndroid.value());
   }
@@ -156,6 +160,7 @@ void RSkComponentTextInput::OnPaint(SkCanvas *canvas) {
 */
 
 void RSkComponentTextInput::onHandleKey(rnsKey eventKeyType, bool keyRepeat, bool *stopPropagation) {
+  RNS_LOG_DEBUG("[onHandleKey] ENTRY");
   *stopPropagation = false;
   if (!editable_) {
     return;
@@ -173,21 +178,7 @@ void RSkComponentTextInput::onHandleKey(rnsKey eventKeyType, bool keyRepeat, boo
   textInputMetrics.contentOffset.x = frame.origin.x;
   textInputMetrics.contentOffset.y = frame.origin.y;
   if (isInEditingMode_ == false && eventKeyType == RNS_KEY_Select ) {
-    RNS_LOG_DEBUG("[onHandleKey] onfocus need to here"<<textInputMetrics.text);
-    textInputMetrics.contentSize.width = paragraph_->getMaxIntrinsicWidth();
-    textInputMetrics.contentSize.height = paragraph_->getHeight();
-    textInputEventEmitter->onFocus(textInputMetrics);
-    isInEditingMode_ = true;
-    if (!caretHidden_ || textInputProps.clearTextOnFocus ) {
-      privateVarProtectorMutex.lock();
-      if(textInputProps.clearTextOnFocus && !displayString_.empty()){
-        displayString_.clear();
-        cursor_.locationFromEnd = 0;
-        cursor_.end = 0;
-      }
-      privateVarProtectorMutex.unlock();
-      drawAndSubmit();
-    }
+      requestForEditingMode();
   } else if (isInEditingMode_) {
     // Logic to update the textinput string.
     // Requirement: Textinput is in Editing mode.
@@ -245,20 +236,12 @@ void RSkComponentTextInput::onHandleKey(rnsKey eventKeyType, bool keyRepeat, boo
       } else if (eventKeyType ==  RNS_KEY_Select) {
         *stopPropagation = true;
         isTextInputInFocus_ = false;
-        isInEditingMode_ = false;
-        if (!caretHidden_) {
-          drawAndSubmit();
-        }
         std::queue<rnsKey> empty;
         inputQueueMutex.lock();
         std::swap( inputQueue, empty );
         inputQueueMutex.unlock();
         eventCount_++;
-        textInputMetrics.text = textString;
-        textInputMetrics.eventCount = eventCount_;
-        textInputEventEmitter->onSubmitEditing(textInputMetrics);
-        textInputEventEmitter->onEndEditing(textInputMetrics);
-        textInputEventEmitter->onBlur(textInputMetrics);
+	resignFromEditingMode();
       }
       return;
     }
@@ -267,6 +250,7 @@ void RSkComponentTextInput::onHandleKey(rnsKey eventKeyType, bool keyRepeat, boo
 }
 
 void RSkComponentTextInput::processEventKey (rnsKey eventKeyType,bool* stopPropagation,bool *waitForupdateProps, bool updateString) {
+  RNS_LOG_DEBUG("[processEventKey]  ENTRY");
   KeyPressMetrics keyPressMetrics;
   TextInputMetrics textInputMetrics;
   std::string textString = displayString_;
@@ -326,16 +310,8 @@ void RSkComponentTextInput::processEventKey (rnsKey eventKeyType,bool* stopPropa
           break;
         case RNS_KEY_Select:
           eventCount_++;
-          textInputMetrics.text = textString;
-          textInputMetrics.eventCount = eventCount_;
-          textInputEventEmitter->onSubmitEditing(textInputMetrics);
-          textInputEventEmitter->onEndEditing(textInputMetrics);
-          textInputEventEmitter->onBlur(textInputMetrics);
-          isInEditingMode_ = false;
           *stopPropagation = true;
-          if (!caretHidden_) {
-            drawAndSubmit();
-          }
+	  resignFromEditingMode();
           return;
         case RNS_KEY_Caps_Lock:
         case RNS_KEY_Shift_L:
@@ -460,7 +436,6 @@ RnsShell::LayerInvalidateMask  RSkComponentTextInput::updateComponentProps(const
     cursorPaint_.setColor(RSkColorFromSharedColor(selectionColor_, SK_ColorBLUE));
     mask |= LayerPaintInvalidate;
   }
-
   if (textInputProps.editable != editable_) {
     editable_ = textInputProps.editable;
     mask |= LayerPaintInvalidate;
@@ -471,7 +446,7 @@ RnsShell::LayerInvalidateMask  RSkComponentTextInput::updateComponentProps(const
   } else {
     caretHidden_ = true;
   }
-
+  hasToSetFocus_ = forceUpdate && textInputProps.autoFocus ? true :false;
   return (RnsShell::LayerInvalidateMask)mask;
 }
 
@@ -489,20 +464,19 @@ void RSkComponentTextInput::handleCommand(std::string commandName,folly::dynamic
   }else if (commandName == "focus") {
     requestForEditingMode();
   }else if (commandName == "blur") {
-    resignFromEditingMode();
+    resignFromEditingMode( );
   } else {
     RNS_LOG_NOT_IMPL;
   }
 }
 
-void RSkComponentTextInput::requestForEditingMode(){
+void RSkComponentTextInput::requestForEditingMode(bool isFlushDisplay){
   RNS_LOG_DEBUG("[requestForEditingMode] ENTRY");
   // check if textinput is already in Editing
   if ( isInEditingMode_ )
     return;
   RNS_LOG_TODO("[requestForEditingMode] Launch OnScreen Keyboard");
   auto spatialNavigator =  SpatialNavigator::RSkSpatialNavigator::sharedSpatialNavigator();
-  auto previousFocusedCandidate = spatialNavigator->getCurrentFocusElement();
   auto candidateToFocus = getComponentData();
   auto textInputEventEmitter = std::static_pointer_cast<TextInputEventEmitter const>(candidateToFocus.eventEmitter);
   auto const &textInputProps = *std::static_pointer_cast<TextInputProps const>(candidateToFocus.props);
@@ -512,11 +486,10 @@ void RSkComponentTextInput::requestForEditingMode(){
   Rect frame = candidateToFocus.layoutMetrics.frame;
   textInputMetrics.contentOffset.x = frame.origin.x;
   textInputMetrics.contentOffset.y = frame.origin.y;
-  textInputMetrics.contentSize.width = paragraph_->getMaxIntrinsicWidth();
-  textInputMetrics.contentSize.height = paragraph_->getHeight();
-  // Resign the editing mode
-  if(previousFocusedCandidate)
-    ((RSkComponentTextInput*)previousFocusedCandidate)->resignFromEditingMode();
+  if(paragraph_){
+    textInputMetrics.contentSize.width = paragraph_->getMaxIntrinsicWidth();
+    textInputMetrics.contentSize.height = paragraph_->getHeight();
+  }
   //SpatialNavigtor API which is responsible
   //for changing focus to respective textinput.
   spatialNavigator->updateFocusCandidate(this);
@@ -530,17 +503,18 @@ void RSkComponentTextInput::requestForEditingMode(){
       cursor_.end = 0;
     }
     privateVarProtectorMutex.unlock();
-    drawAndSubmit();
+    if (!caretHidden_) {
+       drawAndSubmit(isFlushDisplay);
+    }
   }
   RNS_LOG_DEBUG("[requestForEditingMode] END");
 }
 
-void RSkComponentTextInput::resignFromEditingMode() {
-  RNS_LOG_DEBUG("[requestFromEditingMode] ENTER");
+void RSkComponentTextInput::resignFromEditingMode(bool isFlushDisplay) {
+  RNS_LOG_DEBUG("[resignFromEditingMode] ENTER ");
   if (!this->isInEditingMode_)
     return;
   RNS_LOG_TODO("[requestForEditingMode] Exit OnScreen Keyboard");
-  std::string componentName = "TextInput";
   TextInputMetrics textInputMetrics;
   auto component = this->getComponentData();
   if (this->isTextInputInFocus_){
@@ -550,17 +524,15 @@ void RSkComponentTextInput::resignFromEditingMode() {
     std::swap( inputQueue, empty );
     inputQueueMutex.unlock();
   }
-  if ( component.componentName == componentName ) {
-    textInputMetrics.text = this->displayString_;
-    textInputMetrics.eventCount = this->eventCount_;
-    this->isInEditingMode_ = false;
-    auto textInputEventEmitter = std::static_pointer_cast<TextInputEventEmitter const>(component.eventEmitter);
-    textInputEventEmitter->onSubmitEditing(textInputMetrics);
-    textInputEventEmitter->onEndEditing(textInputMetrics);
-    textInputEventEmitter->onBlur(textInputMetrics);
-    if (!caretHidden_) {
-      drawAndSubmit();
-    }
+  textInputMetrics.text = this->displayString_;
+  textInputMetrics.eventCount = this->eventCount_;
+  this->isInEditingMode_ = false;
+  auto textInputEventEmitter = std::static_pointer_cast<TextInputEventEmitter const>(component.eventEmitter);
+  textInputEventEmitter->onSubmitEditing(textInputMetrics);
+  textInputEventEmitter->onEndEditing(textInputMetrics);
+  textInputEventEmitter->onBlur(textInputMetrics);
+  if (!caretHidden_) {
+    drawAndSubmit(isFlushDisplay);
   }
   RNS_LOG_DEBUG("[requestForEditingMode] *** END ***");
 }
@@ -568,6 +540,9 @@ void RSkComponentTextInput::resignFromEditingMode() {
 RSkComponentTextInput::~RSkComponentTextInput(){
   sem_destroy(&jsUpdateSem);
 }
-
+ void RSkComponentTextInput::onHandleBlur(){
+   RNS_LOG_DEBUG("[onHandle] In TextInput");
+   resignFromEditingMode(false);
+ }
 } // namespace react
 } // namespace facebook

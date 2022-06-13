@@ -34,10 +34,18 @@ const SimpleViewApp = () => {
   const ref_input3 = useRef();
   const [text, onChangeText] = React.useState("Useless Text");
     return (
-      <View style={styles.container} onLayout={()=>{ref_input1.current.focus(); console.log("calling textinput 1")}}>
+      <View style={styles.container}>
+      <TouchableOpacity
+        style={styles.button}
+        hasTVPreferredFocus={true}
+        onPress={() => {console.log("is Focused(true 1, false 0)",ref_input1.current.isFocused());ref_input1.current.focus(); console.log("calling textinput 1")} }
+        >
+        <Text>Press Here</Text>
+      </TouchableOpacity>
        <TextInput
        placeholderTextColor="red"
        //value = "immmutable value"
+       autoFocus={true}
        value = {text}
        placeholder="PlaceHolder"
        placeholderTextColor="red"
@@ -54,7 +62,7 @@ const SimpleViewApp = () => {
        style={styles.input}
        underlineColorAndroid={"red"}
        clearTextOnFocus={true}
-       caretHidden={true}
+       //caretHidden={true}
        />
 
        <TextInput
@@ -73,6 +81,7 @@ const SimpleViewApp = () => {
        onSubmitEditing={onSubmitEditing}
        onContentSizeChange={onContentSizeChange}
        onSelectionChange={onSelectionChange}
+       caretHidden={true}
        style={styles.input}/>
 
        <TextInput

@@ -161,6 +161,7 @@ void Layer::prePaint(PaintContext& context, bool forceLayout) {
     //Adjust absolute Layout frame and dirty rects
     bool forceChildrenLayout = (forceLayout || (invalidateMask_ & LayerLayoutInvalidate));
     preRoll(context, forceLayout);
+    // It will reset the invalidate mask.
     invalidateMask_ = static_cast<LayerInvalidateMask>(invalidateMask_ & LayerRemoveInvalidate) ;
 
     // prePaint children recursively
