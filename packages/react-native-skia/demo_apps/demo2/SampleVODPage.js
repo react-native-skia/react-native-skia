@@ -33,6 +33,14 @@ const thumbnailImagePath = [
       require('./images/thumbnail_300x160/22.jpg'),
       require('./images/thumbnail_300x160/18.jpg'),
       require('./images/thumbnail_300x160/17.jpg'),
+      require('./images/thumbnail_300x160/2.jpg'),
+      require('./images/thumbnail_300x160/5.jpg'),
+      require('./images/thumbnail_300x160/8.jpg'),
+      require('./images/thumbnail_300x160/12.jpg'),
+      require('./images/thumbnail_300x160/21.jpg'),
+      require('./images/thumbnail_300x160/24.jpg'),
+      require('./images/thumbnail_300x160/14.jpg'),
+      require('./images/thumbnail_300x160/16.jpg'),
 ];
 const posterImagePath_716x300 = [
       require('./images/poster_716x300/1.jpg'),
@@ -59,6 +67,14 @@ const posterImagePath_716x300 = [
       require('./images/poster_716x300/22.jpg'),
       require('./images/poster_716x300/18.jpg'),
       require('./images/poster_716x300/17.jpg'),
+      require('./images/poster_716x300/2.jpg'),
+      require('./images/poster_716x300/5.jpg'),
+      require('./images/poster_716x300/8.jpg'),
+      require('./images/poster_716x300/12.jpg'),
+      require('./images/poster_716x300/21.jpg'),
+      require('./images/poster_716x300/24.jpg'),
+      require('./images/poster_716x300/14.jpg'),
+      require('./images/poster_716x300/16.jpg'),
 ];
 const posterImagePath_512x288 = [
       require('./images/poster_512x288/1.jpg'),
@@ -85,33 +101,41 @@ const posterImagePath_512x288 = [
       require('./images/poster_512x288/22.jpg'),
       require('./images/poster_512x288/18.jpg'),
       require('./images/poster_512x288/17.jpg'),
+      require('./images/poster_512x288/2.jpg'),
+      require('./images/poster_512x288/5.jpg'),
+      require('./images/poster_512x288/8.jpg'),
+      require('./images/poster_512x288/12.jpg'),
+      require('./images/poster_512x288/21.jpg'),
+      require('./images/poster_512x288/24.jpg'),
+      require('./images/poster_512x288/14.jpg'),
+      require('./images/poster_512x288/16.jpg'),
 ];
 
 var posterImagePath = windowSize.height > 720 ? posterImagePath_716x300 : posterImagePath_512x288 ;
 
 const FocusableComponent = (props) =>  {
-   let [state, setState] = useState({imgscale: 1});
+   let [state, setState] = useState({imgscale: 1,bw:0});
    const onPress = () => {}
 
    const onBlur = (e) => {
        console.log("onBlur---------" )
-       setState({ imgscale: 1});
+       setState({ imgscale: 1, bw:0});
    }
 
    const onFocus = (e) => {
        console.log("onFocus---------" )
-       setState({ imgscale: 1.2});
+       setState({ imgscale: 1.2 , bw:2});
        props.change((props.count));
    }
 
-   if(props.count >= 16) {
+   if(props.count >= 24) {
        return(
           <TouchableOpacity isTVSelectable='true' activeOpacity={0.75} onBlur={onBlur} onFocus={onFocus} style={[styles.elementView]} >
              <Image style={{transform:[{scale: state.imgscale}],width:300,height:160,marginLeft:30,marginTop:16}} source={thumbnailImagePath[props.count]}>
              </Image>
           </TouchableOpacity>
       );
-   } else if((props.count >= 8)) {
+   } else if((props.count >= 16)) {
        return (
           <TouchableHighlight isTVSelectable='true'  onPress={onPress} activeOpacity={0.9} underlayColor='transparent'
                              onBlur={onBlur} onFocus={onFocus}
@@ -120,10 +144,17 @@ const FocusableComponent = (props) =>  {
              </Image>
           </TouchableHighlight>
        );
-   } else {
+   } else if((props.count >= 8)) {
        return (
           <Pressable isTVSelectable='true' onBlur={onBlur} onFocus={onFocus} style={[styles.elementView]} >
              <Image style={{transform:[{scale: state.imgscale}],width:300,height:160,marginLeft:25,marginTop:10}} source={thumbnailImagePath[props.count]}>
+             </Image>
+          </Pressable>
+       );
+   } else {
+       return (
+          <Pressable isTVSelectable='true' onBlur={onBlur} onFocus={onFocus} style={[styles.elementView]} >
+             <Image style={{borderWidth:state.bw,borderColor:'lightcyan',width:300,height:160,marginLeft:25,marginTop:10}} source={thumbnailImagePath[props.count]}>
              </Image>
           </Pressable>
        );
@@ -174,6 +205,8 @@ const SampleVODPage = (props) => {
              {horizontalScrollView(8)}
              {horizontalScrollViewHeader('Recommendations')}
              {horizontalScrollView(16)}
+             {horizontalScrollViewHeader('My List')}
+             {horizontalScrollView(24)}
           </ScrollView>
        );
     }

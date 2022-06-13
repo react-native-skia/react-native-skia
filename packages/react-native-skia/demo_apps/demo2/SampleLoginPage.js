@@ -1,71 +1,87 @@
 import React, { useState,useRef} from "react";
-import { TextInput,View,ImageBackground,TouchableOpacity,Text,Animated,Image} from "react-native";
+import { TextInput,View,ImageBackground,TouchableHighlight,Text,Animated,Image} from "react-native";
 import { Dimensions , StyleSheet} from "react-native";
 
 import SampleVODPage from './SampleVODPage';
 
 const windowSize = Dimensions.get('window');
+const localContentData = require('./dataContent.json');
+let fetchServerData = true;
+let serverIp = "192.168.0.7:";
+let serverPort = "9081";
 
 const TextInputBlock = (props) => {
     let [tiState,setTiState] = useState({borderColor:'black',shadowOpacity:0});
     const onFocus = () => {
-       setTiState({borderColor:'lightblue',shadowOpacity:1});
+       setTiState({borderColor:'#61dafb',shadowOpacity:1});
     }
     const onBlur = () => {
        setTiState({borderColor:'black',shadowOpacity:0});
     }
+    const onSubmitEditing = () => {
+       if(props.nextRef) {
+          props.nextRef.current.focus();
+       }
+    }
     return (
-       <View style={[styles.textinputView,{borderColor:tiState.borderColor,shadowOpacity:tiState.shadowOpacity}]}>
-          <TextInput style={styles.textinput} placeholder={props.placeholderText} placeholderTextColor="darkgrey"
+        <TextInput ref={props.currentRef} style={[styles.textinput,styles.textinputView,{borderColor:tiState.borderColor,shadowOpacity:tiState.shadowOpacity}]}
+             placeholder={props.placeholderText} placeholderTextColor="dimgrey"
              secureTextEntry={props.secured} defaultValue={props.defaultValue}
-             onFocus={onFocus} onBlur={onBlur} onChangeText={props.onChangeText}/>
-       </View>
-   );
+             onFocus={onFocus} onBlur={onBlur}
+             onChangeText={props.onChangeText} onSubmitEditing={onSubmitEditing}/>
+    );
 
 }
 
 const SampleLoginPage = () => {
 
     let [loginStatus, setLoginStatus] = useState(false);
-    let [requestStatus,setRequestStatus] = useState({text:"Load",viewColor:"darkcyan"});
+    let [requestStatus,setRequestStatus] = useState({text:"SIGN IN"});
     let [content,setContent] = useState([]);
     let [spinValue] = useState(new Animated.Value(0));
-    let [serverIp,setServerIp] = useState("http://192.168.0.105:9081");
+    let usrRef = useRef();
+    let pswdRef = useRef();
 
     const startFetchVODData = () => {
        var request = new XMLHttpRequest();
-       request.open('GET',serverIp+'/dataContent.json');
+       request.open('GET',serverIp+serverPort+'/dataContent.json');
        request.responseType = "json"
        request.timeout = 10
        request.onreadystatechange = (e) => {
           console.log("request state change:" + request.status);
           if(request.status == 200) {
             setContent(request.response);
-            setRequestStatus({text:"WE ARE READY TO GO !! ",viewColor:"green"})
             setTimeout(()=> {
                setLoginStatus(true);
             },2000);
           } else {
             console.error("request error:",request.status);
-            setRequestStatus({text:"Error !!",viewColor:"red"})
+            setRequestStatus({text:"Error"})
           }
        }
        request.onerror = (e) => {
           console.error("request error:",request.status);
-          setRequestStatus({text:"Error !!",viewColor:"red"})
+          setRequestStatus({text:"Error"})
        }
        request.ontimeout = (e) => {
           console.error("request timeout:",request.status);
-          setRequestStatus({text:"Error !!",viewColor:"red"})
+          setRequestStatus({text:"Error"})
        }
        console.log("request send");
        request.send();
     }
 
     const onPress = () => {
-       setRequestStatus({text:"Loading",viewColor:"royalblue"})
+       setRequestStatus({text:"Loading"})
        setTimeout(()=> {
-         startFetchVODData()
+         if(fetchServerData) {
+            startFetchVODData()
+         } else {
+            setContent(localContentData);
+            setTimeout(()=> {
+               setLoginStatus(true);
+            },2000);
+         }
        },3000);
        startRotation();
     }
@@ -98,28 +114,35 @@ const SampleLoginPage = () => {
     const loadingButton = () => {
        if( requestStatus.text == "Loading" ) {
           return (
-              <Animated.View style={[animatedStyle]}>
+              <Animated.View style={[animatedStyle,{marginTop:30}]}>
                      <Image source={require('./images/loadingIcon.png')} style={{width:125,height:125}} resizeMode='cover'/>
               </Animated.View>
           );
 
+       } else  if (requestStatus.text == "Error") {
+          return (
+            <>
+              <TouchableHighlight underlayColor='#61dafb' style={[styles.submitView]} onPress={onPress} activeOpacity={0.65}>
+                  <Text style={{margin:5,color:'dimgrey' , fontSize:windowSize.height/35 , fontWeight:'bold',textAlign:'center'}}>{"SIGN IN"}</Text>
+              </TouchableHighlight>
+              <Text style={{margin:15,color:'red' , fontSize:windowSize.height/45 ,textAlign:'center'}}>{"Sign in request failed.Please check your server connection."}</Text>
+            </>
+          );
        } else {
           return (
-              <TouchableOpacity style={[styles.submitView,{backgroundColor:requestStatus.viewColor,borderWidth:5}]} onPress={onPress} activeOpacity={0.85}>
-                  <Text style={{margin:5,color:'black' , fontSize:windowSize.height/35 , fontWeight:'bold',textAlign:'center'}}>{requestStatus.text}</Text>
-              </TouchableOpacity>
+              <TouchableHighlight underlayColor='#61dafb' style={[styles.submitView]} onPress={onPress} activeOpacity={0.75}>
+                  <Text style={{margin:5,color:'dimgrey' , fontSize:windowSize.height/40 , fontWeight:'bold',textAlign:'center'}}>{"SIGN IN"}</Text>
+              </TouchableHighlight>
           );
        }
     }
 
     const loginPage = () => {
       return (
-          <ImageBackground style={styles.backgroundimage} source={require('./images/bg.jpg')} resizeMode='cover'>
-             <Image style={{ margin:50,width: 200, height: 200 }} source={require('react-native/Libraries/NewAppScreen/components/logo.png')}/>
-             <TextInputBlock placeholderText={"Username"} secured={false} defaultValue={""} ></TextInputBlock>
-             <TextInputBlock placeholderText={"Password"} secured={true}  defaultValue={""} ></TextInputBlock>
-             <Text style={{fontSize:windowSize.height/35, color:'darkgrey', textDecorationLine:'underline', textDecorationColor:'darkgrey'}}>{"Server IP"}</Text>
-             <TextInputBlock placeholderText={"Server IP"} secured={false} defaultValue={serverIp} onChangeText={setServerIp}></TextInputBlock>
+          <ImageBackground style={styles.backgroundimage} source={require('./images/bg.jpg')} resizeMode='cover' onLayout={()=>{usrRef.current.focus()}}>
+             <Image style={{ marginTop:20,marginBottom:100,width: 200, height: 200 }} source={require('react-native/Libraries/NewAppScreen/components/logo.png')}/>
+             <TextInputBlock currentRef={usrRef} nextRef={pswdRef} placeholderText={"Username"} secured={false} defaultValue={""} ></TextInputBlock>
+             <TextInputBlock currentRef={pswdRef} placeholderText={"Password"} secured={true}  defaultValue={""} ></TextInputBlock>
              {loadingButton()}
           </ImageBackground>
       )
@@ -144,22 +167,27 @@ const styles = StyleSheet.create({
     },
     textinputView: {
        margin : 20,
-       width : '40%',
-       height : windowSize.height/20,
-       borderWidth : 5,
-       backgroundColor:'dimgrey',
+       width : '38%',
+       height : windowSize.height/15,
+       borderWidth : 3,
+       borderRadius : 12,
+       backgroundColor:'transparent',
        shadowColor : 'black',
        shadowRadius : 10,
        shadowOffset : {width:5, height:30},
     },
     textinput: {
-       color :'white',
+       color :'lightgrey',
        fontSize:windowSize.height/35,
     },
     submitView: {
+       marginTop : 30,
        alignItems : 'center',
-       padding : 20,
-       color :'white',
+       padding: 20,
+       width : '13%',
+       borderWidth: 3,
+       borderRadius : 80,
+       backgroundColor:'transparent',
     }
 });
 
