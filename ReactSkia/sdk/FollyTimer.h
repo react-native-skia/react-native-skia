@@ -40,7 +40,7 @@ class TimingCallback : public HHWheelTimer::Callback {
 class Timer {
  public:
   Timer(double duration,bool repeats,std::function<void()> cb,bool autostart=false);
-  ~Timer() { abort(); }
+  ~Timer();
   void start();
   void reschedule(double duration,bool repeats);
   void scheduleImmediate(std::function<void()> cb);

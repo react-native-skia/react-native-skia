@@ -28,6 +28,21 @@ Timer::Timer(double duration,
 
 }
 
+Timer::~Timer(){
+  timerCallback_.cb = nullptr;
+
+  /* wheelTimer cancelAll requires to be called from the same thread which scheduled it,so wait until cancel is done here*/
+  /* TODO : Check with latest folly version if this cancellation is required here */
+  if(timerCallback_.isScheduled()) {
+    timerThread_.getEventBase()->runInEventBaseThreadAndWait(
+      [this]() {
+         HHWheelTimer& wheelTimer = timerThread_.getEventBase()->timer();
+         wheelTimer.cancelAll();
+      }
+    );
+  }
+}
+
 void Timer::start() {
   RNS_LOG_DEBUG("["<< this << "] Schedule timer for duration:" << targetDuration_ << " ms");
 
