@@ -41,6 +41,7 @@ public:
 #if USE(RNS_SHELL_PARTIAL_UPDATES)
     bool onHasSwapBuffersWithDamage() override;
     bool onHasBufferCopy() override;
+    int32_t getBufferAge() override;
 #endif
 protected:
     sk_sp<const GrGLInterface> onInitializeContext() override;

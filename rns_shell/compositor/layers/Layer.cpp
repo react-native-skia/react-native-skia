@@ -14,11 +14,27 @@ namespace RnsShell {
 
 #if USE(RNS_SHELL_PARTIAL_UPDATES)
 static inline void addDamageRect(PaintContext& context, SkIRect dirtyAbsFrameRect) {
-    // TODO Walk through the dirtyRect vector and
-    // 1. If new dirty rect contains inside any pf existing dirtyRect then ignore
-    // 2. If new dirty rect entirely covers any of existing dirtyRect then remove them from vector and add the new one
+    std::vector<SkIRect>& damageRectList = context.damageRect;
+    bool checkIfAlreadyCovered = true;
 
-    context.damageRect.push_back(dirtyAbsFrameRect);
+    for (auto it = damageRectList.begin(); it != damageRectList.end(); it++) {
+        // Check 1 : If new dirty rect fully covers any of existing dirtyRect in the list then remove them from vector
+        SkIRect &dirtRect = *it;
+        if (dirtyAbsFrameRect != dirtRect && dirtyAbsFrameRect.contains(dirtRect)) {
+            damageRectList.erase(it--); // Need to decrement the iterator.
+            RNS_LOG_TRACE("Remove existing dirty rect [" << dirtRect.x() << dirtRect.y() << dirtRect.width() << dirtRect.height() << "] because new dirty rect [" <<
+              dirtyAbsFrameRect.x() << dirtyAbsFrameRect.y() << dirtyAbsFrameRect.width() << dirtyAbsFrameRect.height() << "] will cover it");
+            // If we entered here, it means that there cannot be an existing rect which already covers this new rect. So we can skip Check 2
+            checkIfAlreadyCovered = false;
+        }
+        // Check 2: If new dirty rect is inside any of existing dirtyRects then ignore and return
+        if(checkIfAlreadyCovered && dirtRect.contains(dirtyAbsFrameRect)) {
+            RNS_LOG_TRACE("Skip new dirtyrect [" << dirtyAbsFrameRect.x() << dirtyAbsFrameRect.y() << dirtyAbsFrameRect.width() << dirtyAbsFrameRect.height() << "] because existing dirty rect [" <<
+              dirtRect.x() << dirtRect.y() << dirtRect.width() << dirtRect.height() << "] already covers it");
+            return;
+        }
+    }
+    damageRectList.push_back(dirtyAbsFrameRect); // Add new unique dirty rect
 }
 #endif
 

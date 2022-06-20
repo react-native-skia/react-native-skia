@@ -61,7 +61,7 @@ private:
     SharedLayer rootLayer_;
     std::unique_ptr<WindowContext> windowContext_;
     sk_sp<SkSurface> backBuffer_;
-    uint64_t nativeWindowHandle_;
+    GLNativeWindowType nativeWindowHandle_;
 
 #if USE(RNS_SHELL_PARTIAL_UPDATES)
     bool supportPartialUpdate_;

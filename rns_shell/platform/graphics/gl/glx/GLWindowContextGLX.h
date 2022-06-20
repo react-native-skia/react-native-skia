@@ -31,6 +31,7 @@ public:
 #if USE(RNS_SHELL_PARTIAL_UPDATES)
     bool onHasSwapBuffersWithDamage() override { RNS_LOG_NOT_IMPL; return false; }
     bool onHasBufferCopy() override { RNS_LOG_NOT_IMPL; return false; };
+    int32_t getBufferAge() override { RNS_LOG_NOT_IMPL; return 0; }
 #endif
 protected:
     sk_sp<const GrGLInterface> onInitializeContext() override;

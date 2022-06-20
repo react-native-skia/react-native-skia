@@ -93,6 +93,11 @@ bool GLWindowContext::hasSwapBuffersWithDamage() {
 bool GLWindowContext::hasBufferCopy() {
     return this->onHasBufferCopy();
 }
+
+int32_t GLWindowContext::bufferAge() {
+    return this->getBufferAge();
+}
+
 #endif
 
 void GLWindowContext::setDisplayParams(const DisplayParams& params) {

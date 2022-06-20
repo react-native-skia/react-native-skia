@@ -29,6 +29,7 @@ class Window {
 public:
     static Window* createNativeWindow(void* platformData);
     static void createEventLoop(Application* app);
+    static Window* getMainWindow() { return mainWindow_; }
     static SkSize getMainWindowSize() {
         if(mainWindow_)
             return mainWindow_->getWindowSize();

@@ -28,6 +28,12 @@ static const char* gEGLAPIName = "OpenGL";
 static const EGLenum gEGLAPIVersion = EGL_OPENGL_API;
 #endif
 
+#if defined(EGL_KHR_partial_update) && EGL_KHR_partial_update
+static PFNEGLSETDAMAGEREGIONKHRPROC eglSetDamageRegion = nullptr;
+#else
+static void* eglSetDamageRegion = nullptr;
+#endif
+
 #if defined(EGL_EXT_swap_buffers_with_damage) && EGL_EXT_swap_buffers_with_damage
 static PFNEGLSWAPBUFFERSWITHDAMAGEEXTPROC eglSwapBuffersWithDamage = nullptr;
 #else
@@ -204,7 +210,12 @@ GLWindowContextEGL::GLWindowContextEGL(GLNativeWindowType window, EGLConfig conf
     sampleCount_ = std::max(sampleCount_, 1);
     this->initializeContext();
 
-    RNS_LOG_DEBUG("GLWindowContextEGL constructed with WH(" << width_ << " x " << height_ << "SampleCount & StencilBits : " << sampleCount_ << "," << stencilBits_);
+#if !defined(GOOGLE_STRIP_LOG) || (GOOGLE_STRIP_LOG <= INFO)
+    EGLint swapBehaviour = EGL_BUFFER_PRESERVED;
+    eglQuerySurface(platformDisplay_.eglDisplay(), glSurface_, EGL_SWAP_BEHAVIOR, &swapBehaviour);
+    RNS_LOG_DEBUG("GLWindowContextEGL constructed with WH(" << width_ << " x " << height_ << ") SampleCount & StencilBits : [" << sampleCount_ << "," << stencilBits_ <<
+                  "], SWAP_BEHAVIOR : " << ((swapBehaviour==EGL_BUFFER_PRESERVED)?"EGL_BUFFER_PRESERVED":"EGL_BUFFER_DESTROYED"));
+#endif
 }
 
 std::unique_ptr<GLWindowContextEGL> GLWindowContextEGL::createWindowContext(GLNativeWindowType window, PlatformDisplay& platformDisplay, const DisplayParams& params, EGLContext sharingContext) {
@@ -347,7 +358,6 @@ sk_sp<const GrGLInterface> GLWindowContextEGL::onInitializeContext() {
         glViewport(0, 0, width_, height_);
     }
 
-
 #if USE(RNS_SHELL_PARTIAL_UPDATES) &&  USE(RNS_SHELL_COPY_BUFFERS)
     eglInitializeOffscreenFrameBuffer();
 #endif
@@ -428,9 +438,12 @@ void GLWindowContextEGL::swapInterval() {
     if (isExtensionSupported(extensions, "EGL_EXT_buffer_age")) {
         RNS_LOG_INFO("EGL_EXT_buffer_age extenstion supported....");
 
+#if defined(EGL_KHR_partial_update) && EGL_KHR_partial_update
         if (isExtensionSupported(extensions, "EGL_KHR_partial_update")) {
             RNS_LOG_INFO("EGL_KHR_partial_update extenstion supported....");
+            eglSetDamageRegion = reinterpret_cast<PFNEGLSETDAMAGEREGIONKHRPROC>(eglGetProcAddress("eglSetDamageRegionKHR"));
         }
+#endif
 
 #if defined(EGL_EXT_swap_buffers_with_damage) && EGL_EXT_swap_buffers_with_damage
         if (isExtensionSupported(extensions, "EGL_EXT_swap_buffers_with_damage")) {
@@ -461,6 +474,13 @@ std::vector<EGLint> GLWindowContextEGL::rectsToInts(EGLDisplay display, EGLSurfa
         res.push_back(r.height());
     }
     return res;
+}
+
+int32_t GLWindowContextEGL::getBufferAge() {
+  EGLint bufferAge = 0;
+  eglQuerySurface(platformDisplay_.eglDisplay(), glSurface_, EGL_BUFFER_AGE_EXT, &bufferAge);
+  RNS_LOG_ERROR("Buffer Age of Current backBuffer of surface : " << bufferAge);
+  return bufferAge;
 }
 
 bool GLWindowContextEGL::onHasSwapBuffersWithDamage() {

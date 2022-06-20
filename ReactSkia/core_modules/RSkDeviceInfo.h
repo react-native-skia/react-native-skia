@@ -8,8 +8,9 @@
 #include "cxxreact/Instance.h"
 #include "ReactCommon/TurboModule.h"
 #include "core_modules/RSkEventEmitter.h"
-#include "rns_shell/common/Window.h"
 #include "sdk/NotificationCenter.h"
+
+#include "rns_shell/common/Window.h"
 
 namespace facebook {
 namespace react {
