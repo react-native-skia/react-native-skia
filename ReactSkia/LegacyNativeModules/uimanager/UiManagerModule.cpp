@@ -133,6 +133,7 @@ dynamic Uimanager::getConstantsForViewManager(std::string viewManagerName) {
       "disableIntervalMomentum", true)(
       "fadingEdgeLength", true)(
       "indicatorStyle", true)(
+      "scrollIndicatorInsets", true)(
       "keyboardDismissMode", true)(
       "maintainVisibleContentPosition", true)("maximumZoomScale", true)("minimumZoomScale", true)(
       "nestedScrollEnabled", true)(

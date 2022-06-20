@@ -14,130 +14,232 @@ const {
   Dimensions
 } = require('react-native');
 
-const NUM_ITEMS = 20;
-
 const windowSize = Dimensions.get('window');
+let topValue = 0;
+let leftValue = 0;
+let bottomValue = 0;
+let rightValue = 0;
 
 const SimpleViewApp = React.Node = () => {
-   let svRef = React.useRef();
-   let setScrollOffsetRef = React.useRef();
-   let setNumItemsRef = React.useRef();
-   let offset=0;
+  let scrollViewRef = React.useRef();
+  let offset=0;
 
-   let [isHorizontal,toggleScrollType] = React.useState(true);
-   let [isFocusableItems,toggleFocusableItems] = React.useState(true);
-   let [numItems,setNumOfItems] = React.useState(20);
-   let [scrollEventData,setScrollEventData] = React.useState("");
-   let [scrollContentSizeEventData,setScrollContentSizeEventData] = React.useState("");
+  let [tiColor,setTiColor] = React.useState("darkgrey");
+  let [scrollConfigs,setScrollConfigs] = React.useState(
+    {
+      "childItemType" : "View",
+      "childItemNum" : 20,
+      "_borderWidth" : 0,
+      "_frameWidth"  : 800,
+      "_frameHeight" : 500,
+    });
 
-   const makeItems: (nItems: number, styles: any) => Array<any> = (
-       nItems: number,
-       styles,
-   ): Array<any> => {
-       const items = [];
-       for (let i = 0; i < nItems; i++) {
-          if(isFocusableItems) {
-               items[i] = (
-                  <TouchableOpacity key={i} style={styles}>
-                     <Text>{i}</Text>
-                  </TouchableOpacity>
-               );
-           } else {
-               items[i] = (
-                  <View key={i} style={styles}>
-                     <Text>{i}</Text>
-                  </View>
-               );
-           }
-       }
-       return items;
-   };
+  let [scrollProps,setScrollProps] = React.useState({
+      "_horizontal" : true,
+      "_scrollEnabled" : true,
+      "_showsHorizontalScrollIndicator" : true,
+      "_showsVerticalScrollIndicator" : true,
+      "_persistentScrollbar" : false,
+      "_indicatorStyle" : 'default',
+      "_scrollIndicatorInsets" : {left:leftValue,top:topValue,right:rightValue,bottom:bottomValue},
+    });
 
-   const items = makeItems(numItems, styles.itemWrapper);
+  let [scrollEventData,setScrollEventData] = React.useState(
+    {
+      "_onScrollEvent" : "",
+      "_onContentSizeChange" : "",
+      "_onLayout" : "",
+    });
 
-   const scrollToEnd = () => {svRef.current.scrollToEnd({animated:false})}
-
-   const scrollTo = () => {
-      if(isHorizontal) {
-         svRef.current.scrollTo({x:offset,y:0,animated:false})
-      } else {
-         svRef.current.scrollTo({x:0,y:offset,animated:false})
+  const makeItems: (nItems: number, styles: any) => Array<any> = (
+      nItems: number,
+      styles,
+    ): Array<any> => {
+      const items = [];
+      for (let i = 0; i < nItems; i++) {
+        if(scrollConfigs["childItemType"] == "TouchableOpacity") {
+          items[i] = (
+            <TouchableOpacity key={i} style={styles}>
+              <Text>{i}</Text>
+            </TouchableOpacity>
+          );
+        } else if (scrollConfigs["childItemType"] == "TouchableHighlight") {
+          items[i] = (
+            <TouchableHighlight key={i} style={styles} onPress={()=>{}} underlayColor="darkcyan">
+              <Text>{i}</Text>
+            </TouchableHighlight>
+          );
+        } else {
+          items[i] = (
+            <View key={i} style={styles}>
+              <Text>{i}</Text>
+            </View>
+          );
+        }
       }
-   }
+      return items;
+  };
 
-   const setOffset = (e) => {
-      offset = parseInt(e.nativeEvent.text);
-      scrollTo();
-   }
+  const items = makeItems(scrollConfigs["childItemNum"], styles.itemWrapper);
 
-   const setNumItems = (e) => {
-      setNumOfItems(parseInt(e.nativeEvent.text))
-   }
+  const scrollTo = (e) => {
+    offset = parseInt(e.nativeEvent.text);
+    if(scrollProps["_horizontal"]) {
+      scrollViewRef.current.scrollTo({x:offset,y:0,animated:false})
+    } else {
+      scrollViewRef.current.scrollTo({x:0,y:offset,animated:false})
+    }
+  }
 
-   const onScrollEvent = (e) => {
-      console.log("ScrollEvent : " , e.nativeEvent);
-      setScrollEventData(JSON.stringify(e.nativeEvent));
-   }
+  const setScrollConfiguration = (configType,configValue) => {
+    let updatedConfig={};
+    if(configType == "addItem"){
+      updatedConfig = {"childItemNum":scrollConfigs["childItemNum"]+1};
+    } else if (configType == "removeItem") {
+      if(scrollConfigs["childItemNum"] <= 1) updatedConfig = {"childItemNum":0};
+      else updatedConfig = {"childItemNum":scrollConfigs["childItemNum"]-1};
+    } else if (configType == "itemType") {
+      if(scrollConfigs["childItemType"] == "View") updatedConfig={"childItemType":"TouchableHighlight"};
+      else if(scrollConfigs["childItemType"] == "TouchableHighlight") updatedConfig={"childItemType":"TouchableOpacity"};
+      else if(scrollConfigs["childItemType"] == "TouchableOpacity") updatedConfig={"childItemType":"View"};
+    } else if (configType == "borderWidth") {
+      if(scrollConfigs["_borderWidth"] == 10) updatedConfig={"_borderWidth" : 0};
+      else updatedConfig={"_borderWidth":scrollConfigs["_borderWidth"]+1}
+    }
+    else if (configType == "frameWidth") updatedConfig={"_frameWidth" : configValue};
+    else if (configType == "frameHeight") updatedConfig={"_frameHeight" : configValue};
 
-   const onScrollContentSizeChangeEvent = (width,height) => {
-      console.log("ScrollContentSizeChange : " + width + "-" + height);
-      setScrollContentSizeEventData("width:" + width + ",height:" + height);
-   }
+    setScrollConfigs(scrollConfigs => ({...scrollConfigs,...updatedConfig}));
+  }
 
-   const setScrollType = () => {
-       offset=0;
-       scrollTo();
-       toggleScrollType(!isHorizontal);
-   }
+  const setScrollProperties = (propType) => {
+    let updatedProp = {}
+    if(propType == "toggleHorizontal") updatedProp = {"_horizontal": !scrollProps["_horizontal"]}
+    else if (propType == "toggleScrollEnabled") updatedProp = {"_scrollEnabled": !scrollProps["_scrollEnabled"]}
+    else if (propType == "toggleVBar") updatedProp = {"_showsVerticalScrollIndicator": !scrollProps["_showsVerticalScrollIndicator"]}
+    else if (propType == "toggleHBar") updatedProp = {"_showsHorizontalScrollIndicator": !scrollProps["_showsHorizontalScrollIndicator"]}
+    else if (propType == "toggleBarColor") {
+      if(scrollProps["_indicatorStyle"] == 'default') updatedProp = {"_indicatorStyle":'black'}
+      else if (scrollProps["_indicatorStyle"] == 'black') updatedProp = {"_indicatorStyle" : 'white'}
+      else updatedProp = {"_indicatorStyle" : 'default'}
+    } else if (propType == "setIndicatorInsets") {
+      updatedProp = {"_scrollIndicatorInsets":{top:topValue,left:leftValue,bottom:bottomValue,right:rightValue}}
+      setTiColor("darkgrey");
+    }
+    setScrollProps(scrollProps => ({...scrollProps,...updatedProp}));
+  }
 
-   const mainView = () => {
-      return(
-       <View style={{flex:1,flexDirection:'row',justifyContent:'center',alignItems:'center',width:windowSize.width,height:windowSize.height,backgroundColor:'darkslategray'}}>
-         <View style={styles.mainView}>
+  const setScrollEventDetails = (eventType,eventInfo) => {
+    let updatedEvent = {}
+    if(eventType == "onScrollEvent") updatedEvent = {"_onScrollEvent":eventInfo}
+    else if (eventType == "onContentSizeChange") updatedEvent = {"_onContentSizeChange":eventInfo}
 
-           <TouchableHighlight underlayColor='darkseagreen' style={styles.controlButton} onPress={setScrollType} >
-             <Text style={{margin:5,fontSize:20,color:'darkgoldenrod'}}>{'HorizontalScroll:' + isHorizontal}</Text>
-           </TouchableHighlight>
+    setScrollEventData(scrollEventData => ({...scrollEventData,...updatedEvent}));
+  }
 
-           <View style={{flexDirection:'row'}}>
-             <TouchableHighlight underlayColor='darkseagreen' style={styles.controlButton} onPress={()=>{setNumItemsRef.current.focus()}} >
-               <Text style={{margin:5,fontSize:20,color:'darkgoldenrod'}}>{'No of Items'}</Text>
-             </TouchableHighlight>
-             <TextInput ref={setNumItemsRef} defaultValue={'20'} onSubmitEditing={setNumItems} style={[styles.controlButton,{color:'darkgrey'}]}/>
-           </View>
+  const mainView = () => {
+    return(
+      <View style={{flex:1,width:windowSize.width,height:windowSize.height,backgroundColor:'darkslategray'}}>
+        <ScrollView ref={scrollViewRef}
+              style={[styles.scrollView,{borderWidth:scrollConfigs["_borderWidth"],width:scrollConfigs["_frameWidth"],height:scrollConfigs["_frameHeight"]}]}
+              scrollEnabled={scrollProps["_scrollEnabled"]}
+              horizontal={scrollProps["_horizontal"]}
+              showsHorizontalScrollIndicator={scrollProps["_showsHorizontalScrollIndicator"]}
+              showsVerticalScrollIndicator={scrollProps["_showsVerticalScrollIndicator"]}
+              persistentScrollbar={scrollProps["_persistentScrollbar"]}
+              indicatorStyle={scrollProps["_indicatorStyle"]}
+              scrollIndicatorInsets={scrollProps["_scrollIndicatorInsets"]}
+              onScroll={(e) => setScrollEventDetails("onScrollEvent",JSON.stringify(e.nativeEvent))}
+              onContentSizeChange={(width,height) => setScrollEventDetails("onContentSizeChange","width:"+width+",height:"+height)} >
 
-           <TouchableHighlight underlayColor='darkseagreen' style={styles.controlButton} onPress={() => {toggleFocusableItems(!isFocusableItems)}} >
-             <Text style={{margin:5,fontSize:20,color:'darkgoldenrod'}}>{'FocusableItems:' + isFocusableItems}</Text>
-           </TouchableHighlight>
+            {items}
+        </ScrollView>
 
-           <View style={{flexDirection:'row'}}>
-              <TouchableHighlight underlayColor='darkseagreen' style={styles.controlButton} onPress={() => {setScrollOffsetRef.current.focus()}} >
-                 <Text style={{margin:5,fontSize:20,color:'darkgoldenrod'}}>{'ScrollTo'}</Text>
+        <View style={{flexDirection:'column'}}>
+          <Text style={[styles.controlButtonText,{textDecorationLine:'underline',fontWeight:'bold',color:'darkorange',marginTop:30}]}>{'CONFIGURATIONS'}</Text>
+
+          <View style={{flexDirection:'row',flexWrap:'wrap'}}>
+            <View style={[styles.controlButton,{width:50,height:50}]}>
+              <Text style={styles.controlButtonText}>{scrollConfigs["childItemNum"]}</Text>
+            </View>
+            <View styles={{flexDirection:'column'}}>
+              <TouchableHighlight underlayColor='darkseagreen' style={[styles.controlButton,{width:150,height:30}]} onPress={() => setScrollConfiguration("addItem")}>
+                <Text style={styles.controlButtonText}>{'Add Item'}</Text>
               </TouchableHighlight>
-              <TextInput ref={setScrollOffsetRef} defaultValue={'0'} onSubmitEditing={setOffset} style={[styles.controlButton,{color:'darkgrey'}]}/>
-           </View>
+              <TouchableHighlight underlayColor='darkseagreen' style={[styles.controlButton,{width:150,height:30}]} onPress={() => setScrollConfiguration("removeItem")}>
+                <Text style={styles.controlButtonText}>{'Remove Item'}</Text>
+              </TouchableHighlight>
+            </View>
 
-           <TouchableHighlight underlayColor='darkseagreen' style={styles.controlButton} onPress={scrollToEnd} >
-             <Text style={{margin:5,fontSize:20,color:'darkgoldenrod'}}>{'ScrollToEnd'}</Text>
-           </TouchableHighlight>
+            <TouchableHighlight underlayColor='darkseagreen' style={styles.controlButton} onPress={() => setScrollConfiguration("itemType")} >
+              <Text style={styles.controlButtonText}>{'ItemType:' + scrollConfigs["childItemType"]}</Text>
+            </TouchableHighlight>
+            <TouchableHighlight underlayColor='darkseagreen' style={styles.controlButton} onPress={() => setScrollConfiguration("borderWidth")} >
+              <Text style={styles.controlButtonText}>{'BorderWidth : ' + scrollConfigs["_borderWidth"]}</Text>
+            </TouchableHighlight>
+            <View style={styles.inputControlButton}>
+              <Text style={styles.controlButtonText}>{'Frame Width'}</Text>
+              <TextInput defaultValue={scrollConfigs["_frameWidth"].toString()} style={{color:'darkgrey',width:100,height:30,margin:5}} onSubmitEditing={(e) => setScrollConfiguration("frameWidth",parseInt(e.nativeEvent.text))}/>
+            </View>
+            <View style={styles.inputControlButton}>
+              <Text style={styles.controlButtonText}>{'Frame Height'}</Text>
+              <TextInput defaultValue={scrollConfigs["_frameHeight"].toString()} style={{color:'darkgrey',width:100,height:30,margin:5}} onSubmitEditing={(e) => setScrollConfiguration("frameHeight",parseInt(e.nativeEvent.text))}/>
+            </View>
+          </View>
+
+          <Text style={[styles.controlButtonText,{textDecorationLine:'underline',fontWeight:'bold',color:'darkorange',marginTop:10}]}>{'PROPERTIES'}</Text>
+          <View style={{flexDirection:'row',flexWrap:'wrap'}}>
+            <TouchableHighlight underlayColor='darkseagreen' style={styles.controlButton} onPress={() => setScrollProperties("toggleScrollEnabled")} >
+              <Text style={styles.controlButtonText}>{'scrollEnabled : ' + scrollProps["_scrollEnabled"]}</Text>
+            </TouchableHighlight>
+            <TouchableHighlight underlayColor='darkseagreen' style={styles.controlButton} onPress={() => setScrollProperties("toggleHorizontal")} >
+              <Text style={styles.controlButtonText}>{'horizontal : ' + scrollProps["_horizontal"]}</Text>
+            </TouchableHighlight>
+            <TouchableHighlight underlayColor='darkseagreen' style={styles.controlButton} onPress={() => setScrollProperties("toggleVBar")} >
+              <Text style={styles.controlButtonText}>{'shows VBar : ' + scrollProps["_showsVerticalScrollIndicator"]}</Text>
+            </TouchableHighlight>
+            <TouchableHighlight underlayColor='darkseagreen' style={styles.controlButton} onPress={() => setScrollProperties("toggleHBar")} >
+              <Text style={styles.controlButtonText}>{'shows HBar : ' + scrollProps["_showsHorizontalScrollIndicator"]}</Text>
+            </TouchableHighlight>
+            <TouchableHighlight underlayColor='darkseagreen' style={styles.controlButton} onPress={() => setScrollProperties("toggleBarColor")} >
+              <Text style={styles.controlButtonText}>{'indicatorstyle : ' + scrollProps["_indicatorStyle"]}</Text>
+            </TouchableHighlight>
+            <View style={styles.inputControlButton}>
+              <TouchableHighlight underlayColor='darkseagreen' style={[styles.controlButton,{borderWidth:0,height:30}]} onPress={() => setScrollProperties("setIndicatorInsets")} >
+                <Text style={styles.controlButtonText}>{'IndicatorInsets [LTRB]'}</Text>
+              </TouchableHighlight>
+              <TextInput defaultValue={leftValue.toString()} onEndEditing={(e) => {leftValue=parseInt(e.nativeEvent.text);setTiColor("white")}} style={{color:tiColor,width:75,height:30,margin:5}}/>
+              <TextInput defaultValue={topValue.toString()} onEndEditing={(e) => {topValue=parseInt(e.nativeEvent.text);setTiColor("white")}} style={{color:tiColor,width:75,height:30,margin:5}}/>
+              <TextInput defaultValue={rightValue.toString()} onEndEditing={(e) => {rightValue=parseInt(e.nativeEvent.text);setTiColor("white")}} style={{color:tiColor,width:75,height:30,margin:5}}/>
+              <TextInput defaultValue={bottomValue.toString()} onEndEditing={(e) => {bottomValue=parseInt(e.nativeEvent.text);setTiColor("white")}} style={{color:tiColor,width:75,height:30,margin:5}}/>
+            </View>
+          </View>
+
+          <Text style={[styles.controlButtonText,{textDecorationLine:'underline',fontWeight:'bold',color:'darkorange',marginTop:10}]}>{'METHODS'}</Text>
+          <View style={{flexDirection:'row',flexWrap:'wrap'}}>
+            <View style={styles.inputControlButton}>
+              <Text style={styles.controlButtonText}>{'ScrollTo'}</Text>
+              <TextInput defaultValue={'0'} onSubmitEditing={scrollTo} style={{color:'darkgrey',width:100,height:30,margin:5}}/>
+            </View>
+            <TouchableHighlight underlayColor='darkseagreen' style={styles.controlButton} onPress={() =>{scrollViewRef.current.scrollToEnd({animated:false})}} >
+              <Text style={styles.controlButtonText}>{'ScrollToEnd'}</Text>
+            </TouchableHighlight>
+            <TouchableHighlight underlayColor='darkseagreen' style={styles.controlButton} onPress={() =>{scrollViewRef.current.flashScrollIndicators()}} >
+              <Text style={styles.controlButtonText}>{'flashScrollIndicators'}</Text>
+            </TouchableHighlight>
+          </View>
+
+          <Text style={[styles.controlButtonText,{textDecorationLine:'underline',fontWeight:'bold',color:'darkorange',marginTop:10}]}>{'EVENTS'}</Text>
+          <View style={{flexDirection:'column',flexWrap:'wrap'}}>
+            <Text style={{margin:5,fontSize:16,textDecorationLine:'underline',color:'darkgoldenrod'}}>{'onScroll:'}</Text>
+            <Text style={{margin:5,fontSize:16,color:'darkgrey'}}>{scrollEventData["_onScrollEvent"]}</Text>
+            <Text style={{margin:5,fontSize:16,textDecorationLine:'underline',color:'darkgoldenrod'}}>{'onScrollContentSizeChange:'}</Text>
+            <Text style={{margin:5,fontSize:16,color:'darkgrey'}}>{scrollEventData["_onContentSizeChange"]}</Text>
+          </View>
         </View>
 
-        <View style={styles.mainView}>
-           <ScrollView ref={svRef} style={styles.scrollView} contentContainerStyle={{margin:5,backgroundColor:'darkolivegreen'}} horizontal={isHorizontal} onScroll={onScrollEvent} onContentSizeChange={onScrollContentSizeChangeEvent}>
-             {items}
-           </ScrollView>
-
-           <View style={{borderWidth:3,borderColor:'black',height:'40%',width:'80%'}}>
-              <Text style={{marginTop:5,textAlign:'center',fontWeight:'bold',fontSize:20,color:'darkgoldenrod'}}>{'EVENTS'}</Text>
-              <Text style={{marginTop:5,fontSize:20,textDecorationLine:'underline',color:'darkgoldenrod'}}>{'onScroll:'}</Text>
-              <Text style={{margin:5,fontSize:16,color:'darkgrey'}}>{scrollEventData}</Text>
-              <Text style={{marginTop:15,fontSize:20,textDecorationLine:'underline',color:'darkgoldenrod'}}>{'onScrollContentSizeChange:'}</Text>
-              <Text style={{margin:5,fontSize:16,color:'darkgrey'}}>{scrollContentSizeEventData}</Text>
-           </View>
-         </View>
-
       </View>
-     )
+    )
   }
 
   return (
@@ -148,10 +250,7 @@ const SimpleViewApp = React.Node = () => {
 const styles = StyleSheet.create({
   scrollView: {
     margin: 10,
-    height:'40%',
-    width:'80%',
-    backgroundColor:'darksgrey',
-    borderWidth:3,
+    backgroundColor:'darkgrey',
     borderColor:'black'
   },
   itemWrapper: {
@@ -166,20 +265,27 @@ const styles = StyleSheet.create({
     height:300,
   },
   controlButton: {
-    margin:10,
+    margin:5,
     width:250,
     height:50,
-    borderWidth:3,
+    borderWidth:2,
     borderRadius:12,
     borderColor: 'black',
   },
-  mainView: {
-    flexDirection:'column',
-    alignItems:'center',
-    justifyContent:'center',
-    width:'50%',
-    height:'100%',
-  }
+  controlButtonText: {
+    fontSize:16,
+    color:'darkgoldenrod',
+    //textAlign:'center',
+    padding:10,
+  },
+  inputControlButton: {
+    margin:5,
+    height:50,
+    borderWidth:2,
+    borderRadius:12,
+    borderColor: 'black',
+    flexDirection:'row'
+  },
 });
 
 export default SimpleViewApp;

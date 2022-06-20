@@ -17,6 +17,9 @@ config("ReactSkia_config") {
   if( react_native_platform == "tvos") {
      defines += ["TARGET_OS_TV=1"]
   }
+
+  # Enable scroll indicator support
+  defines += ["ENABLE_FEATURE_SCROLL_INDICATOR"]
 }
 
 config("textlayoutmanager_config") {

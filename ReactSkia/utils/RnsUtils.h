@@ -11,6 +11,7 @@
 
 #define PLATFORM(RNS_FEATURE) (defined RNS_PLATFORM_##RNS_FEATURE && RNS_PLATFORM_##RNS_FEATURE)
 #define USE(RNS_FEATURE) (defined USE_##RNS_FEATURE && USE_##RNS_FEATURE)
+#define ENABLE(RNS_FEATURE) (defined ENABLE_##RNS_FEATURE && ENABLE_##RNS_FEATURE)
 
 #define RNS_EXPORT __attribute__((visibility("default")))
 #define RNS_UNUSED(val) (void)val;

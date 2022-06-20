@@ -1,8 +1,8 @@
 /*
-* Copyright (C) 1994-2021 OpenTV, Inc. and Nagravision S.A.
+* Copyright (C) 1994-2022 OpenTV, Inc. and Nagravision S.A.
 *
-* Use of this source code is governed by a BSD-style license that can be
-* found in the LICENSE file.
+* This source code is licensed under the MIT license found in the
+* LICENSE file in the root directory of this source tree.
 */
 
 #pragma once
@@ -17,12 +17,50 @@ using SharedScrollLayer = std::shared_ptr<ScrollLayer>;
 
 class ScrollLayer : public Layer {
 public:
+
+#if ENABLE(FEATURE_SCROLL_INDICATOR)
+    class ScrollBar {
+      public:
+        enum ScrollBarPosition {
+            ScrollBarPositionLeft,
+            ScrollBarPositionRight,
+            ScrollBarPositionTop,
+            ScrollBarPositionBottom
+        };
+
+        ScrollBar();
+        void showScrollBar(bool show);
+        void setScrollBarOffset(SkPoint scrollPos);
+        void setScrollBarColor(SkColor color);
+        void setScrollBarPosition(ScrollBarPosition position);
+        void setScrollBarInsets(SkIRect frameInsets);
+        void updateScrollLayerLayout(SkISize scrollContentSize, SkIRect scrollFrame);
+
+        SkIRect getScrollBarAbsFrame(SkIRect scrollAbsFrame);
+        void paint(SkCanvas *canvas);
+
+      private:
+        LayerInvalidateMask mask_{LayerInvalidateNone}; // flag to display/remove bar
+        ScrollBarPosition barPosition_{ScrollBarPositionRight};
+        SkPaint barColor_;
+        SkIRect barFrame_;
+        SkIRect barFrameInsets_;
+        SkPoint barOffsetTranslate_{0,0}; //absolute translate value ie., parent abs matrix + bar offset translate
+        SkPoint barOffsetMultiplier_{1,1};//multiplier to derive offset of bar in the frame
+        //float opacity_{1.0}; // to achieve fade-out animation
+
+        SkISize scrollContentSize_;
+        SkIRect scrollFrame_;
+        SkPoint scrollPos_{0,0};
+
+        void calculateBarLayoutMetrics();
+        void updateBarOffset();
+    };
+#endif //ENABLE_FEATURE_SCROLL_INDICATOR
+
     static SharedScrollLayer Create(Client& layerClient);
     ScrollLayer(Client& layerClient);
     virtual ~ScrollLayer() {};
-
-    int scrollOffsetX{0};   // Offset to scroll in x direction
-    int scrollOffsetY{0};   // Offset to scroll in y direction
 
     SkPicture* shadowPicture() const { return shadowPicture_.get(); }
     SkPicture* borderPicture() const { return borderPicture_.get(); }
@@ -37,9 +75,18 @@ public:
     bool setContentSize(SkISize contentSize) ;
     SkISize getContentSize() { return contentSize_;};
 
+    void setScrollPosition(SkPoint scrollPos) ;
+    SkPoint getScrollPosition() { return SkPoint::Make(scrollOffsetX_,scrollOffsetY_);};
+
+#if ENABLE(FEATURE_SCROLL_INDICATOR)
+    ScrollBar& getScrollBar() { return scrollbar_;}
+#endif
+
 private:
     void bitmapConfigure();
 
+    int scrollOffsetX_{0};   // Offset to scroll in x direction
+    int scrollOffsetY_{0};   // Offset to scroll in y direction
     SkISize contentSize_{0};  // total size of all contents
     bool forceBitmapReset_{true}; // Flag to reset bitmap
 
@@ -50,6 +97,10 @@ private:
 
     sk_sp<SkPicture> shadowPicture_;
     sk_sp<SkPicture> borderPicture_;
+
+#if ENABLE(FEATURE_SCROLL_INDICATOR)
+    ScrollBar scrollbar_;   // scroll indicator bar
+#endif
 
     typedef Layer INHERITED;
 };

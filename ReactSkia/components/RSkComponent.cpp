@@ -197,6 +197,16 @@ void RSkComponent::updateComponentData(const ShadowView &newShadowView,const uin
 
    RnsShell::LayerInvalidateMask invalidateMask=RnsShell::LayerInvalidateNone;
 
+   if(updateMask & ComponentUpdateMaskLayoutMetrics) {
+      RNS_LOG_DEBUG("\tUpdate Layout");
+      component_.layoutMetrics = newShadowView.layoutMetrics;
+      invalidateMask =static_cast<RnsShell::LayerInvalidateMask>(invalidateMask | RnsShell::LayerInvalidateAll);
+
+      Rect frame = component_.layoutMetrics.frame;
+      SkIRect frameIRect = SkIRect::MakeXYWH(frame.origin.x, frame.origin.y, frame.size.width, frame.size.height);
+      if(layer() && layer().get())
+        layer_->setFrame(frameIRect);
+   }
    if(updateMask & ComponentUpdateMaskProps) {
       RNS_LOG_DEBUG("\tUpdate Property");
       invalidateMask = static_cast<RnsShell::LayerInvalidateMask>(invalidateMask | updateProps(newShadowView,forceUpdate));
@@ -215,16 +225,6 @@ void RSkComponent::updateComponentData(const ShadowView &newShadowView,const uin
    if(updateMask & ComponentUpdateMaskEventEmitter){
       RNS_LOG_DEBUG("\tUpdate Emitter");
       component_.eventEmitter = newShadowView.eventEmitter;
-   }
-   if(updateMask & ComponentUpdateMaskLayoutMetrics) {
-      RNS_LOG_DEBUG("\tUpdate Layout");
-      component_.layoutMetrics = newShadowView.layoutMetrics;
-      invalidateMask =static_cast<RnsShell::LayerInvalidateMask>(invalidateMask | RnsShell::LayerInvalidateAll);
-
-      Rect frame = component_.layoutMetrics.frame;
-      SkIRect frameIRect = SkIRect::MakeXYWH(frame.origin.x, frame.origin.y, frame.size.width, frame.size.height);
-      if(layer() && layer().get())
-        layer_->setFrame(frameIRect);
    }
 
    if(layer_ && layer_.get()) {

@@ -1,9 +1,9 @@
 /*
- * Copyright (C) 1994-2021 OpenTV, Inc. and Nagravision S.A.
- *
- * Use of this source code is governed by a BSD-style license that can be
- * found in the LICENSE file.
- */
+* Copyright (C) 1994-2022 OpenTV, Inc. and Nagravision S.A.
+*
+* This source code is licensed under the MIT license found in the
+* LICENSE file in the root directory of this source tree.
+*/
 
 #pragma once
 
@@ -11,13 +11,16 @@
 
 #include "ReactSkia/components/RSkComponent.h"
 #include "ReactSkia/RSkSurfaceWindow.h"
+#include "ReactSkia/sdk/FollyTimer.h"
 
+using namespace rns::sdk;
 namespace facebook {
 namespace react {
 
 #define SCROLL_LAYER_HANDLE static_cast<RnsShell::ScrollLayer*>(layer().get())
 #define SCROLL_LAYER(x) SCROLL_LAYER_HANDLE->x
 #define SCROLLVIEW_DEFAULT_ZOOMSCALE 1
+#define SCROLLBAR_FADEOUT_TIME 1500
 
 enum ScrollDirectionType {
    ScrollDirectionForward = 1,
@@ -27,6 +30,7 @@ enum ScrollDirectionType {
 class RSkComponentScrollView final : public RSkComponent {
  public:
   RSkComponentScrollView(const ShadowView &shadowView);
+  ~RSkComponentScrollView();
 
   //RSkComponent override functions
   RnsShell::LayerInvalidateMask updateComponentProps(
@@ -58,7 +62,19 @@ class RSkComponentScrollView final : public RSkComponent {
 
  private:
   bool scrollEnabled_{true};
+  bool isHorizontalScroll_{false};
   std::vector<int> snapToOffsets_;
+
+#if ENABLE(FEATURE_SCROLL_INDICATOR)
+  bool showHorizontalScrollIndicator_{false};
+  bool showVerticalScrollIndicator_{false};
+  bool persistentScrollIndicator_{false};
+
+  bool drawScrollIndicator_{false};
+  Timer* scrollbarTimer_{nullptr};
+
+  void fadeOutScrollBar();
+#endif //ENABLE_FEATURE_SCROLL_INDICATOR
 
   void calculateNextScrollOffset(
     ScrollDirectionType scrollDirection,
@@ -71,7 +87,6 @@ class RSkComponentScrollView final : public RSkComponent {
   ScrollStatus handleScroll(rnsKey direction,SkIRect candidateFrame);
   ScrollStatus handleScroll(SkPoint scrollPos);
 
-  bool isHorizontalScroll();
   void dispatchOnScrollEvent(SkPoint scrollPos);
 };
 

@@ -1,9 +1,9 @@
 /*
- * Copyright (C) 1994-2021 OpenTV, Inc. and Nagravision S.A.
- *
- * Use of this source code is governed by a BSD-style license that can be
- * found in the LICENSE file.
- */
+* Copyright (C) 1994-2022 OpenTV, Inc. and Nagravision S.A.
+*
+* This source code is licensed under the MIT license found in the
+* LICENSE file in the root directory of this source tree.
+*/
 
 #include "include/core/SkPaint.h"
 #include "include/core/SkPictureRecorder.h"
@@ -21,22 +21,92 @@ RSkComponentScrollView::RSkComponentScrollView(const ShadowView &shadowView)
     : RSkComponent(shadowView) {
 }
 
+RSkComponentScrollView::~RSkComponentScrollView() {
+#if ENABLE(FEATURE_SCROLL_INDICATOR)
+  if(scrollbarTimer_ != nullptr) {
+    delete scrollbarTimer_;
+    scrollbarTimer_ = nullptr;
+  }
+#endif //ENABLE_FEATURE_SCROLL_INDICATOR
+}
+
 void RSkComponentScrollView::OnPaint(SkCanvas *canvas) {}
+
+#if ENABLE(FEATURE_SCROLL_INDICATOR)
+void RSkComponentScrollView::fadeOutScrollBar() {
+  //TODO Hiding the scroll indicator to be achieved
+  // using fade-out animation : when native animation support is added
+  // in RAF notification instead of handleScroll call : when rns-shell add support for RAF
+
+  auto hideScrollBar = [&]() {
+     RnsShell::ScrollLayer* scrollLayer= SCROLL_LAYER_HANDLE;
+     scrollLayer->client().notifyFlushBegin();
+     scrollLayer->getScrollBar().showScrollBar(false);
+     scrollLayer->client().notifyFlushRequired();
+  };
+
+  if(scrollbarTimer_ == nullptr)
+    scrollbarTimer_ = new Timer(SCROLLBAR_FADEOUT_TIME,false,hideScrollBar,true);
+  else
+    scrollbarTimer_->reschedule(SCROLLBAR_FADEOUT_TIME,false);
+}
+#endif //ENABLE_FEATURE_SCROLL_INDICATOR
 
 RnsShell::LayerInvalidateMask RSkComponentScrollView::updateComponentProps(
     const ShadowView &newShadowView,
-    bool forceUpadate) {
+    bool forceUpdate) {
 
-  auto const &scrollViewProps = *std::static_pointer_cast<ScrollViewProps const>(newShadowView.props);
-  scrollEnabled_ = scrollViewProps.scrollEnabled;
+  auto const &newScrollViewProps = *std::static_pointer_cast<ScrollViewProps const>(newShadowView.props);
+  auto const &oldScrollViewProps = *std::static_pointer_cast<ScrollViewProps const>(getComponentData().props);
+  RnsShell::LayerInvalidateMask updateMask=RnsShell::LayerInvalidateNone;
+
+  //Update scroll view props
+  scrollEnabled_ = newScrollViewProps.scrollEnabled;
 
   snapToOffsets_.clear();
-  for(auto &offset : scrollViewProps.snapToOffsets) {
+  for(auto &offset : newScrollViewProps.snapToOffsets) {
     snapToOffsets_.push_back(static_cast<int>(offset));
   }
   sort(snapToOffsets_.begin(),snapToOffsets_.end());
 
-  return RnsShell::LayerInvalidateNone;
+#if ENABLE(FEATURE_SCROLL_INDICATOR)
+  RnsShell::ScrollLayer* scrollLayer= SCROLL_LAYER_HANDLE;
+
+  //Update scroll indicator props
+  //Note : we do not set the scroll layer mask for the indicator
+  RnsShell::ScrollLayer::ScrollBar &scrollbar = scrollLayer->getScrollBar();
+  if(forceUpdate || (oldScrollViewProps.indicatorStyle != newScrollViewProps.indicatorStyle)) {
+    SkColor scrollIndicatorColor = SK_ColorBLACK;
+    if(newScrollViewProps.indicatorStyle == ScrollViewIndicatorStyle::White) scrollIndicatorColor = SK_ColorWHITE;
+    scrollbar.setScrollBarColor(scrollIndicatorColor);
+  }
+
+  if(forceUpdate || (oldScrollViewProps.scrollIndicatorInsets != newScrollViewProps.scrollIndicatorInsets)) {
+    EdgeInsets indicatorInsets = newScrollViewProps.scrollIndicatorInsets;
+    RNS_LOG_DEBUG("IndicatorInsets:" << indicatorInsets.left << "," << indicatorInsets.top << "," <<  indicatorInsets.right << "," << indicatorInsets.bottom);
+    scrollbar.setScrollBarInsets(SkIRect::MakeLTRB(
+                                    SkScalarRoundToInt(indicatorInsets.left),
+                                    SkScalarRoundToInt(indicatorInsets.top),
+                                    SkScalarRoundToInt(indicatorInsets.right),
+                                    SkScalarRoundToInt(indicatorInsets.bottom)));
+  }
+
+  showHorizontalScrollIndicator_ = newScrollViewProps.showsHorizontalScrollIndicator;
+  showVerticalScrollIndicator_ = newScrollViewProps.showsVerticalScrollIndicator;
+
+  drawScrollIndicator_ = false;
+
+  //TODO persistentScrollIndicator prop not yet supported in ReactCommon,so we comment the reading of this prop here
+#if 0
+  persistentScrollIndicator_ = newScrollViewProps.persistentScrollIndicator;
+#endif
+
+  if(isHorizontalScroll_ && showHorizontalScrollIndicator_) drawScrollIndicator_ = true;
+  if(!isHorizontalScroll_ && showVerticalScrollIndicator_) drawScrollIndicator_ = true;
+  RNS_LOG_DEBUG("Show indicator :" << drawScrollIndicator_ << " Vertical:" << showVerticalScrollIndicator_ << " Horizontal:" << showHorizontalScrollIndicator_);
+#endif //ENABLE_FEATURE_SCROLL_INDICATOR
+
+  return updateMask;
 
 }
 
@@ -45,25 +115,44 @@ RnsShell::LayerInvalidateMask RSkComponentScrollView::updateComponentState(
     bool forceUpdate) {
 
   auto state = std::static_pointer_cast<ScrollViewShadowNode::ConcreteStateT const>(newShadowView.state);
-
   SkISize contentSize = RSkSkSizeFromSize(state->getData().getContentSize()).toRound();
   RnsShell::ScrollLayer* scrollLayer= SCROLL_LAYER_HANDLE;
-  /* If contentSize has changed:*/
-  /*  - if content size is less than scrollOffset,set to last frame region*/
-  /*  - if content size is less than frame,set scrolloffset to start position*/
+
+  //ContentSize has changed?
   if(scrollLayer->setContentSize(contentSize)) {
     SkIRect frame = scrollLayer->getFrame();
-    if(isHorizontalScroll()) {
-      if(contentSize.width() <= frame.width()) {
-         scrollLayer->scrollOffsetX = 0;
-      } else if(scrollLayer->scrollOffsetX >= (contentSize.width()-frame.width())){
-         scrollLayer->scrollOffsetX = contentSize.width()-frame.width();
-      }
-    } else if (contentSize.height() >= frame.height()) {
-      scrollLayer->scrollOffsetY = 0;
-    } else if (scrollLayer->scrollOffsetY >= (contentSize.height()-frame.height())) {
-      scrollLayer->scrollOffsetY = contentSize.height()-frame.height();
+
+    //Check scroll view type has changed? update dependent values accordingly
+    bool isHorizontalScroll = contentSize.width() > frame.width();
+    if(isHorizontalScroll != isHorizontalScroll_) {
+      isHorizontalScroll_ = isHorizontalScroll;
+
+#if ENABLE(FEATURE_SCROLL_INDICATOR)
+      drawScrollIndicator_ = false;
+      if(isHorizontalScroll_ && showHorizontalScrollIndicator_) drawScrollIndicator_ = true;
+      if(!isHorizontalScroll_ && showVerticalScrollIndicator_) drawScrollIndicator_ = true;
+      scrollLayer->getScrollBar().setScrollBarPosition(isHorizontalScroll_?
+                                                        RnsShell::ScrollLayer::ScrollBar::ScrollBarPositionBottom :
+                                                        RnsShell::ScrollLayer::ScrollBar::ScrollBarPositionRight);
+#endif //ENABLE_FEATURE_SCROLL_INDICATOR
+
     }
+
+    //Check current scrollOffset requires change ?
+    //  if content size is less than scrollOffset,set to last frame region
+    //  if content size is less than frame,set scrolloffset to start position
+    SkPoint scrollPos{0,0};
+    if(isHorizontalScroll_) {
+      if(scrollPos.fX >= (contentSize.width() - frame.width())){
+         scrollPos.fX = contentSize.width() - frame.width();
+      }
+    } else if (contentSize.height() <= frame.height()) {
+      scrollPos.fY = 0;
+    } else if (scrollPos.fY >= (contentSize.height() - frame.height())) {
+      scrollPos.fY = contentSize.height() - frame.height();
+    }
+    if(scrollPos != scrollLayer->getScrollPosition()) scrollLayer->setScrollPosition(scrollPos);
+
     return RnsShell::LayerInvalidateAll;
   }
 
@@ -82,29 +171,29 @@ void RSkComponentScrollView::handleCommand(std::string commandName,folly::dynami
     RnsShell::ScrollLayer* scrollLayer= SCROLL_LAYER_HANDLE;
     SkISize contentSize = scrollLayer->getContentSize();
     SkIRect frameRect = scrollLayer->getFrame();
-    SkPoint lastScrollOffset = SkPoint::Make(0,0);
+    SkPoint lastScrollPos = SkPoint::Make(0,0);
 
-    if(isHorizontalScroll()) {
+    if(isHorizontalScroll_) {
       if(contentSize.width() <= frameRect.width()) {
          RNS_LOG_DEBUG("No scrollable content to scroll");
          return;
       }
-      lastScrollOffset.fX = contentSize.width() - frameRect.width();
+      lastScrollPos.fX = contentSize.width() - frameRect.width();
     } else {
       if(contentSize.height() <= frameRect.height()) {
          RNS_LOG_DEBUG("No scrollable content to scroll");
          return;
       }
-      lastScrollOffset.fY = contentSize.height() - frameRect.height();
+      lastScrollPos.fY = contentSize.height() - frameRect.height();
     }
 
-    if(lastScrollOffset.equals(scrollLayer->scrollOffsetX,scrollLayer->scrollOffsetY)) {
+    if(lastScrollPos == scrollLayer->getScrollPosition()) {
       RNS_LOG_DEBUG("Scroll position is already at end");
       return;
     }
 
     if(args[0].getBool()) RNS_LOG_TODO("Animated not supported,fallback to scroll immediately");
-    handleScroll(lastScrollOffset);
+    handleScroll(lastScrollPos);
     return;
 
   } else if(commandName == "scrollTo") {
@@ -121,32 +210,49 @@ void RSkComponentScrollView::handleCommand(std::string commandName,folly::dynami
     RnsShell::ScrollLayer * scrollLayer = SCROLL_LAYER_HANDLE;
     SkISize contentSize = scrollLayer->getContentSize();
     SkIRect frameRect = scrollLayer->getFrame();
-    SkPoint scrollOffset = SkPoint::Make(0,0);
+    SkPoint scrollPos = SkPoint::Make(0,0);
 
-    if(isHorizontalScroll()) {
+    if(isHorizontalScroll_) {
       if(contentSize.width() <= frameRect.width()) {
          RNS_LOG_DEBUG("No scrollable content to scroll");
          return;
       }
-      scrollOffset.fX = std::min(std::max(0,x),(contentSize.width()-frameRect.width()));
+      scrollPos.fX = std::min(std::max(0,x),(contentSize.width()-frameRect.width()));
     } else {
       if(contentSize.height() <= frameRect.height()) {
          RNS_LOG_DEBUG("No scrollable content to scroll");
          return;
       }
-      scrollOffset.fY = std::min(std::max(0,y),(contentSize.height()-frameRect.height()));
+      scrollPos.fY = std::min(std::max(0,y),(contentSize.height()-frameRect.height()));
     }
 
-    if(scrollOffset.equals(scrollLayer->scrollOffsetX,scrollLayer->scrollOffsetY)) {
+    if(scrollPos == scrollLayer->getScrollPosition()) {
       RNS_LOG_DEBUG("Scroll position is already at same offset");
       return;
     }
 
     if(args[2].getBool()) RNS_LOG_TODO("Animated not supported,fallback to scroll immediately");
 
-    handleScroll(scrollOffset);
+    handleScroll(scrollPos);
     return;
 
+  } else if(commandName == "flashScrollIndicators") {
+
+#if ENABLE(FEATURE_SCROLL_INDICATOR)
+    RNS_LOG_DEBUG("handleCommand commandName[flashScrollIndicators]");
+    if((!drawScrollIndicator_) || (persistentScrollIndicator_)) return;
+
+    RnsShell::ScrollLayer* scrollLayer= SCROLL_LAYER_HANDLE;
+    RnsShell::ScrollLayer::ScrollBar &scrollbar = scrollLayer->getScrollBar();
+
+    scrollLayer->client().notifyFlushBegin();
+    scrollbar.showScrollBar(true);
+    scrollLayer->invalidate(LayerPaintInvalidate);
+    scrollLayer->client().notifyFlushRequired();
+    fadeOutScrollBar();
+#else
+    RNS_LOG_WARN("handleCommand commandName[flashScrollIndicators] feature disabled !!");
+#endif //ENABLE_FEATURE_SCROLL_INDICATOR
   } else {
     RNS_LOG_TODO("handleCommand commandName[" << commandName << "] args size[" << args.size() << "]");
   }
@@ -167,13 +273,14 @@ bool RSkComponentScrollView::canScrollInDirection(rnsKey direction){
   RnsShell::ScrollLayer* scrollLayer= SCROLL_LAYER_HANDLE;
   SkISize contentSize = scrollLayer->getContentSize();
   SkIRect frameSize = scrollLayer->getFrame();
+  SkPoint scrollPos = scrollLayer->getScrollPosition();
 
-  if(isHorizontalScroll()){
+  if(isHorizontalScroll_){
     switch(direction){
       case RNS_KEY_Right:
-         return (contentSize.width() - scrollLayer->scrollOffsetX) > frameSize.width();
+         return (contentSize.width() - scrollPos.fX) > frameSize.width();
       case RNS_KEY_Left:
-         return (scrollLayer->scrollOffsetX != 0);
+         return (scrollPos.fX != 0);
       default : return false;
     }
   }
@@ -182,9 +289,9 @@ bool RSkComponentScrollView::canScrollInDirection(rnsKey direction){
 
   switch(direction){
     case RNS_KEY_Down:
-      return (contentSize.height() - scrollLayer->scrollOffsetY) > frameSize.height();
+      return (contentSize.height() - scrollPos.fY) > frameSize.height();
     case RNS_KEY_Up:
-      return (scrollLayer->scrollOffsetY != 0);
+      return (scrollPos.fY != 0);
     default : return false;
   }
 
@@ -223,8 +330,8 @@ bool RSkComponentScrollView::isVisible(RSkComponent* candidate) {
    */
   RnsShell::ScrollLayer *scrollLayer = SCROLL_LAYER_HANDLE;
 
-  SkIRect visibleRect = SkIRect::MakeXYWH(scrollLayer->scrollOffsetX,
-                                          scrollLayer->scrollOffsetY,
+  SkIRect visibleRect = SkIRect::MakeXYWH(scrollLayer->getScrollPosition().x(),
+                                          scrollLayer->getScrollPosition().y(),
                                           scrollLayer->getFrame().width(),
                                           scrollLayer->getFrame().height());
 
@@ -232,14 +339,9 @@ bool RSkComponentScrollView::isVisible(RSkComponent* candidate) {
 }
 
 SkPoint RSkComponentScrollView::getScrollOffset() {
-  if(isHorizontalScroll()) return SkPoint::Make(SCROLL_LAYER(scrollOffsetX),0);
+  if(isHorizontalScroll_) return SkPoint::Make(SCROLL_LAYER(getScrollPosition().x()),0);
 
-  return SkPoint::Make(0,SCROLL_LAYER(scrollOffsetY));
-}
-
-
-bool RSkComponentScrollView::isHorizontalScroll() {
-  return SCROLL_LAYER(getContentSize().width()) > SCROLL_LAYER(getFrame().width());
+  return SkPoint::Make(0,SCROLL_LAYER(getScrollPosition().y()));
 }
 
 void RSkComponentScrollView::calculateNextScrollOffset(
@@ -273,8 +375,8 @@ void RSkComponentScrollView::calculateNextScrollOffset(
 
 SkPoint RSkComponentScrollView::getNextScrollPosition(rnsKey direction) {
   RnsShell::ScrollLayer* scrollLayer= SCROLL_LAYER_HANDLE;
-  int scrollOffsetX = scrollLayer->scrollOffsetX;
-  int scrollOffsetY = scrollLayer->scrollOffsetY;
+  int scrollOffsetX = scrollLayer->getScrollPosition().x();
+  int scrollOffsetY = scrollLayer->getScrollPosition().y();
 
   switch(direction) {
     case RNS_KEY_Right:
@@ -300,10 +402,11 @@ SkPoint RSkComponentScrollView::getNextScrollPosition(rnsKey direction) {
 ScrollStatus RSkComponentScrollView::handleSnapToOffsetScroll(rnsKey direction,RSkComponent* candidate) {
   ScrollStatus status = scrollToFocus;
   RnsShell::ScrollLayer* scrollLayer= SCROLL_LAYER_HANDLE;
-  bool isHorizontal = isHorizontalScroll();
-  int frameLength = isHorizontal ? scrollLayer->getFrame().width() : scrollLayer->getFrame().height();
-  int contentLength = isHorizontal ? scrollLayer->getContentSize().width() : scrollLayer->getContentSize().height();
-  int currentOffset = isHorizontal ? scrollLayer->scrollOffsetX : scrollLayer->scrollOffsetY;
+  int frameLength = isHorizontalScroll_ ? scrollLayer->getFrame().width() : scrollLayer->getFrame().height();
+  int contentLength = isHorizontalScroll_ ? scrollLayer->getContentSize().width() : scrollLayer->getContentSize().height();
+  SkPoint scrollPos = scrollLayer->getScrollPosition();
+  SkPoint nextScrollPos = scrollPos;
+  int currentOffset = isHorizontalScroll_ ? scrollPos.x() : scrollPos.y();
   int prevOffset = 0;
   int nextOffset = currentOffset;
 
@@ -313,7 +416,7 @@ ScrollStatus RSkComponentScrollView::handleSnapToOffsetScroll(rnsKey direction,R
      lower = std::lower_bound(snapToOffsets_.begin(),snapToOffsets_.end(),currentOffset);
      status = scrollOnly;
   } else {
-     currentOffset = isHorizontal ? candidate->getLayerAbsoluteFrame().x() : candidate->getLayerAbsoluteFrame().y();
+     currentOffset = isHorizontalScroll_ ? candidate->getLayerAbsoluteFrame().x() : candidate->getLayerAbsoluteFrame().y();
      upper = std::upper_bound(snapToOffsets_.begin(),snapToOffsets_.end(),currentOffset);
      lower = std::lower_bound(snapToOffsets_.begin(),snapToOffsets_.end(),currentOffset);
   }
@@ -329,7 +432,6 @@ ScrollStatus RSkComponentScrollView::handleSnapToOffsetScroll(rnsKey direction,R
   /* TODO */
   /* If candidate is null/this : smooth scroll to nextOffset/prevOffset */
   /* If candidate available : smooth scroll between next & prev Offset */
-  SkPoint nextScrollPos = SkPoint::Make(scrollLayer->scrollOffsetX,scrollLayer->scrollOffsetY);
   switch(direction) {
      case RNS_KEY_Right:
         nextScrollPos.fX = nextOffset;
@@ -354,7 +456,7 @@ ScrollStatus RSkComponentScrollView::handleSnapToOffsetScroll(rnsKey direction,R
 ScrollStatus RSkComponentScrollView::handleScroll(rnsKey direction,SkIRect candidateFrame) {
   RnsShell::ScrollLayer* scrollLayer= SCROLL_LAYER_HANDLE;
   SkIRect frame = scrollLayer->getFrame();
-  SkPoint nextScrollPos = SkPoint::Make(scrollLayer->scrollOffsetX,scrollLayer->scrollOffsetY);
+  SkPoint nextScrollPos = scrollLayer->getScrollPosition();
 
   switch(direction) {
      case RNS_KEY_Right:
@@ -379,16 +481,24 @@ ScrollStatus RSkComponentScrollView::handleScroll(rnsKey direction,SkIRect candi
 ScrollStatus RSkComponentScrollView::handleScroll(SkPoint scrollPos) {
 
   RnsShell::ScrollLayer* scrollLayer= SCROLL_LAYER_HANDLE;
+  if(scrollPos == scrollLayer->getScrollPosition()) return noScroll;
 
   scrollLayer->client().notifyFlushBegin();
 
-  scrollLayer->scrollOffsetX = scrollPos.x();
-  scrollLayer->scrollOffsetY = scrollPos.y();
+  scrollLayer->setScrollPosition(scrollPos);
+
+#if ENABLE(FEATURE_SCROLL_INDICATOR)
+  if(drawScrollIndicator_) scrollLayer->getScrollBar().showScrollBar(true);
+#endif
 
   scrollLayer->invalidate(LayerPaintInvalidate);
   scrollLayer->client().notifyFlushRequired();
 
   dispatchOnScrollEvent(scrollPos);
+
+#if ENABLE(FEATURE_SCROLL_INDICATOR)
+  if(drawScrollIndicator_ && (!persistentScrollIndicator_)) fadeOutScrollBar();
+#endif
   return scrollOnly;
 }
 
