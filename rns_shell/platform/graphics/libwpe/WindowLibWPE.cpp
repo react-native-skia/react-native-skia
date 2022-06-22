@@ -1,6 +1,6 @@
 /*
 * Copyright 2016 Google Inc.
-* Copyright (C) 1994-2021 OpenTV, Inc. and Nagravision S.A.
+* Copyright (C) 1994-2022 OpenTV, Inc. and Nagravision S.A.
 *
 * Use of this source code is governed by a BSD-style license that can be
 * found in the LICENSE file.
@@ -19,6 +19,16 @@ Window* Window::mainWindow_;
 
 GMainLoop       *WindowLibWPE::mainLoop_;
 Application     *WindowLibWPE::mainApp_;
+
+WindowLibWPE::~WindowLibWPE() {
+    closeWindow();
+    if(viewBackend_) {
+        wpe_view_backend_destroy(viewBackend_);
+        viewBackend_ = nullptr;
+    }
+    if(this == mainWindow_)
+        mainWindow_ = nullptr;
+}
 
 bool WindowLibWPE::initViewBackend(wpe_view_backend* viewBackend) {
 
@@ -93,7 +103,7 @@ bool WindowLibWPE::initViewBackend(wpe_view_backend* viewBackend) {
     return true;
 }
 
-bool WindowLibWPE::initRenderTarget(wpe_view_backend* viewBackend, wpe_renderer_backend_egl* renderBackend) {
+bool WindowLibWPE::initRenderTarget(wpe_view_backend* viewBackend, wpe_renderer_backend_egl* renderBackend,SkSize dimension) {
 
     if (nullptr == viewBackend || nullptr == renderBackend) {
         RNS_LOG_ERROR("Invalid View (" << viewBackend << ") or Render (" << renderBackend << ") Backend");
@@ -118,7 +128,10 @@ bool WindowLibWPE::initRenderTarget(wpe_view_backend* viewBackend, wpe_renderer_
 #endif
     };
     wpe_renderer_backend_egl_target_set_client(rendererTarget_, &s_client, this);
-    if( viewWidth_ <= 0 || viewHeight_ <= 0) {
+    if(!dimension.isEmpty()) {
+       viewWidth_ =  dimension.width();
+       viewHeight_ = dimension.height();
+    } else if( viewWidth_ <= 0 || viewHeight_ <= 0) {
         RNS_LOG_ERROR("Invalid View Size.. using default width and height");
         viewWidth_ = 1280;
         viewHeight_ = 720;
@@ -139,22 +152,23 @@ void Window::createEventLoop(Application* app) {
     return;
 }
 
-Window* Window::createNativeWindow(void* platformData) {
+Window* Window::createNativeWindow(void* platformData,SkSize dimension,WindowType type) {
     PlatformDisplay *pDisplay = (PlatformDisplay*) platformData;
 
     RNS_LOG_ASSERT(pDisplay, "Invalid Platform Display");
 
     WindowLibWPE* window = new WindowLibWPE();
-    if (!window->initWindow(pDisplay)) {
+    if (!window->initWindow(pDisplay,dimension,type)) {
         delete window;
         return nullptr;
     }
+    window->winType=type;
     if(!mainWindow_)
         mainWindow_ = window;
     return window;
 }
 
-bool WindowLibWPE::initWindow(PlatformDisplay *platformDisplay) {
+bool WindowLibWPE::initWindow(PlatformDisplay *platformDisplay,SkSize dimension,WindowType winType) {
 
     Display* display = (dynamic_cast<PlatformDisplayLibWPE*>(platformDisplay))->native();
     if( nullptr == display) {
@@ -162,7 +176,7 @@ bool WindowLibWPE::initWindow(PlatformDisplay *platformDisplay) {
         return false;
     }
 
-    struct wpe_view_backend* viewBackend = display->viewBackend();
+    viewBackend_=wpe_view_backend_create();//Creating ViewBackend per window
     struct wpe_renderer_backend_egl* renderBackend = (dynamic_cast<PlatformDisplayLibWPE*>(platformDisplay))->renderBackend();
 
     if (requestedDisplayParams_.msaaSampleCount_ != MSAASampleCount_) {
@@ -178,10 +192,10 @@ bool WindowLibWPE::initWindow(PlatformDisplay *platformDisplay) {
     platformDisplay_ = platformDisplay;
     MSAASampleCount_ = requestedDisplayParams_.msaaSampleCount_;
 
-    if(false == initViewBackend(viewBackend)) {
+    if(false == initViewBackend(viewBackend_)) {
         return false;
     }
-    if(false == initRenderTarget(viewBackend, renderBackend)) {
+    if(false == initRenderTarget(viewBackend_, renderBackend,dimension)) {
         return false;
     }
     window_ = (reinterpret_cast<GLNativeWindowType>(wpe_renderer_backend_egl_target_get_native_window(rendererTarget_)));
@@ -189,7 +203,7 @@ bool WindowLibWPE::initWindow(PlatformDisplay *platformDisplay) {
     // add to hashtable of windows
     gWindowMap.add(this);
 
-    if(WindowLibWPE::mainApp_) // TODO Only for main window
+    if((this->winType == MainWindow ) && (WindowLibWPE::mainApp_))
         WindowLibWPE::mainApp_->sizeChanged(viewWidth_, viewHeight_);
 
     return true;
@@ -201,7 +215,7 @@ void WindowLibWPE::setViewSize(int width, int height) {
 
     viewWidth_ = width;
     viewHeight_ = height;
-    if(WindowLibWPE::mainApp_)
+    if((this->winType == MainWindow ) && (WindowLibWPE::mainApp_) )
         WindowLibWPE::mainApp_->sizeChanged(viewWidth_, viewHeight_);
 }
 

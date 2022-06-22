@@ -31,14 +31,13 @@ const long kEventMask = ExposureMask | StructureNotifyMask |
                         KeyPressMask | KeyReleaseMask |
                         PointerMotionMask | ButtonPressMask | ButtonReleaseMask;
 
-Window* Window::createNativeWindow(void* platformData) {
+Window* Window::createNativeWindow(void* platformData,SkSize dimension,WindowType type) {
     PlatformDisplay *pDisplay = (PlatformDisplay*) platformData;
 
     RNS_LOG_ASSERT(pDisplay, "Invalid Platform Display");
 
     WindowX11* window = new WindowX11();
-    if (!window->initWindow(pDisplay)) {
-
+    if (!window->initWindow(pDisplay,dimension,type)) {
         delete window;
         return nullptr;
     }
@@ -47,6 +46,7 @@ Window* Window::createNativeWindow(void* platformData) {
         XSelectInput (display, DefaultRootWindow(display), ExposureMask | StructureNotifyMask); // Root window is used to monitor screen resolution change in X11
         mainWindow_ = window;
     }
+    window->winType=type;
     return window;
 }
 
@@ -82,7 +82,7 @@ void Window::createEventLoop(Application* app) {
                                 RNS_LOG_INFO("Resize Request with (Width x Height) : (" << event.xconfigurerequest.width <<
                                     " x " << event.xconfigurerequest.height << ")");
                                 WindowX11* win = WindowX11::gWindowMap.find(event.xconfigurerequest.window);
-                                if(win){
+                                if(win && (win->winType == MainWindow )) { // Only for main window
                                     auto windowDimension = win->getWindowDimension();
 
                                     if((windowDimension.width()!=event.xconfigurerequest.width) ||
@@ -96,12 +96,15 @@ void Window::createEventLoop(Application* app) {
                         }
                         break;
                     }
+                    case UnmapNotify:
+                        RNS_LOG_DEBUG("Nothing to be done for UnmapNotify: Happens on window closure");
+                    break;
                     default:
                         WindowX11* win = WindowX11::gWindowMap.find(event.xany.window);
-                        if (win && win->handleEvent(event)) {
+                        if (win && (win->handleEvent(event))) {
                             done = true;
                         }
-                        break;
+                    break;
                 } // switch
             }// while
         }// if(XPending)
@@ -111,7 +114,7 @@ void Window::createEventLoop(Application* app) {
     TaskLoop::main().stop();
 }
 
-bool WindowX11::initWindow(PlatformDisplay *platformDisplay) {
+bool WindowX11::initWindow(PlatformDisplay *platformDisplay,SkSize dimension,WindowType type) {
 
     Display* display = (dynamic_cast<PlatformDisplayX11*>(platformDisplay))->native();
 
@@ -130,7 +133,10 @@ bool WindowX11::initWindow(PlatformDisplay *platformDisplay) {
     Screen *screen = nullptr;
 
     /* Read first screens display resolution*/
-    if(ScreenCount(display) > 0 && (screen = ScreenOfDisplay(display, 0))) {
+    if(!dimension.isEmpty()) {
+       initialWidth =  dimension.width();
+       initialHeight = dimension.height();
+    } else if(ScreenCount(display) > 0 && (screen = ScreenOfDisplay(display, 0))) {
         initialWidth = screen->width;
         initialHeight = screen->height;
     }
@@ -309,7 +315,9 @@ bool WindowX11::handleEvent(const XEvent& event) {
         case ButtonPress:
             RNS_LOG_NOT_IMPL;
             break;
-
+        case Expose:
+            onExpose();
+        break;
         default:
             // these events should be handled in the main event loop
             RNS_LOG_ASSERT(event.type != ConfigureNotify, "Should handle this is main loop ??");
@@ -331,6 +339,10 @@ void WindowX11::show() {
 void WindowX11::setRequestedDisplayParams(const DisplayParams& params, bool allowReattach) {
     RNS_LOG_NOT_IMPL;
     //INHERITED::setRequestedDisplayParams(params, allowReattach);
+}
+
+void WindowX11::onExpose() {
+    NotificationCenter::defaultCenter().emit("windowExposed",(Window*)this);
 }
 
 void WindowX11::onKey(rnsKey eventKeyType, rnsKeyAction eventKeyAction){

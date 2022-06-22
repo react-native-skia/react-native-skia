@@ -24,6 +24,7 @@ public:
     void run();
     bool running();
     void stop();
+    void waitUntilRunning();
 
     void dispatch(Func fun);
 

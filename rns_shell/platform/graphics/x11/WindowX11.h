@@ -46,8 +46,8 @@ public:
         this->closeWindow();
     }
 
-    bool initWindow(PlatformDisplay* display);
-
+    bool initWindow(PlatformDisplay* display,SkSize dimension,WindowType winType);
+    void closeWindow() override;
     uint64_t nativeWindowHandle() override {return (uint64_t) window_; }
     SkSize getWindowSize() override {
         XWindowAttributes winAttr = {0,};
@@ -71,8 +71,8 @@ public:
     void setRequestedDisplayParams(const DisplayParams&, bool allowReattach) override;
 
 private:
-    void closeWindow();
     void onKey(rnsKey eventKeyType, rnsKeyAction eventKeyAction);
+    void onExpose();
     rnsKey  keyIdentifierForX11KeyCode(KeySym keycode);
 
     Display*     display_;

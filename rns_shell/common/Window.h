@@ -22,12 +22,18 @@ class SkSurfaceProps;
 class SkString;
 
 namespace RnsShell {
-
+enum WindowType{
+    MainWindow,
+    SubWindow,
+    DefaultWindow=MainWindow
+};
 class WindowContext;
 
 class Window {
 public:
-    static Window* createNativeWindow(void* platformData);
+    static Window* createNativeWindow(void* platformData,
+                                      SkSize dimension=SkSize::MakeEmpty(),
+                                      WindowType type=DefaultWindow);
     static void createEventLoop(Application* app);
     static Window* getMainWindow() { return mainWindow_; }
     static SkSize getMainWindowSize() {
@@ -40,13 +46,13 @@ public:
 
     virtual void setTitle(const char*) = 0;
     virtual void show() = 0;
+    virtual void closeWindow() = 0;
     virtual uint64_t nativeWindowHandle() = 0;
     virtual SkSize getWindowSize() = 0;
 
     enum BackendType {
         kNativeGL_BackendType,
         kRaster_BackendType,
-
         kLast_BackendType = kRaster_BackendType
     };
     enum {
@@ -76,7 +82,7 @@ private:
 protected:
     Window();
     static Window *mainWindow_;
-
+    WindowType     winType{DefaultWindow};
     DisplayParams          requestedDisplayParams_;
 };
 
