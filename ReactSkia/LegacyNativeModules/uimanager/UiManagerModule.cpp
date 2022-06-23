@@ -92,25 +92,29 @@ dynamic Uimanager::getConstantsForViewManager(std::string viewManagerName) {
       "underlineColorAndroid","UIColor")(
       "value",true);
 
-    auto directEventTypes = folly::dynamic::object(
-      "topBlur",folly::dynamic::object("registrationName", "onBlur"))(
-      "topChange", folly::dynamic::object("registrationName", "onChange"))(
-      "topChangeText", folly::dynamic::object("registrationName", "onChangeText"))(
-      "topContentSizeChange", folly::dynamic::object("registrationName", "onContentSizeChange"))(
-      "topEndEditing", folly::dynamic::object("registrationName", "onEndEditing"))(
-      "topPressIn", folly::dynamic::object("registrationName", "onPressIn"))(
-      "topPressOut", folly::dynamic::object("registrationName", "onPressOut"))(
-      "topFocus", folly::dynamic::object("registrationName", "onFocus"))(
-      "topKeyPress", folly::dynamic::object("registrationName", "onKeyPress"))(
-      "topLayout", folly::dynamic::object("registrationName", "onLayout"))(
-      "topScroll", folly::dynamic::object("registrationName", "onScroll"))(
-      "topSelectionChange", folly::dynamic::object("registrationName", "onSelectionChange"))(
-      "topSubmitEditing", folly::dynamic::object("registrationName", "onSubmitEditing"));
+    auto directEventTypes = folly::dynamic::object();
 
     auto bubblingEventTypes = folly::dynamic::object(
-      "topBlur", folly::dynamic::object("phasedRegistrationNames", folly::dynamic::object("bubbled","onBlur")("captured", "onBlurCapture")))(
-      "topKeyPress", folly::dynamic::object("phasedRegistrationNames", folly::dynamic::object("bubbled","onKeyPress")("captured", "onKeyPressCapture")))(
-      "toponChange", folly::dynamic::object("phasedRegistrationNames", folly::dynamic::object("bubbled","onChange")("captured", "onChangeCapture")));
+      "topBlur",
+      folly::dynamic::object("phasedRegistrationNames", folly::dynamic::object("bubbled","onBlur")("captured", "onBlurCapture")))(
+      "topFocus",
+      folly::dynamic::object("phasedRegistrationNames", folly::dynamic::object("bubbled","onFocus")("captured", "onFocusCapture")))(
+      "topKeyPress",
+      folly::dynamic::object("phasedRegistrationNames", folly::dynamic::object("bubbled","onKeyPress")("captured", "onKeyPressCapture")))(
+      "topSubmitEditing",
+      folly::dynamic::object("phasedRegistrationNames", folly::dynamic::object("bubbled","onSubmitEditing")("captured", "onSubmitEditing")))(
+      "topEndEditing",
+      folly::dynamic::object("phasedRegistrationNames", folly::dynamic::object("bubbled","onEndEditing")("captured", "onEndEditingCapture")))(
+      "topSelectionChange",
+      folly::dynamic::object("phasedRegistrationNames", folly::dynamic::object("bubbled","onSelectionChange")("captured", "onSelectionChangeCapture")))(
+      "topContentSizeChange",
+      folly::dynamic::object("phasedRegistrationNames", folly::dynamic::object("bubbled","onContentSizeChange")("captured", "onContentSizeChangeCapture")))(
+      "topScroll",
+      folly::dynamic::object("phasedRegistrationNames", folly::dynamic::object("bubbled","onScroll")("captured", "onScrollCapture")))(
+      "toChangeText",
+      folly::dynamic::object("phasedRegistrationNames", folly::dynamic::object("bubbled","onChangeText")("captured", "onChangeTextCapture")))(
+      "topChange",
+      folly::dynamic::object("phasedRegistrationNames", folly::dynamic::object("bubbled","onChange")("captured", "onChangeCapture")));
 
     auto registry = folly::dynamic::object(
         NATIVE_PROPS_KEY, std::move(nativeProps))(
