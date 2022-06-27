@@ -265,7 +265,10 @@ void WindowLibWPE::setRequestedDisplayParams(const DisplayParams& params, bool a
 }
 
 void WindowLibWPE::onKey(rnsKey eventKeyType, rnsKeyAction eventKeyAction){
-    NotificationCenter::defaultCenter().emit("onHWKeyEvent", eventKeyType, eventKeyAction);
+    if(winType == SubWindow)
+       NotificationCenter::subWindowCenter().emit("onHWKeyEvent", eventKeyType, eventKeyAction);
+    else
+        NotificationCenter::defaultCenter().emit("onHWKeyEvent", eventKeyType, eventKeyAction);
     return;
 }
 

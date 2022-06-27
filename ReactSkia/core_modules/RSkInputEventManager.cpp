@@ -13,12 +13,14 @@ static rnsKey previousKeyType;
 namespace facebook{
 namespace react {
 static unsigned int eventId_;
+static unsigned int subWindowEventId_;
 RSkInputEventManager* RSkInputEventManager::sharedInputEventManager_{nullptr};
 RSkInputEventManager::RSkInputEventManager(){
   std::function<void(rnsKey, rnsKeyAction)> handler = std::bind(&RSkInputEventManager::keyHandler, this,
                                                               std::placeholders::_1, // rnsKey
                                                               std::placeholders::_2);
   eventId_ = NotificationCenter::defaultCenter().addListener("onHWKeyEvent", handler);
+  subWindowEventId_ = NotificationCenter::subWindowCenter().addListener("onOSKKeyEvent", handler);
   spatialNavigator_ =  SpatialNavigator::RSkSpatialNavigator::sharedSpatialNavigator();
   keyRepeat=false;
   previousKeyType=RNS_KEY_UnKnown;

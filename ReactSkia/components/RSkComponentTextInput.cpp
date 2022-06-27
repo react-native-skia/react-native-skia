@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1994-2021 OpenTV, Inc. and Nagravision S.A.
+ * Copyright (C) 1994-2022 OpenTV, Inc. and Nagravision S.A.
  *
  * Use of this source code is governed by a BSD-style license that can be
  * found in the LICENSE file.
@@ -10,6 +10,7 @@
 #include "ReactSkia/components/RSkComponent.h"
 #include "ReactSkia/core_modules/RSkSpatialNavigator.h"
 #include "ReactSkia/sdk/RNSKeyCodeMapping.h"
+#include "ReactSkia/sdk/OnScreenKeyBoard.h"
 #include "ReactSkia/views/common/RSkDrawUtils.h"
 #include "ReactSkia/views/common/RSkConversion.h"
 #include "rns_shell/compositor/layers/PictureLayer.h"
@@ -25,6 +26,7 @@
 namespace facebook {
 namespace react {
 
+using namespace rns::sdk;
 using namespace RSkDrawUtils;
 using namespace skia::textlayout;
 
@@ -38,6 +40,7 @@ std::mutex privateVarProtectorMutex;
 std::mutex inputQueueMutex;
 static bool isKeyRepeateOn;
 unsigned int keyRepeateStartIndex;
+
 RSkComponentTextInput::RSkComponentTextInput(const ShadowView &shadowView)
     : RSkComponent(shadowView)
     ,isInEditingMode_(false)
@@ -241,7 +244,7 @@ void RSkComponentTextInput::onHandleKey(rnsKey eventKeyType, bool keyRepeat, boo
         std::swap( inputQueue, empty );
         inputQueueMutex.unlock();
         eventCount_++;
-	resignFromEditingMode();
+        resignFromEditingMode();
       }
       return;
     }
@@ -311,7 +314,7 @@ void RSkComponentTextInput::processEventKey (rnsKey eventKeyType,bool* stopPropa
         case RNS_KEY_Select:
           eventCount_++;
           *stopPropagation = true;
-	  resignFromEditingMode();
+          resignFromEditingMode();
           return;
         case RNS_KEY_Caps_Lock:
         case RNS_KEY_Shift_L:
@@ -475,7 +478,7 @@ void RSkComponentTextInput::requestForEditingMode(bool isFlushDisplay){
   // check if textinput is already in Editing
   if ( isInEditingMode_ )
     return;
-  RNS_LOG_TODO("[requestForEditingMode] Launch OnScreen Keyboard");
+
   auto spatialNavigator =  SpatialNavigator::RSkSpatialNavigator::sharedSpatialNavigator();
   auto candidateToFocus = getComponentData();
   auto textInputEventEmitter = std::static_pointer_cast<TextInputEventEmitter const>(candidateToFocus.eventEmitter);
@@ -507,6 +510,16 @@ void RSkComponentTextInput::requestForEditingMode(bool isFlushDisplay){
        drawAndSubmit(isFlushDisplay);
     }
   }
+  /*
+     TODO:Launching with default configuration for now.
+          Need to parse & pass properties :
+       1. keyboardType [oskType]
+       2. returnKeyType [returnKeyLabel]
+       3. keyboardAppearance [oskTheme]
+       4. enablesReturnKeyAutomatically [enablesReturnKeyAutomatically]
+       5. placeholder [placeHolderName]
+  */
+  OnScreenKeyboard::launch();
   RNS_LOG_DEBUG("[requestForEditingMode] END");
 }
 
@@ -514,7 +527,6 @@ void RSkComponentTextInput::resignFromEditingMode(bool isFlushDisplay) {
   RNS_LOG_DEBUG("[resignFromEditingMode] ENTER ");
   if (!this->isInEditingMode_)
     return;
-  RNS_LOG_TODO("[requestForEditingMode] Exit OnScreen Keyboard");
   TextInputMetrics textInputMetrics;
   auto component = this->getComponentData();
   if (this->isTextInputInFocus_){
@@ -534,6 +546,7 @@ void RSkComponentTextInput::resignFromEditingMode(bool isFlushDisplay) {
   if (!caretHidden_) {
     drawAndSubmit(isFlushDisplay);
   }
+  OnScreenKeyboard::exit();
   RNS_LOG_DEBUG("[requestForEditingMode] *** END ***");
 }
 

@@ -40,6 +40,7 @@ static bool platformInitialize(char **argv) {
 
     TaskLoop::initializeMain();
     NotificationCenter::initializeDefault();
+    NotificationCenter::initializeSubWindowCenter();//Intializing Notification center for Events from subWindows
 
 #if PLATFORM(LIBWPE) || USE(WEP_RENDERER)
     wpe_renderer_host_create_client(); // Has to be called before wpe_loader_init
