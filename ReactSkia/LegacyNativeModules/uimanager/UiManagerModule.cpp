@@ -37,7 +37,9 @@ dynamic Uimanager::getConstantsForViewManager(std::string viewManagerName) {
       ("overflow", true);
 
     auto bubblingEventTypes = folly::dynamic::object();
-    auto directEventTypes = folly::dynamic::object("topLayout", folly::dynamic::object("registrationName", "onLayout"));
+    auto directEventTypes = folly::dynamic::object("topLayout", folly::dynamic::object("registrationName", "onLayout"))(
+      "topContentSizeChange", folly::dynamic::object("registrationName", "onContentSizeChange"))(
+      "topSelectionChange", folly::dynamic::object("registrationName", "onSelectionChange"));
 
     auto registry = folly::dynamic::object(
         NATIVE_PROPS_KEY, std::move(nativeProps))(
