@@ -13,7 +13,7 @@
 namespace RnsShell {
 
 #if USE(RNS_SHELL_PARTIAL_UPDATES)
-static inline void addDamageRect(PaintContext& context, SkIRect dirtyAbsFrameRect) {
+void Layer::addDamageRect(PaintContext& context, SkIRect dirtyAbsFrameRect) {
     std::vector<SkIRect>& damageRectList = context.damageRect;
     bool checkIfAlreadyCovered = true;
 

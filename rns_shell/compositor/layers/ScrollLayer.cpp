@@ -76,13 +76,14 @@ void ScrollLayer::ScrollBar::updateScrollLayerLayout(SkISize scrollContentSize, 
 }
 
 SkIRect ScrollLayer::ScrollBar::getScrollBarAbsFrame(SkIRect scrollAbsFrame) {
-    // If scroll bar needs to be cleared,we provide valid abs frame else empty
-    if (mask_ == LayerRemoveInvalidate) {
+    // If scroll bar needs invalidate(paint/remove),we provide valid abs frame else empty
+    if (mask_ != LayerInvalidateNone) {
         SkIRect barAbsFrame = barFrame_;
         barAbsFrame.offset(scrollAbsFrame.x() + barOffsetTranslate_.x(),scrollAbsFrame.y() + barOffsetTranslate_.y());
         RNS_LOG_DEBUG("["<< this << "] Bar Abs frame XYWH[" << barAbsFrame.x() << "," << barAbsFrame.y() << "," << barAbsFrame.width() << "," << barAbsFrame.height() << "]");
 
-        showScrollBar(false);
+        //We set the mask to none,so we dont process dirty rect again once bar is removed
+        if(mask_ == LayerRemoveInvalidate) showScrollBar(false);
         return barAbsFrame;
     }
     return SkIRect::MakeEmpty();
@@ -242,7 +243,7 @@ bool ScrollLayer::setContentSize(SkISize contentSize) {
 void ScrollLayer::setScrollPosition(SkPoint scrollPos) {
     scrollOffsetX_ = scrollPos.x();
     scrollOffsetY_ = scrollPos.y();
-    RNS_LOG_DEBUG("Set ScrollOffset :" << scrollOffsetX_ << "," << scrollOffsetY_);
+    RNS_LOG_DEBUG("Scroll Layer (" << layerId_ << ") Set ScrollOffset :" << scrollOffsetX_ << "," << scrollOffsetY_);
 #if ENABLE(FEATURE_SCROLL_INDICATOR)
     scrollbar_.setScrollBarOffset(scrollPos);
 #endif
@@ -268,6 +269,13 @@ void ScrollLayer::bitmapConfigure() {
 void ScrollLayer::prePaint(PaintContext& context, bool forceLayout) {
     //Adjust absolute Layout frame and dirty rects
     bool forceChildrenLayout = (forceLayout || (invalidateMask_ & LayerLayoutInvalidate));
+
+#if !defined(GOOGLE_STRIP_LOG) || (GOOGLE_STRIP_LOG <= INFO)
+    RNS_LOG_TRACE("Scroll Layer (" << layerId_ << ") Parent damagelist before(" << forceChildrenLayout << ") ============");
+    for(auto &rect : context.damageRect)
+        RNS_LOG_TRACE("[" << rect.x() << "," <<  rect.y() << "," << rect.width() << "," << rect.height() << "]");
+    RNS_LOG_TRACE("====================================");
+#endif
 
     bitmapConfigure();
     scrollCanvas_->save();
@@ -301,9 +309,9 @@ void ScrollLayer::prePaint(PaintContext& context, bool forceLayout) {
 
         /* Prepaint children in below conditions */
         /* 1. bitmap size is updated */
-        /* 2. child has update and intersects with visible Area */
+        /* 2. child intersects with visible Area */
         /* 3. child bounds is not calculated (happens when new child is added runtime)*/
-        if(forceBitmapReset_ || (dummy.intersect(visibleRect,layer->getBounds()) && layer->requireInvalidate(false)) || layer->getBounds().isEmpty()){
+        if(forceBitmapReset_ || dummy.intersect(visibleRect,layer->getBounds()) || layer->getBounds().isEmpty()){
             RNS_LOG_DEBUG("Layer needs prePaint [" << layer->getBounds().x() <<"," << layer->getBounds().y() << "," << layer->getBounds().width() <<"," << layer->getBounds().height() << "]");
             layer->prePaint(bitmapPaintContext,forceChildrenLayout);
             if(layer->invalidateMask_ & LayerRemoveInvalidate) {
@@ -318,27 +326,41 @@ void ScrollLayer::prePaint(PaintContext& context, bool forceLayout) {
     for(auto recycleChildIter = recycleChildList.rbegin();recycleChildIter != recycleChildList.rend();++recycleChildIter)
         removeChild(recycleChildIter->second.get(),recycleChildIter->first);
 
-    clipBound_ = Compositor::beginClip(bitmapPaintContext);
-
-    /* If child requires paint,then self needs to paint,so set invalidate self*/
-    if(bitmapSurfaceDamage_.size() != 0) {
-       /* Clear area before paint */
-        scrollCanvas_->clear(backgroundColor);
-        invalidate(static_cast<LayerInvalidateMask>(invalidateMask_|LayerPaintInvalidate));
-    }
-
     preRoll(context, forceLayout);
 
 #if ENABLE(FEATURE_SCROLL_INDICATOR)
     //Update scroll bar with scroll layer layout info
     if((invalidateMask_ & LayerLayoutInvalidate) == LayerLayoutInvalidate) scrollbar_.updateScrollLayerLayout(contentSize_,getFrame());
 
-    //if hide scrollbar,add its absframe to damage rect list
+    //if scrollbar needs update(paint/remove),add its absframe to damage rect list
     if(context.supportPartialUpdate) {
         SkIRect scrollBarFrame = scrollbar_.getScrollBarAbsFrame(absoluteFrame());
-        if(scrollBarFrame != SkIRect::MakeEmpty()) context.damageRect.push_back(scrollBarFrame);
+        if(scrollBarFrame != SkIRect::MakeEmpty()) addDamageRect(context,scrollBarFrame);
     }
 #endif//ENABLE_FEATURE_SCROLL_INDICATOR
+
+    // If self has update, we anyways update the whole frame
+    // So only if self does not have update, check if any children update is available and update damage rect list accordingly
+    if(invalidateMask_ == LayerInvalidateNone) {
+       RNS_LOG_TRACE("Scroll Layer (" << layerId_ << ") damageRect list size:" << bitmapSurfaceDamage_.size());
+       //Calculate the screen frame for the child dirty frame and add intersected area to parent damageRect list
+       for(auto &rect : bitmapSurfaceDamage_) {
+           SkIRect screenDirtyRect = rect.makeOffset(-scrollOffsetX_,-scrollOffsetY_).makeOffset(absFrame_.x(),absFrame_.y());
+           RNS_LOG_DEBUG("Scroll Layer (" << layerId_ << ") damage rect [" << rect.x() << "," << rect.y() << "," << rect.width() << "," << rect.height()
+                            << "] absFrame point [" << absFrame_.x() << "," << absFrame_.y()
+                            << "] screenDirtyRect [" << screenDirtyRect.x() << "," << screenDirtyRect.y() << "," << screenDirtyRect.width()
+                            << "," << screenDirtyRect.height() << "]");
+
+           if(screenDirtyRect.intersect(absFrame_))  addDamageRect(context,screenDirtyRect);
+       }
+    }
+
+#if !defined(GOOGLE_STRIP_LOG) || (GOOGLE_STRIP_LOG <= INFO)
+    RNS_LOG_TRACE("Scroll Layer (" << layerId_ << ") Parent damagelist after ============");
+    for(auto &rect : context.damageRect)
+        RNS_LOG_TRACE("[" << rect.x() << "," <<  rect.y() << "," << rect.width() << "," << rect.height() << "]");
+    RNS_LOG_TRACE("====================================");
+#endif
 
     invalidateMask_ = LayerInvalidateNone;
     forceBitmapReset_ = false;
@@ -360,7 +382,7 @@ void ScrollLayer::paintSelf(PaintContext& context) {
         shadowPicture()->playback(context.canvas);
     }
 
-    RNS_LOG_INFO("Draw scroll bitmap offset X["<< scrollOffsetX_ << "] Y[" << scrollOffsetY_ << "]");
+    RNS_LOG_INFO("Scroll Layer (" << layerId_ << ") Draw scroll bitmap offset X["<< scrollOffsetX_ << "] Y[" << scrollOffsetY_ << "]");
     SkRect srcRect = SkRect::MakeXYWH(scrollOffsetX_,scrollOffsetY_,frame_.width(),frame_.height());
     SkRect dstRect = SkRect::Make(frame_);
     context.canvas->drawBitmapRect(scrollBitmap_,srcRect,dstRect,NULL);
@@ -370,14 +392,14 @@ void ScrollLayer::paintSelf(PaintContext& context) {
 #endif
 
     if(borderPicture()) {
-        RNS_LOG_DEBUG("SkPicture ( "  << borderPicture_ << " )For " <<
+        RNS_LOG_DEBUG("Scroll Layer (" << layerId_ << ") SkPicture ( "  << borderPicture_ << " )For " <<
                 borderPicture()->approximateOpCount() << " operations and size : " << borderPicture()->approximateBytesUsed());
         borderPicture()->playback(context.canvas);
     }
 
 #if !defined(GOOGLE_STRIP_LOG) || (GOOGLE_STRIP_LOG <= INFO)
     RNS_GET_TIME_STAMP_US(end);
-    RNS_LOG_TRACE("Layer (" << layerId_ << ") took " <<  (end - start) << " us to paint self");
+    RNS_LOG_TRACE("Scroll Layer (" << layerId_ << ") took " <<  (end - start) << " us to paint self");
 #endif
 }
 
@@ -401,6 +423,13 @@ void ScrollLayer::paint(PaintContext& context) {
             nullptr, // GrDirectContext
     };
 
+    clipBound_ = Compositor::beginClip(bitmapPaintContext);
+
+    if(bitmapSurfaceDamage_.size() != 0) {
+       /* Clear clipped area with background color before painting the children*/
+       scrollCanvas_->clear(backgroundColor);
+    }
+
     // First paint children and then self
     for (auto& layer : children()) {
         if(layer->needsPainting(bitmapPaintContext)) {
@@ -415,6 +444,5 @@ void ScrollLayer::paint(PaintContext& context) {
     scrollCanvas_->restore();
     bitmapSurfaceDamage_.clear();
     clipBound_ = SkRect::MakeEmpty();
-
 }
 }   // namespace RnsShell

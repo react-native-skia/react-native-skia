@@ -131,6 +131,9 @@ public:
     friend class PictureLayer;
     friend class ScrollLayer;
 
+protected:
+    static void addDamageRect(PaintContext& context, SkIRect dirtyAbsFrameRect);
+
 private:
     static uint64_t nextUniqueId();
 

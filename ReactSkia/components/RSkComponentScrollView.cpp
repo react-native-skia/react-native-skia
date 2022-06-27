@@ -247,7 +247,6 @@ void RSkComponentScrollView::handleCommand(std::string commandName,folly::dynami
 
     scrollLayer->client().notifyFlushBegin();
     scrollbar.showScrollBar(true);
-    scrollLayer->invalidate(LayerPaintInvalidate);
     scrollLayer->client().notifyFlushRequired();
     fadeOutScrollBar();
 #else
