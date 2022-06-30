@@ -39,7 +39,8 @@ dynamic Uimanager::getConstantsForViewManager(std::string viewManagerName) {
     auto bubblingEventTypes = folly::dynamic::object();
     auto directEventTypes = folly::dynamic::object("topLayout", folly::dynamic::object("registrationName", "onLayout"))(
       "topContentSizeChange", folly::dynamic::object("registrationName", "onContentSizeChange"))(
-      "topSelectionChange", folly::dynamic::object("registrationName", "onSelectionChange"));
+      "topSelectionChange", folly::dynamic::object("registrationName", "onSelectionChange"))(
+      "topScroll",folly::dynamic::object("registrationName","onScroll"));
 
     auto registry = folly::dynamic::object(
         NATIVE_PROPS_KEY, std::move(nativeProps))(
@@ -123,25 +124,29 @@ dynamic Uimanager::getConstantsForViewManager(std::string viewManagerName) {
         BASE_MODULE_NAME_KEY, "RCTView");
       return {std::move(registry)};
   } else if (viewManagerName == "RCTScrollView") {
-    auto nativeProps = folly::dynamic::object("alwaysBounceHorizontal", true)(
-      "alwaysBounceVertical", true)("automaticallyAdjustContentInsets", true)(
-      "bounces", true)("bouncesZoom", true)(
-      "canCancelContentTouches", true)("centerContent", true)("contentInsetAdjustmentBehavior", true)(
-      "decelerationRate", true)("directionalLockEnabled", true)(
-      "disableIntervalMomentum", true)(
+    auto nativeProps = folly::dynamic::object("alwaysBounceHorizontal", false)(
+      "alwaysBounceVertical", false)("automaticallyAdjustContentInsets", false)(
+      "bounces", true)("bouncesZoom", false)(
+      "canCancelContentTouches", false)("centerContent", false)(
+      "contentInset",true)("contentOffset",true)("contentInsetAdjustmentBehavior",false)(
+      "decelerationRate", false)("directionalLockEnabled", false)("disableIntervalMomentum", false)(
+      "endFillColor",true)(
       "fadingEdgeLength", true)(
       "indicatorStyle", true)(
-      "scrollIndicatorInsets", true)(
-      "keyboardDismissMode", true)(
-      "maintainVisibleContentPosition", true)("maximumZoomScale", true)("minimumZoomScale", true)(
-      "nestedScrollEnabled", true)(
-      "onMomentumScrollBegin", true)("onMomentumScrollEnd", true)("onScroll", true)("onScrollBeginDrag", true)("onScrollEndDrag", true)("onScrollToTop", true)("overScrollMode", true)(
-      "pagingEnabled", true)("persistentScrollbar", true)(
-      "scrollEnabled", true)("scrollEventThrottle", true)("scrollToOverflowEnabled", true)("scrollsToTop", true)("sendMomentumEvents", true)("showsHorizontalScrollIndicator", true)(
-      "showsVerticalScrollIndicator", true)("snapToAlignment", true)("snapToEnd", true)("snapToInterval", true)("snapToOffsets", true)("snapToStart", true)(
+      "keyboardDismissMode", false)(
+      "maintainVisibleContentPosition", false)("maximumZoomScale", false)("minimumZoomScale", false)(
+      "nestedScrollEnabled", false)(
+      "onMomentumScrollBegin", false)("onMomentumScrollEnd", false)("onScroll", true)(
+      "onScrollBeginDrag", false)("onScrollEndDrag", false)("onScrollToTop", false)("overScrollMode", false)(
+      "pagingEnabled", true)("persistentScrollbar", true)("pinchGestureEnabled",false)(
+      "scrollIndicatorInsets", true)("scrollEnabled", true)("scrollEventThrottle", true)(
+      "scrollToOverflowEnabled", false)("scrollsToTop", false)("sendMomentumEvents", false)(
+      "showsHorizontalScrollIndicator", true)("showsVerticalScrollIndicator", true)(
+      "snapToAlignment", true)("snapToEnd", true)("snapToInterval", true)(
+      "snapToOffsets", true)("snapToStart", true)(
       "zoomScale", true);
     auto bubblingEventTypes = folly::dynamic::object();
-    auto directEventTypes = folly::dynamic::object("topScrollToTop", folly::dynamic::object("registrationName", "onScrollToTop"));
+    auto directEventTypes = folly::dynamic::object();
 
     auto registry = folly::dynamic::object(
         NATIVE_PROPS_KEY, std::move(nativeProps))(

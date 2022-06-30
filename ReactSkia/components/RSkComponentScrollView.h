@@ -64,6 +64,7 @@ class RSkComponentScrollView final : public RSkComponent {
   bool scrollEnabled_{true};
   bool isHorizontalScroll_{false};
   std::vector<int> snapToOffsets_;
+  SkPoint contentOffset_{0,0};
 
 #if ENABLE(FEATURE_SCROLL_INDICATOR)
   bool showHorizontalScrollIndicator_{false};
@@ -83,9 +84,12 @@ class RSkComponentScrollView final : public RSkComponent {
     int &scrollOfffset);
 
   SkPoint getNextScrollPosition(rnsKey direction);
+  void updateScrollOffset(int x,int y);
+
   ScrollStatus handleSnapToOffsetScroll(rnsKey direction,RSkComponent* candidate);
   ScrollStatus handleScroll(rnsKey direction,SkIRect candidateFrame);
-  ScrollStatus handleScroll(SkPoint scrollPos);
+  ScrollStatus handleScroll(int x,int y, bool isFlushDisplay=true);
+  ScrollStatus handleScroll(SkPoint scrollPos, bool isFlushDisplay=true);
 
   void dispatchOnScrollEvent(SkPoint scrollPos);
 };

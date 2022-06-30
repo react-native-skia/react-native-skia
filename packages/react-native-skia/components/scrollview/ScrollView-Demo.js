@@ -19,6 +19,8 @@ let topValue = 0;
 let leftValue = 0;
 let bottomValue = 0;
 let rightValue = 0;
+let contentOffsetX = 0;
+let contentOffsetY = 0;
 
 const SimpleViewApp = React.Node = () => {
   let scrollViewRef = React.useRef();
@@ -37,6 +39,7 @@ const SimpleViewApp = React.Node = () => {
   let [scrollProps,setScrollProps] = React.useState({
       "_horizontal" : true,
       "_scrollEnabled" : true,
+      "_contentOffset" : {x:contentOffsetX,y:contentOffsetY},
       "_showsHorizontalScrollIndicator" : true,
       "_showsVerticalScrollIndicator" : true,
       "_persistentScrollbar" : false,
@@ -125,6 +128,9 @@ const SimpleViewApp = React.Node = () => {
     } else if (propType == "setIndicatorInsets") {
       updatedProp = {"_scrollIndicatorInsets":{top:topValue,left:leftValue,bottom:bottomValue,right:rightValue}}
       setTiColor("darkgrey");
+    } else if (propType == "contentOffset") {
+      console.log(contentOffsetX + "," + contentOffsetY);
+      updatedProp = {"_contentOffset":{x:contentOffsetX,y:contentOffsetY}}
     }
     setScrollProps(scrollProps => ({...scrollProps,...updatedProp}));
   }
@@ -144,6 +150,7 @@ const SimpleViewApp = React.Node = () => {
               style={[styles.scrollView,{borderWidth:scrollConfigs["_borderWidth"],width:scrollConfigs["_frameWidth"],height:scrollConfigs["_frameHeight"]}]}
               scrollEnabled={scrollProps["_scrollEnabled"]}
               horizontal={scrollProps["_horizontal"]}
+              contentOffset={scrollProps["_contentOffset"]}
               showsHorizontalScrollIndicator={scrollProps["_showsHorizontalScrollIndicator"]}
               showsVerticalScrollIndicator={scrollProps["_showsVerticalScrollIndicator"]}
               persistentScrollbar={scrollProps["_persistentScrollbar"]}
@@ -195,6 +202,11 @@ const SimpleViewApp = React.Node = () => {
             <TouchableHighlight underlayColor='darkseagreen' style={styles.controlButton} onPress={() => setScrollProperties("toggleHorizontal")} >
               <Text style={styles.controlButtonText}>{'horizontal : ' + scrollProps["_horizontal"]}</Text>
             </TouchableHighlight>
+            <View style={styles.inputControlButton}>
+              <Text style={styles.controlButtonText}>{'contentOffset XY'}</Text>
+              <TextInput defaultValue={contentOffsetX.toString()} onSubmitEditing={(e) => {contentOffsetX=parseInt(e.nativeEvent.text)}} style={{color:'darkgrey',width:100,height:30,margin:5}}/>
+              <TextInput defaultValue={contentOffsetY.toString()} onSubmitEditing={(e) => {contentOffsetY=parseInt(e.nativeEvent.text);setScrollProperties("contentOffset")}} style={{color:'darkgrey',width:100,height:30,margin:5}}/>
+            </View>
             <TouchableHighlight underlayColor='darkseagreen' style={styles.controlButton} onPress={() => setScrollProperties("toggleVBar")} >
               <Text style={styles.controlButtonText}>{'shows VBar : ' + scrollProps["_showsVerticalScrollIndicator"]}</Text>
             </TouchableHighlight>
