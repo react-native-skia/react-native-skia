@@ -31,6 +31,7 @@ enum partitionID {
 /* KeyBoard Layout for Alpha Numeric KeyBoard */
 
 #define ALPHA_NUMERIC_KB_PARTITION_COUNT   4
+SkPoint alphaNumericKBReturnKeyIndex{13,2};/*KeyIndex,RowIndex*/
 KBLayoutKeyPosContainer alphaNumericKBKeyPos;
 KBLayoutSibblingInfoContainer alphaNumericKBKeySiblingInfo;
 KBLayoutKeyInfoContainer alphaNumericKBKeyInfo= {
@@ -83,7 +84,7 @@ KBLayoutKeyInfoContainer alphaNumericKBKeyInfo= {
     {"y",RNS_KEY_y,KEY_TYPE_TEXT,GROUP3},
     {"z",RNS_KEY_z,KEY_TYPE_TEXT,GROUP3},
     {".",RNS_KEY_Period,KEY_TYPE_TEXT,GROUP3},
-    {"done",RNS_KEY_Select,KEY_TYPE_FUNCTION,GROUP4}
+    {"return",RNS_KEY_Select,KEY_TYPE_FUNCTION,GROUP4}
   },
   {
     //row 4
@@ -118,6 +119,7 @@ keyPlacementConfig_t alphaNumericKBGroupConfig[ALPHA_NUMERIC_KB_PARTITION_COUNT]
 KBLayoutSibblingInfoContainer symbolKBKBKeySiblingInfo;
 KBLayoutKeyPosContainer symbolKBKBKeyPos;
 #define SYMBOL_KB_PARTITION_COUNT 3
+SkPoint symbolKBReturnKeyIndex{11,2};/*KeyIndex,RowIndex*/
 KBLayoutKeyInfoContainer symbolKBKBKeyInfo={
   {
     {"123ABC",RNS_KEY_UnKnown,KEY_TYPE_TOGGLE,GROUP1},
@@ -165,7 +167,7 @@ KBLayoutKeyInfoContainer symbolKBKBKeyInfo={
     {"-",RNS_KEY_Minus,KEY_TYPE_TEXT,GROUP2},
     {"right", RNS_KEY_Right,KEY_TYPE_FUNCTION,GROUP2},
     {"left", RNS_KEY_Left,KEY_TYPE_FUNCTION,GROUP2},
-    {"done",RNS_KEY_Select,KEY_TYPE_FUNCTION,GROUP3},
+    {"return",RNS_KEY_Select,KEY_TYPE_FUNCTION,GROUP3},
   }
 };
 
@@ -183,6 +185,7 @@ keyPlacementConfig_t symbolKBGroupConfig[SYMBOL_KB_PARTITION_COUNT]={
 KBLayoutSibblingInfoContainer numericKBKeySiblingInfo;
 KBLayoutKeyPosContainer numericKBKeyPos;
 #define NUMERIC_KB_PARTITION_COUNT 1
+SkPoint  numericKBReturnKeyIndex{3,3};
 KBLayoutKeyInfoContainer numericKBKeyKeyInfo={
   {
     //row 1
@@ -210,7 +213,7 @@ KBLayoutKeyInfoContainer numericKBKeyKeyInfo={
     {",",RNS_KEY_Comma,KEY_TYPE_TEXT,GROUP1},
     {"0",RNS_KEY_0,KEY_TYPE_TEXT,GROUP1},
     {".",RNS_KEY_Period,KEY_TYPE_TEXT,GROUP1 },
-    {"done",RNS_KEY_Select,KEY_TYPE_FUNCTION,GROUP1}
+    {"return",RNS_KEY_Select,KEY_TYPE_FUNCTION,GROUP1}
   }
 };
 
@@ -237,7 +240,9 @@ typedef std::map<std::string,UnicharFontConfig_t> FunctionKeymap;
 FunctionKeymap functionKeyMap = {
   {"delete",{0x232B,1}},
   {"space",{0x23B5,2}},
-  {"done",{0x23CE,1.5}},
+  {"return",{0x23CE,1.5}}, // default return key entry: "enter"
+  {"enter",{0x23CE,1.5}},
+  {"search",{0x2315,2.5}},
   {"right",{0x25BA,1}},
   {"left",{0x25c4,1}}
 };

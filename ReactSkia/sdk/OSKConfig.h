@@ -29,7 +29,7 @@ namespace sdk {
 #define OSK_WINDOW_WIDTH                      1 /*100% of Screen Size*/
 #define OSK_WINDOW_HEIGTH                     1
 
-#define OSK_PLACEHOLDER_NAME_VERTICAL_OFFSET  0.15
+#define OSK_PLACEHOLDER_NAME_VERTICAL_OFFSET  0.18
 #define OSK_PLACEHOLDER_VERTICAL_OFFSET       0.2
 #define OSK_PLACEHOLDER_LENGTH                0.7 /*Total display view will be x% of the screen size*/
 #define OSK_PLACEHOLDER_HEIGHT                50

@@ -55,7 +55,15 @@ void OnScreenKeyboard::exit() {
   }
   std::scoped_lock lock(oskLaunchExitCtrlMutex);
   oskHandle.closeWindow();
+
+/*Resetting old values & States*/
   oskHandle.oskState_=OSK_STATE_INACTIVE;
+  oskHandle.autoActivateReturnKey=false;
+
+  oskHandle.displayString_.clear();
+  oskHandle.lastDisplayedString_.clear();
+  oskHandle.lastFocussIndex_.set(0,0);
+  oskHandle.currentFocussIndex_.set(0,0);
 }
 
 void  OnScreenKeyboard::updatePlaceHolderString(std::string PHdisplayString) {
@@ -85,6 +93,9 @@ void OnScreenKeyboard::launchOSKWindow(OSKConfig oskConfig) {
   if(oskConfig_.type == OSK_ALPHA_NUMERIC_KB)
     oskLayout_.kbLayoutType = ALPHA_LOWERCASE_LAYOUT;
 
+  if(oskConfig_.enablesReturnKeyAutomatically)
+    autoActivateReturnKey=true;
+
   unsigned int XscaleFactor = screenSize_.width()/baseScreenSize.width();
   unsigned int YscaleFactor =screenSize_.height()/baseScreenSize.height();
   oskLayout_.textFontSize= OSK_FONT_SIZE *XscaleFactor;
@@ -106,11 +117,11 @@ if(oskState_!= OSK_STATE_ACTIVE) return;
 
 /*2. Draw PlaceHolder*/
   SkPaint paint;
-  if(oskConfig_.placeHolderName) {
+  if(!oskConfig_.placeHolderName.empty()) {
     SkFont font;
     paint.setColor(fontColor_);
     font.setSize(OSK_FONT_SIZE);
-    windowDelegatorCanvas->drawSimpleText(oskConfig_.placeHolderName,strlen(oskConfig_.placeHolderName), SkTextEncoding::kUTF8,
+    windowDelegatorCanvas->drawSimpleText(oskConfig_.placeHolderName.c_str(),oskConfig_.placeHolderName.size(), SkTextEncoding::kUTF8,
                                oskLayout_.horizontalStartOffset,
                                screenSize_.height()*OSK_PLACEHOLDER_NAME_VERTICAL_OFFSET,
                                font, paint);
@@ -235,25 +246,64 @@ inline void OnScreenKeyboard::drawKBKeyFont(SkPoint index,SkColor color,bool onH
       textY=oskLayout_.keyPos->at(rowIndex).at(keyIndex).textXY.y();
     }
 
+    bool needsCanvasRestore{false};
     if(oskLayout_.keyInfo->at(rowIndex).at(keyIndex).keyType == KEY_TYPE_FUNCTION) {
-        FunctionKeymap :: iterator keyFunction =functionKeyMap.find(keyName);
-        keyName=(char *)DRAW_FONT_FAILURE_INDICATOR;
-        if(keyFunction != functionKeyMap.end()) {
-            UnicharFontConfig_t uniCharConfig = keyFunction->second;
-            sk_sp<SkFontMgr> mgr(SkFontMgr::RefDefault());
-            sk_sp<SkTypeface> typeface(mgr->matchFamilyStyleCharacter(nullptr, SkFontStyle(), nullptr, 0, uniCharConfig.unicharValue));
-            if (typeface) {
-                uniChar.appendUnichar(uniCharConfig.unicharValue);
-                font.setTypeface(typeface);
-                if(onHLTile)
-                    font.setSize(oskLayout_.textHLFontSize* uniCharConfig.fontScaleFactor);
-                else
-                  font.setSize(oskLayout_.textFontSize* uniCharConfig.fontScaleFactor);
-                keyName=(char *)uniChar.c_str();
-            }
-        }
+     /*TempFix: Search Icon Presented properly only by "DejaVu Sans Mono/monospace" family. So hardcoding it
+       NOTE : When more icon needs custom handling, custom options to be specified in functionKeyMap to handle in a genric way
+     */
+      char* fontFamily=nullptr;
+      if(!strcmp(keyName,"return")) {
+        /* If autoActivateReturnKey is set. Return key to be presented in disabled/In-Active look until TI was empty.*/
+        if(autoActivateReturnKey && displayString_.empty())
+          textPaint.setColor((oskConfig_.theme == OSK_LIGHT_THEME) ? OSK_LIGHT_THEME_INACTIVE_FONT_COLOR: OSK_DARK_THEME_INACTIVE_FONT_COLOR);
+          if(oskConfig_.returnKeyLabel == OSK_RETURN_KEY_SEARCH) {
+            keyName=(char*)"search";
+            fontFamily =(char *)"DejaVu Sans Mono";
+        } else keyName=(char*)"enter";
+      }
+      FunctionKeymap :: iterator keyFunction =functionKeyMap.find(keyName);
+      if(keyFunction != functionKeyMap.end()) {
+        UnicharFontConfig_t uniCharConfig = keyFunction->second;
+        sk_sp<SkFontMgr> mgr(SkFontMgr::RefDefault());
+        sk_sp<SkTypeface> typeface(mgr->matchFamilyStyleCharacter(fontFamily, SkFontStyle(), nullptr, 0, uniCharConfig.unicharValue));
+
+        if (typeface) {
+          uniChar.appendUnichar(uniCharConfig.unicharValue);
+          font.setTypeface(typeface);
+          if(onHLTile)
+            font.setSize(oskLayout_.textHLFontSize* uniCharConfig.fontScaleFactor);
+          else
+            font.setSize(oskLayout_.textFontSize* uniCharConfig.fontScaleFactor);
+          /*Current Search icon used needs a flip to be alligned with rest of the icons*/
+          if(!strcmp(keyName,"search")) {
+            SkRect bounds;
+            /*NOTE:: TBD-On extending supports for return keys, decision to be taken whether
+                     draw co-ordiantes for any other return keys (other than deafult) to be done
+                     here while drawing or can calculate during LAyout creation and maintained seperately
+            */
+            font.measureText(uniChar.c_str(), uniChar.size(), SkTextEncoding::kUTF8, &bounds);
+            textX = oskLayout_.keyPos->at(rowIndex).at(keyIndex).highlightTile.x() + ((oskLayout_.keyPos->at(rowIndex).at(keyIndex).highlightTile.width() - bounds.width() )/2);
+            textY = oskLayout_.keyPos->at(rowIndex).at(keyIndex).highlightTile.y() + ((oskLayout_.keyPos->at(rowIndex).at(keyIndex).highlightTile.height() + bounds.height()) /2);
+            textX-=5;textY+=5;// For allignment
+            windowDelegatorCanvas->save();
+            SkMatrix transformMatrix;
+            //to Flip on x-axis - anchor @ center
+            transformMatrix.preRotate(270,textX+(bounds.width()/2),textY-(bounds.height()/2));
+            transformMatrix.postTranslate(bounds.width()/2,0);
+            windowDelegatorCanvas->concat(transformMatrix);
+            needsCanvasRestore=true;
+          }
+ #ifdef DISPLAY_FONT_FAMILY_INFO
+              SkString familyName;
+              typeface->getFamilyName(&familyName);
+              RNS_LOG_INFO(" Font Family Name :"<<familyName.c_str() <<" Key Name : "<<keyName);
+#endif/*DISPLAY_FONT_FAMILY_INFO*/
+          keyName=(char *)uniChar.c_str();
+        } else  keyName=(char *)DRAW_FONT_FAILURE_INDICATOR;
+      } else keyName=(char *)DRAW_FONT_FAILURE_INDICATOR;
     }
     windowDelegatorCanvas->drawSimpleText(keyName, strlen(keyName), SkTextEncoding::kUTF8,textX,textY,font, textPaint);
+    if(needsCanvasRestore) windowDelegatorCanvas->restore();
 #ifdef SHOW_FONT_PLACING_ON_HLTILE
     SkRect bounds;
     textPaint.setColor(SK_ColorRED);
@@ -287,7 +337,7 @@ inline void OnScreenKeyboard::drawKBKeyFont(SkPoint index,SkColor color,bool onH
     textPaint.setColor(SK_ColorMAGENTA);
     windowDelegatorCanvas->drawLine(bounds.fLeft,bounds.fTop+(bounds.height()/2),bounds.fRight,bounds.fTop+(bounds.height()/2),textPaint);
     windowDelegatorCanvas->drawLine(bounds.fLeft+(bounds.width()/2),bounds.fTop,bounds.fLeft+(bounds.width()/2),bounds.fBottom,textPaint);
-  #endif/*SHOW_FONT_PLACING_ON_HLTILE*/
+#endif/*SHOW_FONT_PLACING_ON_HLTILE*/
   }
 }
 
@@ -299,12 +349,12 @@ void OnScreenKeyboard ::drawHighLightOnKey(SkPoint index) {
   unsigned int rowIndex=index.y(),keyIndex=index.x();
   unsigned int lastRowIndex=lastFocussIndex_.y(),lastKeyIndex=lastFocussIndex_.x();
 
-   RNS_PROFILE_START(HighlightOSKKey)
-   //reset last focussed item
-   paintObj.setColor(bgColor_);
-   paintObj.setAntiAlias(true);
-   windowDelegatorCanvas->drawRect(oskLayout_.keyPos->at(lastRowIndex).at(lastKeyIndex).highlightTile,paintObj);
-   drawKBKeyFont({lastKeyIndex,lastRowIndex},fontColor_);
+  RNS_PROFILE_START(HighlightOSKKey)
+  //reset last focussed item
+  paintObj.setColor(bgColor_);
+  paintObj.setAntiAlias(true);
+  windowDelegatorCanvas->drawRect(oskLayout_.keyPos->at(lastRowIndex).at(lastKeyIndex).highlightTile,paintObj);
+  drawKBKeyFont({lastKeyIndex,lastRowIndex},fontColor_);
 
   //Hight current focussed item
   paintObj.setColor(OSK_HIGHLIGHT_BACKGROUND_COLOR);
@@ -322,11 +372,25 @@ void OnScreenKeyboard::onHWkeyHandler(rnsKey keyValue, rnsKeyAction eventKeyActi
   unsigned int rowIndex=currentFocussIndex_.y(),keyIndex=currentFocussIndex_.x();
   RNS_LOG_DEBUG("KEY RECEIVED : "<<RNSKeyMap[keyValue]);
   switch( keyValue ) {
-  /*Case 1: handle Enter/selection key*/
+/* Case  1: Process Navigation Keys*/
+    case RNS_KEY_Right:
+      hlCandidate= oskLayout_.siblingInfo->at(rowIndex).at(keyIndex).siblingRight;
+    break;
+    case RNS_KEY_Left:
+      hlCandidate= oskLayout_.siblingInfo->at(rowIndex).at(keyIndex).siblingLeft;
+    break;
+    case RNS_KEY_Up:
+      hlCandidate= oskLayout_.siblingInfo->at(rowIndex).at(keyIndex).siblingUp;
+    break;
+    case RNS_KEY_Down:
+      hlCandidate= oskLayout_.siblingInfo->at(rowIndex).at(keyIndex).siblingDown;
+    break;
+/*Case 2: handle Enter/selection key*/
     case RNS_KEY_Select:
     {
+      bool proceedToKeyEmit=false;
       if(oskLayout_.keyInfo->at(rowIndex).at(keyIndex).keyValue == RNS_KEY_Select) {
-        exit();
+        proceedToKeyEmit=true; /* If selection on select/return Key needs to be emitted to client*/
       } else if (oskLayout_.keyInfo->at(rowIndex).at(keyIndex).keyType == KEY_TYPE_TOGGLE){
         ToggleKeyMap :: iterator keyFunction =toggleKeyMap.find(oskLayout_.keyInfo->at(rowIndex).at(keyIndex).keyName);
         if((keyFunction != toggleKeyMap.end()) && (keyFunction->second != oskLayout_.kbLayoutType)) {
@@ -342,27 +406,15 @@ void OnScreenKeyboard::onHWkeyHandler(rnsKey keyValue, rnsKeyAction eventKeyActi
           OSKkeyValue = static_cast<rnsKey>(OSKkeyValue-26);
         }
       }
+      if(!proceedToKeyEmit)break;
     }
-    break;
-/* Case  2: Process Navigation Keys*/
-    case RNS_KEY_Right:
-      hlCandidate= oskLayout_.siblingInfo->at(rowIndex).at(keyIndex).siblingRight;
-    break;
-    case RNS_KEY_Left:
-      hlCandidate= oskLayout_.siblingInfo->at(rowIndex).at(keyIndex).siblingLeft;
-    break;
-    case RNS_KEY_Up:
-      hlCandidate= oskLayout_.siblingInfo->at(rowIndex).at(keyIndex).siblingUp;
-    break;
-    case RNS_KEY_Down:
-      hlCandidate= oskLayout_.siblingInfo->at(rowIndex).at(keyIndex).siblingDown;
-    break;
-    /*Case 3: Emit back other known keys*/
+/*Case 3: Emit back other known keys*/
     default:
     {
       bool keyFound=false;
       /*Process only KB keys*/
-      if((keyValue < RNS_KEY_UnKnown ) && (keyValue >= RNS_KEY_1)) {
+      if(( keyValue == RNS_KEY_Select) ||
+         ((keyValue < RNS_KEY_UnKnown ) && (keyValue >= RNS_KEY_1))) {
         rnsKey layoutKeyValue{RNS_KEY_UnKnown};
         for (unsigned int rowIndex=0; (rowIndex < oskLayout_.keyInfo->size()) && (!keyFound);rowIndex++) {
           for (unsigned int keyIndex=0; keyIndex<oskLayout_.keyInfo->at(rowIndex).size();keyIndex++) {
@@ -370,7 +422,7 @@ void OnScreenKeyboard::onHWkeyHandler(rnsKey keyValue, rnsKeyAction eventKeyActi
             if(( oskLayout_.keyInfo->at(rowIndex).at(keyIndex).keyType == KEY_TYPE_TEXT ) &&
                (oskLayout_.kbLayoutType == ALPHA_UPPERCASE_LAYOUT) &&
                (isalpha(*oskLayout_.keyInfo->at(rowIndex).at(keyIndex).keyName))) {
-                   layoutKeyValue = static_cast<rnsKey>(layoutKeyValue-26);
+                  layoutKeyValue = static_cast<rnsKey>(layoutKeyValue-26);
             }
             if(layoutKeyValue == keyValue) {
               hlCandidate.set(keyIndex,rowIndex);
@@ -389,6 +441,12 @@ void OnScreenKeyboard::onHWkeyHandler(rnsKey keyValue, rnsKeyAction eventKeyActi
     currentFocussIndex_=hlCandidate;
     drawCallPendingToRender=true;
   }
+  /* Enable Reurn Key on Valid Key EVent if disabled*/
+  if((OSKkeyValue != RNS_KEY_UnKnown) && autoActivateReturnKey) {
+    autoActivateReturnKey=false;
+    drawKBKeyFont(oskLayout_.returnKeyIndex,fontColor_);
+    drawCallPendingToRender=true;
+  }
   if( drawCallPendingToRender && (oskState_== OSK_STATE_ACTIVE)) commitDrawCall();
 
   RNS_LOG_DEBUG("OSK KEY VALUE RECEIVED : "<<RNSKeyMap[OSKkeyValue]);
@@ -403,6 +461,7 @@ void OnScreenKeyboard::createOSKLayout(OSKTypes oskType) {
     oskLayout_.keyPos=&numericKBKeyPos;
     oskLayout_.siblingInfo=&numericKBKeySiblingInfo;
     oskLayout_.kbGroupConfig=numericKBGroupConfig;
+    oskLayout_.returnKeyIndex=numericKBReturnKeyIndex;
   } else {
     if(oskLayout_.kbLayoutType == SYMBOL_LAYOUT) {
       RNS_LOG_DEBUG("DRAW call for AlphaNumeric-symbol KB");
@@ -410,12 +469,14 @@ void OnScreenKeyboard::createOSKLayout(OSKTypes oskType) {
       oskLayout_.keyPos=&symbolKBKBKeyPos;
       oskLayout_.siblingInfo=&symbolKBKBKeySiblingInfo;
       oskLayout_.kbGroupConfig=symbolKBGroupConfig;
+      oskLayout_.returnKeyIndex=symbolKBReturnKeyIndex;
     } else {
       RNS_LOG_DEBUG("DRAW call for AlphaNumeric KB : "<<((oskLayout_.kbLayoutType == ALPHA_UPPERCASE_LAYOUT)? "UpperCase" : "LowerCase"));
       oskLayout_.keyInfo=&alphaNumericKBKeyInfo;
       oskLayout_.keyPos=&alphaNumericKBKeyPos;
       oskLayout_.siblingInfo=&alphaNumericKBKeySiblingInfo;
       oskLayout_.kbGroupConfig=alphaNumericKBGroupConfig;
+      oskLayout_.returnKeyIndex=alphaNumericKBReturnKeyIndex;
     }
   }
 

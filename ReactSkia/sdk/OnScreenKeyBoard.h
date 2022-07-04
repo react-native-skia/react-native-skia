@@ -31,6 +31,12 @@ enum OSKThemes {
   OSK_DARK_THEME,
   OSK_LIGHT_THEME
 };
+// OnScreenKeyBoard supported Return Key Types
+enum OSKReturnKeyType {
+  OSK_RETURN_KEY_DEFAULT,
+  OSK_RETURN_KEY_SEARCH,
+  OSK_RETURN_KEY_SUPPORT_END,
+};
 // OnScreenKeyBoard Error Codes
 enum OSKErrorCode {
   OSK_LAUNCH_SUCCESS=0,
@@ -41,12 +47,12 @@ enum OSKErrorCode {
 struct OSKConfig {
   OSKTypes        type;
   OSKThemes       theme;
-  const char *    placeHolderName;
-  const char *    returnKeyLabel;
+  OSKReturnKeyType    returnKeyLabel;
+  std::string     placeHolderName;
   bool      enablesReturnKeyAutomatically;
 };
 // Default OSK Configuration to be used, in case client doesn't have any preference
-static OSKConfig defaultOSKConfig={ OSK_ALPHA_NUMERIC_KB, OSK_DARK_THEME, nullptr, "done", false };
+static OSKConfig defaultOSKConfig={ OSK_ALPHA_NUMERIC_KB, OSK_DARK_THEME, OSK_RETURN_KEY_DEFAULT,"", false };
 
 //KeyBoard Layout Type
 enum KBLayoutType {
@@ -117,6 +123,7 @@ class OnScreenKeyboard : public WindowDelegator{
       unsigned int      textHLFontSize;
       unsigned int      horizontalStartOffset;
       SkPoint           defaultFocussIndex;
+      SkPoint           returnKeyIndex;
     };
 
     OnScreenKeyboard(){};
@@ -149,6 +156,7 @@ class OnScreenKeyboard : public WindowDelegator{
     std::string   displayString_{}; // Text to be displayed on screen
     std::string   lastDisplayedString_{};
     OSKState      oskState_{OSK_STATE_INACTIVE};
+    bool          autoActivateReturnKey{false};
 };
 
 }// namespace sdk
