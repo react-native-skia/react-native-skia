@@ -9,7 +9,6 @@
 #include "include/core/SkClipOp.h"
 #include "include/core/SkImageFilter.h"
 #include "include/effects/SkImageFilters.h"
-
 #include "rns_shell/compositor/layers/PictureLayer.h"
 
 #include "react/renderer/components/image/ImageEventEmitter.h"
@@ -30,14 +29,15 @@ using namespace RSkDrawUtils;
 using namespace RSkImageUtils;
 
 RSkComponentImage::RSkComponentImage(const ShadowView &shadowView)
-    : RSkComponent(shadowView) {}
+    : RSkComponent(shadowView) {
+      imageEventEmitter_ = std::static_pointer_cast<ImageEventEmitter const>(shadowView.eventEmitter);
+}
 
 void RSkComponentImage::OnPaint(SkCanvas *canvas) {
   sk_sp<SkImage> imageData{nullptr};
   string path;
   auto component = getComponentData();
   auto const &imageProps = *std::static_pointer_cast<ImageProps const>(component.props);
-
   //First to check file entry presence. If not exist, generate imageData.
   do {
     if(networkImageData_) {
@@ -45,7 +45,6 @@ void RSkComponentImage::OnPaint(SkCanvas *canvas) {
       break;
     }
     if(imageProps.sources.empty()) break;
-
     imageData = RSkImageCacheManager::getImageCacheManagerInstance()->findImageDataInCache(imageProps.sources[0].uri.c_str());
     if(imageData) break;
 
@@ -55,10 +54,6 @@ void RSkComponentImage::OnPaint(SkCanvas *canvas) {
       requestNetworkImageData(imageProps.sources[0]);
     }
   } while(0);
-
-  auto imageEventEmitter = std::static_pointer_cast<ImageEventEmitter const>(component.eventEmitter);
-  // Emitting Load completed Event
-  if(imageData) imageEventEmitter->onLoad();
 
   Rect frame = component.layoutMetrics.frame;
   SkRect frameRect = SkRect::MakeXYWH(frame.origin.x, frame.origin.y, frame.size.width, frame.size.height);
@@ -107,12 +102,21 @@ void RSkComponentImage::OnPaint(SkCanvas *canvas) {
     canvas->drawImageRect(imageData,targetRect,&paint);
     if(needClipAndRestore)
         canvas->restore();
-    drawBorder(canvas,frame,imageBorderMetrics,imageProps.backgroundColor);
     networkImageData_ = nullptr;
+    drawBorder(canvas,frame,imageBorderMetrics,imageProps.backgroundColor);
+    // Emitting Load completed Event
+    if(hasToTriggerEvent_) sendSuccessEvents();
+
   } else {
   /* Emitting Image Load failed Event*/
-    RNS_LOG_ERROR("Image not loaded :"<<imageProps.sources[0].uri.c_str());
-    imageEventEmitter->onError();
+    if(imageProps.sources[0].type != ImageSource::Type::Remote) {
+      if(!hasToTriggerEvent_) {
+        imageEventEmitter_->onLoadStart();
+        hasToTriggerEvent_ = true;
+      }
+      if(hasToTriggerEvent_) sendErrorEvents();
+      RNS_LOG_ERROR("Image not loaded :"<<imageProps.sources[0].uri.c_str());
+    }
   }
 }
 
@@ -136,6 +140,10 @@ sk_sp<SkImage> RSkComponentImage::getLocalImageData(ImageSource source) {
     imageCacheData.imageData = imageData;
     imageCacheData.expiryTime = (SkTime::GetMSecs() + DEFAULT_MAX_CACHE_EXPIRY_TIME);//convert min to millisecond 30 min *60 sec *1000
     RSkImageCacheManager::getImageCacheManagerInstance()->imageDataInsertInCache(source.uri.c_str(), imageCacheData);
+  }
+  if(!hasToTriggerEvent_) {
+    imageEventEmitter_->onLoadStart();
+    hasToTriggerEvent_ = true;
   }
 
 #ifdef RNS_IMAGE_CACHE_USAGE_DEBUG
@@ -165,6 +173,10 @@ RnsShell::LayerInvalidateMask RSkComponentImage::updateComponentProps(const Shad
       /* TODO : Needs implementation*/
       imageProps.tintColor = RSkColorFromSharedColor(newimageProps.tintColor,SK_ColorTRANSPARENT);
     }
+    if((forceUpdate) || (oldimageProps.sources[0].uri.compare(newimageProps.sources[0].uri) != 0)) {
+      imageEventEmitter_->onLoadStart();
+      hasToTriggerEvent_ = true;
+    }
     return updateMask;
 }
 
@@ -178,19 +190,22 @@ void RSkComponentImage::drawAndSubmit() {
 }
 
 // callback for remoteImageData
-void RSkComponentImage::processImageData(const char* path, char* response, int size) {
+bool RSkComponentImage::processImageData(const char* path, char* response, int size) {
   decodedimageCacheData imageCacheData;
   // Responce callback from network. Get image data, insert in Cache and call Onpaint
   sk_sp<SkImage> remoteImageData = RSkImageCacheManager::getImageCacheManagerInstance()->findImageDataInCache(path);
   if(remoteImageData) {
     drawAndSubmit();
   } else {
+    if(!response) return false;
     sk_sp<SkData> data = SkData::MakeWithCopy(response,size);
     if (!data){
       RNS_LOG_ERROR("Unable to make SkData for path : " << path);
-      return;
+      return false;
     }
     remoteImageData = SkImage::MakeFromEncoded(data);
+    if(!remoteImageData) return false;
+
     //Add in cache if image data is valid
     if(remoteImageData && canCacheData_){
       imageCacheData.imageData = remoteImageData;
@@ -200,6 +215,7 @@ void RSkComponentImage::processImageData(const char* path, char* response, int s
     networkImageData_ = remoteImageData;
     drawAndSubmit();
   }
+  return true;
 }
 
 inline bool shouldCacheData(std::string cacheControlData) {
@@ -255,7 +271,10 @@ void RSkComponentImage::requestNetworkImageData(ImageSource source) {
   auto completionCallback =  [&](void* curlresponseData,void *userdata)->bool {
     CurlResponse *responseData =  (CurlResponse *)curlresponseData;
     CurlRequest * curlRequest = (CurlRequest *) userdata;
-    processImageData(responseData->responseurl,responseData->responseBuffer,responseData->contentSize);
+    if((!responseData
+        || !processImageData(responseData->responseurl,responseData->responseBuffer,responseData->contentSize)) && (hasToTriggerEvent_)) {
+      sendErrorEvents();
+    }
     delete curlRequest;
     return 0;
   };
@@ -263,7 +282,23 @@ void RSkComponentImage::requestNetworkImageData(ImageSource source) {
   curlRequest->curldelegator.delegatorData = curlRequest;
   curlRequest->curldelegator.CURLNetworkingHeaderCallback = headerCallback;
   curlRequest->curldelegator.CURLNetworkingCompletionCallback=completionCallback;
+  if(!hasToTriggerEvent_) {
+    imageEventEmitter_->onLoadStart();
+    hasToTriggerEvent_ = true;
+  }
   sharedCurlNetworking->sendRequest(curlRequest,query);
+}
+
+inline void RSkComponentImage::sendErrorEvents() {
+  imageEventEmitter_->onError();
+  imageEventEmitter_->onLoadEnd();
+  hasToTriggerEvent_ = false;
+}
+
+inline void RSkComponentImage::sendSuccessEvents() {
+  imageEventEmitter_->onLoad();
+  imageEventEmitter_->onLoadEnd();
+  hasToTriggerEvent_ = false;
 }
 
 } // namespace react

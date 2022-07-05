@@ -34,16 +34,19 @@ class RSkComponentImage final : public RSkComponent {
  private :
   ImgProps imageProps;
   sk_sp<SkImage> networkImageData_;
+  bool hasToTriggerEvent_{false};
   bool canCacheData_{true};
   double cacheExpiryTime_{DEFAULT_MAX_CACHE_EXPIRY_TIME};
+  std::shared_ptr<ImageEventEmitter const> imageEventEmitter_;
 
   sk_sp<SkImage> getLocalImageData(ImageSource source);
   void requestNetworkImageData(ImageSource source);
 
   inline string generateUriPath(string path);
   void drawAndSubmit();
-  void processImageData(const char* path, char* response, int size);
-
+  bool processImageData(const char* path, char* response, int size);
+  inline void sendErrorEvents();
+  inline void sendSuccessEvents();
  protected:
   void OnPaint(SkCanvas *canvas) override;
 };
