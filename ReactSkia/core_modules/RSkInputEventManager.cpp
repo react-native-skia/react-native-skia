@@ -20,7 +20,9 @@ RSkInputEventManager::RSkInputEventManager(){
                                                               std::placeholders::_1, // rnsKey
                                                               std::placeholders::_2);
   eventId_ = NotificationCenter::defaultCenter().addListener("onHWKeyEvent", handler);
+#if ENABLE(FEATURE_ONSCREEN_KEYBOARD)
   subWindowEventId_ = NotificationCenter::subWindowCenter().addListener("onOSKKeyEvent", handler);
+#endif/*FEATURE_ONSCREEN_KEYBOARD*/
   spatialNavigator_ =  SpatialNavigator::RSkSpatialNavigator::sharedSpatialNavigator();
   keyRepeat=false;
   previousKeyType=RNS_KEY_UnKnown;

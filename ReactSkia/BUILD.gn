@@ -3,6 +3,8 @@
 declare_args() {
   # Enable API profiling
   rns_enable_api_profiling = false
+  # Enable OnScreenKeyBoard Feature
+  rns_enable_onscreen_keyboard = true
 }
 
 import("//build/config/gclient_args.gni")
@@ -16,6 +18,9 @@ config("ReactSkia_config") {
   }
   if( react_native_platform == "tvos") {
      defines += ["TARGET_OS_TV=1"]
+  }
+  if(rns_enable_onscreen_keyboard) {
+     defines += ["ENABLE_FEATURE_ONSCREEN_KEYBOARD"]
   }
 
   # Enable scroll indicator support
@@ -105,8 +110,6 @@ source_set("ReactSkia") {
     "sdk/FollyTimer.cpp",
     "sdk/NopollWebsocket.cpp",
     "sdk/NopollWebsocket.h",
-    "sdk/OnScreenKeyBoard.cpp",
-    "sdk/OnScreenKeyBoard.h",
     "sdk/WindowDelegator.cpp",
     "sdk/WindowDelegator.h",
     "core_modules/RSkDeviceInfo.cpp",
@@ -167,6 +170,13 @@ source_set("ReactSkia") {
     "views/common/RSkImageUtils.cpp",
     "views/common/RSkImageUtils.h",
   ]
+
+  if(rns_enable_onscreen_keyboard) {
+    sources += [
+      "sdk/OnScreenKeyBoard.cpp",
+      "sdk/OnScreenKeyBoard.h",
+    ]
+  }
 
   if( react_native_platform == "tvos") {
     sources += [

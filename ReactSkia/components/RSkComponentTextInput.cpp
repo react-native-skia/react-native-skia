@@ -416,7 +416,7 @@ RnsShell::LayerInvalidateMask  RSkComponentTextInput::updateComponentProps(const
       && ((placeholderString_) != (textInputProps.placeholder))
       &&(!textInputProps.value.has_value())) {
 
-    oskLaunchConfig_.placeHolderName=placeholderString_ = textInputProps.placeholder.c_str();
+    placeholderString_ = textInputProps.placeholder.c_str();
     if(!displayString_.size()) {
       mask |= LayerPaintInvalidate;
     }
@@ -451,13 +451,16 @@ RnsShell::LayerInvalidateMask  RSkComponentTextInput::updateComponentProps(const
   }
   hasToSetFocus_ = forceUpdate && textInputProps.autoFocus ? true :false;
 
+#if ENABLE(FEATURE_ONSCREEN_KEYBOARD)
 /* Fetch OnSCreenKeyBoard Props*/
   showSoftInputOnFocus_=textInputProps.traits.showSoftInputOnFocus;
   oskLaunchConfig_.type=RSkToSdkOSKeyboardType(textInputProps.traits.keyboardType);
   oskLaunchConfig_.theme=RSkToSdkOSKeyboardTheme(textInputProps.traits.keyboardAppearance);
   oskLaunchConfig_.returnKeyLabel=RSkToSdkOSKReturnKeyType(textInputProps.traits.returnKeyType);
   oskLaunchConfig_.enablesReturnKeyAutomatically=textInputProps.traits.enablesReturnKeyAutomatically;
- 
+  oskLaunchConfig_.placeHolderName=placeholderString_;
+#endif/*FEATURE_ONSCREEN_KEYBOARD*/
+
   return (RnsShell::LayerInvalidateMask)mask;
 }
 
@@ -518,10 +521,12 @@ void RSkComponentTextInput::requestForEditingMode(bool isFlushDisplay){
        drawAndSubmit(isFlushDisplay);
     }
   }
+#if ENABLE(FEATURE_ONSCREEN_KEYBOARD)
   if(showSoftInputOnFocus_){
     OnScreenKeyboard::launch(oskLaunchConfig_);
     isOSKActive_=true;
   }
+#endif/*FEATURE_ONSCREEN_KEYBOARD*/
   RNS_LOG_DEBUG("[requestForEditingMode] END");
 }
 
@@ -548,10 +553,12 @@ void RSkComponentTextInput::resignFromEditingMode(bool isFlushDisplay) {
   if (!caretHidden_) {
     drawAndSubmit(isFlushDisplay);
   }
+#if ENABLE(FEATURE_ONSCREEN_KEYBOARD)
   if(isOSKActive_){
     OnScreenKeyboard::exit();
     isOSKActive_=false;
   }
+#endif/*FEATURE_ONSCREEN_KEYBOARD*/
   RNS_LOG_DEBUG("[requestForEditingMode] *** END ***");
 }
 

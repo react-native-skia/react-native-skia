@@ -43,8 +43,6 @@ class RSkComponentTextInput final : public RSkComponent {
   bool isTextInputInFocus_=false;
   bool secureTextEntry_=false;
   bool hasToSetFocus_=false;
-  std::atomic<bool> showSoftInputOnFocus_=true;//To decide OnScreen KeyBoard to be used or not
-  bool isOSKActive_=false; // maintaining KB launch state, to decide need to Exit OSK
   int eventCount_;
   int maxLength_;
   std::string displayString_{}; // Text to be displayed on screen
@@ -52,9 +50,14 @@ class RSkComponentTextInput final : public RSkComponent {
   SharedColor placeholderColor_;  // Placeholder Text Color
   SharedColor selectionColor_;
   struct cursor cursor_;
-  rns::sdk::OSKConfig oskLaunchConfig_;
   SkPaint cursorPaint_;
   std::shared_ptr<skia::textlayout::Paragraph> paragraph_;
+
+#if ENABLE(FEATURE_ONSCREEN_KEYBOARD)
+  std::atomic<bool> showSoftInputOnFocus_=true;//To decide OnScreen KeyBoard to be used or not
+  bool isOSKActive_=false; // maintaining KB launch state, to decide need to Exit OSK
+  rns::sdk::OSKConfig oskLaunchConfig_;
+#endif/*FEATURE_ONSCREEN_KEYBOARD*/
   void drawAndSubmit(bool isFlushDisplay=true);
   void drawTextInput(
       SkCanvas *canvas,
