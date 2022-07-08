@@ -62,7 +62,7 @@ RnsShell::LayerInvalidateMask RSkComponentScrollView::updateComponentProps(
 
   //Update scroll view props
   scrollEnabled_ = newScrollViewProps.scrollEnabled;
-
+  pagingEnabled_ = newScrollViewProps.pagingEnabled;
   snapToOffsets_.clear();
   for(auto &offset : newScrollViewProps.snapToOffsets) {
     snapToOffsets_.push_back(static_cast<int>(offset));
@@ -279,9 +279,16 @@ ScrollStatus RSkComponentScrollView::scrollInDirection(RSkComponent* candidate, 
   SkIRect visibleRect = SkIRect::MakeXYWH(scrollPos.x(),scrollPos.y(),frame.width(),frame.height());
 
   SkIRect candidateFrame = candidate->getLayerAbsoluteFrame();
-  if(!visibleRect.intersect(candidateFrame)) return handleScroll(scrollPos);
+  if(!visibleRect.intersect(candidateFrame)) {
+    return handleScroll(scrollPos);
+  }
 
-  return handleScroll(direction,candidateFrame);
+  // When we reach here, candidate frame is found to be available in next calculated offset
+  // There are two cases,
+  //    1. Paging enabled - scroll to next page and return scroll to focus
+  //    2. Paging disabled - scroll to candidate frame and return scroll to focus
+  pagingEnabled_ ? handleScroll(scrollPos) : handleScroll(direction,candidateFrame);
+  return scrollToFocus;
 }
 
 bool RSkComponentScrollView::isVisible(RSkComponent* candidate) {
@@ -309,10 +316,11 @@ void RSkComponentScrollView::calculateNextScrollOffset(
    ScrollDirectionType scrollDirection,
    int contentLength,
    int viewLength,
-   int &scrollOffset) {
+   SkScalar &scrollOffset) {
 
-   /* Default offset derived from experiments in Android TV emulator*/
-   int defaultOffset = SkScalarRoundToInt(viewLength/2);
+   /* If pagingEnabled, use full view length to scroll next
+    *             else, use half of view length similar to Android TV emulator*/
+   int defaultOffset = pagingEnabled_ ? viewLength : SkScalarRoundToInt(viewLength/2);
 
    if(scrollDirection == ScrollDirectionForward) {
      /* Scrollable area available,Set next scrolling offset */
@@ -336,8 +344,7 @@ void RSkComponentScrollView::calculateNextScrollOffset(
 
 SkPoint RSkComponentScrollView::getNextScrollPosition(rnsKey direction) {
   RnsShell::ScrollLayer* scrollLayer= SCROLL_LAYER_HANDLE;
-  int scrollOffsetX = scrollLayer->getScrollPosition().x();
-  int scrollOffsetY = scrollLayer->getScrollPosition().y();
+  SkPoint scrollPos = scrollLayer->getScrollPosition();
 
   switch(direction) {
     case RNS_KEY_Right:
@@ -345,19 +352,18 @@ SkPoint RSkComponentScrollView::getNextScrollPosition(rnsKey direction) {
       calculateNextScrollOffset(direction==RNS_KEY_Right ? ScrollDirectionForward:ScrollDirectionBackward,
                                 scrollLayer->getContentSize().width(),
                                 scrollLayer->getFrame().width(),
-                                scrollOffsetX);
+                                scrollPos.fX);
       break;
     case RNS_KEY_Down:
     case RNS_KEY_Up:
       calculateNextScrollOffset(direction==RNS_KEY_Down ? ScrollDirectionForward:ScrollDirectionBackward,
                                 scrollLayer->getContentSize().height(),
                                 scrollLayer->getFrame().height(),
-                                scrollOffsetY);
+                                scrollPos.fY);
       break;
     default: RNS_LOG_WARN("Invalid key :" << direction);
   }
-  return SkPoint::Make(scrollOffsetX,scrollOffsetY);
-
+  return scrollPos;
 }
 
 inline void RSkComponentScrollView::updateScrollOffset(int x,int y) {
@@ -373,7 +379,7 @@ ScrollStatus RSkComponentScrollView::handleSnapToOffsetScroll(rnsKey direction,R
   SkPoint scrollPos = scrollLayer->getScrollPosition();
   SkPoint nextScrollPos = scrollPos;
   int currentOffset = isHorizontalScroll_ ? scrollPos.x() : scrollPos.y();
-  int prevOffset = 0;
+  int prevOffset = -1;
   int nextOffset = currentOffset;
 
   std::vector<int>::iterator upper,lower;
@@ -387,14 +393,26 @@ ScrollStatus RSkComponentScrollView::handleSnapToOffsetScroll(rnsKey direction,R
      lower = std::lower_bound(snapToOffsets_.begin(),snapToOffsets_.end(),currentOffset);
   }
 
-  if(upper != snapToOffsets_.end()) nextOffset = *upper;
-  if(lower != snapToOffsets_.begin()) prevOffset = *(lower-1);
+  if(upper != snapToOffsets_.end()) {
+    nextOffset = *upper;
+  }
+  if(lower != snapToOffsets_.begin()) {
+    prevOffset = *(lower-1);
+  }
 
   if((direction == RNS_KEY_Right) || (direction == RNS_KEY_Down)) {
-     if(nextOffset == currentOffset) return noScroll;
-     if((contentLength - nextOffset) < frameLength)
-        nextOffset = contentLength-frameLength;
+    if(nextOffset == currentOffset) {
+      return noScroll;
+    }
+    if((contentLength - nextOffset) < frameLength) {
+      nextOffset = contentLength-frameLength;
+    }
+  } else if((direction == RNS_KEY_Left) || (direction == RNS_KEY_Up)) {
+    if(prevOffset == -1) {
+      return noScroll;
+    }
   }
+
   /* TODO */
   /* If candidate is null/this : smooth scroll to nextOffset/prevOffset */
   /* If candidate available : smooth scroll between next & prev Offset */
@@ -411,7 +429,9 @@ ScrollStatus RSkComponentScrollView::handleSnapToOffsetScroll(rnsKey direction,R
      case RNS_KEY_Up:
         nextScrollPos.fY = prevOffset;
         break;
-    default: RNS_LOG_WARN("Invalid key :" << direction);
+     default:
+        RNS_LOG_WARN("Invalid key :" << direction);
+        return noScroll;
   }
 
   handleScroll(nextScrollPos);

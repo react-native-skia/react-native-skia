@@ -61,6 +61,7 @@ class RSkComponentScrollView final : public RSkComponent {
   void OnPaint(SkCanvas *canvas) override;
 
  private:
+  bool pagingEnabled_{false};
   bool scrollEnabled_{true};
   bool isHorizontalScroll_{false};
   std::vector<int> snapToOffsets_;
@@ -81,7 +82,7 @@ class RSkComponentScrollView final : public RSkComponent {
     ScrollDirectionType scrollDirection,
     int containerLength,
     int frameLength,
-    int &scrollOfffset);
+    SkScalar &scrollOfffset);
 
   SkPoint getNextScrollPosition(rnsKey direction);
   void updateScrollOffset(int x,int y);

@@ -21,6 +21,7 @@ let bottomValue = 0;
 let rightValue = 0;
 let contentOffsetX = 0;
 let contentOffsetY = 0;
+let snapToOffsets;
 
 const SimpleViewApp = React.Node = () => {
   let scrollViewRef = React.useRef();
@@ -39,7 +40,9 @@ const SimpleViewApp = React.Node = () => {
   let [scrollProps,setScrollProps] = React.useState({
       "_horizontal" : true,
       "_scrollEnabled" : true,
+      "_pagingEnabled" : false,
       "_contentOffset" : {x:contentOffsetX,y:contentOffsetY},
+      "_snapToOffsets" : null,
       "_showsHorizontalScrollIndicator" : true,
       "_showsVerticalScrollIndicator" : true,
       "_persistentScrollbar" : false,
@@ -94,6 +97,13 @@ const SimpleViewApp = React.Node = () => {
     }
   }
 
+  const setSnapToOffsets = (e) => {
+    var arrayString=e.nativeEvent.text;
+    if(arrayString.length) snapToOffsets = arrayString.split(",").map(function(n) {return Number(n);});
+    else snapToOffsets=null;
+    setScrollProperties("snapToOffsets");
+  }
+
   const setScrollConfiguration = (configType,configValue) => {
     let updatedConfig={};
     if(configType == "addItem"){
@@ -119,6 +129,7 @@ const SimpleViewApp = React.Node = () => {
     let updatedProp = {}
     if(propType == "toggleHorizontal") updatedProp = {"_horizontal": !scrollProps["_horizontal"]}
     else if (propType == "toggleScrollEnabled") updatedProp = {"_scrollEnabled": !scrollProps["_scrollEnabled"]}
+    else if (propType == "togglePagingEnabled") updatedProp = {"_pagingEnabled": !scrollProps["_pagingEnabled"]}
     else if (propType == "toggleVBar") updatedProp = {"_showsVerticalScrollIndicator": !scrollProps["_showsVerticalScrollIndicator"]}
     else if (propType == "toggleHBar") updatedProp = {"_showsHorizontalScrollIndicator": !scrollProps["_showsHorizontalScrollIndicator"]}
     else if (propType == "toggleBarColor") {
@@ -129,8 +140,9 @@ const SimpleViewApp = React.Node = () => {
       updatedProp = {"_scrollIndicatorInsets":{top:topValue,left:leftValue,bottom:bottomValue,right:rightValue}}
       setTiColor("darkgrey");
     } else if (propType == "contentOffset") {
-      console.log(contentOffsetX + "," + contentOffsetY);
       updatedProp = {"_contentOffset":{x:contentOffsetX,y:contentOffsetY}}
+    } else if (propType == "snapToOffsets") {
+      updatedProp = {"_snapToOffsets":snapToOffsets}
     }
     setScrollProps(scrollProps => ({...scrollProps,...updatedProp}));
   }
@@ -150,7 +162,9 @@ const SimpleViewApp = React.Node = () => {
               style={[styles.scrollView,{borderWidth:scrollConfigs["_borderWidth"],width:scrollConfigs["_frameWidth"],height:scrollConfigs["_frameHeight"]}]}
               scrollEnabled={scrollProps["_scrollEnabled"]}
               horizontal={scrollProps["_horizontal"]}
+              pagingEnabled={scrollProps["_pagingEnabled"]}
               contentOffset={scrollProps["_contentOffset"]}
+              snapToOffsets={scrollProps["_snapToOffsets"]}
               showsHorizontalScrollIndicator={scrollProps["_showsHorizontalScrollIndicator"]}
               showsVerticalScrollIndicator={scrollProps["_showsVerticalScrollIndicator"]}
               persistentScrollbar={scrollProps["_persistentScrollbar"]}
@@ -186,11 +200,11 @@ const SimpleViewApp = React.Node = () => {
             </TouchableHighlight>
             <View style={styles.inputControlButton}>
               <Text style={styles.controlButtonText}>{'Frame Width'}</Text>
-              <TextInput defaultValue={scrollConfigs["_frameWidth"].toString()} style={{color:'darkgrey',width:100,height:30,margin:5}} onSubmitEditing={(e) => setScrollConfiguration("frameWidth",parseInt(e.nativeEvent.text))}/>
+              <TextInput showSoftInputOnFocus={false} defaultValue={scrollConfigs["_frameWidth"].toString()} style={{color:'darkgrey',width:100,height:30,margin:5}} onSubmitEditing={(e) => setScrollConfiguration("frameWidth",parseInt(e.nativeEvent.text))}/>
             </View>
             <View style={styles.inputControlButton}>
               <Text style={styles.controlButtonText}>{'Frame Height'}</Text>
-              <TextInput defaultValue={scrollConfigs["_frameHeight"].toString()} style={{color:'darkgrey',width:100,height:30,margin:5}} onSubmitEditing={(e) => setScrollConfiguration("frameHeight",parseInt(e.nativeEvent.text))}/>
+              <TextInput showSoftInputOnFocus={false} defaultValue={scrollConfigs["_frameHeight"].toString()} style={{color:'darkgrey',width:100,height:30,margin:5}} onSubmitEditing={(e) => setScrollConfiguration("frameHeight",parseInt(e.nativeEvent.text))}/>
             </View>
           </View>
 
@@ -202,10 +216,17 @@ const SimpleViewApp = React.Node = () => {
             <TouchableHighlight underlayColor='darkseagreen' style={styles.controlButton} onPress={() => setScrollProperties("toggleHorizontal")} >
               <Text style={styles.controlButtonText}>{'horizontal : ' + scrollProps["_horizontal"]}</Text>
             </TouchableHighlight>
+            <TouchableHighlight underlayColor='darkseagreen' style={styles.controlButton} onPress={() => setScrollProperties("togglePagingEnabled")} >
+              <Text style={styles.controlButtonText}>{'pagingEnabled : ' + scrollProps["_pagingEnabled"]}</Text>
+            </TouchableHighlight>
             <View style={styles.inputControlButton}>
               <Text style={styles.controlButtonText}>{'contentOffset XY'}</Text>
-              <TextInput defaultValue={contentOffsetX.toString()} onSubmitEditing={(e) => {contentOffsetX=parseInt(e.nativeEvent.text)}} style={{color:'darkgrey',width:100,height:30,margin:5}}/>
-              <TextInput defaultValue={contentOffsetY.toString()} onSubmitEditing={(e) => {contentOffsetY=parseInt(e.nativeEvent.text);setScrollProperties("contentOffset")}} style={{color:'darkgrey',width:100,height:30,margin:5}}/>
+              <TextInput showSoftInputOnFocus={false} defaultValue={contentOffsetX.toString()} onSubmitEditing={(e) => {contentOffsetX=parseInt(e.nativeEvent.text)}} style={{color:'darkgrey',width:100,height:30,margin:5}}/>
+              <TextInput showSoftInputOnFocus={false} defaultValue={contentOffsetY.toString()} onSubmitEditing={(e) => {contentOffsetY=parseInt(e.nativeEvent.text);setScrollProperties("contentOffset")}} style={{color:'darkgrey',width:100,height:30,margin:5}}/>
+            </View>
+            <View style={styles.inputControlButton}>
+              <Text style={styles.controlButtonText}>{'snapToOffsets'}</Text>
+              <TextInput showSoftInputOnFocus={false} onSubmitEditing={(e) => {setSnapToOffsets(e)}} style={{color:'darkgrey',width:100,height:30,margin:5}}/>
             </View>
             <TouchableHighlight underlayColor='darkseagreen' style={styles.controlButton} onPress={() => setScrollProperties("toggleVBar")} >
               <Text style={styles.controlButtonText}>{'shows VBar : ' + scrollProps["_showsVerticalScrollIndicator"]}</Text>
@@ -220,10 +241,10 @@ const SimpleViewApp = React.Node = () => {
               <TouchableHighlight underlayColor='darkseagreen' style={[styles.controlButton,{borderWidth:0,height:30}]} onPress={() => setScrollProperties("setIndicatorInsets")} >
                 <Text style={styles.controlButtonText}>{'IndicatorInsets [LTRB]'}</Text>
               </TouchableHighlight>
-              <TextInput defaultValue={leftValue.toString()} onEndEditing={(e) => {leftValue=parseInt(e.nativeEvent.text);setTiColor("white")}} style={{color:tiColor,width:75,height:30,margin:5}}/>
-              <TextInput defaultValue={topValue.toString()} onEndEditing={(e) => {topValue=parseInt(e.nativeEvent.text);setTiColor("white")}} style={{color:tiColor,width:75,height:30,margin:5}}/>
-              <TextInput defaultValue={rightValue.toString()} onEndEditing={(e) => {rightValue=parseInt(e.nativeEvent.text);setTiColor("white")}} style={{color:tiColor,width:75,height:30,margin:5}}/>
-              <TextInput defaultValue={bottomValue.toString()} onEndEditing={(e) => {bottomValue=parseInt(e.nativeEvent.text);setTiColor("white")}} style={{color:tiColor,width:75,height:30,margin:5}}/>
+              <TextInput showSoftInputOnFocus={false} defaultValue={leftValue.toString()} onEndEditing={(e) => {leftValue=parseInt(e.nativeEvent.text);setTiColor("white")}} style={{color:tiColor,width:75,height:30,margin:5}}/>
+              <TextInput showSoftInputOnFocus={false} defaultValue={topValue.toString()} onEndEditing={(e) => {topValue=parseInt(e.nativeEvent.text);setTiColor("white")}} style={{color:tiColor,width:75,height:30,margin:5}}/>
+              <TextInput showSoftInputOnFocus={false} defaultValue={rightValue.toString()} onEndEditing={(e) => {rightValue=parseInt(e.nativeEvent.text);setTiColor("white")}} style={{color:tiColor,width:75,height:30,margin:5}}/>
+              <TextInput showSoftInputOnFocus={false} defaultValue={bottomValue.toString()} onEndEditing={(e) => {bottomValue=parseInt(e.nativeEvent.text);setTiColor("white")}} style={{color:tiColor,width:75,height:30,margin:5}}/>
             </View>
           </View>
 
@@ -231,7 +252,7 @@ const SimpleViewApp = React.Node = () => {
           <View style={{flexDirection:'row',flexWrap:'wrap'}}>
             <View style={styles.inputControlButton}>
               <Text style={styles.controlButtonText}>{'ScrollTo'}</Text>
-              <TextInput defaultValue={'0'} onSubmitEditing={scrollTo} style={{color:'darkgrey',width:100,height:30,margin:5}}/>
+              <TextInput showSoftInputOnFocus={false} defaultValue={'0'} onSubmitEditing={scrollTo} style={{color:'darkgrey',width:100,height:30,margin:5}}/>
             </View>
             <TouchableHighlight underlayColor='darkseagreen' style={styles.controlButton} onPress={() =>{scrollViewRef.current.scrollToEnd({animated:false})}} >
               <Text style={styles.controlButtonText}>{'ScrollToEnd'}</Text>

@@ -341,7 +341,7 @@ void ScrollLayer::prePaint(PaintContext& context, bool forceLayout) {
 
     // If self has update, we anyways update the whole frame
     // So only if self does not have update, check if any children update is available and update damage rect list accordingly
-    if(invalidateMask_ == LayerInvalidateNone) {
+    if((context.supportPartialUpdate) && (invalidateMask_ == LayerInvalidateNone)) {
        RNS_LOG_TRACE("Scroll Layer (" << layerId_ << ") damageRect list size:" << bitmapSurfaceDamage_.size());
        //Calculate the screen frame for the child dirty frame and add intersected area to parent damageRect list
        for(auto &rect : bitmapSurfaceDamage_) {
