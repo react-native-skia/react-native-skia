@@ -217,6 +217,7 @@ void RSkTextLayoutManager::buildText (struct RSkSkTextLayout &textLayout,
     if(textAttributes.alignment.has_value())
         textLayout.paraStyle.setTextAlign(convertTextAlign(textAttributes.alignment.value()));
 
+    textLayout.paraStyle.setMaxLines(std::numeric_limits<size_t>::max());
     textLayout.builder->setParagraphStyle(textLayout.paraStyle);
     textLayout.builder->pushStyle(style);
     textLayout.builder->addText(textString.c_str(), std::strlen(textString.c_str()));
