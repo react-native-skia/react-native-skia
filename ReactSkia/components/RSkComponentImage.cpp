@@ -61,6 +61,8 @@ void RSkComponentImage::OnPaint(SkCanvas *canvas) {
   // Draw order 1.Shadow 2. Background 3.Image Shadow 4. Image 5.Border
   bool contentShadow = false;
   bool needClipAndRestore =false;
+  sk_sp<SkImageFilter> imageFilter;
+
   if(layer()->shadowFilter) {
     contentShadow=drawShadow(canvas,frame,imageBorderMetrics,imageProps.backgroundColor,layer()->shadowOpacity,layer()->shadowFilter);
   }
@@ -72,12 +74,13 @@ void RSkComponentImage::OnPaint(SkCanvas *canvas) {
     /*Draw Image Shadow*/
     if(contentShadow) {
       if(imageProps.resizeMode == ImageResizeMode::Repeat) {
-      /*TODO Not applied any shadow for solid Image when resizeMode is "Repeat"*/
-        sk_sp<SkImageFilter> imageFilter(SkImageFilters::Tile(targetRect,frameRect,layer()->shadowFilter));
-        shadowPaint.setImageFilter(std::move(imageFilter));
-      } else {
-        shadowPaint.setImageFilter(layer()->shadowFilter);
+        imageFilter = SkImageFilters::Tile(targetRect,frameRect,layer()->shadowFilter);
       }
+      if(imageProps.blurRadius > 0) {
+        imageFilter = SkImageFilters::Blur(imageProps.blurRadius, imageProps.blurRadius,(imageFilter ? imageFilter : layer()->shadowFilter));
+      }
+      imageFilter ? shadowPaint.setImageFilter(std::move(imageFilter)) : shadowPaint.setImageFilter(layer()->shadowFilter);
+
       if(!(isOpaque(layer()->shadowOpacity)))
         canvas->saveLayerAlpha(&frameRect,layer()->shadowOpacity);
       canvas->drawImageRect(imageData, targetRect, &shadowPaint);
@@ -95,13 +98,18 @@ void RSkComponentImage::OnPaint(SkCanvas *canvas) {
     /* TODO: Handle filter quality based of configuration. Setting Low Filter Quality as default for now*/
     paint.setFilterQuality(DEFAULT_IMAGE_FILTER_QUALITY);
     if(imageProps.resizeMode == ImageResizeMode::Repeat) {
-       sk_sp<SkImageFilter> imageFilter(SkImageFilters::Tile(targetRect,frameRect,nullptr));
-       paint.setImageFilter(std::move(imageFilter));
+        imageFilter = (SkImageFilters::Tile(targetRect,frameRect,nullptr));
+    }
+    if(imageProps.blurRadius > 0)
+      imageFilter =  SkImageFilters::Blur(imageProps.blurRadius, imageProps.blurRadius,(imageFilter ? imageFilter : nullptr));
+    if(imageFilter) {
+      paint.setImageFilter(std::move(imageFilter));
+    }
+    canvas->drawImageRect(imageData,targetRect,&paint);
+    if(needClipAndRestore) {
+      canvas->restore();
     }
 
-    canvas->drawImageRect(imageData,targetRect,&paint);
-    if(needClipAndRestore)
-        canvas->restore();
     networkImageData_ = nullptr;
     drawBorder(canvas,frame,imageBorderMetrics,imageProps.backgroundColor);
     // Emitting Load completed Event
