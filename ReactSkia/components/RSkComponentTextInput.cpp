@@ -263,6 +263,7 @@ void RSkComponentTextInput::processEventKey (rnsKey eventKeyType,bool* stopPropa
   auto textInputEventEmitter = std::static_pointer_cast<TextInputEventEmitter const>(component.eventEmitter);
   auto const &textInputProps = *std::static_pointer_cast<TextInputProps const>(component.props);
   keyPressMetrics.text = RNSKeyMap[eventKeyType];
+
     //Displayable Charector Range
     if ((eventKeyType >= RNS_KEY_1 && eventKeyType <= RNS_KEY_Less)) {
       if (cursor_.locationFromEnd != 0){
@@ -270,33 +271,40 @@ void RSkComponentTextInput::processEventKey (rnsKey eventKeyType,bool* stopPropa
       } else {
         textString = textString+keyPressMetrics.text;
       }
+      cursor_.end = textString.length();
     } else {
       switch(eventKeyType){
         case RNS_KEY_Left:
-          if(cursor_.locationFromEnd < cursor_.end ){
-            RNS_LOG_DEBUG("[processEventKey]Left key pressed cursor_.locationFromEnd = "<<cursor_.locationFromEnd);
-            cursor_.locationFromEnd++; // locationFromEnd
-          }
-          *stopPropagation = true;
-          keyPressMetrics.eventCount = eventCount_;
-          if (!caretHidden_) {
-            drawAndSubmit();
-          }
-          textInputEventEmitter->onKeyPress(keyPressMetrics);
-          *waitForupdateProps = false;
-          return;
         case RNS_KEY_Right:
-          if (cursor_.locationFromEnd>0){
-            RNS_LOG_DEBUG("[processEventKey] Right key pressed cursor_.locationFromEnd = "<<cursor_.locationFromEnd);
-            cursor_.locationFromEnd--;
-          }
           *stopPropagation = true;
+          *waitForupdateProps = false;
           keyPressMetrics.eventCount = eventCount_;
+          textInputEventEmitter->onKeyPress(keyPressMetrics);
+          if (RNS_KEY_Left == eventKeyType) {
+            if(cursor_.locationFromEnd < cursor_.end ) {
+              RNS_LOG_DEBUG("[processEventKey]Left key pressed cursor_.locationFromEnd = "<<cursor_.locationFromEnd);
+              cursor_.locationFromEnd++; // locationFromEnd
+            } else {
+              return;
+            }
+          }
+          else {
+            if (cursor_.locationFromEnd>0) {
+              RNS_LOG_DEBUG("[processEventKey] Right key pressed cursor_.locationFromEnd = "<<cursor_.locationFromEnd);
+              cursor_.locationFromEnd--;
+            } else {
+              return;
+            }
+          }
+          
           if (!caretHidden_) {
             drawAndSubmit();
           }
-          textInputEventEmitter->onKeyPress(keyPressMetrics);
-          *waitForupdateProps = false;
+          //currently selection is not supported selectionRange length is
+          //is always 0 & selectionRange.location always end
+          textInputMetrics.selectionRange.location = cursor_.end - cursor_.locationFromEnd;
+          textInputMetrics.selectionRange.length = 0;
+          textInputEventEmitter->onSelectionChange(textInputMetrics);
           return;
         case RNS_KEY_Up:
         case RNS_KEY_Down:
@@ -305,8 +313,10 @@ void RSkComponentTextInput::processEventKey (rnsKey eventKeyType,bool* stopPropa
           return;
         case RNS_KEY_Back:
         case RNS_KEY_Delete:
-          if (!textString.empty() && (cursor_.end!=cursor_.locationFromEnd))
+          if (!textString.empty() && (cursor_.end!=cursor_.locationFromEnd)){
             textString.erase(textString.begin()+(cursor_.end-cursor_.locationFromEnd-1)); //acts like a backspace.
+            cursor_.end = textString.length();
+          }
           else
             *waitForupdateProps = false;
           RNS_LOG_DEBUG("[processEventKey] After removing a charector in string = "<<textString);
@@ -328,8 +338,9 @@ void RSkComponentTextInput::processEventKey (rnsKey eventKeyType,bool* stopPropa
     }
   //currently selection is not supported selectionRange length is
   //is always 0 & selectionRange.location always end
-  textInputMetrics.selectionRange.location = cursor_.end ;
+  textInputMetrics.selectionRange.location = cursor_.end - cursor_.locationFromEnd;
   textInputMetrics.selectionRange.length = 0;
+
   int textLengthAfterEdit = textString.length();
   if (updateString) {
     if (displayString_ != textString) {
