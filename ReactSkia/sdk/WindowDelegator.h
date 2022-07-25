@@ -24,7 +24,7 @@ class WindowDelegator {
     WindowDelegator(){};
    ~WindowDelegator(){};
 
-    void createWindow(SkSize windowSize,std::function<void ()> windowReadyTodrawCB,bool runOnTaskRunner=true);
+    void createWindow(SkSize windowSize,std::function<void ()> windowReadyTodrawCB,std::function<void ()> forceFullScreenDraw=nullptr,bool runOnTaskRunner=true);
     void closeWindow();
     void setWindowTittle(const char* titleString);
     void commitDrawCall();
@@ -46,7 +46,11 @@ class WindowDelegator {
     bool ownsTaskrunner_{false};
 /* members to fullfill X11 suggestion of "draw on receiving expose event to avoid data loss" */
     sem_t semReadyToDraw_;
+    std::mutex renderCtrlMutex;
+    std::thread workerThread_;
+
     std::function<void ()> windowReadyTodrawCB_{nullptr};
+    std::function<void ()> forceFullScreenDraw_{nullptr};
 
     RnsShell::PlatformDisplay::Type displayPlatForm_;
     int exposeEventID_{-1};

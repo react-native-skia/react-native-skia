@@ -79,6 +79,8 @@ typedef struct keyPosition {
   SkPoint        textXY{}; // text X,Y to draw
   SkPoint        textHLXY{}; // Text X,Y to draw on Highlight Tile
   SkPoint        textCapsHLXY{}; // Text X,Y for Upper Case Alphabets
+  SkScalar       fontSize;
+  SkScalar       fontHLSize;
   SkRect         highlightTile; // Highlight Tile coverage
 }keyPosition_t;
 typedef struct KeyInfo {
@@ -103,7 +105,7 @@ class OnScreenKeyboard : public WindowDelegator{
     static OnScreenKeyboard& getInstance(); // Interface to get OSK singleton object
     static OSKErrorCode launch(OSKConfig oskConfig=defaultOSKConfig);// Interface to launch OSK
     static void exit(); //Interface to quit OSK
-    static void updatePlaceHolderString(std::string TIDisplayString);
+    static void updatePlaceHolderString(std::string displayString,int cursorPosition);
 
   private:
 
@@ -119,11 +121,18 @@ class OnScreenKeyboard : public WindowDelegator{
       KBLayoutSibblingInfoContainer*    siblingInfo;
       keyPlacementConfig_t*          kbGroupConfig;
       KBLayoutType      kbLayoutType;
-      unsigned int      textFontSize;
-      unsigned int      textHLFontSize;
-      unsigned int      horizontalStartOffset;
       SkPoint           defaultFocussIndex;
       SkPoint           returnKeyIndex;
+      // Common Horizontal start offset for left alligned OSK
+      SkScalar          horizontalStartOffset;
+      // PlaceHolder Title
+      SkScalar          placeHolderTitleVerticalStart;
+      // Place Holder
+      SkScalar          placeHolderLength;
+      SkScalar          placeHolderVerticalStart;
+      SkScalar          placeHolderTextVerticalStart;
+      // Key Board
+      SkScalar          kBVerticalStart;
     };
 
     OnScreenKeyboard(){};
@@ -132,21 +141,31 @@ class OnScreenKeyboard : public WindowDelegator{
     void launchOSKWindow(OSKConfig oskConfig);
     void onHWkeyHandler(rnsKey key, rnsKeyAction eventKeyAction);
     void createOSKLayout(OSKTypes KBtype );
+    void clearScreen(int32_t x,int32_t y,int32_t width,int32_t height,SkPaint & paintObj);
+    SkScalar getStringBound (const std::string & stringToMeasure,unsigned int startIndex,unsigned int endIndex,SkFont & stringFont);
 
     void emitOSKKeyEvent(rnsKey keyValue);
     void windowReadyToDrawCB();
 
     void drawHighLightOnKey(SkPoint index);
     void drawOSK();
+    void drawPlaceHolderDisplayString();
     void drawKBLayout(OSKTypes oskType);
-    void drawKBKeyFont(SkPoint index,SkColor color,bool onHLTile=false);
+    void drawKBKeyFont(SkPoint index,bool onHLTile=false);
 
 // Members for OSK Layout & sytling
     OSKConfig     oskConfig_;
     OSKLayout     oskLayout_;
     SkSize        screenSize_{0,0};
-    SkColor       bgColor_{SK_ColorWHITE};
-    SkColor       fontColor_{SK_ColorWHITE};
+    SkFont        textFont_;// font object for Normal fonts
+    SkFont        textHLFont_;// font object for High Lighted fonts
+    SkPaint       oskBGPaint_;// Paint object for OSK BackGround
+    SkPaint       textPaint_;// Paint object for normal text
+    SkPaint       textHLPaint_;// Paint object for Highlighted text
+    SkPaint       inactiveTextPaint_;// Paint object for inactive text
+    SkPaint       cursorPaint_;// Paint object for cursor
+    SkPaint       placeHolderPaint_;// Paint object for Place Holder
+    SkPaint       highLightTilePaint_;//paint objet for key High light
 
 // Members for OSK operations
     int           subWindowKeyEventId_{-1};
@@ -154,9 +173,12 @@ class OnScreenKeyboard : public WindowDelegator{
     SkPoint       currentFocussIndex_{};
     SkPoint       lastFocussIndex_{};
     std::string   displayString_{}; // Text to be displayed on screen
-    std::string   lastDisplayedString_{};
+    int           cursorPosition_{0};
+    SkPoint       visibleDisplayStringRange_{0,0};/*x=start , Y-end*/
     OSKState      oskState_{OSK_STATE_INACTIVE};
-    bool          autoActivateReturnKey{false};
+    bool          autoActivateReturnKey_{false};
+    SkScalar      spaceWidth_{0};
+    SkScalar      displayStrWidth_{0};
 };
 
 }// namespace sdk

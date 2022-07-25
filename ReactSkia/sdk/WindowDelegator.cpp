@@ -11,18 +11,16 @@
 namespace rns {
 namespace sdk {
 
-void WindowDelegator::createWindow(SkSize windowSize,std::function<void ()> windowReadyCB,bool runOnTaskRunner) {
+void WindowDelegator::createWindow(SkSize windowSize,std::function<void ()> windowReadyCB,std::function<void ()>forceFullScreenDraw,bool runOnTaskRunner) {
 
   windowSize_=windowSize;
   windowReadyTodrawCB_=windowReadyCB;
-  displayPlatForm_=RnsShell::PlatformDisplay::sharedDisplayForCompositing().type();
+  forceFullScreenDraw_=forceFullScreenDraw;
 
   if(runOnTaskRunner) {
     ownsTaskrunner_ = runOnTaskRunner;
     windowTaskRunner_ = std::make_unique<RnsShell::TaskLoop>();
-    std::thread workerThread(&WindowDelegator::windowWorkerThread,this);
-    RNS_LOG_TODO("Need to check : Remove worker Thread detach & use join on closewindow");
-    workerThread.detach();
+    workerThread_=std::thread (&WindowDelegator::windowWorkerThread,this);
     windowTaskRunner_->waitUntilRunning();
     windowTaskRunner_->dispatch([&](){createNativeWindow();});
   } else {
@@ -31,6 +29,8 @@ void WindowDelegator::createWindow(SkSize windowSize,std::function<void ()> wind
 }
 
 void  WindowDelegator::createNativeWindow() {
+
+  displayPlatForm_=RnsShell::PlatformDisplay::sharedDisplayForCompositing().type();
 
   if(displayPlatForm_ == RnsShell::PlatformDisplay::Type::X11) {
     /*For X11 draw should be done after expose event received*/
@@ -63,6 +63,7 @@ void  WindowDelegator::createNativeWindow() {
 void WindowDelegator::closeWindow() {
   RNS_LOG_TODO("Sync between rendering & Exit to be handled ");
   windowActive = false;
+  std::scoped_lock lock(renderCtrlMutex);
   if(ownsTaskrunner_) windowTaskRunner_->stop();
 
   if(exposeEventID_) {
@@ -73,10 +74,15 @@ void WindowDelegator::closeWindow() {
     window_->closeWindow();
     delete window_;
     window_=nullptr;
+    windowContext_ = nullptr;
+    backBuffer_ = nullptr;
   }
   sem_destroy(&semReadyToDraw_);
   windowDelegatorCanvas=nullptr;
   windowReadyTodrawCB_=nullptr;
+  if (workerThread_.joinable() ) {
+    workerThread_.join();
+  }
 }
 
 void WindowDelegator::commitDrawCall() {
@@ -93,9 +99,21 @@ void WindowDelegator::commitDrawCall() {
 inline void WindowDelegator::renderToDisplay() {
   if(!windowActive) return;
 
-  backBuffer_->flushAndSubmit();
-  std::vector<SkIRect> emptyRect;// No partialUpdate handled , so passing emptyRect instead of dirtyRect
-  windowContext_->swapBuffers(emptyRect);
+  std::scoped_lock lock(renderCtrlMutex);
+
+#ifdef RNS_SHELL_HAS_GPU_SUPPORT
+  int bufferAge=windowContext_->bufferAge();
+  if((bufferAge != 1) && (forceFullScreenDraw_)) {
+// Forcing full screen redraw as damage region handling is not done
+    forceFullScreenDraw_();
+  }
+#endif/*RNS_SHELL_HAS_GPU_SUPPORT*/
+
+  if(backBuffer_)  backBuffer_->flushAndSubmit();
+  if(windowContext_) {
+    std::vector<SkIRect> emptyRect;// No partialUpdate handled , so passing emptyRect instead of dirtyRect
+    windowContext_->swapBuffers(emptyRect);
+  }
 }
 
 void WindowDelegator::setWindowTittle(const char* titleString) {
@@ -107,7 +125,7 @@ void WindowDelegator::onExposeHandler(RnsShell::Window* window) {
   if(window  == window_) {
     sem_wait(&semReadyToDraw_);
     window_->show();
-    if(exposeEventID_) {
+    if(exposeEventID_ != -1) {
       NotificationCenter::defaultCenter().removeListener(exposeEventID_);
       exposeEventID_=-1;
     }

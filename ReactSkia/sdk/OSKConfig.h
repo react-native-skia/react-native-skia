@@ -25,6 +25,7 @@ namespace sdk {
 #define OSK_HIGHLIGHT_FONT_SIZE               32
 #define OSK_HIGHLIGHT_BACKGROUND_COLOR        SK_ColorWHITE
 #define OSK_HIGHLIGHT_FONT_COLOR              SK_ColorBLACK
+#define OSK_PLACEHOLDER_CURSOR_COLOR          SK_ColorBLUE
 //OSK Screen & component placement confiuration
 #define OSK_WINDOW_WIDTH                      1 /*100% of Screen Size*/
 #define OSK_WINDOW_HEIGTH                     1
@@ -35,6 +36,12 @@ namespace sdk {
 #define OSK_PLACEHOLDER_HEIGHT                50
 #define OSK_KB_HORIZONTAL_OFFSET              0.1
 #define OSK_KB_VERTICAL_OFFSET                0.3
+// Place Holder configuration
+#define OSK_PLACEHOLDER_CURSOR_WIDTH          3 /* Cursor line thickness*/
+#define OSK_PLACEHOLDER_LEFT_INSET            2 /* offset from PlaceHolder Start*/
+#define OSK_PLACEHOLDER_RIGHT_INSET           3 /* Safe offset to avoid overflow*/
+#define OSK_PLACEHOLDER_RESERVED_LENGTH (OSK_PLACEHOLDER_CURSOR_WIDTH+OSK_PLACEHOLDER_LEFT_INSET+OSK_PLACEHOLDER_RIGHT_INSET)
+
 //Fail Safe Configurations
 #define DRAW_FONT_FAILURE_INDICATOR  "??"
 

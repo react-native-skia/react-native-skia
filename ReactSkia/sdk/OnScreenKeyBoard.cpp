@@ -58,54 +58,167 @@ void OnScreenKeyboard::exit() {
 
 /*Resetting old values & States*/
   oskHandle.oskState_=OSK_STATE_INACTIVE;
-  oskHandle.autoActivateReturnKey=false;
-
+  oskHandle.autoActivateReturnKey_=false;
   oskHandle.displayString_.clear();
-  oskHandle.lastDisplayedString_.clear();
+  oskHandle.displayStrWidth_=0;
+  oskHandle.visibleDisplayStringRange_.set(-1,-1);//Setting to invalid
   oskHandle.lastFocussIndex_.set(0,0);
   oskHandle.currentFocussIndex_.set(0,0);
 }
 
-void  OnScreenKeyboard::updatePlaceHolderString(std::string PHdisplayString) {
-  RNS_LOG_TODO("updatePlaceHolderString:Implementation yet to be done");
-  return;
+void  OnScreenKeyboard::updatePlaceHolderString(std::string displayString,int cursorPosition) {
+  OnScreenKeyboard &oskHandle=OnScreenKeyboard::getInstance();
+  oskHandle.displayString_=displayString;
+  oskHandle.cursorPosition_=cursorPosition;
+
+  if(oskHandle.oskState_ != OSK_STATE_ACTIVE) return;
+
+  oskHandle.drawPlaceHolderDisplayString();
+  if(oskHandle.oskState_== OSK_STATE_ACTIVE) {
+    oskHandle.commitDrawCall();
+  }
 }
 
 void OnScreenKeyboard::launchOSKWindow(OSKConfig oskConfig) {
 
   memcpy(&oskConfig_,&oskConfig,sizeof(oskConfig));
 
-  SkSize mainscreenSize_=RnsShell::PlatformDisplay::sharedDisplay().screenSize();
+  SkSize mainscreenSize_=RnsShell::Window::getMainWindowSize();
   if(screenSize_ != mainscreenSize_) {
     generateOSKLayout_=true;
     screenSize_=mainscreenSize_;
   } else {
       generateOSKLayout_=false;
   }
+
   //Set up OSk configuration
-  if(oskConfig_.theme == OSK_LIGHT_THEME) {
-    bgColor_ = OSK_LIGHT_THEME_BACKGROUND_COLOR ;
-    fontColor_ = OSK_LIGHT_THEME_FONT_COLOR;
-  } else {
-    bgColor_ = OSK_DARK_THEME_BACKGROUND_COLOR ;
-    fontColor_ =OSK_DARK_THEME_FONT_COLOR;
-  }
-  if(oskConfig_.type == OSK_ALPHA_NUMERIC_KB)
+  if(oskConfig_.type == OSK_ALPHA_NUMERIC_KB) {
     oskLayout_.kbLayoutType = ALPHA_LOWERCASE_LAYOUT;
+  }
+  if(oskConfig_.enablesReturnKeyAutomatically) {
+    autoActivateReturnKey_=true;
+  }
 
-  if(oskConfig_.enablesReturnKeyAutomatically)
-    autoActivateReturnKey=true;
+// setting up paint objects
+  // Paint object for normal text
+  textPaint_.setColor((oskConfig_.theme == OSK_LIGHT_THEME) ? OSK_LIGHT_THEME_FONT_COLOR: OSK_DARK_THEME_FONT_COLOR);
+  textPaint_.setAntiAlias(true);
+  // Paint object for Highlighted text
+  textHLPaint_.setColor(OSK_HIGHLIGHT_FONT_COLOR);
+  textHLPaint_.setAntiAlias(true);
+  // Paint object for Place Holder
+  placeHolderPaint_.setColor ((oskConfig_.theme == OSK_LIGHT_THEME) ? OSK_LIGHT_THEME_PLACEHOLDER_COLOR: OSK_DARK_THEME_PLACEHOLDER_COLOR);
+  // Paint object for OSK BackGround
+  oskBGPaint_.setColor((oskConfig_.theme == OSK_LIGHT_THEME) ? OSK_LIGHT_THEME_BACKGROUND_COLOR: OSK_DARK_THEME_BACKGROUND_COLOR);
+  // Paint object for inactive text
+  inactiveTextPaint_.setColor((oskConfig_.theme == OSK_LIGHT_THEME) ? OSK_LIGHT_THEME_INACTIVE_FONT_COLOR: OSK_DARK_THEME_INACTIVE_FONT_COLOR);
+  inactiveTextPaint_.setAntiAlias(true);
+  // Paint object for cursor
+  cursorPaint_.setColor(OSK_PLACEHOLDER_CURSOR_COLOR);
+  cursorPaint_.setAntiAlias(true);
+  cursorPaint_.setStrokeWidth(OSK_PLACEHOLDER_CURSOR_WIDTH);
+  // Paint object for HighLight Tile
+  highLightTilePaint_.setColor(OSK_HIGHLIGHT_BACKGROUND_COLOR);
 
-  unsigned int XscaleFactor = screenSize_.width()/baseScreenSize.width();
-  unsigned int YscaleFactor =screenSize_.height()/baseScreenSize.height();
-  oskLayout_.textFontSize= OSK_FONT_SIZE *XscaleFactor;
-  oskLayout_.textHLFontSize= OSK_HIGHLIGHT_FONT_SIZE *XscaleFactor;
-  oskLayout_.horizontalStartOffset= ((screenSize_.width()-(screenSize_.width()*OSK_PLACEHOLDER_LENGTH))/2)*XscaleFactor;
+// Calculate the OSK components dimension w.r.t screen size*/
+  SkScalar XscaleFactor = screenSize_.width()/baseScreenSize.width();
+   /*Font Size*/
+  textFont_.setSize(OSK_FONT_SIZE *XscaleFactor);
+  textHLFont_.setSize(OSK_HIGHLIGHT_FONT_SIZE *XscaleFactor);
+  SkGlyphID glyphs[1];
+  textFont_.textToGlyphs(" ", 1, SkTextEncoding::kUTF8, glyphs, 1);
+  textFont_.getWidthsBounds(glyphs, 1, &spaceWidth_, nullptr, nullptr);
+  spaceWidth_ += 1; // Adding letter spacing- hardcoded for now
 
-  /*Craeting OSK Window*/
+   /*PlaceHolder Title */
+  oskLayout_.placeHolderTitleVerticalStart=screenSize_.height()*OSK_PLACEHOLDER_NAME_VERTICAL_OFFSET;
+   /*PlaceHolder dimension */
+  oskLayout_.placeHolderLength=screenSize_.width()*OSK_PLACEHOLDER_LENGTH;
+  oskLayout_.placeHolderVerticalStart=screenSize_.height()*OSK_PLACEHOLDER_VERTICAL_OFFSET;
+  oskLayout_.placeHolderTextVerticalStart=oskLayout_.placeHolderVerticalStart + OSK_PLACEHOLDER_HEIGHT - ((OSK_PLACEHOLDER_HEIGHT-textFont_.getSize())/2);
+   /*Key Board */
+  oskLayout_.kBVerticalStart=screenSize_.height()*OSK_KB_VERTICAL_OFFSET;
+   /*Common Horizontal start offset for left alligned OSK*/
+  oskLayout_.horizontalStartOffset= ((screenSize_.width()-oskLayout_.placeHolderLength)/2);
+
+//Finally Creating OSK Window
   std::function<void()> createWindowCB = std::bind(&OnScreenKeyboard::windowReadyToDrawCB,this);
-  createWindow(screenSize_,createWindowCB);
+  std::function<void()> faileSafeCB = std::bind(&OnScreenKeyboard::drawOSK,this);
+  createWindow(screenSize_,createWindowCB,faileSafeCB);
 
+}
+
+void OnScreenKeyboard::drawPlaceHolderDisplayString() {
+
+  if(oskState_!= OSK_STATE_ACTIVE) return;
+
+  SkScalar textWidth{0};
+
+/*Caculate the visible string Range to display string*/
+  if(!displayString_.empty()) {
+
+/*1. Set Visible string Range or adjust the existing one
+     Cases considered on decide on Visible string Range
+     1. If Visible string Range Not set, set complete string range as visible
+     2. If Visible string Range set , Use it
+     3. If Curosr position Is outside the visible string Range, Adjust visible string range to include cursor
+*/
+    int visibleRangeStart=(visibleDisplayStringRange_.x() == -1) ? 0:
+                        ((cursorPosition_ > visibleDisplayStringRange_.x()) ? visibleDisplayStringRange_.x(): cursorPosition_);
+    int visibleRangeEnd=((visibleDisplayStringRange_.y() ==-1 )|| (visibleDisplayStringRange_.y() > displayString_.length()-1)) ?
+                           displayString_.length()-1:
+                         ((cursorPosition_ <= visibleDisplayStringRange_.y()) ? visibleDisplayStringRange_.y():cursorPosition_);
+
+/*2. Check string range decided as visible, fits in the PlaceHolder*/
+    textWidth=getStringBound (displayString_,visibleRangeStart,visibleRangeEnd,textFont_);
+
+/*3  Expand the visible string range, if  placeHolder can accomodate more*/
+    if(((textWidth+OSK_PLACEHOLDER_RESERVED_LENGTH) < oskLayout_.placeHolderLength) &&
+         ((visibleRangeEnd-visibleRangeStart) < (displayString_.length()-1))) {
+            if(visibleRangeEnd != (displayString_.length()-1)) visibleRangeEnd = displayString_.length()-1;
+            else visibleRangeStart=0;
+            textWidth=getStringBound (displayString_,visibleRangeStart,visibleRangeEnd,textFont_);
+    }
+
+/*4. slide and contract the visible string range to fit the string in placeHolder Area. Anchor Visible string Start or the end w.r.t Cursor position
+     and adjust the free end to fit in the placeholder Length.*/
+    while((textWidth+OSK_PLACEHOLDER_RESERVED_LENGTH) >= oskLayout_.placeHolderLength) {
+      if(cursorPosition_ >= (visibleRangeEnd-1)) visibleRangeStart++;
+      else visibleRangeEnd--;
+      textWidth=getStringBound (displayString_,visibleRangeStart,visibleRangeEnd,textFont_);
+    }
+    visibleDisplayStringRange_.set(visibleRangeStart,visibleRangeEnd);
+    displayString_=displayString_.substr(visibleRangeStart,(visibleRangeEnd-visibleRangeStart)+1);
+  }
+
+/* Clear old String*/
+  clearScreen( oskLayout_.horizontalStartOffset,oskLayout_.placeHolderVerticalStart,displayStrWidth_,OSK_PLACEHOLDER_HEIGHT,placeHolderPaint_);
+
+/*Display Current String*/
+  if(!displayString_.empty()) {
+    windowDelegatorCanvas->drawSimpleText(displayString_.c_str(), displayString_.length(), SkTextEncoding::kUTF8,oskLayout_.horizontalStartOffset+OSK_PLACEHOLDER_LEFT_INSET,oskLayout_.placeHolderTextVerticalStart,textFont_, textPaint_);
+  }
+  displayStrWidth_=((textWidth+OSK_PLACEHOLDER_RESERVED_LENGTH) < oskLayout_.placeHolderLength ) ? (textWidth +OSK_PLACEHOLDER_RESERVED_LENGTH) :oskLayout_.placeHolderLength;
+
+/* Display Cursor*/
+  textWidth=0;
+  int newcursorPosition = (cursorPosition_ >= (visibleDisplayStringRange_.x()+1)) ? ( cursorPosition_- visibleDisplayStringRange_.x()):0;
+  if(newcursorPosition) {
+    textWidth=getStringBound (displayString_,0,newcursorPosition-1,textFont_);
+  }
+  textWidth +=(oskLayout_.horizontalStartOffset+OSK_PLACEHOLDER_LEFT_INSET);
+  windowDelegatorCanvas->drawLine(textWidth,oskLayout_.placeHolderTextVerticalStart,textWidth,oskLayout_.placeHolderTextVerticalStart-textFont_.getSize(),cursorPaint_);
+
+#ifdef  DRAW_STRING_BOUNDING_BOX
+  SkPaint paint;
+  paint.setColor(SK_ColorGREEN);
+  paint.setStrokeWidth(2);
+  paint.setStyle(SkPaint::kStroke_Style);
+  SkRect testBounds;
+  textFont_.measureText(displayString_.c_str(),  displayString_.size(), SkTextEncoding::kUTF8, &testBounds);
+  testBounds.offset(oskLayout_.horizontalStartOffset,oskLayout_.placeHolderTextVerticalStart);
+  windowDelegatorCanvas->drawRect(testBounds,paint);
+#endif /*DRAW_STRING_BOUNDING_BOX*/
 }
 
 void OnScreenKeyboard::drawOSK() {
@@ -113,29 +226,19 @@ void OnScreenKeyboard::drawOSK() {
 if(oskState_!= OSK_STATE_ACTIVE) return;
 
 /*1. Set up OSK Window background*/
-  windowDelegatorCanvas->clear(bgColor_);
+  windowDelegatorCanvas->clear(oskBGPaint_.getColor());
 
-/*2. Draw PlaceHolder*/
-  SkPaint paint;
+/*2. Draw PlaceHolder Title*/
   if(!oskConfig_.placeHolderName.empty()) {
-    SkFont font;
-    paint.setColor(fontColor_);
-    font.setSize(OSK_FONT_SIZE);
     windowDelegatorCanvas->drawSimpleText(oskConfig_.placeHolderName.c_str(),oskConfig_.placeHolderName.size(), SkTextEncoding::kUTF8,
                                oskLayout_.horizontalStartOffset,
-                               screenSize_.height()*OSK_PLACEHOLDER_NAME_VERTICAL_OFFSET,
-                               font, paint);
+                               oskLayout_.placeHolderTitleVerticalStart,
+                               textHLFont_,textPaint_);
   }
-  paint.setColor((oskConfig_.theme == OSK_LIGHT_THEME) ? OSK_LIGHT_THEME_PLACEHOLDER_COLOR: OSK_DARK_THEME_PLACEHOLDER_COLOR);
-  SkRect rect=SkRect::MakeXYWH( oskLayout_.horizontalStartOffset,
-                                screenSize_.height()*OSK_PLACEHOLDER_VERTICAL_OFFSET,
-                                screenSize_.width()*OSK_PLACEHOLDER_LENGTH,
-                                OSK_PLACEHOLDER_HEIGHT
-                              );
-  windowDelegatorCanvas->drawRect(rect,paint);
 
 /*3. Draw PLaceHolder Display String */
-  RNS_LOG_TODO("Update PlaceHolder String on start Up");
+  clearScreen(oskLayout_.horizontalStartOffset,oskLayout_.placeHolderVerticalStart,oskLayout_.placeHolderLength,OSK_PLACEHOLDER_HEIGHT,placeHolderPaint_);
+  drawPlaceHolderDisplayString();
 
 /*4. Draw  KeyBoard Layout*/
   drawKBLayout(oskConfig_.type);
@@ -159,26 +262,21 @@ void OnScreenKeyboard::drawKBLayout(OSKTypes oskType) {
   RNS_PROFILE_END("OSk Layout Create Done : ",OSKLayoutCreate)
   RNS_PROFILE_START(OSKDraw)
 //clear KeyBoard Area
-  SkRect kbArea=SkRect::MakeXYWH( oskLayout_.horizontalStartOffset,
-                                  screenSize_.height()*OSK_KB_VERTICAL_OFFSET,
-                                  screenSize_.width(),
-                                  screenSize_.height()- screenSize_.height()*OSK_KB_VERTICAL_OFFSET
-                                );
-  SkPaint paintObj;
-  paintObj.setColor(bgColor_);
-  windowDelegatorCanvas->drawRect(kbArea,paintObj);
+  clearScreen( oskLayout_.horizontalStartOffset,oskLayout_.kBVerticalStart,
+               screenSize_.width(),(screenSize_.height()- oskLayout_.kBVerticalStart),
+               oskBGPaint_);
   if(oskLayout_.keyInfo && oskLayout_.keyPos) {
     /*1. Draw Keys */
     for (unsigned int rowIndex = 0; rowIndex < oskLayout_.keyInfo->size(); rowIndex++) {
       for (unsigned int keyIndex = 0; keyIndex < oskLayout_.keyInfo->at(rowIndex).size(); keyIndex++) {
-        if(oskState_== OSK_STATE_ACTIVE) drawKBKeyFont({keyIndex,rowIndex},fontColor_);
+        if(oskState_== OSK_STATE_ACTIVE) drawKBKeyFont({keyIndex,rowIndex});
         else return;
       }
     }
     /*2. Draw KB partition*/
     if(oskConfig_.type != OSK_NUMERIC_KB) {
       SkPaint paint;
-      paint.setColor((oskConfig_.theme == OSK_LIGHT_THEME) ? OSK_LIGHT_THEME_PLACEHOLDER_COLOR: OSK_DARK_THEME_PLACEHOLDER_COLOR);
+      paint.setColor(placeHolderPaint_.getColor());
       paint.setStrokeWidth(2);
       unsigned int startY,endY,xpos,rowCount=oskLayout_.keyInfo->size()-1;
       unsigned int KeyCount=oskLayout_.keyInfo->at(rowCount).size()-1;
@@ -198,7 +296,7 @@ void OnScreenKeyboard::drawKBLayout(OSKTypes oskType) {
   RNS_PROFILE_END("OSk Draw completion : ",OSKDraw)
 }
 
-inline void OnScreenKeyboard::drawKBKeyFont(SkPoint index,SkColor color,bool onHLTile) {
+inline void OnScreenKeyboard::drawKBKeyFont(SkPoint index,bool onHLTile) {
 
   if(oskState_!= OSK_STATE_ACTIVE) return;
 
@@ -212,38 +310,36 @@ inline void OnScreenKeyboard::drawKBKeyFont(SkPoint index,SkColor color,bool onH
     char upperCase[2];
     unsigned int textX,textY,groupID;
 
-    textPaint.setColor(color);
-    textPaint.setAntiAlias(true);
     groupID=oskLayout_.keyInfo->at(rowIndex).at(keyIndex).kbPartitionId;
 
+    if(onHLTile) {
+      font.setSize(oskLayout_.keyPos->at(rowIndex).at(keyIndex).fontHLSize);
+      textPaint.setColor(textHLPaint_.getColor());
+      textX=oskLayout_.keyPos->at(rowIndex).at(keyIndex).textHLXY.x();
+      textY=oskLayout_.keyPos->at(rowIndex).at(keyIndex).textHLXY.y();
+    } else {
+      textPaint.setColor(textPaint_.getColor());
+      font.setSize(oskLayout_.keyPos->at(rowIndex).at(keyIndex).fontSize);
+      textX=oskLayout_.keyPos->at(rowIndex).at(keyIndex).textXY.x();
+      textY=oskLayout_.keyPos->at(rowIndex).at(keyIndex).textXY.y();
+      if (oskLayout_.keyInfo->at(rowIndex).at(keyIndex).keyType == KEY_TYPE_TOGGLE) {
+        ToggleKeyMap :: iterator keyFunction =toggleKeyMap.find(keyName);
+        if(keyFunction != toggleKeyMap.end()) {
+           if(keyFunction->second != oskLayout_.kbLayoutType) {
+             textPaint.setColor(inactiveTextPaint_.getColor());
+           }
+        }
+      }
+    }
     if(( oskLayout_.keyInfo->at(rowIndex).at(keyIndex).keyType == KEY_TYPE_TEXT ) &&
      (oskLayout_.kbLayoutType == ALPHA_UPPERCASE_LAYOUT) && (isalpha(*keyName))) {
       upperCase[0] = *keyName-LOWER_TO_UPPER_CASE_OFFSET;
       upperCase[1]='\0';
       keyName=upperCase;
-    }
-
-    if(onHLTile) {
-      font.setSize(oskLayout_.textHLFontSize* oskLayout_.kbGroupConfig[groupID].fontScaleFactor);
-      if(( oskLayout_.keyInfo->at(rowIndex).at(keyIndex).keyType == KEY_TYPE_TEXT ) &&
-         (isalpha(*keyName)) && oskLayout_.kbLayoutType == ALPHA_UPPERCASE_LAYOUT ) {
+      if(onHLTile) {
         textX=oskLayout_.keyPos->at(rowIndex).at(keyIndex).textCapsHLXY.x();
         textY=oskLayout_.keyPos->at(rowIndex).at(keyIndex).textCapsHLXY.y();
-      } else {
-        textX=oskLayout_.keyPos->at(rowIndex).at(keyIndex).textHLXY.x();
-        textY=oskLayout_.keyPos->at(rowIndex).at(keyIndex).textHLXY.y();
-      }
-    } else {
-      if (oskLayout_.keyInfo->at(rowIndex).at(keyIndex).keyType == KEY_TYPE_TOGGLE) {
-          ToggleKeyMap :: iterator keyFunction =toggleKeyMap.find(keyName);
-          if(keyFunction != toggleKeyMap.end()) {
-             if(keyFunction->second != oskLayout_.kbLayoutType)
-                 textPaint.setColor((oskConfig_.theme == OSK_LIGHT_THEME) ? OSK_LIGHT_THEME_INACTIVE_FONT_COLOR: OSK_DARK_THEME_INACTIVE_FONT_COLOR);
-          }
-      }
-      font.setSize(oskLayout_.textFontSize * oskLayout_.kbGroupConfig[groupID].fontScaleFactor);
-      textX=oskLayout_.keyPos->at(rowIndex).at(keyIndex).textXY.x();
-      textY=oskLayout_.keyPos->at(rowIndex).at(keyIndex).textXY.y();
+     }
     }
 
     bool needsCanvasRestore{false};
@@ -253,12 +349,13 @@ inline void OnScreenKeyboard::drawKBKeyFont(SkPoint index,SkColor color,bool onH
      */
       char* fontFamily=nullptr;
       if(!strcmp(keyName,"return")) {
-        /* If autoActivateReturnKey is set. Return key to be presented in disabled/In-Active look until TI was empty.*/
-        if(autoActivateReturnKey && displayString_.empty())
-          textPaint.setColor((oskConfig_.theme == OSK_LIGHT_THEME) ? OSK_LIGHT_THEME_INACTIVE_FONT_COLOR: OSK_DARK_THEME_INACTIVE_FONT_COLOR);
-          if(oskConfig_.returnKeyLabel == OSK_RETURN_KEY_SEARCH) {
-            keyName=(char*)"search";
-            fontFamily =(char *)"DejaVu Sans Mono";
+     /* If autoActivateReturnKey_ is set. Return key to be presented in disabled/In-Active look until TI was empty.*/
+        if(autoActivateReturnKey_ && displayString_.empty()) {
+          textPaint.setColor(inactiveTextPaint_.getColor());
+        }
+        if(oskConfig_.returnKeyLabel == OSK_RETURN_KEY_SEARCH) {
+          keyName=(char*)"search";
+          fontFamily =(char *)"DejaVu Sans Mono";
         } else keyName=(char*)"enter";
       }
       FunctionKeymap :: iterator keyFunction =functionKeyMap.find(keyName);
@@ -270,10 +367,6 @@ inline void OnScreenKeyboard::drawKBKeyFont(SkPoint index,SkColor color,bool onH
         if (typeface) {
           uniChar.appendUnichar(uniCharConfig.unicharValue);
           font.setTypeface(typeface);
-          if(onHLTile)
-            font.setSize(oskLayout_.textHLFontSize* uniCharConfig.fontScaleFactor);
-          else
-            font.setSize(oskLayout_.textFontSize* uniCharConfig.fontScaleFactor);
           /*Current Search icon used needs a flip to be alligned with rest of the icons*/
           if(!strcmp(keyName,"search")) {
             SkRect bounds;
@@ -305,6 +398,7 @@ inline void OnScreenKeyboard::drawKBKeyFont(SkPoint index,SkColor color,bool onH
     windowDelegatorCanvas->drawSimpleText(keyName, strlen(keyName), SkTextEncoding::kUTF8,textX,textY,font, textPaint);
     if(needsCanvasRestore) windowDelegatorCanvas->restore();
 #ifdef SHOW_FONT_PLACING_ON_HLTILE
+    SkPaint textPaint;
     SkRect bounds;
     textPaint.setColor(SK_ColorRED);
     textPaint.setStrokeWidth(2);
@@ -345,21 +439,17 @@ void OnScreenKeyboard ::drawHighLightOnKey(SkPoint index) {
 
   if(oskState_!= OSK_STATE_ACTIVE) return;
 
-  SkPaint paintObj;
   unsigned int rowIndex=index.y(),keyIndex=index.x();
   unsigned int lastRowIndex=lastFocussIndex_.y(),lastKeyIndex=lastFocussIndex_.x();
 
   RNS_PROFILE_START(HighlightOSKKey)
   //reset last focussed item
-  paintObj.setColor(bgColor_);
-  paintObj.setAntiAlias(true);
-  windowDelegatorCanvas->drawRect(oskLayout_.keyPos->at(lastRowIndex).at(lastKeyIndex).highlightTile,paintObj);
-  drawKBKeyFont({lastKeyIndex,lastRowIndex},fontColor_);
+  windowDelegatorCanvas->drawRect(oskLayout_.keyPos->at(lastRowIndex).at(lastKeyIndex).highlightTile,oskBGPaint_);
+  drawKBKeyFont({lastKeyIndex,lastRowIndex});
 
   //Hight current focussed item
-  paintObj.setColor(OSK_HIGHLIGHT_BACKGROUND_COLOR);
-  windowDelegatorCanvas->drawRect(oskLayout_.keyPos->at(rowIndex).at(keyIndex).highlightTile,paintObj);
-  drawKBKeyFont({keyIndex,rowIndex},OSK_HIGHLIGHT_FONT_COLOR,true);
+  windowDelegatorCanvas->drawRect(oskLayout_.keyPos->at(rowIndex).at(keyIndex).highlightTile,highLightTilePaint_);
+  drawKBKeyFont({keyIndex,rowIndex},true);
   RNS_PROFILE_END(" Highlight Completion : ",HighlightOSKKey)
 }
 
@@ -436,21 +526,53 @@ void OnScreenKeyboard::onHWkeyHandler(rnsKey keyValue, rnsKeyAction eventKeyActi
     }
     break;
   }
+
+  RNS_LOG_DEBUG("OSK KEY VALUE RECEIVED : "<<RNSKeyMap[OSKkeyValue]);
+
+  /* Enable Return Key on Valid Key Event if disabled*/
+  if((OSKkeyValue != RNS_KEY_UnKnown) && autoActivateReturnKey_) {
+    autoActivateReturnKey_=false;
+    drawKBKeyFont(oskLayout_.returnKeyIndex);
+  }
   if((lastFocussIndex_ != hlCandidate)) {
     drawHighLightOnKey(hlCandidate);
     currentFocussIndex_=hlCandidate;
-    drawCallPendingToRender=true;
+    if(OSKkeyValue == RNS_KEY_UnKnown) drawCallPendingToRender=true;
   }
-  /* Enable Reurn Key on Valid Key EVent if disabled*/
-  if((OSKkeyValue != RNS_KEY_UnKnown) && autoActivateReturnKey) {
-    autoActivateReturnKey=false;
-    drawKBKeyFont(oskLayout_.returnKeyIndex,fontColor_);
-    drawCallPendingToRender=true;
+/* To reduce the draw call and to avoid the frequency of swap buffer issue in openGL backend,
+   trigger commit only if there is no key emit to client. As in the other case commit will be
+   taken care as part of update string call from client , followed by key emit
+*/
+  if( drawCallPendingToRender && (oskState_== OSK_STATE_ACTIVE)) {
+    commitDrawCall();
   }
-  if( drawCallPendingToRender && (oskState_== OSK_STATE_ACTIVE)) commitDrawCall();
+  /* Emit only known keys to client*/
+  if(OSKkeyValue != RNS_KEY_UnKnown) {
+    NotificationCenter::subWindowCenter().emit("onOSKKeyEvent", OSKkeyValue, RNS_KEY_Press);
+  }
+}
 
-  RNS_LOG_DEBUG("OSK KEY VALUE RECEIVED : "<<RNSKeyMap[OSKkeyValue]);
-  if(OSKkeyValue != RNS_KEY_UnKnown)  NotificationCenter::subWindowCenter().emit("onOSKKeyEvent", OSKkeyValue, RNS_KEY_Press);
+inline void OnScreenKeyboard::clearScreen(int32_t x,int32_t y,int32_t width,int32_t height,SkPaint & paintObj) {
+    SkRect rect=SkRect::MakeXYWH( x,y,width,height);
+    windowDelegatorCanvas->drawRect(rect,paintObj);
+}
+
+inline SkScalar OnScreenKeyboard:: getStringBound (const std::string & stringToMeasure,
+                                                      unsigned int startIndex,unsigned int endIndex,
+                                                      SkFont & stringFont) {
+  unsigned int spaceCount{0};
+  SkScalar width{0};
+  if(!stringToMeasure.empty() ) {
+  /* Fix: Skfont ignores white spaces in the begining and end of the string, while calculating bounds.
+     So adding width of space seperately*/
+    if(!stringToMeasure.compare(0,1," ")) { spaceCount++; startIndex++; }
+    if(!stringToMeasure.compare(stringToMeasure.size()-1,1," ")) { spaceCount++; endIndex--; }
+    if(startIndex >= 0) {
+      width=stringFont.measureText(&stringToMeasure.c_str()[startIndex],(endIndex-startIndex)+1, SkTextEncoding::kUTF8);
+    }
+    if(spaceCount) width +=(spaceWidth_*spaceCount);
+  }
+  return width;
 }
 
 void OnScreenKeyboard::createOSKLayout(OSKTypes oskType) {
@@ -502,12 +624,9 @@ void OnScreenKeyboard::createOSKLayout(OSKTypes oskType) {
   SkString uniChar;
   sk_sp<SkTypeface> defaultTypeface;
 
-  unsigned int YscaleFactor=screenSize_.height()/baseScreenSize.height();
   unsigned int rowSize=oskLayout_.keyInfo->size();
   oskLayout_.keyPos->resize(rowSize);
   oskLayout_.siblingInfo->resize(rowSize);
-  SkPoint oskStartpt{ oskLayout_.horizontalStartOffset,
-                     (OSK_KB_VERTICAL_OFFSET*screenSize_.height()*YscaleFactor)};
 
   for (unsigned int rowIndex = 0; rowIndex < rowSize; rowIndex++) {
 
@@ -527,22 +646,22 @@ void OnScreenKeyboard::createOSKLayout(OSKTypes oskType) {
       RNS_LOG_DEBUG("Group Key Spacing : x "<<oskLayout_.kbGroupConfig[groupID].groupKeySpacing.x()<<"y : "<<oskLayout_.kbGroupConfig[groupID].groupKeySpacing.x());
 
       if(!groupKeyIndex) {
-        groupHLTileWidth=groupHLTileHeigth =(oskLayout_.textHLFontSize * oskLayout_.kbGroupConfig[groupID].maxTextLength* oskLayout_.kbGroupConfig[groupID].fontScaleFactor) * oskLayout_.kbGroupConfig[groupID].hlTileFontSizeMultiplier;
+        groupHLTileWidth=groupHLTileHeigth =(textHLFont_.getSize() * oskLayout_.kbGroupConfig[groupID].maxTextLength* oskLayout_.kbGroupConfig[groupID].fontScaleFactor) * oskLayout_.kbGroupConfig[groupID].hlTileFontSizeMultiplier;
         if(oskLayout_.kbGroupConfig[groupID].maxTextLength) {
-          groupHLTileHeigth =(oskLayout_.textHLFontSize * oskLayout_.kbGroupConfig[groupID].fontScaleFactor * oskLayout_.kbGroupConfig[groupID].hlTileFontSizeMultiplier);
+          groupHLTileHeigth =(textHLFont_.getSize() * oskLayout_.kbGroupConfig[groupID].fontScaleFactor * oskLayout_.kbGroupConfig[groupID].hlTileFontSizeMultiplier);
       }
         groupOffset=oskLayout_.kbGroupConfig[groupID].groupOffset;
         groupKeySpacing=oskLayout_.kbGroupConfig[groupID].groupKeySpacing;
-        font.setSize(oskLayout_.textFontSize * oskLayout_.kbGroupConfig[groupID].fontScaleFactor);
+        font.setSize(textFont_.getSize() * oskLayout_.kbGroupConfig[groupID].fontScaleFactor);
         font.setEdging(SkFont::Edging::kAntiAlias);
-        fontHL.setSize(oskLayout_.textHLFontSize * oskLayout_.kbGroupConfig[groupID].fontScaleFactor);
+        fontHL.setSize(textHLFont_.getSize() * oskLayout_.kbGroupConfig[groupID].fontScaleFactor);
         fontHL.setEdging(SkFont::Edging::kAntiAlias);
       }
       /* Enchancement Note:To Handle Variable tile width on the same group: Need to add Tile width info in the  Layout
             and here on generating tile x,y co-ordinate, previous tiles spacing to be accumulated and considered as groupKeySpacing
          */
-      hlX = oskStartpt.x()+groupOffset.x()+(( groupHLTileWidth + groupKeySpacing.x()) * groupKeyIndex);
-      hlY = oskStartpt.y()+groupOffset.y()+ (( groupHLTileHeigth + groupKeySpacing.y()) * rowIndex);
+      hlX = oskLayout_.horizontalStartOffset+groupOffset.x()+(( groupHLTileWidth + groupKeySpacing.x()) * groupKeyIndex);
+      hlY = oskLayout_.kBVerticalStart+groupOffset.y()+ (( groupHLTileHeigth + groupKeySpacing.y()) * rowIndex);
       oskLayout_.keyPos->at(rowIndex).at(columnIndex).highlightTile.setXYWH(hlX,hlY,groupHLTileWidth,groupHLTileHeigth);
 
   //2.  Calculate text draw position
@@ -557,8 +676,8 @@ void OnScreenKeyboard::createOSKLayout(OSKTypes oskType) {
           if (typeface) {
             font.setTypeface(typeface);
             fontHL.setTypeface(typeface);
-            font.setSize(oskLayout_.textFontSize * uniCharConfig.fontScaleFactor);
-            fontHL.setSize(oskLayout_.textHLFontSize * uniCharConfig.fontScaleFactor);
+            font.setSize(textFont_.getSize() * uniCharConfig.fontScaleFactor);
+            fontHL.setSize(textHLFont_.getSize() * uniCharConfig.fontScaleFactor);
             uniChar.reset();
             uniChar.appendUnichar(uniCharConfig.unicharValue);
             keyName=(char*)uniChar.c_str();
@@ -583,6 +702,8 @@ void OnScreenKeyboard::createOSKLayout(OSKTypes oskType) {
       font.measureText(keyName, strlen(keyName), SkTextEncoding::kUTF8, &bounds);
       fontHL.measureText(keyName, strlen(keyName), SkTextEncoding::kUTF8,&boundsHL);
 
+      oskLayout_.keyPos->at(rowIndex).at(columnIndex).fontSize=font.getSize();
+      oskLayout_.keyPos->at(rowIndex).at(columnIndex).fontHLSize=fontHL.getSize();
       oskLayout_.keyPos->at(rowIndex).at(columnIndex).textXY.set(
              (oskLayout_.keyPos->at(rowIndex).at(columnIndex).highlightTile.x() + (oskLayout_.keyPos->at(rowIndex).at(columnIndex).highlightTile.width() - bounds.width() )/2),
              (oskLayout_.keyPos->at(rowIndex).at(columnIndex).highlightTile.y() + (oskLayout_.keyPos->at(rowIndex).at(columnIndex).highlightTile.height() + bounds.height() )/2));
