@@ -623,6 +623,8 @@ void OnScreenKeyboard::createOSKLayout(OSKTypes oskType) {
   char * keyName;
   SkString uniChar;
   sk_sp<SkTypeface> defaultTypeface;
+  SkScalar XscaleFactor = screenSize_.width()/baseScreenSize.width();
+  SkScalar YscaleFactor = screenSize_.height()/baseScreenSize.height();
 
   unsigned int rowSize=oskLayout_.keyInfo->size();
   oskLayout_.keyPos->resize(rowSize);
@@ -650,8 +652,10 @@ void OnScreenKeyboard::createOSKLayout(OSKTypes oskType) {
         if(oskLayout_.kbGroupConfig[groupID].maxTextLength) {
           groupHLTileHeigth =(textHLFont_.getSize() * oskLayout_.kbGroupConfig[groupID].fontScaleFactor * oskLayout_.kbGroupConfig[groupID].hlTileFontSizeMultiplier);
       }
-        groupOffset=oskLayout_.kbGroupConfig[groupID].groupOffset;
-        groupKeySpacing=oskLayout_.kbGroupConfig[groupID].groupKeySpacing;
+        groupOffset.set(oskLayout_.kbGroupConfig[groupID].groupOffset.x()*XscaleFactor,
+                        oskLayout_.kbGroupConfig[groupID].groupOffset.y()*YscaleFactor);
+        groupKeySpacing.set(oskLayout_.kbGroupConfig[groupID].groupKeySpacing.x()*XscaleFactor,
+                            oskLayout_.kbGroupConfig[groupID].groupKeySpacing.y()*YscaleFactor);
         font.setSize(textFont_.getSize() * oskLayout_.kbGroupConfig[groupID].fontScaleFactor);
         font.setEdging(SkFont::Edging::kAntiAlias);
         fontHL.setSize(textHLFont_.getSize() * oskLayout_.kbGroupConfig[groupID].fontScaleFactor);
