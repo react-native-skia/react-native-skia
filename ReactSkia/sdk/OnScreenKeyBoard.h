@@ -129,6 +129,7 @@ class OnScreenKeyboard : public WindowDelegator{
       SkScalar          placeHolderTitleVerticalStart;
       // Place Holder
       SkScalar          placeHolderLength;
+      SkScalar          placeHolderHeight;
       SkScalar          placeHolderVerticalStart;
       SkScalar          placeHolderTextVerticalStart;
       // Key Board
