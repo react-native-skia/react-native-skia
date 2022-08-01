@@ -1,5 +1,5 @@
 /*
-* Copyright (C) 1994-2021 OpenTV, Inc. and Nagravision S.A.
+* Copyright (C) 1994-2022 OpenTV, Inc. and Nagravision S.A.
 *
 * Use of this source code is governed by a BSD-style license that can be
 * found in the LICENSE file.
@@ -16,14 +16,12 @@ class RSkKeyboardObserver final: public RSkEventEmitter {
   RSkKeyboardObserver(
       const std::string &name,
       std::shared_ptr<CallInvoker> jsInvoker,
-      Instance *bridgeInstance)
-      : RSkEventEmitter(name, jsInvoker, bridgeInstance){}
-
+      Instance *bridgeInstance);
+  void handleOnScreenKeyboardEventNotification(std::string eventType);
  private:
-  void startObserving() { RNS_LOG_NOT_IMPL;};
-
-  void stopObserving() { RNS_LOG_NOT_IMPL;};
-
+  void startObserving();
+  void stopObserving();
+  unsigned int onscreenKeyboardEventId_ = UINT_MAX;
 };
 
 } //namespace react

@@ -152,6 +152,7 @@ class OnScreenKeyboard : public WindowDelegator{
     void drawPlaceHolderDisplayString();
     void drawKBLayout(OSKTypes oskType);
     void drawKBKeyFont(SkPoint index,bool onHLTile=false);
+    static inline void onScreenKeyboardEventEmit(std::string eventType);
 
 // Members for OSK Layout & sytling
     OSKConfig     oskConfig_;

@@ -116,6 +116,7 @@ source_set("ReactSkia") {
     "core_modules/RSkDeviceInfo.h",
     "core_modules/RSkEventEmitter.cpp",
     "core_modules/RSkEventEmitter.h",
+    "core_modules/RSkKeyboardObserver.h",
     "core_modules/RSkSpatialNavigator.cpp",
     "core_modules/RSkSpatialNavigator.h",
     "core_modules/RSkSpatialNavigatorContainer.cpp",
@@ -173,6 +174,7 @@ source_set("ReactSkia") {
 
   if(rns_enable_onscreen_keyboard) {
     sources += [
+      "core_modules/RSkKeyboardObserver.cpp",
       "sdk/OnScreenKeyBoard.cpp",
       "sdk/OnScreenKeyBoard.h",
     ]

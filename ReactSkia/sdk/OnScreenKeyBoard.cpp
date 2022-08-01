@@ -25,7 +25,6 @@ OnScreenKeyboard& OnScreenKeyboard::getInstance() {
 }
 
 OSKErrorCode OnScreenKeyboard::launch(OSKConfig oskConfig) {
-  RNS_LOG_TODO("Need to do emit , keyboardWillShow Event to APP");
 
   OnScreenKeyboard &oskHandle=OnScreenKeyboard::getInstance();
 
@@ -35,12 +34,12 @@ OSKErrorCode OnScreenKeyboard::launch(OSKConfig oskConfig) {
   std::scoped_lock lock(oskLaunchExitCtrlMutex);
 
   oskHandle.oskState_=OSK_STATE_LAUNCH_INPROGRESS;
+  onScreenKeyboardEventEmit(std::string("keyboardWillShow"));
   oskHandle.launchOSKWindow(oskConfig);
   return OSK_LAUNCH_SUCCESS;
 }
 
 void OnScreenKeyboard::exit() {
-  RNS_LOG_TODO("Need to emitkeyboardWillHide Event  to APP");
 
   OnScreenKeyboard &oskHandle=OnScreenKeyboard::getInstance();
 
@@ -48,6 +47,7 @@ void OnScreenKeyboard::exit() {
     return;
 
   oskHandle.oskState_=OSK_STATE_EXIT_INPROGRESS;
+  onScreenKeyboardEventEmit(std::string("keyboardWillHide"));
 /* Stop Listening for Hw Key Event*/
   if(oskHandle.subWindowKeyEventId_ != -1) {
       NotificationCenter::subWindowCenter().removeListener(oskHandle.subWindowKeyEventId_);
@@ -55,6 +55,7 @@ void OnScreenKeyboard::exit() {
   }
   std::scoped_lock lock(oskLaunchExitCtrlMutex);
   oskHandle.closeWindow();
+  onScreenKeyboardEventEmit(std::string("keyboardDidHide"));
 
 /*Resetting old values & States*/
   oskHandle.oskState_=OSK_STATE_INACTIVE;
@@ -801,8 +802,15 @@ void OnScreenKeyboard::windowReadyToDrawCB() {
     oskState_=OSK_STATE_ACTIVE;
     setWindowTittle("OSK Window");
     drawOSK();
-    if(oskState_== OSK_STATE_ACTIVE) commitDrawCall();
+    if(oskState_== OSK_STATE_ACTIVE){
+      commitDrawCall();
+      onScreenKeyboardEventEmit(std::string("keyboardDidShow"));
+    }
   } else oskState_=OSK_STATE_INACTIVE;
+}
+
+void OnScreenKeyboard::onScreenKeyboardEventEmit(std::string eventType){
+  NotificationCenter::subWindowCenter().emit("onScreenKeyboardEvent",eventType);
 }
 
 } // namespace sdk
