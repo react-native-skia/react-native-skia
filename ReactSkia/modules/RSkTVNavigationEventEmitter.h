@@ -19,7 +19,7 @@ class RSkTVNavigationEventEmitter final: public RSkEventEmitter {
         unsigned int navEventId_ = UINT_MAX; // Some undefined ID
 
         void handleTVKeyEvent(rnsKey  eventKey, rnsKeyAction eventKeyAction);
-        void handleTVNavigationEventNotification(folly::dynamic paramObject);
+        void handleTVNavigationEventNotification(folly::dynamic paramObject, NotificationCompleteVoidCallback completeCallback);
 
     public:
         RSkTVNavigationEventEmitter(

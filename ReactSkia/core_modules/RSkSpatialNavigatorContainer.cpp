@@ -9,6 +9,8 @@
 #include "RSkSpatialNavigatorContainer.h"
 #include "ReactSkia/components/RSkComponent.h"
 
+namespace facebook{
+namespace react {
 namespace SpatialNavigator {
 
 void Container::addComponent(RSkComponent *newCandidate) {
@@ -102,4 +104,6 @@ RSkComponent* Container::preferredFocusInContainer() {
 }
 #endif //TARGET_OS_TV
 
-} // namespace SpatialNavigator
+}// namespace SpatialNavigator
+}//react
+}//facebook

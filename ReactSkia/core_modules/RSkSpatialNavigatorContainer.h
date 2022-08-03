@@ -13,6 +13,8 @@
 
 using namespace facebook::react;
 
+namespace facebook{
+namespace react {
 namespace SpatialNavigator {
 
 enum ScrollStatus {
@@ -52,4 +54,6 @@ public:
 #endif //TARGET_OS_TV
 };
 
-} // namespace SpatialNavigator
+}// namespace SpatialNavigator
+}//react
+}//facebook

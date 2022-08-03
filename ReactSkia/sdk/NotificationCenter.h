@@ -31,6 +31,8 @@
 
 #pragma once
 
+using NotificationCompleteVoidCallback = std::function<void()>;
+
 class NotificationCenter {
     private:
         struct ListenerBase {
@@ -130,5 +132,3 @@ void NotificationCenter::emit(std::string eventName, Args... args) {
         h->cb(args...);
     }        
 }
-
-

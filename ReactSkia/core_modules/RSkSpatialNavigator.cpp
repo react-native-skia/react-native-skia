@@ -10,12 +10,21 @@
 #include "RSkSpatialNavigator.h"
 #include "ReactSkia/components/RSkComponent.h"
 
+#include "ReactSkia/core_modules/RSkInputEventManager.h"
+
+namespace facebook{
+namespace react {
 namespace SpatialNavigator {
 
 RSkSpatialNavigator* RSkSpatialNavigator::sharedSpatialNavigator_{nullptr};
 std::mutex RSkSpatialNavigator::mutex_;
 
 RSkSpatialNavigator::RSkSpatialNavigator() {
+#if ENABLE(FEATURE_KEY_THROTTLING)
+    completeCallback_ = std::bind(&RSkSpatialNavigator::tvEventCompleteCallback, this);
+#else
+    completeCallback_ = nullptr;
+#endif
 }
 
 RSkSpatialNavigator::~RSkSpatialNavigator() {
@@ -32,17 +41,28 @@ RSkSpatialNavigator* RSkSpatialNavigator::sharedSpatialNavigator() {
     return sharedSpatialNavigator_;
 }
 
-void RSkSpatialNavigator::sendNotificationWithEventType(std::string eventType, int tag) {
+void RSkSpatialNavigator::sendNotificationWithEventType(std::string eventType, int tag, NotificationCompleteVoidCallback completeCallback) {
     if(eventType.c_str() == nullptr)
         return;
     RNS_LOG_DEBUG("Send : " << eventType  << " To ComponentTag : " << tag );
+#if ENABLE(FEATURE_KEY_THROTTLING)
+    if(completeCallback)
+      RSkInputEventManager::getInputKeyEventManager()->onEventEmit();
+#endif
     NotificationCenter::defaultCenter().emit("RCTTVNavigationEventNotification",
                                                 folly::dynamic(folly::dynamic::object("eventType", eventType.c_str())
                                                                               ("eventKeyAction", (int)RNS_KEY_UnknownAction)
                                                                               ("tag", tag)
                                                                               ("target", tag)
-                                                                              ));
+                                                                              ), completeCallback);
 }
+
+#if ENABLE(FEATURE_KEY_THROTTLING)
+void RSkSpatialNavigator::tvEventCompleteCallback() {
+    RNS_LOG_DEBUG("Recieved TV Event Complete Callback");
+    RSkInputEventManager::getInputKeyEventManager()->onEventComplete();
+}
+#endif
 
 // Update spatial Navigator state when there is any change in focusable component.
 void RSkSpatialNavigator::updateSpatialNavigatorState(NavigatorStateOperation operation, RSkComponent *candidate) {
@@ -61,7 +81,7 @@ void RSkSpatialNavigator::updateSpatialNavigatorState(NavigatorStateOperation op
                     sendNotificationWithEventType("blur", currentFocus_->getComponentData().tag);
                     currentFocus_->onHandleBlur();
                 }
-                sendNotificationWithEventType("focus", candidateData.tag);
+                sendNotificationWithEventType("focus", candidateData.tag, completeCallback_);
                 currentFocus_ = candidate;
                 currentContainer_ = currentFocus_->nearestAncestorContainer();
             }
@@ -74,7 +94,7 @@ void RSkSpatialNavigator::updateSpatialNavigatorState(NavigatorStateOperation op
             break;
         case ComponentUpdated: // Called when the candidate is not focusable anymore
             if (currentFocus_ == candidate) {
-                sendNotificationWithEventType("blur", currentFocus_->getComponentData().tag);
+                sendNotificationWithEventType("blur", currentFocus_->getComponentData().tag, completeCallback_);
                 currentFocus_ = nullptr;
             }
             break;
@@ -403,6 +423,7 @@ bool RSkSpatialNavigator::advanceFocusInDirection(Container *container, rnsKey k
   updateFocusCandidate(focusCandidate);
   return true;
 }
+
 void RSkSpatialNavigator::updateFocusCandidate(RSkComponent* focusCandidate){
 #if defined(TARGET_OS_TV) && TARGET_OS_TV
   if( !focusCandidate || (currentFocus_ == focusCandidate))
@@ -411,7 +432,7 @@ void RSkSpatialNavigator::updateFocusCandidate(RSkComponent* focusCandidate){
     sendNotificationWithEventType("blur", currentFocus_->getComponentData().tag);
     currentFocus_->onHandleBlur();
   }
-  sendNotificationWithEventType("focus", focusCandidate->getComponentData().tag);
+  sendNotificationWithEventType("focus", focusCandidate->getComponentData().tag, completeCallback_);
 #endif //TARGET_OS_TV
   RNS_LOG_DEBUG("Blur : [" << ((currentFocus_) ? currentFocus_->getComponentData().tag : -1) << "], Focus :[" << focusCandidate->getComponentData().tag << "]");
   currentFocus_ = focusCandidate;
@@ -455,4 +476,6 @@ RSkComponent* RSkSpatialNavigator::getCurrentFocusElement(){
     return currentFocus_;
 }
 
-} // namespace SpatialNavigator
+}// namespace SpatialNavigator
+}//react
+}//facebook

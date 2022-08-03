@@ -3,8 +3,12 @@
 declare_args() {
   # Enable API profiling
   rns_enable_api_profiling = false
+
   # Enable OnScreenKeyBoard Feature
   rns_enable_onscreen_keyboard = true
+
+  # Enable key throttling
+  rns_enable_key_throttling = false
 }
 
 import("//build/config/gclient_args.gni")
@@ -25,6 +29,11 @@ config("ReactSkia_config") {
 
   # Enable scroll indicator support
   defines += ["ENABLE_FEATURE_SCROLL_INDICATOR"]
+
+  # Enable key throttling
+  if(rns_enable_key_throttling) {
+    defines += ["ENABLE_FEATURE_KEY_THROTTLING"]
+  }
 }
 
 config("textlayoutmanager_config") {
@@ -110,6 +119,7 @@ source_set("ReactSkia") {
     "sdk/FollyTimer.cpp",
     "sdk/NopollWebsocket.cpp",
     "sdk/NopollWebsocket.h",
+    "sdk/ThreadSafeQueue.h",
     "sdk/WindowDelegator.cpp",
     "sdk/WindowDelegator.h",
     "core_modules/RSkDeviceInfo.cpp",

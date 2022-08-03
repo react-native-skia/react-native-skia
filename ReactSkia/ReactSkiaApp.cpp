@@ -8,6 +8,7 @@
 #include "ReactSkia/views/common/RSkImageCacheManager.h"
 
 using namespace RnsShell;
+using namespace facebook::react;
 
 Application *Application::Create(int argc, char **argv) {
   return new ReactSkiaApp(argc, argv);

@@ -26,13 +26,10 @@
 using folly::sorted_vector_map;
 using folly::sorted_vector_set;
 
-namespace facebook {
-    namespace react {
-        class RSkComponent;
-    }
-}
+namespace facebook{
+namespace react {
 
-using namespace facebook::react;
+class RSkComponent;
 
 namespace SpatialNavigator {
 
@@ -81,8 +78,12 @@ private:
     RSkComponent* findFocusCandidateInContainer(Container *container, rnsKey keyEvent, bool visibleOnly);
     RSkComponent* pickCandidateInDirection(rnsKey keyEvent, SortedCandidateList<RSkComponent>& overLapping, SortedCandidateList<RSkComponent>& nonOverLapping);
     RSkComponent* findDefaultFocusInContainer(Container *container);
-    void sendNotificationWithEventType(std::string eventType, int tag);
+    void sendNotificationWithEventType(std::string eventType, int tag, NotificationCompleteVoidCallback completeCB = nullptr);
+#if ENABLE(FEATURE_KEY_THROTTLING)
+    void tvEventCompleteCallback();
+#endif
 
+    NotificationCompleteVoidCallback completeCallback_ {nullptr};
 public:
     static RSkSpatialNavigator* sharedSpatialNavigator();
     ~RSkSpatialNavigator();
@@ -95,4 +96,6 @@ public:
     void setRootContainer(Container *container) { rootContainer_ = container; }
 };
 
-} // namespace SpatialNavigator
+}// namespace SpatialNavigator
+}//react
+}//facebook
