@@ -9,6 +9,10 @@
 #include <semaphore.h>
 #include <thread>  
 #include "jsi/JSIDynamic.h"
+#include "ThreadSafeCache.h"
+#define DEFAULT_MAX_CACHE_EXPIRY_TIME 1800000 // 30mins in seconds 1800000
+#define CURRENT_CACHE_SIZE 10 // in megabyte
+#define TOTAL_MAX_CACHE_SIZE 15 // in megabyte
 
 #ifndef CA_CERTIFICATE
 #define CA_CERTIFICATE       "/etc/ssl/certs/ca-certificates.crt"      /**< The certificate of the CA to establish https connection to the server*/
@@ -18,6 +22,7 @@
 
 namespace facebook {
 namespace react {
+using namespace rns::sdk;
 typedef struct Curldelegator {
   std::function<size_t(double, double, double, double, void*)> CURLNetworkingProgressCallback;
   std::function<size_t(void*,void*)> CURLNetworkingHeaderCallback;
@@ -32,8 +37,13 @@ typedef struct CurlResponse {
     responseBufferOffset(0),
     contentSize(0),
     responseurl(nullptr){
-
     headerBuffer = folly::dynamic::object();
+  }
+  ~CurlResponse() {
+    if(responseBuffer) {
+      free(responseBuffer);
+      responseBuffer = NULL;
+    }
   }
   folly::dynamic headerBuffer;
   char* responseBuffer;
@@ -43,19 +53,20 @@ typedef struct CurlResponse {
   int statusCode;
   std::string errorResult;
   bool responseTimeout;
+  double cacheExpiryTime{DEFAULT_MAX_CACHE_EXPIRY_TIME};
 }CurlResponse;
 
 class CurlRequest {
  public:
   CURL *handle;
-  const char *URL;
+  std::string URL;
   size_t timeout;
-  const char* method;
+  std::string method;
   Curldelegator curldelegator;
-  CurlResponse curlResponse;
+  shared_ptr<CurlResponse> curlResponse;
   std::mutex bufferLock;
-  CurlRequest(CURL *lhandle, const char* lURL,size_t ltimeout,const char* lmethod);
-  ~CurlRequest();
+  inline bool shouldCacheData();
+  CurlRequest(CURL *lhandle, std::string lURL, size_t ltimeout, std::string lmethod);
 };
 
 
@@ -64,17 +75,18 @@ class CurlNetworking {
  public:
   CurlNetworking();
   ~CurlNetworking();
-  bool sendRequest(CurlRequest *curlRequest, folly::dynamic query);
-  bool abortRequest(CurlRequest *);
-  static void processNetworkRequest(CURLM *cm);
-  bool preparePostRequest(CurlRequest *, folly::dynamic, folly::dynamic);
+  bool sendRequest(shared_ptr<CurlRequest> curlRequest, folly::dynamic query);
+  bool abortRequest(shared_ptr<CurlRequest>);
+  void processNetworkRequest(CURLM *cm);
+  bool preparePostRequest(shared_ptr<CurlRequest>, folly::dynamic, folly::dynamic);
   static CurlNetworking* sharedCurlNetworking();
   static size_t writeCallbackCurlWrapper(void* buffer, size_t size, size_t nitems, void* userData) ;
   static size_t progressCallbackCurlWrapper(void *clientp, double dltotal, double dlnow, double ultotal, double ulnow);
   static size_t headerCallbackCurlWrapper(char* buffer, size_t size, size_t nitems, void* userData);
-
+  void sendResponseCacheData(shared_ptr<CurlRequest> curlRequest);
  private:
   static CurlNetworking *sharedCurlNetworking_;
+  ThreadSafeCache<std::string, shared_ptr<CurlResponse> >*  networkCache_;
   sem_t networkRequestSem_; 
   CURLM* curlMultihandle_ = nullptr;
   bool exitLoop_ = false;

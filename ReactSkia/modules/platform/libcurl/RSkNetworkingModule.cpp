@@ -56,9 +56,7 @@ jsi::Value RSkNetworkingModule::sendRequest(
   networkRequest->requestId_ = nextUniqueId();
 
   // Add the request object to list and notify app using callback function.
-
-  CurlRequest* curlRequest = new CurlRequest(nullptr,url.c_str(),timeout,method.c_str());
-
+  std::shared_ptr<CurlRequest> curlRequest = std::make_shared<CurlRequest>(nullptr,url,timeout,method);
   auto headerCallback = [&](void* curlResponse,void *userdata) -> size_t {
     struct NetworkRequest *networkRequest = ((struct NetworkRequest *)userdata);
     networkRequest->self_->headerCallbackWrapper(curlResponse,networkRequest);
@@ -91,14 +89,14 @@ jsi::Value RSkNetworkingModule::sendRequest(
   curlRequest->curldelegator.CURLNetworkingCompletionCallback = completionCallback;
   curlRequest->curldelegator.delegatorData = networkRequest;
   networkRequest->curlRequest_ = curlRequest;
-  if(sharedCurlNetworking_->sendRequest(curlRequest,query) == false)
-    goto safe_return;
-
-  connectionList_[networkRequest->requestId_] = networkRequest;
   if(callbackObj.isFunction(rt)) {
     jsi::Function callback = callbackObj.getFunction(rt);
     callback.call(rt, (int) networkRequest->requestId_, 1);
   }
+  if(sharedCurlNetworking_->sendRequest(curlRequest,query) == false)
+    goto safe_return;
+
+  connectionList_[networkRequest->requestId_] = networkRequest;
   status = jsi::Value((int)CURL_RETURN_SUCESS);
 safe_return :
   if(status.getNumber() == CURL_RETURN_FAILURE && networkRequest )
@@ -121,7 +119,7 @@ jsi::Value RSkNetworkingModule::abortRequest(folly::dynamic requestId) {
 }
 
 void RSkNetworkingModule::sendProgressEventwrapper(double dltotal,double dlnow, double ultotal, double ulnow, NetworkRequest *networkRequest) {
-  struct CurlResponse *responseData =  (struct CurlResponse *)&networkRequest->curlRequest_->curlResponse;
+  shared_ptr<CurlResponse> responseData =  networkRequest->curlRequest_->curlResponse;
   if(networkRequest->uploadComplete_ == false && ultotal != 0.0) {
     sendEventWithName("didSendNetworkData", folly::dynamic::array(networkRequest->requestId_, ulnow,ultotal ));
     if(ulnow >= ultotal)

@@ -245,7 +245,7 @@ inline double getCacheMaxAgeDuration(std::string cacheControlData) {
 
 void RSkComponentImage::requestNetworkImageData(ImageSource source) {
   auto sharedCurlNetworking = CurlNetworking::sharedCurlNetworking();
-  CurlRequest *curlRequest = new CurlRequest(nullptr,source.uri.c_str(),0,"GET");
+  std::shared_ptr<CurlRequest> remoteCurlRequest = std::make_shared<CurlRequest>(nullptr,source.uri,0,"GET");
 
   folly::dynamic query = folly::dynamic::object();
 
@@ -254,7 +254,7 @@ void RSkComponentImage::requestNetworkImageData(ImageSource source) {
   cacheExpiryTime_ = DEFAULT_MAX_CACHE_EXPIRY_TIME;
 
   // headercallback lambda fuction
-  auto headerCallback =  [&](void* curlresponseData,void *userdata)->bool {
+  auto headerCallback =  [this, remoteCurlRequest](void* curlresponseData,void *userdata)->bool {
     CurlResponse *responseData =  (CurlResponse *)curlresponseData;
     CurlRequest *curlRequest = (CurlRequest *) userdata;
 
@@ -276,25 +276,28 @@ void RSkComponentImage::requestNetworkImageData(ImageSource source) {
 
 
   // completioncallback lambda fuction
-  auto completionCallback =  [&](void* curlresponseData,void *userdata)->bool {
+  auto completionCallback =  [this, remoteCurlRequest](void* curlresponseData,void *userdata)->bool {
     CurlResponse *responseData =  (CurlResponse *)curlresponseData;
     CurlRequest * curlRequest = (CurlRequest *) userdata;
     if((!responseData
         || !processImageData(responseData->responseurl,responseData->responseBuffer,responseData->contentSize)) && (hasToTriggerEvent_)) {
       sendErrorEvents();
     }
-    delete curlRequest;
+    //Reset the lamda callback so that curlRequest shared pointer dereffered from the lamda 
+    // and gets auto destructored after the completion callback.
+    remoteCurlRequest->curldelegator.CURLNetworkingHeaderCallback = nullptr;
+    remoteCurlRequest->curldelegator.CURLNetworkingCompletionCallback = nullptr;
     return 0;
   };
 
-  curlRequest->curldelegator.delegatorData = curlRequest;
-  curlRequest->curldelegator.CURLNetworkingHeaderCallback = headerCallback;
-  curlRequest->curldelegator.CURLNetworkingCompletionCallback=completionCallback;
+  remoteCurlRequest->curldelegator.delegatorData = remoteCurlRequest.get();
+  remoteCurlRequest->curldelegator.CURLNetworkingHeaderCallback = headerCallback;
+  remoteCurlRequest->curldelegator.CURLNetworkingCompletionCallback=completionCallback;
   if(!hasToTriggerEvent_) {
     imageEventEmitter_->onLoadStart();
     hasToTriggerEvent_ = true;
   }
-  sharedCurlNetworking->sendRequest(curlRequest,query);
+  sharedCurlNetworking->sendRequest(remoteCurlRequest,query);
 }
 
 inline void RSkComponentImage::sendErrorEvents() {

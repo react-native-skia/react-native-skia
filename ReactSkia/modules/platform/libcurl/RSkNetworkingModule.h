@@ -28,13 +28,7 @@ struct NetworkRequest {
   std::string responseType_;
   bool uploadComplete_;
   bool downloadComplete_;
-  CurlRequest* curlRequest_;
-  
-  ~NetworkRequest() {
-    if(curlRequest_){
-      delete curlRequest_;
-    }
-  }
+  std::shared_ptr<CurlRequest> curlRequest_;
 };
 
   
