@@ -1,6 +1,6 @@
 /*
 * Copyright 2016 Google Inc.
-* Copyright (C) 1994-2021 OpenTV, Inc. and Nagravision S.A.
+* Copyright (C) 1994-2022 OpenTV, Inc. and Nagravision S.A.
 *
 * Use of this source code is governed by a BSD-style license that can be
 * found in the LICENSE file.
@@ -140,6 +140,7 @@ void Compositor::renderLayerTree() {
 #endif
             clipBound, // After prePaint we need to update this with beginClip
             nullptr, // GrDirectContext
+            {0,0} //scrollOffset is zero for rootLayer
         };
         RNS_PROFILE_API_OFF("Render Tree Pre-Paint", rootLayer_.get()->prePaint(paintContext));
         clipBound = beginClip(paintContext);
@@ -184,7 +185,7 @@ void Compositor::commit(bool immediate=false) {
     }
 
     if(immediate) {
-       RNS_PROFILE_API_OFF("RenderTree :", renderLayerTree());
+       RNS_PROFILE_API_OFF("RenderTree Immediate:", renderLayerTree());
        // Unlock here, after rendering of tree is done for immediate rendering
        isMutating.unlock();
        return;
@@ -194,7 +195,7 @@ void Compositor::commit(bool immediate=false) {
     isMutating.unlock();
     TaskLoop::main().dispatch([&]() {
         std::scoped_lock lock(isMutating); // Lock to make sure render tree is not mutated during the rendering
-        RNS_PROFILE_API_OFF("RenderTree :", renderLayerTree());
+        RNS_PROFILE_API_OFF("RenderTree Scheduled:", renderLayerTree());
     });
 }
 

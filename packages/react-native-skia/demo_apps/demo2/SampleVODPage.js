@@ -147,7 +147,7 @@ const FocusableComponent = (props) =>  {
    } else if((props.count >= 8)) {
        return (
           <Pressable isTVSelectable='true' onBlur={onBlur} onFocus={onFocus} style={[styles.elementView]} >
-             <Image style={{transform:[{scale: state.imgscale}],width:300,height:160,marginLeft:25,marginTop:10}} source={thumbnailImagePath[props.count]}>
+             <Image style={{transform:[{scale: state.imgscale}],width:300,height:160,marginLeft:30,marginTop:16}} source={thumbnailImagePath[props.count]}>
              </Image>
           </Pressable>
        );
@@ -161,13 +161,35 @@ const FocusableComponent = (props) =>  {
    }
 }
 
+const PosterView = (pvProps) => {
+  React.useEffect(()=>{pvProps.pvRef.current=setPosterIndex},[]);
+
+  let content = pvProps.contentData;
+  let [index, setIndex] = useState(0);
+  let text1 = content[index].duration.concat("  |  ", content[index].genre, "  |  ", content[index].year)
+
+  function setPosterIndex(count) {
+     setIndex(count);
+  }
+
+  return (
+   <>
+    <View style={styles.posterContentView}>
+      <Text style={styles.titleText}>{content[index].title}</Text>
+      <Text style={[styles.titleTextContent,{fontSize:titleTextGenreSize}]}>{text1}</Text>
+      <Text style={[styles.titleTextContent,{fontSize:titleTextContentSize}]}>{content[index].description}</Text>
+    </View>
+    <Image source={posterImagePath[index]} style={styles.posterView} resizeMode="contain">
+    </Image>
+   </>
+  );
+}
+
 const SampleVODPage = (props) => {
+    const pvRef = React.useRef(null);
 
-    let [index, setIndex] = useState(0);
-    let content = props.contentData;
-
-    function changeBackground (value) {
-       setIndex(value);
+    function changeBackground(count) {
+       pvRef.current(count);
     }
 
     const addItems = (n) => {
@@ -211,28 +233,9 @@ const SampleVODPage = (props) => {
        );
     }
 
-    const posterView = () => {
-        return(
-          <Image source={posterImagePath[index]} style={styles.posterView} resizeMode="contain">
-          </Image>
-        );
-    }
-
-    const posterContent = () => {
-        let text1 = content[index].duration.concat("  |  ", content[index].genre, "  |  ", content[index].year)
-        return (
-           <View style={styles.posterContentView}>
-                <Text style={styles.titleText}>{content[index].title}</Text>
-                <Text style={[styles.titleTextContent,{fontSize:titleTextGenreSize}]}>{text1}</Text>
-                <Text style={[styles.titleTextContent,{fontSize:titleTextContentSize}]}>{content[index].description}</Text>
-           </View>
-         );
-    }
-
     return (
         <ImageBackground style={styles.backgroundimage} source={require('./images/bg.jpg')}>
-           {posterView()}
-           {posterContent()}
+           <PosterView pvRef={pvRef} contentData={props.contentData}></PosterView>
            {verticalScrollView()}
         </ImageBackground>
     );

@@ -28,6 +28,10 @@ config("rns_shell_config") {
       defines += ["USE_RNS_SHELL_PARTIAL_UPDATES"]
     }
   }
+
+  if(rns_enable_scroll_layer_bitmap) {
+    defines += ["USE_SCROLL_LAYER_BITMAP"]
+  }
 }
 
 if(is_linux && gl_has_gpu ) {

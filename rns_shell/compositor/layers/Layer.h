@@ -1,6 +1,6 @@
 /*
 * Copyright 2016 Google Inc.
-* Copyright (C) 1994-2021 OpenTV, Inc. and Nagravision S.A.
+* Copyright (C) 1994-2022 OpenTV, Inc. and Nagravision S.A.
 *
 * Use of this source code is governed by a BSD-style license that can be
 * found in the LICENSE file.
@@ -54,6 +54,7 @@ struct PaintContext {
 #endif
     const SkRect& dirtyClipBound; // combined clip bounds based on all the dirty rects.
     GrDirectContext* grContext;
+    SkPoint offset; // scroll offset to calculate screen offset,updated by scrollable layer.
 };
 
 class Layer {
@@ -109,6 +110,7 @@ public:
     void removeFromParent();
 
     virtual void paintSelf(PaintContext& context);
+    virtual void paintChildren(PaintContext& context);
     virtual void prePaint(PaintContext& context, bool forceChildrenLayout = false);
     virtual void paint(PaintContext& context);
     virtual void onPaint(SkCanvas*) {}
@@ -139,6 +141,8 @@ private:
 
     void setParent(Layer* layer);
     void setSkipParentMatrix(bool skipParentMatrix) {skipParentMatrix_ = skipParentMatrix;}
+    void setLayerOpacity(PaintContext& context);
+    void setLayerTransformMatrix(PaintContext& context);
 
     void calculateTransformMatrix();
 
@@ -150,8 +154,9 @@ private:
 
     //Layer Geometry
     SkIRect frame_; //The frame bounds should include any transform performed by the layer itself in its parent's coordinate space
+    SkIRect frameBounds_; //The paint bounds of frame_ including shadow
     SkIRect absFrame_; // Absolute frame include any transform performed by the layer itself in rootview's coordinate space
-    SkIRect bounds_; //The paint bounds of absFrame_ including shadow
+    SkIRect bounds_; //Absolute frame bounds which is absFrame_ including shadow
     SkPoint anchorPosition_; // Position of Layer wrt anchor point in parents coordinate space. This will be used during the transformation.
     SkMatrix absoluteTransformMatrix_; // Combined Transformation Matrix of self & parent's
     //Layer’s Appearance

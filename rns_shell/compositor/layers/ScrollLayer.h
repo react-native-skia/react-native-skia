@@ -36,7 +36,7 @@ public:
         void setScrollBarInsets(SkIRect frameInsets);
         void updateScrollLayerLayout(SkISize scrollContentSize, SkIRect scrollFrame);
 
-        SkIRect getScrollBarAbsFrame(SkIRect scrollAbsFrame);
+        SkIRect getScrollBarAbsFrame(SkIRect scrollAbsFrame,LayerInvalidateMask layerMask);
         void paint(SkCanvas *canvas);
 
       private:
@@ -83,21 +83,27 @@ public:
 #endif
 
 private:
+
+#if USE(SCROLL_LAYER_BITMAP)
     void bitmapConfigure();
+    void paintChildrenAndSelf(PaintContext& context);
+    bool forceBitmapReset_{true}; // Flag to reset bitmap
+    SkBitmap scrollBitmap_; // Bitmap for scroll container for childs to draw
+    std::unique_ptr<SkCanvas> scrollCanvas_;
+    SkRect clipBound_;
+
+    SkIRect drawDestRect_;
+    SkIRect drawSrcRect_;
+#endif
+    std::vector<SkIRect> bitmapSurfaceDamage_;
 
     int scrollOffsetX_{0};   // Offset to scroll in x direction
     int scrollOffsetY_{0};   // Offset to scroll in y direction
     SkISize contentSize_{0};  // total size of all contents
-    bool forceBitmapReset_{true}; // Flag to reset bitmap
-
-    SkBitmap scrollBitmap_; // Bitmap for scroll container for childs to draw
-    std::unique_ptr<SkCanvas> scrollCanvas_;
-    std::vector<SkIRect> bitmapSurfaceDamage_;
-    SkRect clipBound_;
-
     sk_sp<SkPicture> shadowPicture_;
     sk_sp<SkPicture> borderPicture_;
 
+    void paintSelfAndChildren(PaintContext& context);
 #if ENABLE(FEATURE_SCROLL_INDICATOR)
     ScrollBar scrollbar_;   // scroll indicator bar
 #endif

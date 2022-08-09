@@ -9,6 +9,9 @@ declare_args() {
 
   # Enable key throttling
   rns_enable_key_throttling = false
+
+  # Enable ScrollBar Feature
+  rns_enable_scrollindicator = true
 }
 
 import("//build/config/gclient_args.gni")
@@ -27,12 +30,13 @@ config("ReactSkia_config") {
      defines += ["ENABLE_FEATURE_ONSCREEN_KEYBOARD"]
   }
 
-  # Enable scroll indicator support
-  defines += ["ENABLE_FEATURE_SCROLL_INDICATOR"]
-
   # Enable key throttling
   if(rns_enable_key_throttling) {
     defines += ["ENABLE_FEATURE_KEY_THROTTLING"]
+  }
+
+  if(rns_enable_scrollindicator) {
+     defines += ["ENABLE_FEATURE_SCROLL_INDICATOR"]
   }
 }
 

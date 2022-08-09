@@ -1,6 +1,6 @@
 /*
 * Copyright 2016 Google Inc.
-* Copyright (C) 1994-2021 OpenTV, Inc. and Nagravision S.A.
+* Copyright (C) 1994-2022 OpenTV, Inc. and Nagravision S.A.
 *
 * Use of this source code is governed by a BSD-style license that can be
 * found in the LICENSE file.
@@ -138,13 +138,19 @@ void Layer::preRoll(PaintContext& context, bool forceLayout) {
         absoluteTransformMatrix_.mapRect(&mapRect);
         absFrame_ = SkIRect::MakeXYWH(mapRect.x(), mapRect.y(), mapRect.width(), mapRect.height());
         SkIRect newBounds = absFrame_;
+        frameBounds_ = frame_;
         if(shadowFilter) {
             SkMatrix identityMatrix;
-            newBounds = shadowFilter->filterBounds(
-            absFrame_,
-            identityMatrix,
-            SkImageFilter::kForward_MapDirection,
-            nullptr);
+            frameBounds_ = shadowFilter->filterBounds(
+                                               frame_,
+                                               identityMatrix,
+                                               SkImageFilter::kForward_MapDirection,
+                                               nullptr);
+
+            //Calculate absolute frame bounds
+            SkRect mapRect=SkRect::Make(frameBounds_);
+            absoluteTransformMatrix_.mapRect(&mapRect);
+            newBounds = SkIRect::MakeXYWH(mapRect.x(), mapRect.y(), mapRect.width(), mapRect.height());
         }
 #if USE(RNS_SHELL_PARTIAL_UPDATES)
         if((invalidateMask_ & LayerLayoutInvalidate)) {
@@ -211,33 +217,39 @@ void Layer::paintSelf(PaintContext& context) {
 #endif
 }
 
+void Layer::paintChildren(PaintContext& context) {
+    for (auto& layer : children_) {
+        if(layer->needsPainting(context)) {
+            RNS_LOG_DEBUG("Paint Layer(ID:" << layerId_ << ", ParentID:" << (parent_ ? parent_->layerId() : -1) <<
+                ") Frame [" << frame_.x() << "," << frame_.y() << "," << frame_.width() << "," << frame_.height() <<
+                "], Bounds [" << bounds_.x() << "," << bounds_.y() << "," << bounds_.width() << "," << bounds_.height() << "]");
+            layer->paint(context);
+        }
+    }
+}
+
 void Layer::paint(PaintContext& context) {
     RNS_LOG_DEBUG("Layer (" << layerId_ << ") has " << children_.size() << " childrens");
 
     SkAutoCanvasRestore save(context.canvas, true); // Save current clip and matrix state.
 
-    if(opacity <= 0.0) return; //if transparent,paint self & children not required
-    if(opacity < 0xFF) {
-      SkRect layerBounds = SkRect::Make(bounds_);
-      context.canvas->saveLayerAlpha(&layerBounds,opacity);
-    }
-
-    context.canvas->setMatrix(absoluteTransformMatrix_); //Apply self & parent's combined transformation matrix before paint
-
+    setLayerTransformMatrix(context);
+    setLayerOpacity(context);
     paintSelf(context); // First paint self and then children if any
 
     if(masksToBounds_) { // Need to clip children.
         SkRect intRect = SkRect::Make(absFrame_);
+        //If scrolling offset available,check intRect with offset value
+        if(!context.offset.isZero()){
+            intRect.offset(context.offset.x(),context.offset.y());
+        }
         if(!context.dirtyClipBound.isEmpty() && intRect.intersect(context.dirtyClipBound) == false) {
             RNS_LOG_WARN("We should not call paint if it doesnt intersect with non empty dirtyClipBound...");
         }
         context.canvas->clipRect(intRect);
     }
 
-    for (auto& layer : children_) {
-        if(layer->needsPainting(context))
-            layer->paint(context);
-    }
+    paintChildren(context);
 }
 
 bool Layer::hasAncestor(const Layer* ancestor) const {
@@ -272,7 +284,12 @@ bool Layer::needsPainting(PaintContext& context) {
     // As long as paintBounds interset with one of the dirty rect, we will need repainting.
     SkIRect dummy;
     for (auto& dirtRect : context.damageRect) {
-        if(dummy.intersect(bounds_, dirtRect)) { // this layer intersects with one of the dirty rect, so needs repainting
+        SkIRect bounds = bounds_;
+        //If scrolling offset available,check bounds with offset value
+        if(!context.offset.isZero()){
+          bounds.offset(context.offset.x(),context.offset.y());
+        }
+        if(dummy.intersect(bounds, dirtRect)) { // this layer intersects with one of the dirty rect, so needs repainting
             return true;
         }
     }
@@ -315,6 +332,24 @@ bool Layer::requireInvalidate(bool skipChildren) {
           if(layer->requireInvalidate(skipChildren)) return true;
     }
     return false;
+}
+
+void Layer::setLayerOpacity(PaintContext& context) {
+    if(opacity <= 0.0) return; //if transparent,paint self & children not required
+    if(opacity < 0xFF) {
+      SkRect layerBounds = SkRect::Make(frameBounds_);
+      context.canvas->saveLayerAlpha(&layerBounds,opacity);
+    }
+}
+
+void Layer::setLayerTransformMatrix(PaintContext& context) {
+    SkMatrix screenMatrix;
+    //If scrolling offset is available,concat the offset to transform matrix
+    if(!context.offset.isZero()) {
+        screenMatrix.setTranslate(context.offset.x(),context.offset.y());
+    }
+    screenMatrix.preConcat(absoluteTransformMatrix_);
+    context.canvas->setMatrix(screenMatrix);
 }
 
 }   // namespace RnsShell
