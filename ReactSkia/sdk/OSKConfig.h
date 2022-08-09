@@ -33,7 +33,7 @@ namespace sdk {
 #define OSK_PLACEHOLDER_NAME_VERTICAL_OFFSET  0.18
 #define OSK_PLACEHOLDER_VERTICAL_OFFSET       0.2
 #define OSK_PLACEHOLDER_LENGTH                0.7 /*Total display view will be x% of the screen size*/
-#define OSK_PLACEHOLDER_HEIGHT                50
+#define OSK_PLACEHOLDER_HEIGHT_SCALE_FACTOR   2 /* X*Font Size, will be the PlaceHolder Height */
 #define OSK_KB_HORIZONTAL_OFFSET              0.1
 #define OSK_KB_VERTICAL_OFFSET                0.3
 // Place Holder configuration

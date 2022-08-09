@@ -37,9 +37,6 @@ TextInputProps::TextInputProps(
           "placeholderTextColor",
           sourceProps.placeholderTextColor,
           {})),
-      editable(convertRawProp(rawProps, "editable", sourceProps.editable, {})),
-      caretHidden(convertRawProp(rawProps, "caretHidden", sourceProps.caretHidden, {})),
-      secureTextEntry(convertRawProp(rawProps, "secureTextEntry", sourceProps.secureTextEntry, {})),
       maxLength(
           convertRawProp(rawProps, "maxLength", sourceProps.maxLength, {})),
       cursorColor(
@@ -62,8 +59,6 @@ TextInputProps::TextInputProps(
           {})),
       autoFocus(
           convertRawProp(rawProps, "autoFocus", sourceProps.autoFocus, {})),
-      clearTextOnFocus(
-          convertRawProp(rawProps, "clearTextOnFocus", sourceProps.clearTextOnFocus, {})),
       inputAccessoryViewID(convertRawProp(
           rawProps,
           "inputAccessoryViewID",

@@ -32,6 +32,7 @@ enum partitionID {
 
 #define ALPHA_NUMERIC_KB_PARTITION_COUNT   4
 SkPoint alphaNumericKBReturnKeyIndex{13,2};/*KeyIndex,RowIndex*/
+SkPoint alphaNumericKBDefaultHLKeyIndex{7,0};/*KeyIndex,RowIndex*/
 KBLayoutKeyPosContainer alphaNumericKBKeyPos;
 KBLayoutSibblingInfoContainer alphaNumericKBKeySiblingInfo;
 KBLayoutKeyInfoContainer alphaNumericKBKeyInfo= {
@@ -120,6 +121,7 @@ KBLayoutSibblingInfoContainer symbolKBKBKeySiblingInfo;
 KBLayoutKeyPosContainer symbolKBKBKeyPos;
 #define SYMBOL_KB_PARTITION_COUNT 3
 SkPoint symbolKBReturnKeyIndex{11,2};/*KeyIndex,RowIndex*/
+SkPoint symbolKBDefaultHLKeyIndex{7,0};/*KeyIndex,RowIndex*/
 KBLayoutKeyInfoContainer symbolKBKBKeyInfo={
   {
     {"123ABC",RNS_KEY_UnKnown,KEY_TYPE_TOGGLE,GROUP1},
@@ -151,7 +153,7 @@ KBLayoutKeyInfoContainer symbolKBKBKeyInfo={
     {"]",RNS_KEY_BracketRight,KEY_TYPE_TEXT,GROUP2},
     {"`",RNS_KEY_Grave,KEY_TYPE_TEXT,GROUP2},
     {"'",RNS_KEY_Apostrophe,KEY_TYPE_TEXT,GROUP2},
-            {"_",RNS_KEY_Underscore,KEY_TYPE_TEXT,GROUP2},
+    {"_",RNS_KEY_Underscore,KEY_TYPE_TEXT,GROUP2},
     {"delete",RNS_KEY_Delete,KEY_TYPE_FUNCTION,GROUP3}
   },
   {
@@ -185,7 +187,8 @@ keyPlacementConfig_t symbolKBGroupConfig[SYMBOL_KB_PARTITION_COUNT]={
 KBLayoutSibblingInfoContainer numericKBKeySiblingInfo;
 KBLayoutKeyPosContainer numericKBKeyPos;
 #define NUMERIC_KB_PARTITION_COUNT 1
-SkPoint  numericKBReturnKeyIndex{3,3};
+SkPoint  numericKBReturnKeyIndex{3,3};/*KeyIndex,RowIndex*/
+SkPoint numericKBDefaultHLKeyIndex{2,0};/*KeyIndex,RowIndex*/
 KBLayoutKeyInfoContainer numericKBKeyKeyInfo={
   {
     //row 1

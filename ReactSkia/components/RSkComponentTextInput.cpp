@@ -416,7 +416,7 @@ RnsShell::LayerInvalidateMask  RSkComponentTextInput::updateComponentProps(const
   std::string textString{};
   RNS_LOG_DEBUG("[updateComponentProps] event count "<<textInputProps.mostRecentEventCount);
   textString = textInputProps.text;
-  caretHidden_ = textInputProps.caretHidden;
+  caretHidden_ = textInputProps.traits.caretHidden;
   maxLength_ = textInputProps.maxLength;
 
   /* Update display string in below conditions */
@@ -444,8 +444,8 @@ RnsShell::LayerInvalidateMask  RSkComponentTextInput::updateComponentProps(const
     }
   }
 
-  if (secureTextEntry_ != textInputProps.secureTextEntry) {
-    secureTextEntry_ = textInputProps.secureTextEntry;
+  if (secureTextEntry_ != textInputProps.traits.secureTextEntry) {
+    secureTextEntry_ = textInputProps.traits.secureTextEntry;
     mask |= LayerPaintInvalidate;
   }
 
@@ -461,8 +461,8 @@ RnsShell::LayerInvalidateMask  RSkComponentTextInput::updateComponentProps(const
     cursorPaint_.setColor(RSkColorFromSharedColor(selectionColor_, SK_ColorBLUE));
     mask |= LayerPaintInvalidate;
   }
-  if (textInputProps.editable != editable_) {
-    editable_ = textInputProps.editable;
+  if (textInputProps.traits.editable != editable_) {
+    editable_ = textInputProps.traits.editable;
     mask |= LayerPaintInvalidate;
   }
 
@@ -480,7 +480,7 @@ RnsShell::LayerInvalidateMask  RSkComponentTextInput::updateComponentProps(const
   oskLaunchConfig_.theme=RSkToSdkOSKeyboardTheme(textInputProps.traits.keyboardAppearance);
   oskLaunchConfig_.returnKeyLabel=RSkToSdkOSKReturnKeyType(textInputProps.traits.returnKeyType);
   oskLaunchConfig_.enablesReturnKeyAutomatically=textInputProps.traits.enablesReturnKeyAutomatically;
-  oskLaunchConfig_.placeHolderName=placeholderString_;
+  oskLaunchConfig_.placeHolderName=textInputProps.placeholder;
 #endif/*FEATURE_ONSCREEN_KEYBOARD*/
 
   return (RnsShell::LayerInvalidateMask)mask;
@@ -531,9 +531,9 @@ void RSkComponentTextInput::requestForEditingMode(bool isFlushDisplay){
   spatialNavigator->updateFocusCandidate(this);
   isInEditingMode_ = true;
   textInputEventEmitter->onFocus(textInputMetrics);
-  if (!caretHidden_ || textInputProps.clearTextOnFocus) {
+  if (!caretHidden_ || textInputProps.traits.clearTextOnFocus) {
     privateVarProtectorMutex.lock();
-    if(textInputProps.clearTextOnFocus && !displayString_.empty()){
+    if(textInputProps.traits.clearTextOnFocus && !displayString_.empty()){
       displayString_.clear();
       cursor_.locationFromEnd = 0;
       cursor_.end = 0;
