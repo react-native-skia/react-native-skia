@@ -13,6 +13,7 @@
 #define DEFAULT_MAX_CACHE_EXPIRY_TIME 1800000 // 30mins in seconds 1800000
 #define CURRENT_CACHE_SIZE 10 // in megabyte
 #define TOTAL_MAX_CACHE_SIZE 15 // in megabyte
+#define MAX_URL_REDIRECT 10L // maximum number of redirects allowed
 
 #ifndef CA_CERTIFICATE
 #define CA_CERTIFICATE       "/etc/ssl/certs/ca-certificates.crt"      /**< The certificate of the CA to establish https connection to the server*/

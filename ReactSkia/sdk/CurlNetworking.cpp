@@ -116,13 +116,11 @@ void CurlNetworking::processNetworkRequest(CURLM *curlMultiHandle) {
             (curlRequest->curlResponse->responseTimeout = true)
             :(curlRequest->curlResponse->responseTimeout = false);
         curl_multi_remove_handle(curlMultiHandle, curlHandle);
-        char *url = NULL;
-        curl_easy_getinfo(curlHandle, CURLINFO_EFFECTIVE_URL, &url);
         if(curlRequest->shouldCacheData()) {
-          if(networkCache_->isAvailableInCache(url)) {
+          if(networkCache_->isAvailableInCache(curlRequest->URL)) {
             RNS_LOG_DEBUG("Data is already in cache");
           } else {
-            networkCache_->setCache(url, curlRequest->curlResponse);
+            networkCache_->setCache(curlRequest->URL, curlRequest->curlResponse);
           }
         }
         if(curlRequest->curldelegator.CURLNetworkingCompletionCallback)
@@ -266,6 +264,8 @@ bool CurlNetworking::sendRequest(shared_ptr<CurlRequest> curlRequest, folly::dyn
   curlRequest->handle = curl;
   curl_easy_setopt(curl, CURLOPT_URL, curlRequest->URL.c_str());
   curl_easy_setopt(curl, CURLOPT_PRIVATE,  curlRequest.get());
+  curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);//Enable HTTP(S) redirects
+  curl_easy_setopt(curl, CURLOPT_MAXREDIRS, MAX_URL_REDIRECT);
   //The following code gets executed for a https connection.
   if(strstr(curlRequest->URL.c_str(),"https") != NULL) {
     curl_easy_setopt(curl, CURLOPT_SSLENGINE_DEFAULT, 1L);
