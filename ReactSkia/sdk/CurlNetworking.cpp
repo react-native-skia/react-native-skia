@@ -235,8 +235,16 @@ size_t CurlNetworking::headerCallbackCurlWrapper(char* buffer, size_t size, size
 }
 
 void CurlNetworking::sendResponseCacheData(shared_ptr<CurlRequest> curlRequest) {
-  curlRequest->curldelegator.CURLNetworkingHeaderCallback(curlRequest->curlResponse.get(),curlRequest->curldelegator.delegatorData);
-  curlRequest->curldelegator.CURLNetworkingCompletionCallback(curlRequest->curlResponse.get(),curlRequest->curldelegator.delegatorData);
+  if(curlRequest->curldelegator.CURLNetworkingHeaderCallback) {
+    curlRequest->curldelegator.CURLNetworkingHeaderCallback(curlRequest->curlResponse.get(),curlRequest->curldelegator.delegatorData);
+  } else {
+    RNS_LOG_DEBUG("CurlNetworking CURLNetworkingHeaderCallback is not available");
+  }
+  if(curlRequest->curldelegator.CURLNetworkingCompletionCallback) {
+    curlRequest->curldelegator.CURLNetworkingCompletionCallback(curlRequest->curlResponse.get(),curlRequest->curldelegator.delegatorData);
+  } else {
+    RNS_LOG_WARN("CurlNetworking CURLNetworkingCompletionCallback is null");
+  }
 }
 
 bool CurlNetworking::sendRequest(shared_ptr<CurlRequest> curlRequest, folly::dynamic query) {

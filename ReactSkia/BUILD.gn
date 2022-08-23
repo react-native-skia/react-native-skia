@@ -131,6 +131,8 @@ source_set("ReactSkia") {
     "core_modules/RSkDeviceInfo.h",
     "core_modules/RSkEventEmitter.cpp",
     "core_modules/RSkEventEmitter.h",
+    "core_modules/RSkImageLoader.cpp",
+    "core_modules/RSkImageLoader.h",
     "core_modules/RSkKeyboardObserver.h",
     "core_modules/RSkSpatialNavigator.cpp",
     "core_modules/RSkSpatialNavigator.h",

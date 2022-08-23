@@ -6,6 +6,7 @@
 #include "JSITurboModuleManager.h"
 #include "version.h"
 #include "core_modules/RSkDeviceInfo.h"
+#include "core_modules/RSkImageLoader.h"
 #include "core_modules/RSkTimingModule.h"
 #include "core_modules/RSkKeyboardObserver.h"
 #include "modules/platform/nopoll/RSkWebSocketModule.h"
@@ -161,6 +162,8 @@ JSITurboModuleManager::JSITurboModuleManager(Instance *bridgeInstance)
       std::make_shared<RSkKeyboardObserver>("KeyboardObserver", jsInvoker, bridgeInstance);
   modules_["DeviceInfo"] =
       std::make_shared<RSkDeviceInfoModule>("DeviceInfo", jsInvoker, bridgeInstance);
+  modules_["ImageLoader"] =
+      std::make_shared<RSkImageLoader>("ImageLoader", jsInvoker);
 
 #if defined(TARGET_OS_TV) && TARGET_OS_TV
   modules_["TVNavigationEventEmitter"] =
@@ -169,8 +172,6 @@ JSITurboModuleManager::JSITurboModuleManager(Instance *bridgeInstance)
 
   modules_["DevSettings"] =
       std::make_shared<UnimplementedTurboModule>("DevSettings", jsInvoker);
-  modules_["ImageLoader"] =
-      std::make_shared<UnimplementedTurboModule>("ImageLoader", jsInvoker);
   modules_["StatusBarManager"] =
       std::make_shared<UnimplementedTurboModule>("StatusBarManager", jsInvoker);
   modules_["Appearance"] =
