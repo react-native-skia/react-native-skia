@@ -138,8 +138,7 @@ void CurlNetworking::processNetworkRequest(CURLM *curlMultiHandle) {
 
 }
 
-bool CurlNetworking::preparePostRequest(shared_ptr<CurlRequest> curlRequest, folly::dynamic headers, folly::dynamic data ) {
-  struct curl_slist *curlListRequestHeader = NULL;
+bool CurlNetworking::preparePostRequest(shared_ptr<CurlRequest> curlRequest, folly::dynamic data ) {
   const char *dataPtr = NULL;
   size_t dataSize = 0;
   bool status = false;
@@ -165,6 +164,15 @@ bool CurlNetworking::preparePostRequest(shared_ptr<CurlRequest> curlRequest, fol
   }
   
   curl_easy_setopt(curlRequest->handle, CURLOPT_POST, 1L);
+  /* get verbose debug output please */
+  curl_easy_setopt(curlRequest->handle, CURLOPT_POSTFIELDSIZE, (long)dataSize);
+  curl_easy_setopt(curlRequest->handle, CURLOPT_COPYPOSTFIELDS, dataPtr);
+  status = true;
+  return status;
+}
+
+void CurlNetworking::setHeaders(shared_ptr<CurlRequest> curlRequest, folly::dynamic headers) {
+  struct curl_slist *curlListRequestHeader = NULL;
   for (auto& pair : headers.items()) {
     /* Key is pair.first, value is pair.second */
     string headerKeyValue = pair.first.c_str();
@@ -173,13 +181,10 @@ bool CurlNetworking::preparePostRequest(shared_ptr<CurlRequest> curlRequest, fol
     headerKeyValue += pair.second.c_str();
     curlListRequestHeader = curl_slist_append(curlListRequestHeader, headerKeyValue.c_str());
   }
-  curl_easy_setopt(curlRequest->handle, CURLOPT_HTTPHEADER, curlListRequestHeader);
-  /* get verbose debug output please */
-  curl_easy_setopt(curlRequest->handle, CURLOPT_POSTFIELDSIZE, (long)dataSize);
-  curl_easy_setopt(curlRequest->handle, CURLOPT_COPYPOSTFIELDS, dataPtr);
-  status = true;
-  return status;
+  if(curlListRequestHeader != NULL)
+    curl_easy_setopt(curlRequest->handle, CURLOPT_HTTPHEADER, curlListRequestHeader);
 }
+
 size_t CurlNetworking::writeCallbackCurlWrapper(void* buffer, size_t size, size_t nitems, void* userData) {
   CurlRequest *curlRequest = (CurlRequest *)userData;
   std::scoped_lock lock(curlRequest->bufferLock);
@@ -196,7 +201,6 @@ size_t CurlNetworking::writeCallbackCurlWrapper(void* buffer, size_t size, size_
   }
   return size*nitems;
 }
-
 size_t CurlNetworking::progressCallbackCurlWrapper(void *clientp, double dltotal, double dlnow, double ultotal, double ulnow) {
   CurlRequest *curlRequest = (CurlRequest *)clientp;
   if(curlRequest){
@@ -295,9 +299,10 @@ bool CurlNetworking::sendRequest(shared_ptr<CurlRequest> curlRequest, folly::dyn
     curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0L); // Enable progress callback
     curl_easy_setopt(curl, CURLOPT_PROGRESSDATA, curlRequest.get() );
     curl_easy_setopt(curl, CURLOPT_PROGRESSFUNCTION, progressCallbackCurlWrapper);
-   }
+  }
+  setHeaders(curlRequest, headers);
   if(!(strcmp(curlRequest->method.c_str(), "POST"))) {
-    if(preparePostRequest(curlRequest, headers, data) == false)
+    if(preparePostRequest(curlRequest, data) == false)
       goto safe_return;
   } else if(!(strcmp(curlRequest->method.c_str(),"GET"))) {
       // ResponseWrite callback and user data
