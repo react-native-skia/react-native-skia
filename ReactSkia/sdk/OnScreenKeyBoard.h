@@ -49,6 +49,7 @@ struct OSKConfig {
   OSKThemes       theme;
   OSKReturnKeyType    returnKeyLabel;
   std::string     placeHolderName;
+  bool          showCursor;
   bool      enablesReturnKeyAutomatically;
 };
 // Default OSK Configuration to be used, in case client doesn't have any preference

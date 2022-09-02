@@ -481,6 +481,7 @@ RnsShell::LayerInvalidateMask  RSkComponentTextInput::updateComponentProps(const
   oskLaunchConfig_.returnKeyLabel=RSkToSdkOSKReturnKeyType(textInputProps.traits.returnKeyType);
   oskLaunchConfig_.enablesReturnKeyAutomatically=textInputProps.traits.enablesReturnKeyAutomatically;
   oskLaunchConfig_.placeHolderName=textInputProps.placeholder;
+  oskLaunchConfig_.showCursor= !textInputProps.traits.caretHidden;
 #endif/*FEATURE_ONSCREEN_KEYBOARD*/
 
   return (RnsShell::LayerInvalidateMask)mask;
@@ -540,11 +541,14 @@ void RSkComponentTextInput::requestForEditingMode(bool isFlushDisplay){
     }
     privateVarProtectorMutex.unlock();
     if (!caretHidden_) {
-       drawAndSubmit(isFlushDisplay);
+      drawAndSubmit(isFlushDisplay);
     }
   }
+ 
+
 #if ENABLE(FEATURE_ONSCREEN_KEYBOARD)
   if(showSoftInputOnFocus_){
+    OnScreenKeyboard::updatePlaceHolderString(displayString_,(cursor_.end - cursor_.locationFromEnd));
     OnScreenKeyboard::launch(oskLaunchConfig_);
     isOSKActive_=true;
   }

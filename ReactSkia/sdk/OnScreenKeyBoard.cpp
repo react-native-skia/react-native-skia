@@ -25,8 +25,7 @@ OnScreenKeyboard& OnScreenKeyboard::getInstance() {
 }
 
 OSKErrorCode OnScreenKeyboard::launch(OSKConfig& oskConfig) {
-  RNS_LOG_TODO("Need to do emit , keyboardWillShow Event to APP");
-
+  
   OnScreenKeyboard &oskHandle=OnScreenKeyboard::getInstance();
 
   if((oskHandle.oskState_ == OSK_STATE_LAUNCH_INPROGRESS) || (oskHandle.oskState_ == OSK_STATE_ACTIVE)) {
@@ -210,14 +209,15 @@ void OnScreenKeyboard::drawPlaceHolderDisplayString() {
   displayStrWidth_=((textWidth+OSK_PLACEHOLDER_RESERVED_LENGTH) < oskLayout_.placeHolderLength ) ? (textWidth +OSK_PLACEHOLDER_RESERVED_LENGTH) :oskLayout_.placeHolderLength;
 
 /* Display Cursor*/
-  textWidth=0;
-  int newcursorPosition = (cursorPosition_ >= (visibleDisplayStringRange_.x()+1)) ? ( cursorPosition_- visibleDisplayStringRange_.x()):0;
-  if(newcursorPosition) {
-    textWidth=getStringBound (displayString_,0,newcursorPosition-1,textFont_);
+  if(oskConfig_.showCursor){
+    textWidth=0;
+    int newcursorPosition = (cursorPosition_ >= (visibleDisplayStringRange_.x()+1)) ? ( cursorPosition_- visibleDisplayStringRange_.x()):0;
+    if(newcursorPosition) {
+      textWidth=getStringBound (displayString_,0,newcursorPosition-1,textFont_);
+    }
+    textWidth +=(oskLayout_.horizontalStartOffset+OSK_PLACEHOLDER_LEFT_INSET);
+    windowDelegatorCanvas->drawLine(textWidth,oskLayout_.placeHolderTextVerticalStart,textWidth,oskLayout_.placeHolderTextVerticalStart-textFont_.getSize(),cursorPaint_);
   }
-  textWidth +=(oskLayout_.horizontalStartOffset+OSK_PLACEHOLDER_LEFT_INSET);
-  windowDelegatorCanvas->drawLine(textWidth,oskLayout_.placeHolderTextVerticalStart,textWidth,oskLayout_.placeHolderTextVerticalStart-textFont_.getSize(),cursorPaint_);
-
 #ifdef  DRAW_STRING_BOUNDING_BOX
   SkPaint paint;
   paint.setColor(SK_ColorGREEN);
