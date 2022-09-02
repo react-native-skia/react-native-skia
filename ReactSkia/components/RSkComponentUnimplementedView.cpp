@@ -23,6 +23,10 @@ RSkComponentUnimplementedView::RSkComponentUnimplementedView(const ShadowView &s
 
 RnsShell::LayerInvalidateMask RSkComponentUnimplementedView::updateComponentProps(const ShadowView &newShadowView,bool forceUpdate) { RNS_LOG_NOT_IMPL; return RnsShell::LayerInvalidateNone;}
 
+void RSkComponentUnimplementedView::handleCommand(std::string commandName,folly::dynamic args){
+  RNS_LOG_WARN("[RSkComponentUnimplementedView][handleCommand] commandName : "<< commandName);
+}
+
 void RSkComponentUnimplementedView::OnPaint(
     SkCanvas *canvas) {
   auto component = getComponentData();

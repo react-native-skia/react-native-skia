@@ -15,6 +15,7 @@
 
 #define RNS_EXPORT __attribute__((visibility("default")))
 #define RNS_UNUSED(val) (void)val;
+#define RNS_USED __attribute__((used))
 #define RNS_MAKE_NONCOPYABLE(ClassName) \
     private: \
         ClassName(const ClassName&) = delete; \

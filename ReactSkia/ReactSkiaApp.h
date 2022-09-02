@@ -16,9 +16,17 @@ class ReactSkiaApp : public RnsShell::Application {
   ReactSkiaApp(int argc, char **argv);
   ~ReactSkiaApp();
 
+  static facebook::react::RNInstance *currentBridge() {
+    return currentBridgeInstance;
+  }
+  static void setCurrentBridge(facebook::react::RNInstance *instance) {
+    currentBridgeInstance = instance;
+  }
+
   void onIdle();
   void onResize(SkSize newSize);
 
+  static facebook::react::RNInstance *currentBridgeInstance;
  private:
   std::unique_ptr<facebook::react::RNInstance> rnInstance_;
   std::unique_ptr<facebook::react::RSkSurfaceWindow> surface_;

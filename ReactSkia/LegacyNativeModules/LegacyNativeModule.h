@@ -8,38 +8,25 @@
 
 #pragma once
 
+#include <cxxreact/CxxNativeModule.h>
 #include <cxxreact/CxxModule.h>
+#include <cxxreact/MessageQueueThread.h>
 #include <cxxreact/NativeModule.h>
 
 namespace facebook {
 namespace react {
 
-class LegacyNativeModule : public NativeModule {
+using RSkLegacyNativeModuleProviderProtocol = std::unique_ptr<xplat::module::CxxModule>(*)();
+
+class LegacyNativeModule : public CxxNativeModule {
  public:
   LegacyNativeModule(
       std::string name,
-      xplat::module::CxxModule::Provider provider)
-      : name_(std::move(name)),
-        provider_(provider) {}
-
-  std::string getName() override;
-  std::string getSyncMethodName(unsigned int methodId) override;
-  std::vector<MethodDescriptor> getMethods() override;
-  folly::dynamic getConstants() override;
-  void invoke(unsigned int reactMethodId, folly::dynamic &&params, int callId) override;
-  MethodCallResult callSerializableNativeHook(
-      unsigned int hookId,
-      folly::dynamic &&args) override;
-
- private:
-  void lazyInit();
-
-  std::string name_;
-  xplat::module::CxxModule::Provider provider_;
-  std::unique_ptr<xplat::module::CxxModule> module_;
-  std::vector<xplat::module::CxxModule::Method> methods_;
+      std::weak_ptr<Instance> instance,
+      xplat::module::CxxModule::Provider provider,
+      std::shared_ptr<MessageQueueThread> messageQueueThread)
+      : CxxNativeModule(instance,name,provider,messageQueueThread) {}
 };
-
 
 } // namespace react
 } // namespace facebook

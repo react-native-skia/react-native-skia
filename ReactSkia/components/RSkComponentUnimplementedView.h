@@ -16,6 +16,7 @@ class RSkComponentUnimplementedView final : public RSkComponent {
  public:
   RSkComponentUnimplementedView(const ShadowView &shadowView);
   RnsShell::LayerInvalidateMask updateComponentProps(const ShadowView &newShadowView,bool forceUpdate) override;
+  void handleCommand(std::string commandName, folly::dynamic args) override;
 
   virtual bool isVisible(RSkComponent* candidate) override;
 
