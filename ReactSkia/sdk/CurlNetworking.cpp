@@ -300,9 +300,11 @@ bool CurlNetworking::sendRequest(shared_ptr<CurlRequest> curlRequest, folly::dyn
     curl_easy_setopt(curl, CURLOPT_PROGRESSDATA, curlRequest.get() );
     curl_easy_setopt(curl, CURLOPT_PROGRESSFUNCTION, progressCallbackCurlWrapper);
   }
-  setHeaders(curlRequest, headers);
+  if(headers != nullptr) {
+    setHeaders(curlRequest, headers);
+  }
   if(!(strcmp(curlRequest->method.c_str(), "POST"))) {
-    if(preparePostRequest(curlRequest, data) == false)
+    if((data != nullptr) && (preparePostRequest(curlRequest, data) == false))
       goto safe_return;
   } else if(!(strcmp(curlRequest->method.c_str(),"GET"))) {
       // ResponseWrite callback and user data
