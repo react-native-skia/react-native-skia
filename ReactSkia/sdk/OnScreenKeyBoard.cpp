@@ -18,6 +18,7 @@ namespace rns {
 namespace sdk {
 
 std::mutex oskLaunchExitCtrlMutex;//For synchronized OSK Launch & Exit
+std::mutex conditionalLockMutex;
 
 OnScreenKeyboard& OnScreenKeyboard::getInstance() {
   static OnScreenKeyboard oskHandle;
@@ -111,7 +112,9 @@ void  OnScreenKeyboard::updatePlaceHolderString(std::string displayString,int cu
   oskHandle.drawPlaceHolderDisplayString();
   if(oskHandle.oskState_== OSK_STATE_ACTIVE) {
     oskHandle.commitDrawCall();
+
   }
+  oskHandle.sendDrawCommand(DRAW_PH_STRING);
 }
 
 void OnScreenKeyboard::launchOSKWindow() {
@@ -188,7 +191,6 @@ void OnScreenKeyboard::drawPlaceHolderDisplayString() {
     return;
   }
   SkScalar textWidth{0};
-
 /*Caculate the visible string Range to display string*/
   if(!displayString_.empty()) {
 
@@ -540,8 +542,9 @@ inline void OnScreenKeyboard::processKey(rnsKey keyValue) {
   if(keyValue == RNS_KEY_UnKnown){
     return;
   }
+  if(oskState_ != OSK_STATE_ACTIVE) return;
+  
   SkPoint hlCandidate;
-  bool drawCallPendingToRender{false};
   hlCandidate=lastFocussIndex_=currentFocussIndex_;
   rnsKey OSKkeyValue{RNS_KEY_UnKnown};
   unsigned int rowIndex=currentFocussIndex_.y(),keyIndex=currentFocussIndex_.x();
@@ -570,8 +573,7 @@ inline void OnScreenKeyboard::processKey(rnsKey keyValue) {
         ToggleKeyMap :: iterator keyFunction =toggleKeyMap.find(oskLayout_.keyInfo->at(rowIndex).at(keyIndex).keyName);
         if((keyFunction != toggleKeyMap.end()) && (keyFunction->second != oskLayout_.kbLayoutType)) {
           oskLayout_.kbLayoutType=keyFunction->second;
-          drawKBLayout(OSK_ALPHA_NUMERIC_KB);
-          drawCallPendingToRender=true;
+          sendDrawCommand(DRAW_KB);
         }
       }else {
         OSKkeyValue=oskLayout_.keyInfo->at(rowIndex).at(keyIndex).keyValue;
@@ -617,22 +619,19 @@ inline void OnScreenKeyboard::processKey(rnsKey keyValue) {
   /* Enable Return Key on Valid Key Event if disabled*/
   if((OSKkeyValue != RNS_KEY_UnKnown) && autoActivateReturnKey_) {
     autoActivateReturnKey_=false;
-    drawKBKeyFont(oskLayout_.returnKeyIndex);
+    sendDrawCommand(DRAW_HL);
   }
   if((lastFocussIndex_ != hlCandidate)) {
-    drawHighLightOnKey(hlCandidate);
-    currentFocussIndex_=hlCandidate;
-    if(OSKkeyValue == RNS_KEY_UnKnown) {
-      drawCallPendingToRender=true;
-    }
-  }
 /* To reduce the draw call and to avoid the frequency of swap buffer issue in openGL backend,
    trigger commit only if there is no key emit to client. As in the other case commit will be
    taken care as part of update string call from client , followed by key emit
 */
-  if( drawCallPendingToRender && (oskState_== OSK_STATE_ACTIVE)) {
-    commitDrawCall();
+    currentFocussIndex_=hlCandidate;
+    if(OSKkeyValue == RNS_KEY_UnKnown) {
+      sendDrawCommand(DRAW_HL);
+    }
   }
+
   /* Emit only known keys to client*/
   if(OSKkeyValue != RNS_KEY_UnKnown) {
 #if ENABLE(FEATURE_KEY_THROTTLING)
@@ -943,6 +942,40 @@ void OnScreenKeyboard::repeatKeyProcessingThread(){
   }
 }
 #endif
+
+void OnScreenKeyboard::sendDrawCommand(DrawCommands commands) {
+   std::scoped_lock lock(conditionalLockMutex);
+   SkPictureRecorder pictureRecorder_;
+   pictureCanvas_ = pictureRecorder_.beginRecording(SkRect::MakeXYWH(0, 0, screenSize_.width(), screenSize_.height()));
+   switch(commands) {
+     case DRAW_PH_STRING:
+       RNS_LOG_INFO("@@@ Got Task to work:DRAW_PH_STRING@@");
+       drawPlaceHolderDisplayString();
+       if(lastFocussIndex_ == currentFocussIndex_) {
+         break; // else continue to draw Highlight
+      }
+      case DRAW_HL:
+        RNS_LOG_INFO("@@@ Got Task to work:DRAW_HL@@");
+        drawHighLightOnKey(currentFocussIndex_);
+      break;
+     case DRAW_KB:
+       RNS_LOG_INFO("@@@ Got Task to work:DRAW_KB@@");
+       drawKBLayout(OSK_ALPHA_NUMERIC_KB);
+     break;
+     case DRAW_KEY:
+       RNS_LOG_INFO("@@@ Got Task to work:DRAW_KEY@@");
+       drawKBKeyFont(oskLayout_.returnKeyIndex);
+     break;
+     default:
+     break;
+   }
+   auto pic = pictureRecorder_.finishRecordingAsPicture();
+   if(pic.get()) {
+     RNS_LOG_INFO("SkPicture ( "  << pic << " )For " <<
+     pic.get()->approximateOpCount() << " operations and size : " << pic.get()->approximateBytesUsed());
+   }
+   if(oskState_== OSK_STATE_ACTIVE) commitDrawCall(pic);
+}
 
 } // namespace sdk
 } // namespace rns

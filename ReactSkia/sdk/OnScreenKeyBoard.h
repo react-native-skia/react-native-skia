@@ -198,6 +198,7 @@ class OnScreenKeyboard : public WindowDelegator{
     sem_t         sigKeyConsumed_;
     std::atomic<bool> waitingForKeyConsumedSignal_{false};
 #endif /*ENABLE_FEATURE_KEY_THROTTLING*/
+    SkCanvas*     pictureCanvas_{nullptr};
 };
 
 }// namespace sdk

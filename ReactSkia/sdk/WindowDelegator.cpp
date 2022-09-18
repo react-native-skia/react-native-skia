@@ -89,10 +89,9 @@ void WindowDelegator::closeWindow() {
 
 void WindowDelegator::commitDrawCall() {
   if(!windowActive) return;
-
   if( ownsTaskrunner_ )  {
     if( windowTaskRunner_->running() )
-      windowTaskRunner_->dispatch([&](){ renderToDisplay(); });
+      windowTaskRunner_->dispatch([=](){ renderToDisplay(pictureObj); });
   } else {
     renderToDisplay();
   }
@@ -102,6 +101,14 @@ inline void WindowDelegator::renderToDisplay() {
   if(!windowActive) return;
 
   std::scoped_lock lock(renderCtrlMutex);
+    if(fullSCreenPictureObj_.get()) {
+        RNS_LOG_INFO("SkPicture ( "  << fullSCreenPictureObj_ << " )For " <<
+            fullSCreenPictureObj_.get()->approximateOpCount() << " operations and size : " << fullSCreenPictureObj_.get()->approximateBytesUsed());
+    }
+    if(pictureObj.get()) {
+        RNS_LOG_INFO("SkPicture ( "  << pictureObj << " )For " <<
+                pictureObj.get()->approximateOpCount() << " operations and size : " << pictureObj.get()->approximateBytesUsed());
+    }
 
 #ifdef RNS_SHELL_HAS_GPU_SUPPORT
   int bufferAge=windowContext_->bufferAge();
