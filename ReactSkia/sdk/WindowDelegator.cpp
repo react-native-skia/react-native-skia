@@ -11,6 +11,7 @@
 namespace rns {
 namespace sdk {
 
+#define MAX_HISTORY_BIN_SIZE 4
 void WindowDelegator::createWindow(SkSize windowSize,std::function<void ()> windowReadyCB,std::function<void ()>forceFullScreenDraw,bool runOnTaskRunner) {
 
   windowSize_=windowSize;
@@ -87,43 +88,79 @@ void WindowDelegator::closeWindow() {
   windowReadyTodrawCB_=nullptr;
 }
 
+<<<<<<< HEAD
 void WindowDelegator::commitDrawCall() {
+=======
+void WindowDelegator::commitDrawCall(std::string keyRef,sk_sp<SkPicture> pictureObj) {
+>>>>>>> Added logic of maintain History and playback from history
   if(!windowActive) return;
   if( ownsTaskrunner_ )  {
     if( windowTaskRunner_->running() )
-      windowTaskRunner_->dispatch([=](){ renderToDisplay(pictureObj); });
+      windowTaskRunner_->dispatch([=](){ renderToDisplay(keyRef,pictureObj); });
   } else {
+<<<<<<< HEAD
     renderToDisplay();
   }
 }
 
 inline void WindowDelegator::renderToDisplay() {
+=======
+    renderToDisplay(keyRef,pictureObj);
+  }
+}
+
+inline void WindowDelegator::renderToDisplay(std::string keyRef,sk_sp<SkPicture> pictureObj) {
+>>>>>>> Added logic of maintain History and playback from history
   if(!windowActive) return;
 
   std::scoped_lock lock(renderCtrlMutex);
-
 #ifdef RNS_SHELL_HAS_GPU_SUPPORT
+  if(!keyRef.empty()) {
+   RNS_LOG_ERROR("keyRef :: "<<keyRef<< "Map Size : "<<drawHistorybin_.size());
+    drawHistorybin_.insert(std::pair<std::string, sk_sp<SkPicture>>(keyRef,pictureObj));
+  }
   int bufferAge=windowContext_->bufferAge();
+<<<<<<< HEAD
   if((bufferAge != 1) && (forceFullScreenDraw_)) {
+=======
+  if(bufferAge != 1) {
+>>>>>>> Added logic of maintain History and playback from history
 // Forcing full screen redraw as damage region handling is not done
     RNS_LOG_ERROR("@@@@@@@@ drawPicture : Force Redraw@@@@@@@@@");
     if(fullSCreenPictureObj_.get()) {
-        RNS_LOG_INFO("SkPicture ( "  << fullSCreenPictureObj_ << " )For " <<
-            fullSCreenPictureObj_.get()->approximateOpCount() << " operations and size : " << fullSCreenPictureObj_.get()->approximateBytesUsed());
+      RNS_LOG_INFO("SkPicture ( "  << fullSCreenPictureObj_ << " )For " <<
+      fullSCreenPictureObj_.get()->approximateOpCount() << " operations and size : " << fullSCreenPictureObj_.get()->approximateBytesUsed());
     }
-    fullSCreenPictureObj_->playback(windowDelegatorCanvas_);
-  } else
+    if((bufferAge ==0) && fullSCreenPictureObj_.get()) {
+      fullSCreenPictureObj_->playback(windowDelegatorCanvas_);
+    }
+    std::map<std::string,sk_sp<SkPicture>>::reverse_iterator it = drawHistorybin_.rbegin();
+    int count=1;
+    while( (it != drawHistorybin_.rend()) && bufferAge ) {
+      if(count > drawHistorybin_.size()) break;
+      if(it->second.get()) {
+        RNS_LOG_INFO("SkPicture ( "  << it->second << " )For " <<
+                it->second.get()->approximateOpCount() << " operations and size : " << it->second.get()->approximateBytesUsed());
+        it->second->playback(windowDelegatorCanvas_);
+        RNS_LOG_ERROR("keyRef :: "<<it->first<< "Map Size : "<<drawHistorybin_.size());
+        count++;
+      }
+      bufferAge--;
+    }
+  }else
 #endif/*RNS_SHELL_HAS_GPU_SUPPORT*/
   {
-    RNS_LOG_ERROR("@@@@@@@@ drawPicture : Normal Draw @@@@@@@@@");
     if(pictureObj.get()) {
         RNS_LOG_INFO("SkPicture ( "  << pictureObj << " )For " <<
                 pictureObj.get()->approximateOpCount() << " operations and size : " << pictureObj.get()->approximateBytesUsed());
+      pictureObj->playback(windowDelegatorCanvas_);
     }
-    pictureObj->playback(windowDelegatorCanvas_);
   }
+<<<<<<< HEAD
 #endif/*RNS_SHELL_HAS_GPU_SUPPORT*/
 
+=======
+>>>>>>> Added logic of maintain History and playback from history
   if(backBuffer_)  backBuffer_->flushAndSubmit();
   if(windowContext_) {
     std::vector<SkIRect> emptyRect;// No partialUpdate handled , so passing emptyRect instead of dirtyRect

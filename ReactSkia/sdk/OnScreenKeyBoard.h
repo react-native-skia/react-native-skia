@@ -119,6 +119,13 @@ class OnScreenKeyboard : public WindowDelegator{
       OSK_STATE_EXIT_INPROGRESS,
       OSK_STATE_INACTIVE,
     };
+    enum DrawCommands {
+      DRAW_PH_STRING,
+      DRAW_KB,
+      DRAW_HL,
+      DRAW_OSK,
+      DRAW_MAX
+    };
     struct OSKLayout {
       KBLayoutKeyInfoContainer*  keyInfo;
       KBLayoutKeyPosContainer*    keyPos;

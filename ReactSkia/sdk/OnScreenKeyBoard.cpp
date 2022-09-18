@@ -180,9 +180,14 @@ void OnScreenKeyboard::launchOSKWindow() {
 
 //Finally Creating OSK Window
   std::function<void()> createWindowCB = std::bind(&OnScreenKeyboard::windowReadyToDrawCB,this);
+<<<<<<< HEAD
   std::function<void()> forceFullScreenDrawCB = std::bind(&OnScreenKeyboard::drawOSK,this);
   createWindow(screenSize_,createWindowCB,forceFullScreenDrawCB);
 
+=======
+  std::function<void()> faileSafeCB = std::bind(&OnScreenKeyboard::drawOSK,this);
+  createWindow(screenSize_,createWindowCB,faileSafeCB);
+>>>>>>> Added logic of maintain History and playback from history
 }
 
 void OnScreenKeyboard::drawPlaceHolderDisplayString() {
@@ -946,25 +951,23 @@ void OnScreenKeyboard::repeatKeyProcessingThread(){
 void OnScreenKeyboard::sendDrawCommand(DrawCommands commands) {
    std::scoped_lock lock(conditionalLockMutex);
    SkPictureRecorder pictureRecorder_;
+   std::string commandKey;
    pictureCanvas_ = pictureRecorder_.beginRecording(SkRect::MakeXYWH(0, 0, screenSize_.width(), screenSize_.height()));
    switch(commands) {
      case DRAW_PH_STRING:
        RNS_LOG_INFO("@@@ Got Task to work:DRAW_PH_STRING@@");
        drawPlaceHolderDisplayString();
-       if(lastFocussIndex_ == currentFocussIndex_) {
+       commandKey="EmbededTIString";
          break; // else continue to draw Highlight
-      }
       case DRAW_HL:
         RNS_LOG_INFO("@@@ Got Task to work:DRAW_HL@@");
+        commandKey="HighLight";
         drawHighLightOnKey(currentFocussIndex_);
       break;
      case DRAW_KB:
        RNS_LOG_INFO("@@@ Got Task to work:DRAW_KB@@");
+       commandKey="KeyBoardLayout";
        drawKBLayout(OSK_ALPHA_NUMERIC_KB);
-     break;
-     case DRAW_KEY:
-       RNS_LOG_INFO("@@@ Got Task to work:DRAW_KEY@@");
-       drawKBKeyFont(oskLayout_.returnKeyIndex);
      break;
      default:
      break;
@@ -974,7 +977,7 @@ void OnScreenKeyboard::sendDrawCommand(DrawCommands commands) {
      RNS_LOG_INFO("SkPicture ( "  << pic << " )For " <<
      pic.get()->approximateOpCount() << " operations and size : " << pic.get()->approximateBytesUsed());
    }
-   if(oskState_== OSK_STATE_ACTIVE) commitDrawCall(pic);
+   if(oskState_== OSK_STATE_ACTIVE) commitDrawCall(commandKey,pic);
 }
 
 } // namespace sdk
