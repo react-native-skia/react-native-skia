@@ -7,6 +7,7 @@
 
 #include <semaphore.h>
 #include <thread>
+#include <vector>
 
 #include "include/core/SkCanvas.h"
 
@@ -27,9 +28,9 @@ class WindowDelegator {
     void createWindow(SkSize windowSize,std::function<void ()> windowReadyTodrawCB,std::function<void ()> forceFullScreenDraw=nullptr,bool runOnTaskRunner=true);
     void closeWindow();
     void setWindowTittle(const char* titleString);
-    void commitDrawCall();
 
-    SkCanvas *windowDelegatorCanvas{nullptr};
+    void commitDrawCall(sk_sp<SkPicture> pictureObj);
+    void setFullScreenPicture(sk_sp<SkPicture> pictureObj) {fullSCreenPictureObj_=pictureObj;}
 
   private:
     void onExposeHandler(RnsShell::Window* window);
@@ -40,6 +41,8 @@ class WindowDelegator {
     std::unique_ptr<RnsShell::WindowContext> windowContext_{nullptr};
     RnsShell::Window* window_{nullptr};
     sk_sp<SkSurface>  backBuffer_;
+    SkCanvas *windowDelegatorCanvas_{nullptr};
+    sk_sp<SkPicture>  fullSCreenPictureObj_;
 
 /*To fulfill OpenGl requirement of create & rendering to be handled from same thread context*/
     std::unique_ptr<RnsShell::TaskLoop> windowTaskRunner_{nullptr};
@@ -56,6 +59,8 @@ class WindowDelegator {
     int exposeEventID_{-1};
     SkSize windowSize_;
     bool windowActive{false};
+
+    std::vector<sk_sp<SkPicture>> drawHistorybin_;
 };
 
 } // namespace sdk

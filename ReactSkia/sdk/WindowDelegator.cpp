@@ -49,7 +49,7 @@ void  WindowDelegator::createNativeWindow() {
     if(windowContext_) {
       windowContext_->makeContextCurrent();
       backBuffer_ = windowContext_->getBackbufferSurface();
-      windowDelegatorCanvas = backBuffer_->getCanvas();
+      windowDelegatorCanvas_ = backBuffer_->getCanvas();
       windowActive = true;
       if(displayPlatForm_ == RnsShell::PlatformDisplay::Type::X11) {
         sem_post(&semReadyToDraw_);
@@ -83,7 +83,7 @@ void WindowDelegator::closeWindow() {
     backBuffer_ = nullptr;
   }
   sem_destroy(&semReadyToDraw_);
-  windowDelegatorCanvas=nullptr;
+  windowDelegatorCanvas_=nullptr;
   windowReadyTodrawCB_=nullptr;
 }
 
@@ -101,20 +101,26 @@ inline void WindowDelegator::renderToDisplay() {
   if(!windowActive) return;
 
   std::scoped_lock lock(renderCtrlMutex);
-    if(fullSCreenPictureObj_.get()) {
-        RNS_LOG_INFO("SkPicture ( "  << fullSCreenPictureObj_ << " )For " <<
-            fullSCreenPictureObj_.get()->approximateOpCount() << " operations and size : " << fullSCreenPictureObj_.get()->approximateBytesUsed());
-    }
-    if(pictureObj.get()) {
-        RNS_LOG_INFO("SkPicture ( "  << pictureObj << " )For " <<
-                pictureObj.get()->approximateOpCount() << " operations and size : " << pictureObj.get()->approximateBytesUsed());
-    }
 
 #ifdef RNS_SHELL_HAS_GPU_SUPPORT
   int bufferAge=windowContext_->bufferAge();
   if((bufferAge != 1) && (forceFullScreenDraw_)) {
 // Forcing full screen redraw as damage region handling is not done
-    forceFullScreenDraw_();
+    RNS_LOG_ERROR("@@@@@@@@ drawPicture : Force Redraw@@@@@@@@@");
+    if(fullSCreenPictureObj_.get()) {
+        RNS_LOG_INFO("SkPicture ( "  << fullSCreenPictureObj_ << " )For " <<
+            fullSCreenPictureObj_.get()->approximateOpCount() << " operations and size : " << fullSCreenPictureObj_.get()->approximateBytesUsed());
+    }
+    fullSCreenPictureObj_->playback(windowDelegatorCanvas_);
+  } else
+#endif/*RNS_SHELL_HAS_GPU_SUPPORT*/
+  {
+    RNS_LOG_ERROR("@@@@@@@@ drawPicture : Normal Draw @@@@@@@@@");
+    if(pictureObj.get()) {
+        RNS_LOG_INFO("SkPicture ( "  << pictureObj << " )For " <<
+                pictureObj.get()->approximateOpCount() << " operations and size : " << pictureObj.get()->approximateBytesUsed());
+    }
+    pictureObj->playback(windowDelegatorCanvas_);
   }
 #endif/*RNS_SHELL_HAS_GPU_SUPPORT*/
 
