@@ -5,6 +5,7 @@
 
 #include "JSITurboModuleManager.h"
 #include "version.h"
+#include "core_modules/RSkAlertManager.h"
 #include "core_modules/RSkDeviceInfo.h"
 #include "core_modules/RSkImageLoader.h"
 #include "core_modules/RSkTimingModule.h"
@@ -164,6 +165,8 @@ JSITurboModuleManager::JSITurboModuleManager(Instance *bridgeInstance)
       std::make_shared<RSkDeviceInfoModule>("DeviceInfo", jsInvoker, bridgeInstance);
   modules_["ImageLoader"] =
       std::make_shared<RSkImageLoader>("ImageLoader", jsInvoker);
+  modules_["AlertManager"] =
+      std::make_shared<RSkAlertManager>("AlertManager", jsInvoker, bridgeInstance);
 
 #if defined(TARGET_OS_TV) && TARGET_OS_TV
   modules_["TVNavigationEventEmitter"] =

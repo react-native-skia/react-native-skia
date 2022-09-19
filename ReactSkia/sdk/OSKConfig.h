@@ -11,13 +11,9 @@ namespace rns {
 namespace sdk {
 
 // Dark Theme configuration
-#define OSK_DARK_THEME_BACKGROUND_COLOR       SkColorSetARGB(0xFF, 0x34, 0x34, 0x34) //Dark Gray
-#define OSK_DARK_THEME_FONT_COLOR             SK_ColorWHITE
 #define OSK_DARK_THEME_PLACEHOLDER_COLOR      SK_ColorDKGRAY
 #define OSK_DARK_THEME_INACTIVE_FONT_COLOR    SkColorSetARGB(0xFF, 0x60, 0x60, 0x60) //Mild Lighter Tone of Dark Gray
 // LIGHT Theme configuration
-#define OSK_LIGHT_THEME_BACKGROUND_COLOR      SkColorSetARGB(0xFF, 0x80, 0x80, 0x80) // Mild Dark Tone on SK_ColorGRAY
-#define OSK_LIGHT_THEME_FONT_COLOR            SK_ColorWHITE
 #define OSK_LIGHT_THEME_PLACEHOLDER_COLOR     SkColorSetARGB(0xFF, 0x96, 0x96, 0x96) //Mild Lighter Tone on SK_ColorGRAY
 #define OSK_LIGHT_THEME_INACTIVE_FONT_COLOR   SkColorSetARGB(0xFF, 0xB3, 0xB3, 0xB3)
 // OSK common styling configuration

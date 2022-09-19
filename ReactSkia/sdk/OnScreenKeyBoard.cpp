@@ -13,6 +13,7 @@
 #include "OnScreenKeyBoard.h"
 #include "OSKConfig.h"
 #include "OSKLayout.h"
+#include "sdkStylesConfig.h"
 
 namespace rns {
 namespace sdk {
@@ -147,7 +148,7 @@ void OnScreenKeyboard::launchOSKWindow() {
 
 // setting up paint objects
   // Paint object for normal text
-  textPaint_.setColor((oskConfig_.theme == OSK_LIGHT_THEME) ? OSK_LIGHT_THEME_FONT_COLOR: OSK_DARK_THEME_FONT_COLOR);
+  textPaint_.setColor((oskConfig_.theme == OSK_LIGHT_THEME) ? LIGHT_THEME_FONT_COLOR: DARK_THEME_FONT_COLOR);
   textPaint_.setAntiAlias(true);
   // Paint object for Highlighted text
   textHLPaint_.setColor(OSK_HIGHLIGHT_FONT_COLOR);
@@ -155,7 +156,7 @@ void OnScreenKeyboard::launchOSKWindow() {
   // Paint object for Place Holder
   placeHolderPaint_.setColor ((oskConfig_.theme == OSK_LIGHT_THEME) ? OSK_LIGHT_THEME_PLACEHOLDER_COLOR: OSK_DARK_THEME_PLACEHOLDER_COLOR);
   // Paint object for OSK BackGround
-  oskBGPaint_.setColor((oskConfig_.theme == OSK_LIGHT_THEME) ? OSK_LIGHT_THEME_BACKGROUND_COLOR: OSK_DARK_THEME_BACKGROUND_COLOR);
+  oskBGPaint_.setColor((oskConfig_.theme == OSK_LIGHT_THEME) ? LIGHT_THEME_BACKGROUND_COLOR: DARK_THEME_BACKGROUND_COLOR);
   // Paint object for inactive text
   inactiveTextPaint_.setColor((oskConfig_.theme == OSK_LIGHT_THEME) ? OSK_LIGHT_THEME_INACTIVE_FONT_COLOR: OSK_DARK_THEME_INACTIVE_FONT_COLOR);
   inactiveTextPaint_.setAntiAlias(true);
