@@ -22,7 +22,7 @@ namespace rns {
 namespace sdk {
 
 struct pictureCommand {
-  SkIRect dirtyRect;
+  std::vector<SkIRect> dirtyRect;
   sk_sp<SkPicture> pictureCommand;
 };
 

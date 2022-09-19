@@ -104,6 +104,7 @@ void WindowDelegator::commitDrawCall(std::string keyRef,PictureObject pictureObj
 inline void WindowDelegator::renderToDisplay(std::string keyRef,PictureObject pictureObj) {
   if(!windowActive) return;
   std::vector<SkIRect> dirtyRect;
+
 #ifdef SHOW_DIRTY_RECT
   SkPaint paint;
   paint.setColor(SK_ColorGREEN);
@@ -113,54 +114,61 @@ inline void WindowDelegator::renderToDisplay(std::string keyRef,PictureObject pi
   std::scoped_lock lock(renderCtrlMutex);
 #ifdef RNS_SHELL_HAS_GPU_SUPPORT
   if(!keyRef.empty()) {
+    auto iter=drawHistorybin_.find(keyRef);
+    if(iter != drawHistorybin_.end()) {
+        for(auto oldDirtyRectIt:iter->second.dirtyRect) {
+          dirtyRect.push_back(oldDirtyRectIt);
+          #ifdef SHOW_DIRTY_RECT
+          windowDelegatorCanvas_->drawIRect(oldDirtyRectIt,paint);
+          #endif/*SHOW_DIRTY_RECT*/
+        }
+    }
     drawHistorybin_[keyRef]=pictureObj;
-    RNS_LOG_ERROR("keyRef :: "<<keyRef<< "Map Size : "<<drawHistorybin_.size());
   }
-  RNS_LOG_INFO("keyNameBasePicCommand_ :: "<<keyNameBasePicCommand_);
   int bufferAge=windowContext_->bufferAge();
   if(bufferAge != 1) {
 // Forcing full screen redraw as damage region handling is not done
-    if(bufferAge==0) {
-        std::map<std::string,PictureObject>::iterator it = drawHistorybin_.find(keyNameBasePicCommand_);
-        if(it!=drawHistorybin_.end()){
-          if(it->second.pictureCommand.get()) {
-            RNS_LOG_INFO("SkPicture ( "  << it->second.pictureCommand << " )For " <<
-                it->second.pictureCommand.get()->approximateOpCount() << " operations and size : " << it->second.pictureCommand.get()->approximateBytesUsed());
-            (it->second).pictureCommand->playback(windowDelegatorCanvas_);
-            #ifdef SHOW_DIRTY_RECT
-            windowDelegatorCanvas_->drawIRect((it->second).dirtyRect,paint);
-            #endif/*SHOW_DIRTY_RECT*/
-            dirtyRect.push_back((it->second).dirtyRect);
-            RNS_LOG_ERROR("Draw Base Command: keyRef :: "<<it->first<< "Map Size : "<<drawHistorybin_.size());
-          }
-        }
-    }
     std::map<std::string,PictureObject>::reverse_iterator it = drawHistorybin_.rbegin();
     for( ;it != drawHistorybin_.rend() ;it++ ) {
-      if(it->second.pictureCommand.get() && ((it->first).compare(keyNameBasePicCommand_))) {
+      if(it->second.pictureCommand.get() ) {
+        it->second.pictureCommand->playback(windowDelegatorCanvas_);
         RNS_LOG_INFO("SkPicture ( "  << it->second.pictureCommand << " )For " <<
                 it->second.pictureCommand.get()->approximateOpCount() << " operations and size : " << it->second.pictureCommand.get()->approximateBytesUsed());
-        it->second.pictureCommand->playback(windowDelegatorCanvas_);
-        #ifdef SHOW_DIRTY_RECT
-        windowDelegatorCanvas_->drawIRect((it->second).dirtyRect,paint);
-        #endif/*SHOW_DIRTY_RECT*/
-        if(bufferAge !=0) {
-          dirtyRect.push_back((it->second).dirtyRect);
+        if(!(it->first).compare(keyNameBasePicCommand_)) {
+          if(bufferAge ==0) {
+            for(auto dirtyRectIt:(it->second).dirtyRect) {
+              dirtyRect.push_back(dirtyRectIt);
+              RNS_LOG_ERROR("Added dirt Rect :: "<<(it->first));
+              #ifdef SHOW_DIRTY_RECT
+              windowDelegatorCanvas_->drawIRect(dirtyRectIt,paint);
+              #endif/*SHOW_DIRTY_RECT*/
+            }
+          }
+        } else {
+          for(auto dirtyRectIt:(it->second).dirtyRect) {
+            dirtyRect.push_back(dirtyRectIt);
+            RNS_LOG_ERROR("Added dirt Rect :: "<<(it->first));
+            #ifdef SHOW_DIRTY_RECT
+            windowDelegatorCanvas_->drawIRect(dirtyRectIt,paint);
+            #endif/*SHOW_DIRTY_RECT*/
+          }
         }
-        RNS_LOG_ERROR("Draw Rest Of commands :keyRef :: "<<it->first<< "Map Size : "<<drawHistorybin_.size());
       }
     }
   } else
 #endif/*RNS_SHELL_HAS_GPU_SUPPORT*/
   {
     if(pictureObj.pictureCommand.get()) {
-        RNS_LOG_INFO("SkPicture ( "  << pictureObj.pictureCommand << " )For " <<
+      RNS_LOG_INFO("SkPicture ( "  << pictureObj.pictureCommand << " )For " <<
                 pictureObj.pictureCommand.get()->approximateOpCount() << " operations and size : " << pictureObj.pictureCommand.get()->approximateBytesUsed());
       pictureObj.pictureCommand->playback(windowDelegatorCanvas_);
-      #ifdef SHOW_DIRTY_RECT
-      windowDelegatorCanvas_->drawIRect(pictureObj.dirtyRect,paint);
-      #endif/*SHOW_DIRTY_RECT*/
-      dirtyRect.push_back(pictureObj.dirtyRect);
+      for(auto dirtyRectIt:pictureObj.dirtyRect) {
+        dirtyRect.push_back(dirtyRectIt);
+        RNS_LOG_ERROR("Added dirt Rect :: "<<keyRef);
+        #ifdef SHOW_DIRTY_RECT
+        windowDelegatorCanvas_->drawIRect(dirtyRectIt,paint);
+        #endif/*SHOW_DIRTY_RECT*/
+      }
       RNS_LOG_ERROR("Draw Current Command :keyRef :: "<<keyRef<< "Map Size : "<<drawHistorybin_.size());
     }
   }

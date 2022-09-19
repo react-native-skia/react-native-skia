@@ -166,10 +166,10 @@ class OnScreenKeyboard : public WindowDelegator{
     void windowReadyToDrawCB();
     void sendDrawCommand(DrawCommands commands);
 
-    void drawHighLightOnKey(SkPoint index);
-    void drawOSKBackGround();
-    void drawPlaceHolderDisplayString();
-    void drawKBLayout(OSKTypes oskType);
+    void drawHighLightOnKey(std::vector<SkIRect> &dirtyRect);
+    void drawOSKBackGround(std::vector<SkIRect> &dirtyRect);
+    void drawPlaceHolderDisplayString(std::vector<SkIRect> &dirtyRect);
+    void drawKBLayout(std::vector<SkIRect> &dirtyRect);
     void drawKBKeyFont(SkPoint index,bool onHLTile=false);
     static inline void onScreenKeyboardEventEmit(std::string eventType);
 

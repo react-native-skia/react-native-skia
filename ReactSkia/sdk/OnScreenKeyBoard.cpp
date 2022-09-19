@@ -178,7 +178,7 @@ void OnScreenKeyboard::launchOSKWindow() {
    createWindow(screenSize_,createWindowCB);
 }
 
-void OnScreenKeyboard::drawPlaceHolderDisplayString() {
+void OnScreenKeyboard::drawPlaceHolderDisplayString(std::vector<SkIRect> &dirtyRect) {
 
   if(oskState_!= OSK_STATE_ACTIVE) {
     return;
@@ -246,6 +246,8 @@ void OnScreenKeyboard::drawPlaceHolderDisplayString() {
     textWidth +=(oskLayout_.horizontalStartOffset+OSK_PLACEHOLDER_LEFT_INSET);
     pictureCanvas_->drawLine(textWidth,oskLayout_.placeHolderTextVerticalStart,textWidth,oskLayout_.placeHolderTextVerticalStart-textFont_.getSize(),cursorPaint_);
   }
+  dirtyRect.push_back(SkIRect::MakeXYWH(oskLayout_.horizontalStartOffset,oskLayout_.placeHolderVerticalStart, oskLayout_.placeHolderLength,oskLayout_.placeHolderHeight));
+
 #ifdef  DRAW_STRING_BOUNDING_BOX
   SkPaint paint;
   paint.setColor(SK_ColorGREEN);
@@ -258,7 +260,7 @@ void OnScreenKeyboard::drawPlaceHolderDisplayString() {
 #endif /*DRAW_STRING_BOUNDING_BOX*/
 }
 
-void OnScreenKeyboard::drawOSKBackGround() {
+void OnScreenKeyboard::drawOSKBackGround(std::vector<SkIRect> &dirtyRect) {
 
 if(oskState_!= OSK_STATE_ACTIVE) return;
 
@@ -275,16 +277,16 @@ if(oskState_!= OSK_STATE_ACTIVE) return;
 
 /*3. Draw PLaceHolder Display String */
   clearScreen( oskLayout_.horizontalStartOffset,oskLayout_.placeHolderVerticalStart,oskLayout_.placeHolderLength,oskLayout_.placeHolderHeight,placeHolderPaint_);
-
+  dirtyRect.push_back(SkIRect::MakeXYWH(0, 0, screenSize_.width(), screenSize_.height()));
   return;
 }
 
-void OnScreenKeyboard::drawKBLayout(OSKTypes oskType) {
+void OnScreenKeyboard::drawKBLayout(std::vector<SkIRect> &dirtyRect) {
 
   if(oskState_!= OSK_STATE_ACTIVE) return;
 
   RNS_PROFILE_START(OSKLayoutCreate)
-  createOSKLayout(oskType);
+  createOSKLayout(oskConfig_.type);
   currentFocussIndex_=oskLayout_.defaultFocussIndex;
   RNS_PROFILE_END("OSk Layout Create Done : ",OSKLayoutCreate)
   RNS_PROFILE_START(OSKDraw)
@@ -321,6 +323,9 @@ void OnScreenKeyboard::drawKBLayout(OSKTypes oskType) {
       }
     }
   }
+  dirtyRect.push_back(SkIRect::MakeXYWH(oskLayout_.horizontalStartOffset,oskLayout_.kBVerticalStart,
+                             oskLayout_.placeHolderLength,oskLayout_.kBHeight));
+
   RNS_PROFILE_END("OSk Draw completion : ",OSKDraw)
 }
 
@@ -475,21 +480,27 @@ inline void OnScreenKeyboard::drawKBKeyFont(SkPoint index,bool onHLTile) {
   }
 }
 
-void OnScreenKeyboard ::drawHighLightOnKey(SkPoint index) {
+void OnScreenKeyboard ::drawHighLightOnKey(std::vector<SkIRect> &dirtyRect) {
 
   if(oskState_!= OSK_STATE_ACTIVE) return;
 
-  unsigned int rowIndex=index.y(),keyIndex=index.x();
+  unsigned int rowIndex=currentFocussIndex_.y(),keyIndex=currentFocussIndex_.x();
   unsigned int lastRowIndex=lastFocussIndex_.y(),lastKeyIndex=lastFocussIndex_.x();
 
   RNS_PROFILE_START(HighlightOSKKey)
   //reset last focussed item
-  pictureCanvas_->drawRect(oskLayout_.keyPos->at(lastRowIndex).at(lastKeyIndex).highlightTile,oskBGPaint_);
+  keyPosition_t & oldKeyPos=oskLayout_.keyPos->at(lastRowIndex).at(lastKeyIndex);
+  keyPosition_t & keyPos=oskLayout_.keyPos->at(rowIndex).at(keyIndex);
+
+  pictureCanvas_->drawRect(oldKeyPos.highlightTile,oskBGPaint_);
   drawKBKeyFont({lastKeyIndex,lastRowIndex});
+  dirtyRect.push_back(SkIRect::MakeXYWH(oldKeyPos.highlightTile.x(),oldKeyPos.highlightTile.y(),oldKeyPos.highlightTile.width(),oldKeyPos.highlightTile.height()));
 
   //Hight current focussed item
-  pictureCanvas_->drawRect(oskLayout_.keyPos->at(rowIndex).at(keyIndex).highlightTile,highLightTilePaint_);
+  pictureCanvas_->drawRect(keyPos.highlightTile,highLightTilePaint_);
   drawKBKeyFont({keyIndex,rowIndex},true);
+  dirtyRect.push_back(SkIRect::MakeXYWH(keyPos.highlightTile.x(),keyPos.highlightTile.y(),keyPos.highlightTile.width(),keyPos.highlightTile.height()));
+
   RNS_PROFILE_END(" Highlight Completion : ",HighlightOSKKey)
 }
 
@@ -940,35 +951,29 @@ void OnScreenKeyboard::sendDrawCommand(DrawCommands commands) {
    std::scoped_lock lock(conditionalLockMutex);
    SkPictureRecorder pictureRecorder_;
    std::string commandKey;
-   SkIRect   dirtyRect;
+   std::vector<SkIRect>   dirtyRect;
    pictureCanvas_ = pictureRecorder_.beginRecording(SkRect::MakeXYWH(0, 0, screenSize_.width(), screenSize_.height()));
    switch(commands) {
      case DRAW_OSK_BG:
      RNS_LOG_INFO("@@@ Got Task to work:DRAW_OSK_BG@@");
-     drawOSKBackGround();
+     drawOSKBackGround(dirtyRect);
      commandKey="OSKBackGround";
      setBasePicCommand(commandKey);
-     dirtyRect.setXYWH(0, 0, screenSize_.width(), screenSize_.height());
      break;
      case DRAW_PH_STRING:
        RNS_LOG_INFO("@@@ Got Task to work:DRAW_PH_STRING@@");
-       drawPlaceHolderDisplayString();
+       drawPlaceHolderDisplayString(dirtyRect);
        commandKey="EmbededTIString";
-       dirtyRect.setXYWH(oskLayout_.horizontalStartOffset,oskLayout_.placeHolderVerticalStart,oskLayout_.placeHolderLength,oskLayout_.placeHolderHeight);
        break;
       case DRAW_HL:
         RNS_LOG_INFO("@@@ Got Task to work:DRAW_HL@@");
         commandKey="HighLight";
-        drawHighLightOnKey(currentFocussIndex_);
-       dirtyRect.setXYWH(oskLayout_.horizontalStartOffset,oskLayout_.kBVerticalStart,
-               oskLayout_.placeHolderLength,oskLayout_.kBHeight);
+        drawHighLightOnKey(dirtyRect);
       break;
      case DRAW_KB:
        RNS_LOG_INFO("@@@ Got Task to work:DRAW_KB@@");
        commandKey="KeyBoardLayout";
-       drawKBLayout(oskConfig_.type);
-       dirtyRect.setXYWH(oskLayout_.horizontalStartOffset,oskLayout_.kBVerticalStart,
-               oskLayout_.placeHolderLength,oskLayout_.kBHeight);
+       drawKBLayout(dirtyRect);
       break;
      default:
      break;
