@@ -28,6 +28,8 @@ class RSkImageLoaderModule : public CxxModule {
   ImageSizeMap imageRequestList_;
   void getImageSize(std::string uri, CxxModule::Callback resolveBlock, CxxModule::Callback rejectBlock);
   void getImageSizeWithHeaders(std::string uri, folly::dynamic headers, CxxModule::Callback resolveBlock, CxxModule::Callback rejectBlock);
+  inline void handleRejectBlock( CxxModule::Callback rejectBlock);
+  inline void handleResolveBlock(CxxModule::Callback resolveBlock,sk_sp<SkImage> remoteImageData);
   void prefetchImage(std::string uri, CxxModule::Callback resolveBlock, CxxModule::Callback rejectBlock);
   void queryCache(folly::dynamic uris, CxxModule::Callback resolveBlock, CxxModule::Callback rejectBlock);
 };
