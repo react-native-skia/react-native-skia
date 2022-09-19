@@ -109,11 +109,6 @@ void  OnScreenKeyboard::updatePlaceHolderString(std::string displayString,int cu
     sem_post(&oskHandle.sigKeyConsumed_);
   }
 #endif
-  oskHandle.drawPlaceHolderDisplayString();
-  if(oskHandle.oskState_== OSK_STATE_ACTIVE) {
-    oskHandle.commitDrawCall();
-
-  }
   oskHandle.sendDrawCommand(DRAW_PH_STRING);
 }
 
@@ -237,7 +232,7 @@ void OnScreenKeyboard::drawPlaceHolderDisplayString() {
 
 /*Display Current String*/
   if(!displayString_.empty()) {
-    windowDelegatorCanvas->drawSimpleText(displayString_.c_str(), displayString_.length(), SkTextEncoding::kUTF8,oskLayout_.horizontalStartOffset+OSK_PLACEHOLDER_LEFT_INSET,oskLayout_.placeHolderTextVerticalStart,textFont_, textPaint_);
+    pictureCanvas_->drawSimpleText(displayString_.c_str(), displayString_.length(), SkTextEncoding::kUTF8,oskLayout_.horizontalStartOffset+OSK_PLACEHOLDER_LEFT_INSET,oskLayout_.placeHolderTextVerticalStart,textFont_, textPaint_);
   }
   displayStrWidth_=((textWidth+OSK_PLACEHOLDER_RESERVED_LENGTH) < oskLayout_.placeHolderLength ) ? (textWidth +OSK_PLACEHOLDER_RESERVED_LENGTH) :oskLayout_.placeHolderLength;
 
@@ -249,7 +244,7 @@ void OnScreenKeyboard::drawPlaceHolderDisplayString() {
       textWidth=getStringBound (displayString_,0,newcursorPosition-1,textFont_);
     }
     textWidth +=(oskLayout_.horizontalStartOffset+OSK_PLACEHOLDER_LEFT_INSET);
-    windowDelegatorCanvas->drawLine(textWidth,oskLayout_.placeHolderTextVerticalStart,textWidth,oskLayout_.placeHolderTextVerticalStart-textFont_.getSize(),cursorPaint_);
+    pictureCanvas_->drawLine(textWidth,oskLayout_.placeHolderTextVerticalStart,textWidth,oskLayout_.placeHolderTextVerticalStart-textFont_.getSize(),cursorPaint_);
   }
 #ifdef  DRAW_STRING_BOUNDING_BOX
   SkPaint paint;
@@ -259,7 +254,7 @@ void OnScreenKeyboard::drawPlaceHolderDisplayString() {
   SkRect testBounds;
   textFont_.measureText(displayString_.c_str(),  displayString_.size(), SkTextEncoding::kUTF8, &testBounds);
   testBounds.offset(oskLayout_.horizontalStartOffset,oskLayout_.placeHolderTextVerticalStart);
-  windowDelegatorCanvas->drawRect(testBounds,paint);
+  pictureCanvas_->drawRect(testBounds,paint);
 #endif /*DRAW_STRING_BOUNDING_BOX*/
 }
 
@@ -268,18 +263,18 @@ void OnScreenKeyboard::drawOSKBackGround() {
 if(oskState_!= OSK_STATE_ACTIVE) return;
 
 /*1. Set up OSK Window background*/
-  windowDelegatorCanvas->clear(oskBGPaint_.getColor());
+  pictureCanvas_->clear(oskBGPaint_.getColor());
 
 /*2. Draw PlaceHolder Title*/
   if(!oskConfig_.placeHolderName.empty()) {
-    windowDelegatorCanvas->drawSimpleText(oskConfig_.placeHolderName.c_str(),oskConfig_.placeHolderName.size(), SkTextEncoding::kUTF8,
+    pictureCanvas_->drawSimpleText(oskConfig_.placeHolderName.c_str(),oskConfig_.placeHolderName.size(), SkTextEncoding::kUTF8,
                                oskLayout_.horizontalStartOffset,
                                oskLayout_.placeHolderTitleVerticalStart,
                                textFont_,textPaint_);
   }
 
 /*3. Draw PLaceHolder Display String */
-  clearScreen(oskLayout_.horizontalStartOffset,oskLayout_.placeHolderVerticalStart,oskLayout_.placeHolderLength,OSK_PLACEHOLDER_HEIGHT,placeHolderPaint_);
+  clearScreen( oskLayout_.horizontalStartOffset,oskLayout_.placeHolderVerticalStart,oskLayout_.placeHolderLength,oskLayout_.placeHolderHeight,placeHolderPaint_);
 
   return;
 }
@@ -318,7 +313,7 @@ void OnScreenKeyboard::drawKBLayout(OSKTypes oskType) {
       for (unsigned int index=1;index<oskLayout_.keyInfo->at(0).size();index++) {
         if(oskLayout_.keyInfo->at(0).at(index).kbPartitionId != oskLayout_.keyInfo->at(0).at(index-1).kbPartitionId) {
           xpos=oskLayout_.keyPos->at(0).at(index).highlightTile.x()-(oskLayout_.keyPos->at(0).at(index).highlightTile.fLeft - oskLayout_.keyPos->at(0).at(index-1).highlightTile.fRight)/2;
-          windowDelegatorCanvas->drawLine(xpos,startY,xpos,endY,paint);
+          pictureCanvas_->drawLine(xpos,startY,xpos,endY,paint);
         }
       }
     }
@@ -416,12 +411,12 @@ inline void OnScreenKeyboard::drawKBKeyFont(SkPoint index,bool onHLTile) {
             textX = keyPos.highlightTile.x() + ((keyPos.highlightTile.width() - bounds.width() )/2);
             textY = keyPos.highlightTile.y() + ((keyPos.highlightTile.height() + bounds.height()) /2);
             textX-=5;textY+=5;// For allignment
-            windowDelegatorCanvas->save();
+            pictureCanvas_->save();
             SkMatrix transformMatrix;
             //to Flip on x-axis - anchor @ center
             transformMatrix.preRotate(270,textX+(bounds.width()/2),textY-(bounds.height()/2));
             transformMatrix.postTranslate(bounds.width()/2,0);
-            windowDelegatorCanvas->concat(transformMatrix);
+            pictureCanvas_->concat(transformMatrix);
             needsCanvasRestore=true;
           }
  #ifdef DISPLAY_FONT_FAMILY_INFO
@@ -437,42 +432,42 @@ inline void OnScreenKeyboard::drawKBKeyFont(SkPoint index,bool onHLTile) {
          keyName=(char *)DRAW_FONT_FAILURE_INDICATOR;
       }
     }
-    windowDelegatorCanvas->drawSimpleText(keyName, strlen(keyName), SkTextEncoding::kUTF8,textX,textY,font, textPaint);
-    if(needsCanvasRestore) windowDelegatorCanvas->restore();
+    pictureCanvas_->drawSimpleText(keyName, strlen(keyName), SkTextEncoding::kUTF8,textX,textY,font, textPaint);
+    if(needsCanvasRestore) pictureCanvas_->restore();
 #ifdef SHOW_FONT_PLACING_ON_HLTILE
     SkPaint textPaint;
     SkRect bounds;
     textPaint.setColor(SK_ColorRED);
     textPaint.setStrokeWidth(2);
     //Text draw point
-    windowDelegatorCanvas->drawPoint(textX,textY,textPaint);
+    pictureCanvas_->drawPoint(textX,textY,textPaint);
     textPaint.setColor(SK_ColorGREEN);
     textPaint.setStrokeWidth(2);
     textPaint.setStyle(SkPaint::kStroke_Style);
     font.measureText(keyName, strlen(keyName), SkTextEncoding::kUTF8, &bounds);
     bounds.offset(textX,textY);
     // Font bounds
-    windowDelegatorCanvas->drawRect(bounds,textPaint);
+    pictureCanvas_->drawRect(bounds,textPaint);
     textPaint.setColor(SK_ColorBLUE);
     // Highlight Tile Coverage
-    windowDelegatorCanvas->drawRect(keyPos.highlightTile,textPaint);
+    pictureCanvas_->drawRect(keyPos.highlightTile,textPaint);
     textPaint.setColor(SK_ColorYELLOW);
     textPaint.setStrokeWidth(1);
     //HighLightTile Centre
-    windowDelegatorCanvas->drawLine(keyPos.highlightTile.fLeft,
+    pictureCanvas_->drawLine(keyPos.highlightTile.fLeft,
                          keyPos.highlightTile.fTop+(keyPos.highlightTile.height()/2),
                          keyPos.highlightTile.fRight,
                          keyPos.highlightTile.fTop+(keyPos.highlightTile.height()/2),
                          textPaint);
-    windowDelegatorCanvas->drawLine(keyPos.highlightTile.fLeft+(keyPos.highlightTile.width()/2),
+    pictureCanvas_->drawLine(keyPos.highlightTile.fLeft+(keyPos.highlightTile.width()/2),
                          keyPos.highlightTile.fTop,
                          keyPos.highlightTile.fLeft+(keyPos.highlightTile.width()/2),
                          keyPos.highlightTile.fBottom,
                          textPaint);
     // Bounds Mid portion
     textPaint.setColor(SK_ColorMAGENTA);
-    windowDelegatorCanvas->drawLine(bounds.fLeft,bounds.fTop+(bounds.height()/2),bounds.fRight,bounds.fTop+(bounds.height()/2),textPaint);
-    windowDelegatorCanvas->drawLine(bounds.fLeft+(bounds.width()/2),bounds.fTop,bounds.fLeft+(bounds.width()/2),bounds.fBottom,textPaint);
+    pictureCanvas_->drawLine(bounds.fLeft,bounds.fTop+(bounds.height()/2),bounds.fRight,bounds.fTop+(bounds.height()/2),textPaint);
+    pictureCanvas_->drawLine(bounds.fLeft+(bounds.width()/2),bounds.fTop,bounds.fLeft+(bounds.width()/2),bounds.fBottom,textPaint);
 #endif/*SHOW_FONT_PLACING_ON_HLTILE*/
   }
 }
@@ -486,11 +481,11 @@ void OnScreenKeyboard ::drawHighLightOnKey(SkPoint index) {
 
   RNS_PROFILE_START(HighlightOSKKey)
   //reset last focussed item
-  windowDelegatorCanvas->drawRect(oskLayout_.keyPos->at(lastRowIndex).at(lastKeyIndex).highlightTile,oskBGPaint_);
+  pictureCanvas_->drawRect(oskLayout_.keyPos->at(lastRowIndex).at(lastKeyIndex).highlightTile,oskBGPaint_);
   drawKBKeyFont({lastKeyIndex,lastRowIndex});
 
   //Hight current focussed item
-  windowDelegatorCanvas->drawRect(oskLayout_.keyPos->at(rowIndex).at(keyIndex).highlightTile,highLightTilePaint_);
+  pictureCanvas_->drawRect(oskLayout_.keyPos->at(rowIndex).at(keyIndex).highlightTile,highLightTilePaint_);
   drawKBKeyFont({keyIndex,rowIndex},true);
   RNS_PROFILE_END(" Highlight Completion : ",HighlightOSKKey)
 }
@@ -639,7 +634,7 @@ inline void OnScreenKeyboard::processKey(rnsKey keyValue) {
 
 inline void OnScreenKeyboard::clearScreen(SkScalar x,SkScalar y,SkScalar width,SkScalar height,SkPaint & paintObj) {
     SkRect rect=SkRect::MakeXYWH( x,y,width,height);
-    windowDelegatorCanvas->drawRect(rect,paintObj);
+    pictureCanvas_->drawRect(rect,paintObj);
 }
 
 inline SkScalar OnScreenKeyboard:: getStringBound (const std::string & stringToMeasure,

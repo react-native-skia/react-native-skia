@@ -10,6 +10,7 @@
 #include <map>
 
 #include "include/core/SkCanvas.h"
+#include "include/core/SkPictureRecorder.h"
 
 #include "rns_shell/compositor/Compositor.h"
 #include "rns_shell/common/Window.h"
@@ -25,11 +26,13 @@ class WindowDelegator {
     WindowDelegator(){};
    ~WindowDelegator(){};
 
-    void createWindow(SkSize windowSize,std::function<void ()> windowReadyTodrawCB,std::function<void ()> forceFullScreenDraw=nullptr,bool runOnTaskRunner=true);
+    void createWindow(SkSize windowSize,std::function<void ()> windowReadyTodrawCB,bool runOnTaskRunner=true);
     void closeWindow();
     void setWindowTittle(const char* titleString);
     void commitDrawCall(std::string keyRef,sk_sp<SkPicture> pictureObj);
     void setBasePicCommand(std::string keyName) {keyNameBasePicCommand_=keyName;}
+
+  private:
     void onExposeHandler(RnsShell::Window* window);
     void windowWorkerThread();
     void createNativeWindow();
@@ -39,7 +42,6 @@ class WindowDelegator {
     RnsShell::Window* window_{nullptr};
     sk_sp<SkSurface>  backBuffer_;
     SkCanvas *windowDelegatorCanvas_{nullptr};
-    sk_sp<SkPicture>  fullSCreenPictureObj_;
 
 /*To fulfill OpenGl requirement of create & rendering to be handled from same thread context*/
     std::unique_ptr<RnsShell::TaskLoop> windowTaskRunner_{nullptr};
@@ -50,7 +52,6 @@ class WindowDelegator {
     std::thread workerThread_;
 
     std::function<void ()> windowReadyTodrawCB_{nullptr};
-    std::function<void ()> forceFullScreenDraw_{nullptr};
 
     RnsShell::PlatformDisplay::Type displayPlatForm_;
     int exposeEventID_{-1};

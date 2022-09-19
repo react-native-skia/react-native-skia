@@ -162,6 +162,7 @@ class OnScreenKeyboard : public WindowDelegator{
 
     void emitOSKKeyEvent(rnsKey keyValue);
     void windowReadyToDrawCB();
+    void sendDrawCommand(DrawCommands commands);
 
     void drawHighLightOnKey(SkPoint index);
     void drawOSKBackGround();

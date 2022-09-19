@@ -12,11 +12,10 @@ namespace rns {
 namespace sdk {
 
 #define MAX_HISTORY_BIN_SIZE 4
-void WindowDelegator::createWindow(SkSize windowSize,std::function<void ()> windowReadyCB,std::function<void ()>forceFullScreenDraw,bool runOnTaskRunner) {
+void WindowDelegator::createWindow(SkSize windowSize,std::function<void ()> windowReadyCB,bool runOnTaskRunner) {
 
   windowSize_=windowSize;
   windowReadyTodrawCB_=windowReadyCB;
-  forceFullScreenDraw_=forceFullScreenDraw;
 
   if(runOnTaskRunner) {
     ownsTaskrunner_ = runOnTaskRunner;
@@ -88,29 +87,17 @@ void WindowDelegator::closeWindow() {
   windowReadyTodrawCB_=nullptr;
 }
 
-<<<<<<< HEAD
-void WindowDelegator::commitDrawCall() {
-=======
 void WindowDelegator::commitDrawCall(std::string keyRef,sk_sp<SkPicture> pictureObj) {
->>>>>>> Added logic of maintain History and playback from history
   if(!windowActive) return;
   if( ownsTaskrunner_ )  {
     if( windowTaskRunner_->running() )
       windowTaskRunner_->dispatch([=](){ renderToDisplay(keyRef,pictureObj); });
   } else {
-<<<<<<< HEAD
-    renderToDisplay();
-  }
-}
-
-inline void WindowDelegator::renderToDisplay() {
-=======
     renderToDisplay(keyRef,pictureObj);
   }
 }
 
 inline void WindowDelegator::renderToDisplay(std::string keyRef,sk_sp<SkPicture> pictureObj) {
->>>>>>> Added logic of maintain History and playback from history
   if(!windowActive) return;
 
   std::scoped_lock lock(renderCtrlMutex);
@@ -121,11 +108,7 @@ inline void WindowDelegator::renderToDisplay(std::string keyRef,sk_sp<SkPicture>
   }
   RNS_LOG_INFO("keyNameBasePicCommand_ :: "<<keyNameBasePicCommand_);
   int bufferAge=windowContext_->bufferAge();
-<<<<<<< HEAD
-  if((bufferAge != 1) && (forceFullScreenDraw_)) {
-=======
   if(bufferAge != 1) {
->>>>>>> Added logic of maintain History and playback from history
 // Forcing full screen redraw as damage region handling is not done
     if(bufferAge==0) {
         std::map<std::string,sk_sp<SkPicture>>::iterator it = drawHistorybin_.find(keyNameBasePicCommand_);
@@ -157,11 +140,6 @@ inline void WindowDelegator::renderToDisplay(std::string keyRef,sk_sp<SkPicture>
       RNS_LOG_ERROR("Draw Current Command :keyRef :: "<<keyRef<< "Map Size : "<<drawHistorybin_.size());
     }
   }
-<<<<<<< HEAD
-#endif/*RNS_SHELL_HAS_GPU_SUPPORT*/
-
-=======
->>>>>>> Added logic of maintain History and playback from history
   if(backBuffer_)  backBuffer_->flushAndSubmit();
   if(windowContext_) {
     std::vector<SkIRect> emptyRect;// No partialUpdate handled , so passing emptyRect instead of dirtyRect
