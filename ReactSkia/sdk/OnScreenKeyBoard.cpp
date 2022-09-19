@@ -289,8 +289,12 @@ void OnScreenKeyboard::drawKBLayout(OSKTypes oskType) {
   RNS_PROFILE_END("OSk Layout Create Done : ",OSKLayoutCreate)
   RNS_PROFILE_START(OSKDraw)
 //clear KeyBoard Area
+  unsigned int rowCount=oskLayout_.keyInfo->size()-1;
+  unsigned int KeyCount=oskLayout_.keyInfo->at(rowCount).size()-1;
+  oskLayout_.kBHeight=(oskLayout_.keyPos->at(rowCount).at(KeyCount).highlightTile.fBottom+3)-oskLayout_.kBVerticalStart;
+
   clearScreen( oskLayout_.horizontalStartOffset,oskLayout_.kBVerticalStart,
-               screenSize_.width(),(screenSize_.height()- oskLayout_.kBVerticalStart),
+               oskLayout_.placeHolderLength,oskLayout_.kBHeight,
                oskBGPaint_);
   if(oskLayout_.keyInfo && oskLayout_.keyPos) {
     /*1. Draw Keys */
@@ -306,10 +310,9 @@ void OnScreenKeyboard::drawKBLayout(OSKTypes oskType) {
       SkPaint paint;
       paint.setColor(placeHolderPaint_.getColor());
       paint.setStrokeWidth(2);
-      unsigned int startY,endY,xpos,rowCount=oskLayout_.keyInfo->size()-1;
-      unsigned int KeyCount=oskLayout_.keyInfo->at(rowCount).size()-1;
-      endY=oskLayout_.keyPos->at(rowCount).at(KeyCount).highlightTile.fBottom+3;
+      unsigned int startY,xpos,endY;
       startY=oskLayout_.keyPos->at(0).at(0).highlightTile.fTop - oskLayout_.kbGroupConfig[oskLayout_.keyInfo->at(0).at(0).kbPartitionId].groupKeySpacing.y();
+      endY=oskLayout_.keyPos->at(rowCount).at(KeyCount).highlightTile.fBottom+3;
       for (unsigned int index=1;index<oskLayout_.keyInfo->at(0).size();index++) {
         if(oskLayout_.keyInfo->at(0).at(index).kbPartitionId != oskLayout_.keyInfo->at(0).at(index-1).kbPartitionId) {
           xpos=oskLayout_.keyPos->at(0).at(index).highlightTile.x()-(oskLayout_.keyPos->at(0).at(index).highlightTile.fLeft - oskLayout_.keyPos->at(0).at(index-1).highlightTile.fRight)/2;
@@ -937,6 +940,7 @@ void OnScreenKeyboard::sendDrawCommand(DrawCommands commands) {
    std::scoped_lock lock(conditionalLockMutex);
    SkPictureRecorder pictureRecorder_;
    std::string commandKey;
+   SkIRect   dirtyRect;
    pictureCanvas_ = pictureRecorder_.beginRecording(SkRect::MakeXYWH(0, 0, screenSize_.width(), screenSize_.height()));
    switch(commands) {
      case DRAW_OSK_BG:
@@ -944,21 +948,27 @@ void OnScreenKeyboard::sendDrawCommand(DrawCommands commands) {
      drawOSKBackGround();
      commandKey="OSKBackGround";
      setBasePicCommand(commandKey);
+     dirtyRect.setXYWH(0, 0, screenSize_.width(), screenSize_.height());
      break;
      case DRAW_PH_STRING:
        RNS_LOG_INFO("@@@ Got Task to work:DRAW_PH_STRING@@");
        drawPlaceHolderDisplayString();
        commandKey="EmbededTIString";
+       dirtyRect.setXYWH(oskLayout_.horizontalStartOffset,oskLayout_.placeHolderVerticalStart,oskLayout_.placeHolderLength,oskLayout_.placeHolderHeight);
        break;
       case DRAW_HL:
         RNS_LOG_INFO("@@@ Got Task to work:DRAW_HL@@");
         commandKey="HighLight";
         drawHighLightOnKey(currentFocussIndex_);
+       dirtyRect.setXYWH(oskLayout_.horizontalStartOffset,oskLayout_.kBVerticalStart,
+               oskLayout_.placeHolderLength,oskLayout_.kBHeight);
       break;
      case DRAW_KB:
        RNS_LOG_INFO("@@@ Got Task to work:DRAW_KB@@");
        commandKey="KeyBoardLayout";
        drawKBLayout(oskConfig_.type);
+       dirtyRect.setXYWH(oskLayout_.horizontalStartOffset,oskLayout_.kBVerticalStart,
+               oskLayout_.placeHolderLength,oskLayout_.kBHeight);
       break;
      default:
      break;

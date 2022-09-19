@@ -5,13 +5,15 @@
 * LICENSE file in the root directory of this source tree.
 */
 
+#include <vector>
+
 #include "NotificationCenter.h"
 #include "WindowDelegator.h"
 
 namespace rns {
 namespace sdk {
 
-#define MAX_HISTORY_BIN_SIZE 4
+#define SHOW_DIRTY_RECT
 void WindowDelegator::createWindow(SkSize windowSize,std::function<void ()> windowReadyCB,bool runOnTaskRunner) {
 
   windowSize_=windowSize;
@@ -101,7 +103,13 @@ void WindowDelegator::commitDrawCall(std::string keyRef,PictureObject pictureObj
 
 inline void WindowDelegator::renderToDisplay(std::string keyRef,PictureObject pictureObj) {
   if(!windowActive) return;
-
+  std::vector<SkIRect> dirtyRect;
+#ifdef SHOW_DIRTY_RECT
+  SkPaint paint;
+  paint.setColor(SK_ColorGREEN);
+  paint.setStrokeWidth(2);
+  paint.setStyle(SkPaint::kStroke_Style);
+#endif /*SHOW_DIRTY_RECT*/
   std::scoped_lock lock(renderCtrlMutex);
 #ifdef RNS_SHELL_HAS_GPU_SUPPORT
   if(!keyRef.empty()) {
@@ -119,6 +127,10 @@ inline void WindowDelegator::renderToDisplay(std::string keyRef,PictureObject pi
             RNS_LOG_INFO("SkPicture ( "  << it->second.pictureCommand << " )For " <<
                 it->second.pictureCommand.get()->approximateOpCount() << " operations and size : " << it->second.pictureCommand.get()->approximateBytesUsed());
             (it->second).pictureCommand->playback(windowDelegatorCanvas_);
+            #ifdef SHOW_DIRTY_RECT
+            windowDelegatorCanvas_->drawIRect((it->second).dirtyRect,paint);
+            #endif/*SHOW_DIRTY_RECT*/
+            dirtyRect.push_back((it->second).dirtyRect);
             RNS_LOG_ERROR("Draw Base Command: keyRef :: "<<it->first<< "Map Size : "<<drawHistorybin_.size());
           }
         }
@@ -129,6 +141,12 @@ inline void WindowDelegator::renderToDisplay(std::string keyRef,PictureObject pi
         RNS_LOG_INFO("SkPicture ( "  << it->second.pictureCommand << " )For " <<
                 it->second.pictureCommand.get()->approximateOpCount() << " operations and size : " << it->second.pictureCommand.get()->approximateBytesUsed());
         it->second.pictureCommand->playback(windowDelegatorCanvas_);
+        #ifdef SHOW_DIRTY_RECT
+        windowDelegatorCanvas_->drawIRect((it->second).dirtyRect,paint);
+        #endif/*SHOW_DIRTY_RECT*/
+        if(bufferAge !=0) {
+          dirtyRect.push_back((it->second).dirtyRect);
+        }
         RNS_LOG_ERROR("Draw Rest Of commands :keyRef :: "<<it->first<< "Map Size : "<<drawHistorybin_.size());
       }
     }
@@ -139,13 +157,18 @@ inline void WindowDelegator::renderToDisplay(std::string keyRef,PictureObject pi
         RNS_LOG_INFO("SkPicture ( "  << pictureObj.pictureCommand << " )For " <<
                 pictureObj.pictureCommand.get()->approximateOpCount() << " operations and size : " << pictureObj.pictureCommand.get()->approximateBytesUsed());
       pictureObj.pictureCommand->playback(windowDelegatorCanvas_);
+      #ifdef SHOW_DIRTY_RECT
+      windowDelegatorCanvas_->drawIRect(pictureObj.dirtyRect,paint);
+      #endif/*SHOW_DIRTY_RECT*/
+      dirtyRect.push_back(pictureObj.dirtyRect);
       RNS_LOG_ERROR("Draw Current Command :keyRef :: "<<keyRef<< "Map Size : "<<drawHistorybin_.size());
     }
   }
+  
   if(backBuffer_)  backBuffer_->flushAndSubmit();
   if(windowContext_) {
-    std::vector<SkIRect> emptyRect;// No partialUpdate handled , so passing emptyRect instead of dirtyRect
-    windowContext_->swapBuffers(emptyRect);
+    RNS_LOG_INFO(" DIRTY RECT SIZE :: "<<dirtyRect.size());    
+    windowContext_->swapBuffers(dirtyRect);
   }
 }
 
