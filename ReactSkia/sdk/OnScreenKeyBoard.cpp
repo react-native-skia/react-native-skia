@@ -180,14 +180,7 @@ void OnScreenKeyboard::launchOSKWindow() {
 
 //Finally Creating OSK Window
   std::function<void()> createWindowCB = std::bind(&OnScreenKeyboard::windowReadyToDrawCB,this);
-<<<<<<< HEAD
-  std::function<void()> forceFullScreenDrawCB = std::bind(&OnScreenKeyboard::drawOSK,this);
-  createWindow(screenSize_,createWindowCB,forceFullScreenDrawCB);
-
-=======
-  std::function<void()> faileSafeCB = std::bind(&OnScreenKeyboard::drawOSK,this);
-  createWindow(screenSize_,createWindowCB,faileSafeCB);
->>>>>>> Added logic of maintain History and playback from history
+   createWindow(screenSize_,createWindowCB);
 }
 
 void OnScreenKeyboard::drawPlaceHolderDisplayString() {
@@ -270,7 +263,7 @@ void OnScreenKeyboard::drawPlaceHolderDisplayString() {
 #endif /*DRAW_STRING_BOUNDING_BOX*/
 }
 
-void OnScreenKeyboard::drawOSK() {
+void OnScreenKeyboard::drawOSKBackGround() {
 
 if(oskState_!= OSK_STATE_ACTIVE) return;
 
@@ -286,11 +279,8 @@ if(oskState_!= OSK_STATE_ACTIVE) return;
   }
 
 /*3. Draw PLaceHolder Display String */
-  clearScreen(oskLayout_.horizontalStartOffset,oskLayout_.placeHolderVerticalStart,oskLayout_.placeHolderLength,oskLayout_.placeHolderHeight,placeHolderPaint_);
-  drawPlaceHolderDisplayString();
+  clearScreen(oskLayout_.horizontalStartOffset,oskLayout_.placeHolderVerticalStart,oskLayout_.placeHolderLength,OSK_PLACEHOLDER_HEIGHT,placeHolderPaint_);
 
-/*4. Draw  KeyBoard Layout*/
-  drawKBLayout(oskConfig_.type);
   return;
 }
 
@@ -300,6 +290,7 @@ void OnScreenKeyboard::drawKBLayout(OSKTypes oskType) {
 
   RNS_PROFILE_START(OSKLayoutCreate)
   createOSKLayout(oskType);
+  currentFocussIndex_=oskLayout_.defaultFocussIndex;
   RNS_PROFILE_END("OSk Layout Create Done : ",OSKLayoutCreate)
   RNS_PROFILE_START(OSKDraw)
 //clear KeyBoard Area
@@ -331,9 +322,6 @@ void OnScreenKeyboard::drawKBLayout(OSKTypes oskType) {
         }
       }
     }
-    /*3. Highlighlight default focussed key*/
-    drawHighLightOnKey(oskLayout_.defaultFocussIndex);
-    currentFocussIndex_=oskLayout_.defaultFocussIndex;
   }
   RNS_PROFILE_END("OSk Draw completion : ",OSKDraw)
 }
@@ -579,6 +567,7 @@ inline void OnScreenKeyboard::processKey(rnsKey keyValue) {
         if((keyFunction != toggleKeyMap.end()) && (keyFunction->second != oskLayout_.kbLayoutType)) {
           oskLayout_.kbLayoutType=keyFunction->second;
           sendDrawCommand(DRAW_KB);
+          sendDrawCommand(DRAW_HL);//Set default Focuss
         }
       }else {
         OSKkeyValue=oskLayout_.keyInfo->at(rowIndex).at(keyIndex).keyValue;
@@ -624,6 +613,7 @@ inline void OnScreenKeyboard::processKey(rnsKey keyValue) {
   /* Enable Return Key on Valid Key Event if disabled*/
   if((OSKkeyValue != RNS_KEY_UnKnown) && autoActivateReturnKey_) {
     autoActivateReturnKey_=false;
+    currentFocussIndex_=oskLayout_.returnKeyIndex;
     sendDrawCommand(DRAW_HL);
   }
   if((lastFocussIndex_ != hlCandidate)) {
@@ -632,10 +622,8 @@ inline void OnScreenKeyboard::processKey(rnsKey keyValue) {
    taken care as part of update string call from client , followed by key emit
 */
     currentFocussIndex_=hlCandidate;
-    if(OSKkeyValue == RNS_KEY_UnKnown) {
-      sendDrawCommand(DRAW_HL);
-    }
-  }
+    sendDrawCommand(DRAW_HL);
+   }
 
   /* Emit only known keys to client*/
   if(OSKkeyValue != RNS_KEY_UnKnown) {
@@ -902,27 +890,29 @@ void OnScreenKeyboard::createOSKLayout(OSKTypes oskType) {
 }
 
 void OnScreenKeyboard::windowReadyToDrawCB() {
-  if((windowDelegatorCanvas != nullptr) && (oskState_== OSK_STATE_LAUNCH_INPROGRESS)) {
+  if(oskState_== OSK_STATE_LAUNCH_INPROGRESS) {
     oskState_=OSK_STATE_ACTIVE;
     setWindowTittle("OSK Window");
-    drawOSK();
+    sendDrawCommand(DRAW_OSK_BG);
+    sendDrawCommand(DRAW_PH_STRING);
+    sendDrawCommand(DRAW_KB);
+    sendDrawCommand(DRAW_HL);
+ 
     if(oskState_== OSK_STATE_ACTIVE) {
-      commitDrawCall();
 #if ENABLE(FEATURE_KEY_THROTTLING)
-          /*create Queue & KeyHandler for Repeat key Processing */
-          sem_init(&sigKeyConsumed_, 0, 0);
-          repeatKeyQueue_ =  std::make_unique<ThreadSafeQueue<rnsKey>>();
-          repeatKeyHandler_ = std::thread(&OnScreenKeyboard::repeatKeyProcessingThread, this);
+    /*create Queue & KeyHandler for Repeat key Processing */
+      sem_init(&sigKeyConsumed_, 0, 0);
+      repeatKeyQueue_ =  std::make_unique<ThreadSafeQueue<rnsKey>>();
+      repeatKeyHandler_ = std::thread(&OnScreenKeyboard::repeatKeyProcessingThread, this);
 #endif
       /*Listen for  Key Press event */
-      if(subWindowKeyEventId_ == -1) {
+      if((oskState_== OSK_STATE_ACTIVE) && (subWindowKeyEventId_ == -1) ) {
         std::function<void(rnsKey, rnsKeyAction)> handler = std::bind(&OnScreenKeyboard::onHWkeyHandler,this,
                                                                        std::placeholders::_1,
                                                                        std::placeholders::_2);
         subWindowKeyEventId_ = NotificationCenter::subWindowCenter().addListener("onHWKeyEvent", handler);
       }
       onScreenKeyboardEventEmit(std::string("keyboardDidShow"));
-    }
   } else {
     oskState_=OSK_STATE_INACTIVE;
   }
@@ -954,11 +944,17 @@ void OnScreenKeyboard::sendDrawCommand(DrawCommands commands) {
    std::string commandKey;
    pictureCanvas_ = pictureRecorder_.beginRecording(SkRect::MakeXYWH(0, 0, screenSize_.width(), screenSize_.height()));
    switch(commands) {
+     case DRAW_OSK_BG:
+     RNS_LOG_INFO("@@@ Got Task to work:DRAW_OSK_BG@@");
+     drawOSKBackGround();
+     commandKey="OSKBackGround";
+     setBasePicCommand(commandKey);
+     break;
      case DRAW_PH_STRING:
        RNS_LOG_INFO("@@@ Got Task to work:DRAW_PH_STRING@@");
        drawPlaceHolderDisplayString();
        commandKey="EmbededTIString";
-         break; // else continue to draw Highlight
+       break;
       case DRAW_HL:
         RNS_LOG_INFO("@@@ Got Task to work:DRAW_HL@@");
         commandKey="HighLight";
@@ -967,8 +963,8 @@ void OnScreenKeyboard::sendDrawCommand(DrawCommands commands) {
      case DRAW_KB:
        RNS_LOG_INFO("@@@ Got Task to work:DRAW_KB@@");
        commandKey="KeyBoardLayout";
-       drawKBLayout(OSK_ALPHA_NUMERIC_KB);
-     break;
+       drawKBLayout(oskConfig_.type);
+      break;
      default:
      break;
    }

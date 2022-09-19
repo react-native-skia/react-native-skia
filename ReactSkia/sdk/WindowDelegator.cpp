@@ -116,9 +116,10 @@ inline void WindowDelegator::renderToDisplay(std::string keyRef,sk_sp<SkPicture>
   std::scoped_lock lock(renderCtrlMutex);
 #ifdef RNS_SHELL_HAS_GPU_SUPPORT
   if(!keyRef.empty()) {
-   RNS_LOG_ERROR("keyRef :: "<<keyRef<< "Map Size : "<<drawHistorybin_.size());
-    drawHistorybin_.insert(std::pair<std::string, sk_sp<SkPicture>>(keyRef,pictureObj));
+    drawHistorybin_[keyRef]=pictureObj;
+    RNS_LOG_ERROR("keyRef :: "<<keyRef<< "Map Size : "<<drawHistorybin_.size());
   }
+  RNS_LOG_INFO("keyNameBasePicCommand_ :: "<<keyNameBasePicCommand_);
   int bufferAge=windowContext_->bufferAge();
 <<<<<<< HEAD
   if((bufferAge != 1) && (forceFullScreenDraw_)) {
@@ -126,34 +127,34 @@ inline void WindowDelegator::renderToDisplay(std::string keyRef,sk_sp<SkPicture>
   if(bufferAge != 1) {
 >>>>>>> Added logic of maintain History and playback from history
 // Forcing full screen redraw as damage region handling is not done
-    RNS_LOG_ERROR("@@@@@@@@ drawPicture : Force Redraw@@@@@@@@@");
-    if(fullSCreenPictureObj_.get()) {
-      RNS_LOG_INFO("SkPicture ( "  << fullSCreenPictureObj_ << " )For " <<
-      fullSCreenPictureObj_.get()->approximateOpCount() << " operations and size : " << fullSCreenPictureObj_.get()->approximateBytesUsed());
-    }
-    if((bufferAge ==0) && fullSCreenPictureObj_.get()) {
-      fullSCreenPictureObj_->playback(windowDelegatorCanvas_);
+    if(bufferAge==0) {
+        std::map<std::string,sk_sp<SkPicture>>::iterator it = drawHistorybin_.find(keyNameBasePicCommand_);
+        if(it!=drawHistorybin_.end()){
+          if(it->second.get()) {
+            RNS_LOG_INFO("SkPicture ( "  << it->second << " )For " <<
+                it->second.get()->approximateOpCount() << " operations and size : " << it->second.get()->approximateBytesUsed());
+            it->second->playback(windowDelegatorCanvas_);
+            RNS_LOG_ERROR("Draw Base Command: keyRef :: "<<it->first<< "Map Size : "<<drawHistorybin_.size());
+          }
+        }
     }
     std::map<std::string,sk_sp<SkPicture>>::reverse_iterator it = drawHistorybin_.rbegin();
-    int count=1;
-    while( (it != drawHistorybin_.rend()) && bufferAge ) {
-      if(count > drawHistorybin_.size()) break;
-      if(it->second.get()) {
+    for( ;it != drawHistorybin_.rend() ;it++ ) {
+      if(it->second.get() && ((it->first).compare(keyNameBasePicCommand_))) {
         RNS_LOG_INFO("SkPicture ( "  << it->second << " )For " <<
                 it->second.get()->approximateOpCount() << " operations and size : " << it->second.get()->approximateBytesUsed());
         it->second->playback(windowDelegatorCanvas_);
-        RNS_LOG_ERROR("keyRef :: "<<it->first<< "Map Size : "<<drawHistorybin_.size());
-        count++;
+        RNS_LOG_ERROR("Draw Rest Of commands :keyRef :: "<<it->first<< "Map Size : "<<drawHistorybin_.size());
       }
-      bufferAge--;
     }
-  }else
+  } else
 #endif/*RNS_SHELL_HAS_GPU_SUPPORT*/
   {
     if(pictureObj.get()) {
         RNS_LOG_INFO("SkPicture ( "  << pictureObj << " )For " <<
                 pictureObj.get()->approximateOpCount() << " operations and size : " << pictureObj.get()->approximateBytesUsed());
       pictureObj->playback(windowDelegatorCanvas_);
+      RNS_LOG_ERROR("Draw Current Command :keyRef :: "<<keyRef<< "Map Size : "<<drawHistorybin_.size());
     }
   }
 <<<<<<< HEAD

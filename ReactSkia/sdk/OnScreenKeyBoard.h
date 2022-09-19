@@ -120,10 +120,10 @@ class OnScreenKeyboard : public WindowDelegator{
       OSK_STATE_INACTIVE,
     };
     enum DrawCommands {
+      DRAW_OSK_BG,
       DRAW_PH_STRING,
       DRAW_KB,
       DRAW_HL,
-      DRAW_OSK,
       DRAW_MAX
     };
     struct OSKLayout {
@@ -164,7 +164,7 @@ class OnScreenKeyboard : public WindowDelegator{
     void windowReadyToDrawCB();
 
     void drawHighLightOnKey(SkPoint index);
-    void drawOSK();
+    void drawOSKBackGround();
     void drawPlaceHolderDisplayString();
     void drawKBLayout(OSKTypes oskType);
     void drawKBKeyFont(SkPoint index,bool onHLTile=false);

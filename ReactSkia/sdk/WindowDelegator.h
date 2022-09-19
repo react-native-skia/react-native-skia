@@ -29,8 +29,7 @@ class WindowDelegator {
     void closeWindow();
     void setWindowTittle(const char* titleString);
     void commitDrawCall(std::string keyRef,sk_sp<SkPicture> pictureObj);
-    void setFullScreenPicture(sk_sp<SkPicture> pictureObj) {fullSCreenPictureObj_=pictureObj;}
-  private:
+    void setBasePicCommand(std::string keyName) {keyNameBasePicCommand_=keyName;}
     void onExposeHandler(RnsShell::Window* window);
     void windowWorkerThread();
     void createNativeWindow();
@@ -59,6 +58,7 @@ class WindowDelegator {
     bool windowActive{false};
 
     std::map<std::string,sk_sp<SkPicture>> drawHistorybin_;
+    std::string keyNameBasePicCommand_;
 };
 
 } // namespace sdk
