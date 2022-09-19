@@ -11,7 +11,7 @@ const {
   AppRegistry,
 } = require('react-native');
 
-const NUM_ITEMS = 25;
+const NUM_ITEMS = 250;
 
 class ScrollViewSimpleExample extends React.Component<{...}> {
   makeItems: (nItems: number, styles: any) => Array<any> = (
@@ -20,13 +20,13 @@ class ScrollViewSimpleExample extends React.Component<{...}> {
   ): Array<any> => {
     const items = [];
     for (let i = 0; i < nItems; i++) {
-      if(i==3) {
+      if(!(i%8)) {
          items[i] = (
           <View key={i} style={{ backgroundColor: 'red', alignItems: 'center',borderRadius: 5, borderWidth: 5, borderColor: '#a52a2a', padding: 30, margin: 5, height:650}}>
             <Text>{'Item ' + i}</Text>
           </View>
          );
-      } else if ( i >10 && i < 15) {
+      } else if ( !(i % 5)) {
          items[i] = (
           <View key={i} style={{backgroundColor: 'orange', alignItems: 'center',borderRadius: 5, borderWidth: 5, borderColor: '#a52a2a', padding: 30, margin: 5}}>
             <Text>{'Item ' + i}</Text>
@@ -100,6 +100,7 @@ const styles = StyleSheet.create({
     borderColor: '#a52a2a',
     padding: 30,
     margin: 5,
+    height: 250,
   },
 });
 

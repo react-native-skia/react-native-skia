@@ -10,7 +10,7 @@ const {
   AppRegistry,
 } = require('react-native');
 
-const NUM_ITEMS = 25;
+const NUM_ITEMS = 250;
 
 class ScrollViewSimpleExample extends React.Component<{...}> {
   makeItems: (nItems: number, styles: any) => Array<any> = (
@@ -64,6 +64,7 @@ const styles = StyleSheet.create({
     borderColor: '#a52a2a',
     padding: 30,
     margin: 2,
+    width: 200,
   }
 });
 

@@ -104,6 +104,8 @@ private:
     sk_sp<SkPicture> borderPicture_;
 
     void paintSelfAndChildren(PaintContext& context);
+    inline void paintBorder(PaintContext& context);
+    inline void paintScrollBar(PaintContext& context);
 #if ENABLE(FEATURE_SCROLL_INDICATOR)
     ScrollBar scrollbar_;   // scroll indicator bar
 #endif

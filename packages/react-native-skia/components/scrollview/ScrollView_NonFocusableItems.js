@@ -7,11 +7,12 @@ const {
   StyleSheet,
   Text,
   View,
+  Image,
   TouchableOpacity,
   AppRegistry,
 } = require('react-native');
 
-const NUM_ITEMS = 25;
+const NUM_ITEMS = 250;
 
 class ScrollViewSimpleExample extends React.Component<{...}> {
   makeItems: (nItems: number, styles: any) => Array<any> = (
@@ -23,6 +24,7 @@ class ScrollViewSimpleExample extends React.Component<{...}> {
       items[i] = (
           <View key={i} style={styles}>
             <Text>{'Item ' + i}</Text>
+            <Image style={{width:50,height:50}} source={require('react-native/Libraries/NewAppScreen/components/logo.png')}></Image>
           </View>
         );
     }
@@ -68,6 +70,12 @@ const styles = StyleSheet.create({
     borderColor: '#a52a2a',
     padding: 30,
     margin: 5,
+    height: 350,
+  },
+  image: {
+    width: 125,
+    height: 100,
+    backgroundColor: "lightgreen"
   }
 });
 

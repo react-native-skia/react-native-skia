@@ -220,9 +220,9 @@ void Layer::paintSelf(PaintContext& context) {
 void Layer::paintChildren(PaintContext& context) {
     for (auto& layer : children_) {
         if(layer->needsPainting(context)) {
-            RNS_LOG_DEBUG("Paint Layer(ID:" << layerId_ << ", ParentID:" << (parent_ ? parent_->layerId() : -1) <<
-                ") Frame [" << frame_.x() << "," << frame_.y() << "," << frame_.width() << "," << frame_.height() <<
-                "], Bounds [" << bounds_.x() << "," << bounds_.y() << "," << bounds_.width() << "," << bounds_.height() << "]");
+            RNS_LOG_DEBUG("Paint Layer(ID:" << layer->layerId_ << ", ParentID:" << layerId_ <<
+                ") Frame [" << layer->frame_.x() << "," << layer->frame_.y() << "," << layer->frame_.width() << "," << layer->frame_.height() <<
+                "], Bounds [" << layer->bounds_.x() << "," << layer->bounds_.y() << "," << layer->bounds_.width() << "," << layer->bounds_.height() << "]");
             layer->paint(context);
         }
     }
@@ -238,15 +238,11 @@ void Layer::paint(PaintContext& context) {
     paintSelf(context); // First paint self and then children if any
 
     if(masksToBounds_) { // Need to clip children.
-        SkRect intRect = SkRect::Make(absFrame_);
-        //If scrolling offset available,check intRect with offset value
-        if(!context.offset.isZero()){
-            intRect.offset(context.offset.x(),context.offset.y());
-        }
+        SkRect intRect = SkRect::Make(frame_);
         if(!context.dirtyClipBound.isEmpty() && intRect.intersect(context.dirtyClipBound) == false) {
             RNS_LOG_WARN("We should not call paint if it doesnt intersect with non empty dirtyClipBound...");
         }
-        context.canvas->clipRect(intRect);
+        context.canvas->clipRect(intRect,SkClipOp::kIntersect);
     }
 
     paintChildren(context);

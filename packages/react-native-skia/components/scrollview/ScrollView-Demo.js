@@ -30,6 +30,7 @@ const SimpleViewApp = React.Node = () => {
   let [tiColor,setTiColor] = React.useState("darkgrey");
   let [scrollConfigs,setScrollConfigs] = React.useState(
     {
+      "showSV"          : false,
       "childItemType" : "View",
       "childItemNum" : 20,
       "_borderWidth" : 0,
@@ -121,6 +122,7 @@ const SimpleViewApp = React.Node = () => {
     }
     else if (configType == "frameWidth") updatedConfig={"_frameWidth" : configValue};
     else if (configType == "frameHeight") updatedConfig={"_frameHeight" : configValue};
+    else if (configType == "showSV") updatedConfig={"showSV" : !scrollConfigs["showSV"]};
 
     setScrollConfigs(scrollConfigs => ({...scrollConfigs,...updatedConfig}));
   }
@@ -155,10 +157,9 @@ const SimpleViewApp = React.Node = () => {
     setScrollEventData(scrollEventData => ({...scrollEventData,...updatedEvent}));
   }
 
-  const mainView = () => {
-    return(
-      <View style={{flex:1,width:windowSize.width,height:windowSize.height,backgroundColor:'darkslategray'}}>
-        <ScrollView ref={scrollViewRef}
+  const scrollView = () => {
+     if(scrollConfigs["showSV"]) {
+        return (<ScrollView ref={scrollViewRef}
               style={[styles.scrollView,{borderWidth:scrollConfigs["_borderWidth"],width:scrollConfigs["_frameWidth"],height:scrollConfigs["_frameHeight"]}]}
               scrollEnabled={scrollProps["_scrollEnabled"]}
               horizontal={scrollProps["_horizontal"]}
@@ -172,15 +173,23 @@ const SimpleViewApp = React.Node = () => {
               scrollIndicatorInsets={scrollProps["_scrollIndicatorInsets"]}
               onScroll={(e) => setScrollEventDetails("onScrollEvent",JSON.stringify(e.nativeEvent))}
               onContentSizeChange={(width,height) => setScrollEventDetails("onContentSizeChange","width:"+width+",height:"+height)} >
-
             {items}
         </ScrollView>
+        );
+     }
+  }
 
+  const mainView = () => {
+    return(
+      <View style={{flex:1,width:windowSize.width,height:windowSize.height,backgroundColor:'darkslategray'}}>
+        {scrollView()}
         <View style={{flexDirection:'column'}}>
           <Text style={[styles.controlButtonText,{textDecorationLine:'underline',fontWeight:'bold',color:'darkorange',marginTop:30}]}>{'CONFIGURATIONS'}</Text>
-
           <View style={{flexDirection:'row',flexWrap:'wrap'}}>
-            <View style={[styles.controlButton,{width:50,height:50}]}>
+            <TouchableHighlight underlayColor='darkseagreen' style={styles.controlButton} onPress={() => setScrollConfiguration("showSV")} >
+              <Text style={styles.controlButtonText}>{'showSV:' + scrollConfigs["showSV"]}</Text>
+            </TouchableHighlight>
+            <View style={[styles.controlButton,{width:100,height:50}]}>
               <Text style={styles.controlButtonText}>{scrollConfigs["childItemNum"]}</Text>
             </View>
             <View styles={{flexDirection:'column'}}>
