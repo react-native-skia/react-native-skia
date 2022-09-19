@@ -85,9 +85,11 @@ void WindowDelegator::closeWindow() {
   sem_destroy(&semReadyToDraw_);
   windowDelegatorCanvas_=nullptr;
   windowReadyTodrawCB_=nullptr;
+  std::map<std::string,PictureObject> emptyMap;
+  drawHistorybin_.swap(emptyMap);
 }
 
-void WindowDelegator::commitDrawCall(std::string keyRef,sk_sp<SkPicture> pictureObj) {
+void WindowDelegator::commitDrawCall(std::string keyRef,PictureObject pictureObj) {
   if(!windowActive) return;
   if( ownsTaskrunner_ )  {
     if( windowTaskRunner_->running() )
@@ -97,7 +99,7 @@ void WindowDelegator::commitDrawCall(std::string keyRef,sk_sp<SkPicture> picture
   }
 }
 
-inline void WindowDelegator::renderToDisplay(std::string keyRef,sk_sp<SkPicture> pictureObj) {
+inline void WindowDelegator::renderToDisplay(std::string keyRef,PictureObject pictureObj) {
   if(!windowActive) return;
 
   std::scoped_lock lock(renderCtrlMutex);
@@ -111,32 +113,32 @@ inline void WindowDelegator::renderToDisplay(std::string keyRef,sk_sp<SkPicture>
   if(bufferAge != 1) {
 // Forcing full screen redraw as damage region handling is not done
     if(bufferAge==0) {
-        std::map<std::string,sk_sp<SkPicture>>::iterator it = drawHistorybin_.find(keyNameBasePicCommand_);
+        std::map<std::string,PictureObject>::iterator it = drawHistorybin_.find(keyNameBasePicCommand_);
         if(it!=drawHistorybin_.end()){
-          if(it->second.get()) {
-            RNS_LOG_INFO("SkPicture ( "  << it->second << " )For " <<
-                it->second.get()->approximateOpCount() << " operations and size : " << it->second.get()->approximateBytesUsed());
-            it->second->playback(windowDelegatorCanvas_);
+          if(it->second.pictureCommand.get()) {
+            RNS_LOG_INFO("SkPicture ( "  << it->second.pictureCommand << " )For " <<
+                it->second.pictureCommand.get()->approximateOpCount() << " operations and size : " << it->second.pictureCommand.get()->approximateBytesUsed());
+            (it->second).pictureCommand->playback(windowDelegatorCanvas_);
             RNS_LOG_ERROR("Draw Base Command: keyRef :: "<<it->first<< "Map Size : "<<drawHistorybin_.size());
           }
         }
     }
-    std::map<std::string,sk_sp<SkPicture>>::reverse_iterator it = drawHistorybin_.rbegin();
+    std::map<std::string,PictureObject>::reverse_iterator it = drawHistorybin_.rbegin();
     for( ;it != drawHistorybin_.rend() ;it++ ) {
-      if(it->second.get() && ((it->first).compare(keyNameBasePicCommand_))) {
-        RNS_LOG_INFO("SkPicture ( "  << it->second << " )For " <<
-                it->second.get()->approximateOpCount() << " operations and size : " << it->second.get()->approximateBytesUsed());
-        it->second->playback(windowDelegatorCanvas_);
+      if(it->second.pictureCommand.get() && ((it->first).compare(keyNameBasePicCommand_))) {
+        RNS_LOG_INFO("SkPicture ( "  << it->second.pictureCommand << " )For " <<
+                it->second.pictureCommand.get()->approximateOpCount() << " operations and size : " << it->second.pictureCommand.get()->approximateBytesUsed());
+        it->second.pictureCommand->playback(windowDelegatorCanvas_);
         RNS_LOG_ERROR("Draw Rest Of commands :keyRef :: "<<it->first<< "Map Size : "<<drawHistorybin_.size());
       }
     }
   } else
 #endif/*RNS_SHELL_HAS_GPU_SUPPORT*/
   {
-    if(pictureObj.get()) {
-        RNS_LOG_INFO("SkPicture ( "  << pictureObj << " )For " <<
-                pictureObj.get()->approximateOpCount() << " operations and size : " << pictureObj.get()->approximateBytesUsed());
-      pictureObj->playback(windowDelegatorCanvas_);
+    if(pictureObj.pictureCommand.get()) {
+        RNS_LOG_INFO("SkPicture ( "  << pictureObj.pictureCommand << " )For " <<
+                pictureObj.pictureCommand.get()->approximateOpCount() << " operations and size : " << pictureObj.pictureCommand.get()->approximateBytesUsed());
+      pictureObj.pictureCommand->playback(windowDelegatorCanvas_);
       RNS_LOG_ERROR("Draw Current Command :keyRef :: "<<keyRef<< "Map Size : "<<drawHistorybin_.size());
     }
   }

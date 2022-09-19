@@ -968,7 +968,7 @@ void OnScreenKeyboard::sendDrawCommand(DrawCommands commands) {
      RNS_LOG_INFO("SkPicture ( "  << pic << " )For " <<
      pic.get()->approximateOpCount() << " operations and size : " << pic.get()->approximateBytesUsed());
    }
-   if(oskState_== OSK_STATE_ACTIVE) commitDrawCall(commandKey,pic);
+   if(oskState_== OSK_STATE_ACTIVE) commitDrawCall(commandKey,{dirtyRect,pic});
 }
 
 } // namespace sdk
