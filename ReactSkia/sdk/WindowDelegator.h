@@ -28,6 +28,7 @@ class WindowDelegator {
     void closeWindow();
     void setWindowTittle(const char* titleString);
     void commitDrawCall();
+    RnsShell::Window* getWindow() {return window_;};
 
     SkCanvas *windowDelegatorCanvas{nullptr};
 

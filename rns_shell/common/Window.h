@@ -31,9 +31,7 @@ class WindowContext;
 
 class Window {
 public:
-    static Window* createNativeWindow(void* platformData,
-                                      SkSize dimension=SkSize::MakeEmpty(),
-                                      WindowType type=DefaultWindow);
+    static Window* createNativeWindow(void* platformData, SkSize dimension=SkSize::MakeEmpty(), WindowType type=DefaultWindow);
     static void createEventLoop(Application* app);
     static Window* getMainWindow() { return mainWindow_; }
     static SkSize getMainWindowSize() {
@@ -82,8 +80,8 @@ private:
 protected:
     Window();
     static Window *mainWindow_;
-    WindowType     winType{DefaultWindow};
-    DisplayParams          requestedDisplayParams_;
+    WindowType winType{DefaultWindow};
+    DisplayParams requestedDisplayParams_;
 };
 
 }   // namespace RnsShell

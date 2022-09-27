@@ -141,7 +141,7 @@ class OnScreenKeyboard : public WindowDelegator{
     ~OnScreenKeyboard() = default;
 
     void launchOSKWindow();
-    void onHWkeyHandler(rnsKey key, rnsKeyAction eventKeyAction);
+    void onHWkeyHandler(rnsKey key, rnsKeyAction eventKeyAction, RnsShell::Window* window);
     void createOSKLayout(OSKTypes KBtype );
     void clearScreen(SkScalar x,SkScalar y,SkScalar width,SkScalar height,SkPaint & paintObj);
     SkScalar getStringBound (const std::string & stringToMeasure,unsigned int startIndex,unsigned int endIndex,SkFont & stringFont);
