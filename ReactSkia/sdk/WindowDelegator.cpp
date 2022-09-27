@@ -55,19 +55,21 @@ void WindowDelegator::createWindow(SkSize windowSize,std::function<void ()> wind
 
 void  WindowDelegator::createNativeWindow() {
 
-  displayPlatForm_=RnsShell::PlatformDisplay::sharedDisplayForCompositing().type();
+  displayPlatForm_ = RnsShell::PlatformDisplay::sharedDisplayForCompositing().type();
 
   if(displayPlatForm_ == RnsShell::PlatformDisplay::Type::X11) {
     /*For X11 draw should be done after expose event received*/
     sem_init(&semReadyToDraw_,0,0);
     // Registering expose event
-    std::function<void(RnsShell::Window*)> handler = std::bind(&WindowDelegator::onExposeHandler,this,
-                                                                         std::placeholders::_1);
+    std::function<void(RnsShell::Window*)> handler = std::bind(&WindowDelegator::onExposeHandler, this, std::placeholders::_1);
     exposeEventID_ = NotificationCenter::defaultCenter().addListener("windowExposed",handler);
+    RNS_LOG_INFO("INSIDE::createNativeWindow::1::exposeEventID_ = " << exposeEventID_);
   }
+  
   window_ = RnsShell::Window::createNativeWindow(&RnsShell::PlatformDisplay::sharedDisplayForCompositing(),
-                                                 SkSize::Make(windowSize_.width(),windowSize_.height()),
-                                                 RnsShell::SubWindow);
+                                                SkSize::Make(windowSize_.width(),windowSize_.height()),
+                                                RnsShell::SubWindow);
+  
   if(window_) {
     windowContext_ = RnsShell::WCF::createContextForWindow(window_->nativeWindowHandle(),
                &RnsShell::PlatformDisplay::sharedDisplayForCompositing(), RnsShell::DisplayParams());
@@ -113,6 +115,9 @@ void WindowDelegator::closeWindow() {
   sem_destroy(&semReadyToDraw_);
   windowDelegatorCanvas_=nullptr;
   windowReadyTodrawCB_=nullptr;
+  if (workerThread_.joinable()) {
+    workerThread_.join()
+  }
   std::map<std::string,PictureObject> emptyMap;
   componentCommandBin_.swap(emptyMap);
 }

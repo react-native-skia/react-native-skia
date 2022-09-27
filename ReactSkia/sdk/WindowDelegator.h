@@ -38,6 +38,7 @@ class WindowDelegator {
     void setWindowTittle(const char* titleString);
     void commitDrawCall(std::string pictureCommandKey,PictureObject pictureObj);
     void setBasePicCommand(std::string keyName) {basePictureCommandKey_=keyName;}
+    RnsShell::Window* getWindow() {return window_;};
 
   private:
     void onExposeHandler(RnsShell::Window* window);

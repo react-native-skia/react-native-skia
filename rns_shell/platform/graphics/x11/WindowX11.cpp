@@ -22,6 +22,8 @@
 
 #include "x11/PlatformDisplayX11.h"
 
+static int i = 0;
+
 namespace RnsShell {
 
 SkTDynamicHash<WindowX11, XWindow> WindowX11::gWindowMap;
@@ -47,6 +49,7 @@ Window* Window::createNativeWindow(void* platformData,SkSize dimension,WindowTyp
         mainWindow_ = window;
     }
     window->winType=type;
+    i++;
     return window;
 }
 
@@ -346,12 +349,12 @@ void WindowX11::onExpose() {
 }
 
 void WindowX11::onKey(rnsKey eventKeyType, rnsKeyAction eventKeyAction){
-#if ENABLE(FEATURE_ONSCREEN_KEYBOARD)
+// #if ENABLE(FEATURE_ONSCREEN_KEYBOARD)
     if(winType == SubWindow)
-        NotificationCenter::subWindowCenter().emit("onHWKeyEvent", eventKeyType, eventKeyAction);
+        NotificationCenter::subWindowCenter().emit("onHWKeyEvent", eventKeyType, eventKeyAction, (Window*)this);
     else
-#endif/*FEATURE_ONSCREEN_KEYBOARD*/
-        NotificationCenter::defaultCenter().emit("onHWKeyEvent", eventKeyType, eventKeyAction);
+// #endif/*FEATURE_ONSCREEN_KEYBOARD*/
+        NotificationCenter::defaultCenter().emit("onHWKeyEvent", eventKeyType, eventKeyAction, (Window*)this);
     return;
 }
 

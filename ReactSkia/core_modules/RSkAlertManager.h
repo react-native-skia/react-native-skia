@@ -59,7 +59,7 @@ private:
     void drawAlertMsg();
     void windowReadyToDrawCB();
     void createAlertWindow();
-    void onHWKeyHandler(rnsKey key, rnsKeyAction eventKeyAction);
+    void onHWKeyHandler(rnsKey key, rnsKeyAction eventKeyAction, RnsShell::Window* window);
 };
 }
 }
