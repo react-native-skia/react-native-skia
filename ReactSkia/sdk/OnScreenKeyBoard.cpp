@@ -520,7 +520,7 @@ void OnScreenKeyboard ::drawHighLightOnKey(std::vector<SkIRect> &dirtyRect) {
 }
 
 void OnScreenKeyboard::onHWkeyHandler(rnsKey keyValue, rnsKeyAction eventKeyAction, RnsShell::Window* window) {
-  RNS_LOG_DEBUG(__func__<<" rnsKey: "<<RNSKeyMap[keyValue]<<" rnsKeyAction: "<<((eventKeyAction ==0) ? "RNS_KEY_Press ": "RNS_KEY_Release ")<<eventKeyAction );
+  RNS_LOG_DEBUG(__func__<<"rnsKey: "<<RNSKeyMap[keyValue]<<" rnsKeyAction: "<<((eventKeyAction ==0) ? "RNS_KEY_Press ": "RNS_KEY_Release ")<<eventKeyAction );
   if (getWindow() != window) {
     return;
   }
@@ -933,10 +933,12 @@ void OnScreenKeyboard::windowReadyToDrawCB() {
     /*Listen for  Key Press event */
     if(subWindowKeyEventId_ == -1) {
       std::function<void(rnsKey, rnsKeyAction)> handler = std::bind(&OnScreenKeyboard::onHWkeyHandler,this,
-                                                                 std::placeholders::_1,
-                                                                 std::placeholders::_2,
-                                                                 std::placeholders::_3);
+                                                                       std::placeholders::_1,   // KeyValue
+                                                                       std::placeholders::_2,   // eventKeyAction
+                                                                       std::placeholders::_3);  // Window
       subWindowKeyEventId_ = NotificationCenter::subWindowCenter().addListener("onHWKeyEvent", handler);
+    }
+      onScreenKeyboardEventEmit(std::string("keyboardDidShow"));
     }
     onScreenKeyboardEventEmit(std::string("keyboardDidShow"));
   }

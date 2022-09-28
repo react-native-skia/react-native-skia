@@ -9,8 +9,8 @@
 
 #include "sdk/sdkStylesConfig.h"
 
-namespace rns {
-namespace sdk {
+namespace facebook {
+namespace react {
 
 std::mutex lockMsgDrawing;
 
@@ -111,9 +111,9 @@ void RSkAlertManager::createAlertWindow() {
         std::bind(
             &RSkAlertManager::onHWKeyHandler,
             this,
-            std::placeholders::_1,
-            std::placeholders::_2,
-            std::placeholders::_3);
+            std::placeholders::_1,  // KeyValue
+            std::placeholders::_2,  // eventKeyAction
+            std::placeholders::_3); // Window
     subWindowKeyEventId_ = NotificationCenter::subWindowCenter().addListener("onHWKeyEvent", handler);
   }
   font_.setSize(FONT_SIZE);
@@ -139,7 +139,6 @@ void RSkAlertManager::onHWKeyHandler(
               subWindowKeyEventId_);
           subWindowKeyEventId_ = -1;
         }
-        RNS_LOG_INFO("ClosingAlertWindow!!!");
         closeWindow();
         alertWindowState_ = ALERT_WINDOW_DESTRUCT;
 
@@ -155,5 +154,5 @@ void RSkAlertManager::onHWKeyHandler(
     }
   }
 }
-} // namespace sdk
-} // namespace rns
+} // namespace react
+} // namespace facebook

@@ -7,8 +7,8 @@
 
 #pragma once
 
-namespace rns {
-namespace sdk {
+namespace facebook {
+namespace react {
 
 class Alert {
 public:
@@ -27,5 +27,5 @@ private:
     std::string title_;
     std::string message_;
 };
-} // rns
-} // sdk
+} // react
+} // facebook
