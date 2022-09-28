@@ -22,8 +22,6 @@
 
 #include "x11/PlatformDisplayX11.h"
 
-static int i = 0;
-
 namespace RnsShell {
 
 SkTDynamicHash<WindowX11, XWindow> WindowX11::gWindowMap;
@@ -49,7 +47,6 @@ Window* Window::createNativeWindow(void* platformData,SkSize dimension,WindowTyp
         mainWindow_ = window;
     }
     window->winType=type;
-    i++;
     return window;
 }
 
@@ -291,7 +288,7 @@ bool WindowX11::handleEvent(const XEvent& event) {
         XEvent nev;
         XPeekEvent(display_, &nev);
         if (nev.type == KeyPress && nev.xkey.time == event.xkey.time &&
-            nev.xkey.keycode == event.xkey.keycode){
+            nev.xkey.keycode == event.xkey.keycode) {
             //Unlike wpe backend, X11 sends both key press and release when key-repeat is on. 
             //this code is for ignoring key release when keyrepeat is on
             RNS_LOG_DEBUG("[handleEvent] KeyRelease is ignored in Key Repeate mode");
@@ -348,13 +345,13 @@ void WindowX11::onExpose() {
     NotificationCenter::defaultCenter().emit("windowExposed",(Window*)this);
 }
 
-void WindowX11::onKey(rnsKey eventKeyType, rnsKeyAction eventKeyAction){
+void WindowX11::onKey(rnsKey eventKeyType, rnsKeyAction eventKeyAction) {
 // #if ENABLE(FEATURE_ONSCREEN_KEYBOARD)
     if(winType == SubWindow)
         NotificationCenter::subWindowCenter().emit("onHWKeyEvent", eventKeyType, eventKeyAction, (Window*)this);
     else
 // #endif/*FEATURE_ONSCREEN_KEYBOARD*/
-        NotificationCenter::defaultCenter().emit("onHWKeyEvent", eventKeyType, eventKeyAction, (Window*)this);
+        NotificationCenter::defaultCenter().emit("onHWKeyEvent", eventKeyType, eventKeyAction);
     return;
 }
 
