@@ -20,8 +20,8 @@
 #include "ReactCommon/TurboModule.h"
 #include "ReactSkia/JSITurboModuleManager.h"
 
-namespace rns {
-namespace sdk {
+namespace facebook {
+namespace react {
 
 enum AlertWindowState {
         ALERT_WINDOW_CREATE = 1, // Window is Created
@@ -30,7 +30,7 @@ enum AlertWindowState {
         ALERT_WINDOW_DESTRUCT = 4 // Window is Destructed
     };
 
-class RSkAlertManager : public WindowDelegator, public facebook::react::TurboModule {
+class RSkAlertManager : public rns::sdk::WindowDelegator, public facebook::react::TurboModule {
 public:
 
     RSkAlertManager(
@@ -61,5 +61,5 @@ private:
     void createAlertWindow();
     void onHWKeyHandler(rnsKey key, rnsKeyAction eventKeyAction, RnsShell::Window* window);
 };
-}
-}
+} // react
+} // facebook

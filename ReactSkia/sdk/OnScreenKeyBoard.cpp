@@ -53,7 +53,6 @@ void OnScreenKeyboard::exit() {
 
   std::scoped_lock lock(oskLaunchExitCtrlMutex);
   onScreenKeyboardEventEmit(std::string("keyboardWillHide"));
-  RNS_LOG_INFO("Closing OSK::Window!!!");
   oskHandle.closeWindow();
 
   /* Stop Listening for Hw Key Event*/
@@ -841,9 +840,9 @@ void OnScreenKeyboard::windowReadyToDrawCB() {
       if(subWindowKeyEventId_ == -1) {
         std::function<void(rnsKey, rnsKeyAction, RnsShell::Window*)> handler = std::bind(&OnScreenKeyboard::onHWkeyHandler,
                                                                        this,
-                                                                       std::placeholders::_1,
-                                                                       std::placeholders::_2,
-                                                                       std::placeholders::_3);
+                                                                       std::placeholders::_1,   // KeyValue
+                                                                       std::placeholders::_2,   // eventKeyAction
+                                                                       std::placeholders::_3);  // Window
         subWindowKeyEventId_ = NotificationCenter::subWindowCenter().addListener("onHWKeyEvent", handler);
       }
       onScreenKeyboardEventEmit(std::string("keyboardDidShow"));

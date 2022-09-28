@@ -38,7 +38,6 @@ void  WindowDelegator::createNativeWindow() {
     // Registering expose event
     std::function<void(RnsShell::Window*)> handler = std::bind(&WindowDelegator::onExposeHandler, this, std::placeholders::_1);
     exposeEventID_ = NotificationCenter::defaultCenter().addListener("windowExposed",handler);
-    RNS_LOG_INFO("INSIDE::createNativeWindow::1::exposeEventID_ = " << exposeEventID_);
   }
   
   window_ = RnsShell::Window::createNativeWindow(&RnsShell::PlatformDisplay::sharedDisplayForCompositing(),
@@ -82,7 +81,7 @@ void WindowDelegator::closeWindow() {
   sem_destroy(&semReadyToDraw_);
   windowDelegatorCanvas=nullptr;
   windowReadyTodrawCB_=nullptr;
-  if (workerThread_.joinable() ) {
+  if (workerThread_.joinable()) {
     workerThread_.join();
   }
 }
