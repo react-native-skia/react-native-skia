@@ -23,13 +23,16 @@ void RSkKeyboardObserver::handleOnScreenKeyboardEventNotification(string eventTy
 
 void RSkKeyboardObserver::startObserving(){
     //Add listerners
+#if ENABLE(FEATURE_ONSCREEN_KEYBOARD)
   std::function<void (std::string)> onScreenKeyboardNotification  = std::bind(&RSkKeyboardObserver::handleOnScreenKeyboardEventNotification, this,std::placeholders::_1);
   onscreenKeyboardEventId_ = NotificationCenter::subWindowCenter().addListener("onScreenKeyboardEvent", onScreenKeyboardNotification);
-
+#endif 
 }
 
 void RSkKeyboardObserver::stopObserving(){
+#if ENABLE(FEATURE_ONSCREEN_KEYBOARD)
   NotificationCenter::subWindowCenter().removeListener(onscreenKeyboardEventId_);
+#endif 
 }
 
 } //namespace react

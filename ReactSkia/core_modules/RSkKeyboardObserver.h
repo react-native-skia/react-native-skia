@@ -7,6 +7,7 @@
 
 #include "core_modules/RSkEventEmitter.h"
 #include "utils/RnsLog.h"
+#include "utils/RnsUtils.h"
 
 namespace facebook {
 namespace react {
@@ -21,7 +22,9 @@ class RSkKeyboardObserver final: public RSkEventEmitter {
  private:
   void startObserving();
   void stopObserving();
+#if ENABLE(FEATURE_ONSCREEN_KEYBOARD)
   unsigned int onscreenKeyboardEventId_ = UINT_MAX;
+#endif
 };
 
 } //namespace react
