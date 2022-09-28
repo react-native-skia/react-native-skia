@@ -6,7 +6,7 @@
 */
 
 #include <algorithm>
-
+#include "include/core/SkTime.h"
 #include "FollyTimer.h"
 
 namespace rns {
@@ -173,6 +173,17 @@ double Timer::getTimeRemaining() {
 
 SysTimePoint Timer::getFutureTime() {
   return system_clock::now() + milliseconds(static_cast<unsigned long long>(31536000000)); // Set 1 year ahead time from now
+}
+
+double Timer::getCurrentTimeNSecs() {
+  return SkTime::GetNSecs();
+}
+
+double Timer::getCurrentTimeSecs() {
+  return SkTime::GetSecs();
+}
+double Timer::getCurrentTimeMSecs() {
+  return SkTime::GetMSecs();
 }
 
 void Timer::scheduleImmediate(std::function<void()> cb) {

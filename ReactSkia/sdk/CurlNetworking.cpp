@@ -14,10 +14,8 @@ namespace facebook {
 namespace react {
 CurlNetworking* CurlNetworking::sharedCurlNetworking_{nullptr};
 std::mutex CurlNetworking::mutex_;
-
 CurlNetworking::CurlNetworking() {
-  // TODO Values will be updated when we added eviction logic
-  networkCache_ = new ThreadSafeCache<string,shared_ptr<CurlResponse>>(CURRENT_CACHE_SIZE,TOTAL_MAX_CACHE_SIZE);
+  networkCache_ = new ThreadSafeCache<string,shared_ptr<CurlResponse>>();
   curl_global_init(CURL_GLOBAL_ALL);
   sem_init(&networkRequestSem_, 0, 0);
   curlMultihandle_ = curl_multi_init();
@@ -86,7 +84,7 @@ inline bool CurlRequest::shouldCacheData() {
           if(responseMaxAgeTime == 0) {
             return false;
           }
-          curlResponse->cacheExpiryTime = std::min(std::min(responseMaxAgeTime,requestMaxAgeTime),static_cast<double>(DEFAULT_MAX_CACHE_EXPIRY_TIME));
+          curlResponse->cacheExpiryTime = Timer::getCurrentTimeMSecs() + std::min(std::min(responseMaxAgeTime,requestMaxAgeTime),static_cast<double>(DEFAULT_MAX_CACHE_EXPIRY_TIME));
           return true;
         }
       }
@@ -116,11 +114,17 @@ void CurlNetworking::processNetworkRequest(CURLM *curlMultiHandle) {
             (curlRequest->curlResponse->responseTimeout = true)
             :(curlRequest->curlResponse->responseTimeout = false);
         curl_multi_remove_handle(curlMultiHandle, curlHandle);
-        if(curlRequest->shouldCacheData()) {
+        if(msg->data.result == CURLE_OK && curlRequest->shouldCacheData()) {
           if(networkCache_->isAvailableInCache(curlRequest->URL)) {
             RNS_LOG_DEBUG("Data is already in cache");
           } else {
-            networkCache_->setCache(curlRequest->URL, curlRequest->curlResponse);
+            double downloadedSize = curlRequest->curlResponse->contentSize+curlRequest->curlResponse->headerBufferSize;
+            if(!networkCache_->needEvict(downloadedSize)) {
+              networkCache_->setCache(curlRequest->URL, curlRequest->curlResponse, curlRequest->curlResponse->cacheExpiryTime);
+            }else {
+              // TODO:Need to implement LRU cache
+              RNS_LOG_ERROR("Insert data to cache failed... :"<<" file :" << curlRequest->URL);
+            }
           }
         }
         if(curlRequest->curldelegator.CURLNetworkingCompletionCallback)
@@ -191,7 +195,7 @@ size_t CurlNetworking::writeCallbackCurlWrapper(void* buffer, size_t size, size_
   curlRequest->curlResponse->responseBuffer  = (char *) realloc(curlRequest->curlResponse->responseBuffer , curlRequest->curlResponse->responseBufferOffset+nitems+1);
   RNS_LOG_ASSERT((curlRequest->curlResponse->responseBuffer), "responseBuffer cannot be null ");
   memcpy(&(curlRequest->curlResponse->responseBuffer [curlRequest->curlResponse->responseBufferOffset]), (char *)buffer, nitems);
-  curlRequest->curlResponse->responseBufferOffset += nitems;
+  curlRequest->curlResponse->responseBufferOffset += (size*nitems);
   curlRequest->curlResponse->responseBuffer[curlRequest->curlResponse->responseBufferOffset] = 0;
   curlRequest->curlResponse->contentSize = curlRequest->curlResponse->responseBufferOffset;
   if(!curlRequest->curlResponse->responseurl) {
@@ -235,6 +239,7 @@ size_t CurlNetworking::headerCallbackCurlWrapper(char* buffer, size_t size, size
 #endif
     curlRequest->curldelegator.CURLNetworkingHeaderCallback(curlRequest->curlResponse.get(),curlRequest->curldelegator.delegatorData);
   }
+  curlRequest->curlResponse->headerBufferSize += (size*nitems);
   return size*nitems;
 }
 

@@ -11,9 +11,8 @@
 #include <thread>  
 #include "jsi/JSIDynamic.h"
 #include "ThreadSafeCache.h"
+#include "ReactSkia/sdk/FollyTimer.h"
 #define DEFAULT_MAX_CACHE_EXPIRY_TIME 1800000 // 30mins in seconds 1800000
-#define CURRENT_CACHE_SIZE 10 // in megabyte
-#define TOTAL_MAX_CACHE_SIZE 15 // in megabyte
 #define MAX_URL_REDIRECT 10L // maximum number of redirects allowed
 
 #ifndef CA_CERTIFICATE
@@ -38,6 +37,7 @@ typedef struct CurlResponse {
    :responseBuffer(nullptr),
     responseBufferOffset(0),
     contentSize(0),
+    headerBufferSize(0),
     responseurl(nullptr){
     headerBuffer = folly::dynamic::object();
   }
@@ -51,6 +51,7 @@ typedef struct CurlResponse {
   char* responseBuffer;
   int responseBufferOffset;
   int contentSize;
+  int headerBufferSize;
   const char* responseurl;
   int statusCode;
   std::string errorResult;
@@ -70,8 +71,6 @@ class CurlRequest {
   inline bool shouldCacheData();
   CurlRequest(CURL *lhandle, std::string lURL, size_t ltimeout, std::string lmethod);
 };
-
-
 
 class CurlNetworking {
  public:

@@ -48,6 +48,10 @@ class Timer {
   void scheduleTimerTimeout();
   double getTimeRemaining();
   static SysTimePoint getFutureTime();
+  static double getCurrentTimeSecs();
+  static double getCurrentTimeMSecs();
+  static double getCurrentTimeNSecs();
+
 
  private:
 
