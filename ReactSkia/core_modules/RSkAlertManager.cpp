@@ -5,9 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "RSkAlertManager.h"
-
-#include "sdk/sdkStylesConfig.h"
+#include "ReactSkia/core_modules/RSkAlertManager.h"
+#include "ReactSkia/sdk/sdkStylesConfig.h"
 
 namespace facebook {
 namespace react {
@@ -79,8 +78,10 @@ void RSkAlertManager::drawAlertMsg() {
         font_,
         paint_);
 
+
     drawStartPointY = ((mainWindowSize_.height() - FONT_SIZE) / 2) + (FONT_SIZE) + OFFSET_VERTICAL;
-    WindowDelegator::windowDelegatorCanvas->drawSimpleText(
+    if (alertRef->getMessage().c_str() != NULL) {
+      WindowDelegator::windowDelegatorCanvas->drawSimpleText(
         alertRef->getMessage().c_str(),
         strlen(alertRef->getMessage().c_str()),
         SkTextEncoding::kUTF8,
@@ -88,6 +89,7 @@ void RSkAlertManager::drawAlertMsg() {
         drawStartPointY,
         font_,
         paint_);
+    }
   }
   displayMsgIndex_ = alertPropsList_.size();
 }

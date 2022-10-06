@@ -13,7 +13,7 @@ namespace react {
 class Alert {
 public:
 
-    Alert(std::string title,std::string message) {
+    Alert(std::string title, std::string message) {
         title_ = title;
         message_ = message;
     };
