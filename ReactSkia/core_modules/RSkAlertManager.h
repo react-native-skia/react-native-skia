@@ -7,30 +7,31 @@
 
 #pragma once
 
-#include "jsi/JSIDynamic.h"
+#include "third_party/skia/include/core/SkCanvas.h"
+#include "third_party/skia/include/core/SkColor.h"
+#include "third_party/skia/include/core/SkFont.h"
+#include "third_party/skia/include/core/SkFontMgr.h"
 
-#include "core_modules/Alert.h"
-#include "include/core/SkFontMgr.h"
-#include "include/core/SkCanvas.h"
-#include "include/core/SkColor.h"
-#include "include/core/SkFont.h"
-#include "sdk/NotificationCenter.h"
-#include "sdk/RNSKeyCodeMapping.h"
-#include "sdk/WindowDelegator.h"
+#include "jsi/JSIDynamic.h"
 #include "ReactCommon/TurboModule.h"
+
+#include "ReactSkia/core_modules/Alert.h"
 #include "ReactSkia/JSITurboModuleManager.h"
+#include "ReactSkia/sdk/NotificationCenter.h"
+#include "ReactSkia/sdk/RNSKeyCodeMapping.h"
+#include "ReactSkia/sdk/WindowDelegator.h"
 
 namespace facebook {
 namespace react {
 
 enum AlertWindowState {
-        ALERT_WINDOW_CREATE = 1, // Window is Created
-        ALERT_WINDOW_ACTIVE = 2, // Window is Active
-        ALERT_WINDOW_INACTIVE = 3, // Window is In-Active
-        ALERT_WINDOW_DESTRUCT = 4 // Window is Destructed
-    };
+    ALERT_WINDOW_CREATE = 1, // Window is Created
+    ALERT_WINDOW_ACTIVE = 2, // Window is Active
+    ALERT_WINDOW_INACTIVE = 3, // Window is In-Active
+    ALERT_WINDOW_DESTRUCT = 4 // Window is Destructed
+};
 
-class RSkAlertManager : public rns::sdk::WindowDelegator, public facebook::react::TurboModule {
+class RSkAlertManager : public rns::sdk::WindowDelegator, public TurboModule {
 public:
 
     RSkAlertManager(
