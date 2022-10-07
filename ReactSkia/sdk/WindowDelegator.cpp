@@ -65,7 +65,8 @@ void  WindowDelegator::createNativeWindow() {
 void WindowDelegator::closeWindow() {
   RNS_LOG_TODO("Sync between rendering & Exit to be handled ");
   windowActive = false;
-  std::scoped_lock lock(renderCtrlMutex);
+  std::scoped_lock lock(renderCtrlMutex_);
+  if(ownsTaskrunner_) windowTaskRunner_->stop();
 
   if(ownsTaskrunner_) {
     windowTaskRunner_->stop();
@@ -91,30 +92,35 @@ void WindowDelegator::closeWindow() {
   drawHistorybin_.swap(emptyMap);
 }
 
-void WindowDelegator::commitDrawCall(std::string keyRef,PictureObject pictureObj) {
+void WindowDelegator::commitDrawCall(std::string pictureCommandKey,PictureObject pictureObj) {
   if(!windowActive) return;
   if( ownsTaskrunner_ )  {
     if( windowTaskRunner_->running() )
-      windowTaskRunner_->dispatch([=](){ renderToDisplay(keyRef,pictureObj); });
+      windowTaskRunner_->dispatch([=](){ renderToDisplay(pictureCommandKey,pictureObj); });
   } else {
-    renderToDisplay(keyRef,pictureObj);
+    renderToDisplay(pictureCommandKey,pictureObj);
   }
 }
 
-inline void WindowDelegator::renderToDisplay(std::string keyRef,PictureObject pictureObj) {
+inline void WindowDelegator::renderToDisplay(std::string pictureCommandKey,PictureObject pictureObj) {
   if(!windowActive) return;
   std::vector<SkIRect> dirtyRect;
-
+/* Works on the Expection, the client would seperated its window in to sepearte component
+ * and update/changes happens on portion of the screen i.e. w.r.t component
+ * pictureCommandKey : component/Updating Area's key name
+ * PictureObject     : Hold the recorded canvas command to the Area/component
+*/
 #ifdef SHOW_DIRTY_RECT
   SkPaint paint;
   paint.setColor(SK_ColorGREEN);
   paint.setStrokeWidth(2);
   paint.setStyle(SkPaint::kStroke_Style);
 #endif /*SHOW_DIRTY_RECT*/
-  std::scoped_lock lock(renderCtrlMutex);
+  std::scoped_lock lock(renderCtrlMutex_);
 #ifdef RNS_SHELL_HAS_GPU_SUPPORT
-  if(!keyRef.empty()) {
-    auto iter=drawHistorybin_.find(keyRef);
+  if(!pictureCommandKey.empty()) {
+// Add last updated area of current component to dirty Rect
+    auto iter=drawHistorybin_.find(pictureCommandKey);
     if(iter != drawHistorybin_.end()) {
         for(auto oldDirtyRectIt:iter->second.dirtyRect) {
           dirtyRect.push_back(oldDirtyRectIt);
@@ -123,19 +129,21 @@ inline void WindowDelegator::renderToDisplay(std::string keyRef,PictureObject pi
           #endif/*SHOW_DIRTY_RECT*/
         }
     }
-    drawHistorybin_[keyRef]=pictureObj;
+// update with latest Picture Obj for current component
+    drawHistorybin_[pictureCommandKey]=pictureObj;
   }
   int bufferAge=windowContext_->bufferAge();
   if(bufferAge != 1) {
-// Forcing full screen redraw as damage region handling is not done
+// when draw buffer don't have all the frame, redraw missed frames from command history bin
     std::map<std::string,PictureObject>::reverse_iterator it = drawHistorybin_.rbegin();
     for( ;it != drawHistorybin_.rend() ;it++ ) {
       if(it->second.pictureCommand.get() ) {
         it->second.pictureCommand->playback(windowDelegatorCanvas_);
         RNS_LOG_INFO("SkPicture ( "  << it->second.pictureCommand << " )For " <<
                 it->second.pictureCommand.get()->approximateOpCount() << " operations and size : " << it->second.pictureCommand.get()->approximateBytesUsed());
-        if(!(it->first).compare(keyNameBasePicCommand_)) {
+        if(!(it->first).compare(basePictureCommandKey_)) {
           if(bufferAge ==0) {
+// Base Picture command needs to be drawn  when draw buffer is empty
             for(auto dirtyRectIt:(it->second).dirtyRect) {
               dirtyRect.push_back(dirtyRectIt);
               RNS_LOG_ERROR("Added dirt Rect :: "<<(it->first));
@@ -164,18 +172,17 @@ inline void WindowDelegator::renderToDisplay(std::string keyRef,PictureObject pi
       pictureObj.pictureCommand->playback(windowDelegatorCanvas_);
       for(auto dirtyRectIt:pictureObj.dirtyRect) {
         dirtyRect.push_back(dirtyRectIt);
-        RNS_LOG_ERROR("Added dirt Rect :: "<<keyRef);
+        RNS_LOG_ERROR("Added dirt Rect :: "<<pictureCommandKey);
         #ifdef SHOW_DIRTY_RECT
         windowDelegatorCanvas_->drawIRect(dirtyRectIt,paint);
         #endif/*SHOW_DIRTY_RECT*/
       }
-      RNS_LOG_ERROR("Draw Current Command :keyRef :: "<<keyRef<< "Map Size : "<<drawHistorybin_.size());
+      RNS_LOG_ERROR("Draw Current Command :pictureCommandKey :: "<<pictureCommandKey<< "Map Size : "<<drawHistorybin_.size());
     }
   }
-  
   if(backBuffer_)  backBuffer_->flushAndSubmit();
   if(windowContext_) {
-    RNS_LOG_INFO(" DIRTY RECT SIZE :: "<<dirtyRect.size());    
+    RNS_LOG_INFO(" DIRTY RECT SIZE :: "<<dirtyRect.size());
     windowContext_->swapBuffers(dirtyRect);
   }
 }

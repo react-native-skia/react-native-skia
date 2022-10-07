@@ -120,10 +120,10 @@ class OnScreenKeyboard : public WindowDelegator{
       OSK_STATE_INACTIVE,
     };
     enum DrawCommands {
-      DRAW_OSK_BG,
-      DRAW_PH_STRING,
-      DRAW_KB,
-      DRAW_HL,
+      DRAW_OSK_BG, // Draw OSK Window Background
+      DRAW_PH_STRING, // Draw PlaceHolder String
+      DRAW_KB, // Draw KeyBoard Layout
+      DRAW_HL, // Draw Highlighted Key
       DRAW_MAX
     };
     struct OSKLayout {

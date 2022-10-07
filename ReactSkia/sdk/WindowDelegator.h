@@ -36,14 +36,14 @@ class WindowDelegator {
     void createWindow(SkSize windowSize,std::function<void ()> windowReadyTodrawCB,bool runOnTaskRunner=true);
     void closeWindow();
     void setWindowTittle(const char* titleString);
-    void commitDrawCall(std::string keyRef,PictureObject pictureObj);
-    void setBasePicCommand(std::string keyName) {keyNameBasePicCommand_=keyName;}
+    void commitDrawCall(std::string pictureCommandKey,PictureObject pictureObj);
+    void setBasePicCommand(std::string keyName) {basePictureCommandKey_=keyName;}
 
   private:
     void onExposeHandler(RnsShell::Window* window);
     void windowWorkerThread();
     void createNativeWindow();
-    void renderToDisplay(std::string keyRef,PictureObject pictureObj);
+    void renderToDisplay(std::string pictureCommandKey,PictureObject pictureObj);
 
     std::unique_ptr<RnsShell::WindowContext> windowContext_{nullptr};
     RnsShell::Window* window_{nullptr};
@@ -55,7 +55,7 @@ class WindowDelegator {
     bool ownsTaskrunner_{false};
 /* members to fullfill X11 suggestion of "draw on receiving expose event to avoid data loss" */
     sem_t semReadyToDraw_;
-    std::mutex renderCtrlMutex;
+    std::mutex renderCtrlMutex_;
     std::thread workerThread_;
 
     std::function<void ()> windowReadyTodrawCB_{nullptr};
@@ -66,7 +66,7 @@ class WindowDelegator {
     bool windowActive{false};
 
     std::map<std::string,PictureObject> drawHistorybin_;
-    std::string keyNameBasePicCommand_;
+    std::string basePictureCommandKey_;
 };
 
 } // namespace sdk

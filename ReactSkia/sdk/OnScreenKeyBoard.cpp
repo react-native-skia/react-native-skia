@@ -18,7 +18,7 @@ namespace rns {
 namespace sdk {
 
 std::mutex oskLaunchExitCtrlMutex;//For synchronized OSK Launch & Exit
-std::mutex conditionalLockMutex;
+std::mutex drawCtrlLockMutex;
 
 OnScreenKeyboard& OnScreenKeyboard::getInstance() {
   static OnScreenKeyboard oskHandle;
@@ -948,7 +948,7 @@ void OnScreenKeyboard::repeatKeyProcessingThread(){
 #endif
 
 void OnScreenKeyboard::sendDrawCommand(DrawCommands commands) {
-   std::scoped_lock lock(conditionalLockMutex);
+   std::scoped_lock lock(drawCtrlLockMutex);
    SkPictureRecorder pictureRecorder_;
    std::string commandKey;
    std::vector<SkIRect>   dirtyRect;
