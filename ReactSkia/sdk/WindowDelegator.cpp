@@ -118,7 +118,8 @@ inline void WindowDelegator::renderToDisplay(std::string pictureCommandKey,Pictu
 #endif /*SHOW_DIRTY_RECT*/
   std::scoped_lock lock(renderCtrlMutex_);
 #ifdef RNS_SHELL_HAS_GPU_SUPPORT
-  if(!pictureCommandKey.empty()) {
+  int bufferAge=windowContext_->bufferAge();
+  if(!pictureCommandKey.empty() && (bufferAge == 1)) {
 // Add last updated area of current component to dirty Rect
     auto iter=drawHistorybin_.find(pictureCommandKey);
     if(iter != drawHistorybin_.end()) {
@@ -129,20 +130,20 @@ inline void WindowDelegator::renderToDisplay(std::string pictureCommandKey,Pictu
           #endif/*SHOW_DIRTY_RECT*/
         }
     }
-// update with latest Picture Obj for current component
-    drawHistorybin_[pictureCommandKey]=pictureObj;
   }
-  int bufferAge=windowContext_->bufferAge();
+  // update with latest Picture Obj for current component
+  drawHistorybin_[pictureCommandKey]=pictureObj;
+
   if(bufferAge != 1) {
 // when draw buffer don't have all the frame, redraw missed frames from command history bin
     std::map<std::string,PictureObject>::reverse_iterator it = drawHistorybin_.rbegin();
     for( ;it != drawHistorybin_.rend() ;it++ ) {
       if(it->second.pictureCommand.get() ) {
+          RNS_LOG_ERROR("Parsing dirt Rect :: "<<(it->first));
         it->second.pictureCommand->playback(windowDelegatorCanvas_);
-        RNS_LOG_INFO("SkPicture ( "  << it->second.pictureCommand << " )For " <<
+        RNS_LOG_DEBUG("SkPicture ( "  << it->second.pictureCommand << " )For " <<
                 it->second.pictureCommand.get()->approximateOpCount() << " operations and size : " << it->second.pictureCommand.get()->approximateBytesUsed());
-        if(!(it->first).compare(basePictureCommandKey_)) {
-          if(bufferAge ==0) {
+        if((bufferAge ==0) ||((it->first).compare(basePictureCommandKey_))) {
 // Base Picture command needs to be drawn  when draw buffer is empty
             for(auto dirtyRectIt:(it->second).dirtyRect) {
               dirtyRect.push_back(dirtyRectIt);
@@ -151,15 +152,6 @@ inline void WindowDelegator::renderToDisplay(std::string pictureCommandKey,Pictu
               windowDelegatorCanvas_->drawIRect(dirtyRectIt,paint);
               #endif/*SHOW_DIRTY_RECT*/
             }
-          }
-        } else {
-          for(auto dirtyRectIt:(it->second).dirtyRect) {
-            dirtyRect.push_back(dirtyRectIt);
-            RNS_LOG_ERROR("Added dirt Rect :: "<<(it->first));
-            #ifdef SHOW_DIRTY_RECT
-            windowDelegatorCanvas_->drawIRect(dirtyRectIt,paint);
-            #endif/*SHOW_DIRTY_RECT*/
-          }
         }
       }
     }
