@@ -122,6 +122,7 @@ void RSkAlertManager::drawMsg() {
 }
 
 void RSkAlertManager::windowReadyToDrawCB() {
+  std::scoped_lock lock(lockMsgDrawing);
   alertWindowState_ = ALERT_WINDOW_ACTIVE;
   drawMsg();
   commitDrawCall();
