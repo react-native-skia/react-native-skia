@@ -21,6 +21,8 @@
 #include "ReactSkia/sdk/RNSKeyCodeMapping.h"
 #include "ReactSkia/sdk/WindowDelegator.h"
 
+#include <mutex>
+
 namespace facebook {
 namespace react {
 
@@ -50,14 +52,14 @@ public:
 private:
     int displayMsgIndex_{0};
     int subWindowKeyEventId_{-1};
-    std::list<std::shared_ptr<Alert>> alertPropsList_;
+    std::list<std::shared_ptr<Alert>> alertList_;
     SkSize mainWindowSize_;
     AlertWindowState alertWindowState_{ALERT_WINDOW_DESTRUCT};
     SkFont font_;
     SkPaint paint_;
 
-    void processAlertMessages(std::shared_ptr<Alert> alertPtr);
-    void drawAlertMsg();
+    void processAlertMessages(std::shared_ptr<Alert> alertPtr=NULL);
+    void drawMsg();
     void windowReadyToDrawCB();
     void createAlertWindow();
     void onHWKeyHandler(rnsKey key, rnsKeyAction eventKeyAction, RnsShell::Window* window);
