@@ -33,7 +33,7 @@ using namespace RSkDrawUtils;
 using namespace skia::textlayout;
 
 #define NUMBER_OF_LINES         1
-#define FONTSIZE_MULTIPLIER     10
+#define FONTSIZE_MULTIPLIER     1
 #define CURSOR_WIDTH 2
 
 std::queue<rnsKey> inputQueue;

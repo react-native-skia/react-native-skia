@@ -79,25 +79,28 @@ void drawText(std::shared_ptr<Paragraph>& paragraph,
     SkPaint paint;
     SkScalar yOffset = 0;
     Rect frame = layout.frame;
-    auto fontLineHeight = (!std::isnan(props.textAttributes.lineHeight)) && (props.textAttributes.lineHeight >= 0) ?
-                            props.textAttributes.lineHeight :
-                            true;
+    SkAutoCanvasRestore save(canvas, true);
 
-    if ((props.backgroundColor) || (props.textAttributes.lineHeight >= 0)) {
-        if (isParent)
-            canvas->clipRect(SkRect::MakeXYWH(0, 0, frame.size.width, frame.size.height));
-        else
-            canvas->clipRect(SkRect::MakeXYWH(frame.origin.x, frame.origin.y, frame.size.width, frame.size.height));
-        canvas->drawColor(RSkColorFromSharedColor(props.backgroundColor, SK_ColorTRANSPARENT));
+    if (isParent){
+        canvas->clipRect(SkRect::MakeXYWH(0, 0, frame.size.width, frame.size.height), SkClipOp::kIntersect);
+    } else {
+        canvas->clipRect(SkRect::MakeXYWH(frame.origin.x, frame.origin.y, frame.size.width, frame.size.height), SkClipOp::kIntersect);
     }
-    if (fontLineHeight) {
+
+    if (props.backgroundColor ){
+        SkColor bgColor = RSkColorFromSharedColor(props.backgroundColor, SK_ColorTRANSPARENT);
+        if (bgColor && SkColorGetA(bgColor)){
+            canvas->drawColor(bgColor);
+        }
+    }
+
 #if defined(TARGET_OS_TV) && TARGET_OS_TV
-        yOffset = yPosOffset(attributedString, paragraph->getHeight(), layout.getContentFrame().size.height);
+    yOffset = yPosOffset(attributedString, paragraph->getHeight(), layout.getContentFrame().size.height);
 #endif //TARGET_OS_TV
-        if (isParent)
-            paragraph->paint(canvas, layout.contentInsets.left, layout.contentInsets.top + yOffset);
-        else
-            paragraph->paint(canvas, frame.origin.x + layout.contentInsets.left, frame.origin.y + layout.contentInsets.top + yOffset);
+    if (isParent){
+        paragraph->paint(canvas, layout.contentInsets.left, layout.contentInsets.top + yOffset);
+    } else {
+        paragraph->paint(canvas, frame.origin.x + layout.contentInsets.left, frame.origin.y + layout.contentInsets.top + yOffset);
     }
 }
 } //RSkTextUtils

@@ -104,8 +104,8 @@ TextMeasurement RSkTextLayoutManager::doMeasure (SharedColor backGroundColor,
 
     size.width = paragraph->getMaxIntrinsicWidth() < paragraph->getMaxWidth() ?
 	                                        paragraph->getMaxIntrinsicWidth() :
-								            paragraph->getMaxWidth();
-    size.height = paragraph->getHeight(); 
+								            paragraph->getMaxWidth();  
+    size.height = paragraph->getHeight();
 
     Point attachmentPoint = calculateFramePoint({0,0}, size, layoutConstraints.maximumSize.width);
     for (auto const &fragment : attributedString.getFragments()) {
@@ -144,12 +144,11 @@ void RSkTextLayoutManager::buildText (struct RSkSkTextLayout &textLayout,
     SkFontStyle::Slant fontStyle = SkFontStyle::kUpright_Slant;
     double fontShadowRadius = 0;
     Size fontShadowOffset = {0,0};                         
-    SkScalar fontLineHeight;
     SkPoint setShadowPoint; 
 
     fontSize = (!std::isnan(textAttributes.fontSize)) && (textAttributes.fontSize > 0) ? 
                             textAttributes.fontSize :
-                            TextAttributes::defaultTextAttributes().fontSize;textAttributes.
+                            TextAttributes::defaultTextAttributes().fontSize;
 
     fontSizeMultiplier = !std::isnan(textAttributes.fontSizeMultiplier) ?
                             textAttributes.fontSizeMultiplier :
@@ -163,10 +162,6 @@ void RSkTextLayoutManager::buildText (struct RSkSkTextLayout &textLayout,
                             convertFontStyle(textAttributes.fontStyle.value()): 
                             SkFontStyle::kUpright_Slant;
 
-    fontLineHeight = (!std::isnan(textAttributes.lineHeight)) && (textAttributes.lineHeight > 0) ?
-                            textAttributes.lineHeight :
-                            fontSize;
-
     fontShadowOffset = textAttributes.textShadowOffset.has_value() ?
                             textAttributes.textShadowOffset.value() : 
                             fontShadowOffset;
@@ -178,8 +173,12 @@ void RSkTextLayoutManager::buildText (struct RSkSkTextLayout &textLayout,
     style.setFontSize((fontSize * fontSizeMultiplier));
     style.setFontFamilies({SkString(textAttributes.fontFamily.c_str())});
     style.setFontStyle(SkFontStyle{fontWeight, SkFontStyle::kNormal_Width, fontStyle});
-    style.setHeightOverride(true);
-    style.setHeight(fontLineHeight / fontSize);
+
+    if((!std::isnan(textAttributes.lineHeight)) && (textAttributes.lineHeight > 0)){
+        style.setHeightOverride(true);
+        style.setHeight(textAttributes.lineHeight / fontSize);
+    }
+    
     style.setDecoration(textAttributes.textDecorationLineType.has_value() ?
                             convertDecoration(textAttributes.textDecorationLineType.value()) :
                             TextDecoration::kNoDecoration);
@@ -206,8 +205,8 @@ void RSkTextLayoutManager::buildText (struct RSkSkTextLayout &textLayout,
         style.setForegroundColor(convertTextColor(textAttributes.foregroundColor ?
                                                     textAttributes.foregroundColor :
                                                     TextAttributes::defaultTextAttributes().foregroundColor));
-        style.setBackgroundColor(convertTextColor(backGroundColor ?
-                                                    backGroundColor :
+        style.setBackgroundColor(convertTextColor(textAttributes.backgroundColor ?
+                                                    textAttributes.backgroundColor :
                                                     TextAttributes::defaultTextAttributes().backgroundColor));
         style.setDecorationColor(convertTextColor(textAttributes.textDecorationColor ?
                                                     textAttributes.textDecorationColor :

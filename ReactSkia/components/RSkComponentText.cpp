@@ -51,12 +51,17 @@ void RSkComponentParagraph::OnPaint(SkCanvas *canvas) {
     Rect borderFrame = component.layoutMetrics.frame;
     bool isParent = false;
 
-
+    /* TODO : Need to cleanup the following code under macro, once it is not required anymore.*/
+    /* Reason : After this commit (Id: fe718401e53a044f384747d3641e946250033353 ), react native framework */
+    /*          considering all type of nested texts as fragments, so no more parent-child mechanism hereafter. */
+    /*          Commented the below code under a macro to avoid child text components handling. */
+#ifdef NESTED_TEXT_PARENT_CHILD_DIFFERENTIATION_SUPPORT
     /* Check if this component has parent Paragraph component */
     RSkComponentParagraph* parent = getParentParagraph();
     /* If parent, this text component is part of nested text(aka fragment attachment)*/
     /*    - use parent paragraph builder to add text & push style */
     /*    - draw the paragraph, when we reach the last fragment attachment*/
+
     if(parent) {
 
         auto parentComponent = parent->getComponentData();
@@ -96,7 +101,9 @@ void RSkComponentParagraph::OnPaint(SkCanvas *canvas) {
             }
         }
     }
-    else {
+    else
+#endif 
+    {
         /* If previously created builder is available,using it will append the text in builder*/
         /* If it reaches here,means there is an update in text.So create new paragraph builder*/
         if(nullptr != textLayout.builder) {
