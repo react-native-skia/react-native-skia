@@ -64,9 +64,14 @@ void WindowDelegator::closeWindow() {
   RNS_LOG_TODO("Sync between rendering & Exit to be handled ");
   windowActive = false;
   std::scoped_lock lock(renderCtrlMutex);
-  if(ownsTaskrunner_) windowTaskRunner_->stop();
 
-  if(exposeEventID_) {
+  if(ownsTaskrunner_) {
+    windowTaskRunner_->stop();
+  }
+  if (workerThread_.joinable() ) {
+    workerThread_.join();
+  }
+  if(exposeEventID_ != -1) {
     NotificationCenter::defaultCenter().removeListener(exposeEventID_);
     exposeEventID_=-1;
   }
@@ -80,9 +85,6 @@ void WindowDelegator::closeWindow() {
   sem_destroy(&semReadyToDraw_);
   windowDelegatorCanvas=nullptr;
   windowReadyTodrawCB_=nullptr;
-  if (workerThread_.joinable() ) {
-    workerThread_.join();
-  }
 }
 
 void WindowDelegator::commitDrawCall() {

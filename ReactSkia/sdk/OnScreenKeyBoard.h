@@ -15,6 +15,9 @@
 
 #include "NotificationCenter.h"
 #include "RNSKeyCodeMapping.h"
+#if ENABLE(FEATURE_KEY_THROTTLING)
+#include "ThreadSafeQueue.h"
+#endif /*ENABLE_FEATURE_KEY_THROTTLING*/
 #include "WindowDelegator.h"
 
 namespace rns {
@@ -142,6 +145,10 @@ class OnScreenKeyboard : public WindowDelegator{
 
     void launchOSKWindow();
     void onHWkeyHandler(rnsKey key, rnsKeyAction eventKeyAction);
+    void processKey(rnsKey keyValue);
+#if ENABLE(FEATURE_KEY_THROTTLING)
+    void repeatKeyProcessingThread();
+#endif/*ENABLE_FEATURE_KEY_THROTTLING*/
     void createOSKLayout(OSKTypes KBtype );
     void clearScreen(SkScalar x,SkScalar y,SkScalar width,SkScalar height,SkPaint & paintObj);
     SkScalar getStringBound (const std::string & stringToMeasure,unsigned int startIndex,unsigned int endIndex,SkFont & stringFont);
@@ -182,6 +189,15 @@ class OnScreenKeyboard : public WindowDelegator{
     bool          autoActivateReturnKey_{false};
     SkScalar      spaceWidth_{0};
     SkScalar      displayStrWidth_{0};
+    rnsKey        emittedOSKKey_{RNS_KEY_UnKnown};
+#if ENABLE(FEATURE_KEY_THROTTLING)
+    std::unique_ptr<ThreadSafeQueue<rnsKey>> repeatKeyQueue_;
+    std::thread   repeatKeyHandler_;
+    std::atomic<bool> onKeyRepeatMode_{false};
+    rnsKey        previousKey_{RNS_KEY_UnKnown};
+    sem_t         sigKeyConsumed_;
+    std::atomic<bool> waitingForKeyConsumedSignal_{false};
+#endif /*ENABLE_FEATURE_KEY_THROTTLING*/
 };
 
 }// namespace sdk
