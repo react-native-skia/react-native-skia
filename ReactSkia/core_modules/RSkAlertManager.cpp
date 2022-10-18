@@ -87,7 +87,7 @@ void RSkAlertManager::drawMsg() {
   windowDelegatorCanvas->clear(DARK_THEME_BACKGROUND_COLOR);
   titleWidth = font_.measureText(
     alertRef->getTitle().c_str(),
-    strlen(alertRef->getTitle().c_str()),
+    alertRef->getTitle().length(),
     SkTextEncoding::kUTF8);
 
   if (!alertList_.empty()) {
