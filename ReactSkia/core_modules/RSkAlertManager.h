@@ -57,6 +57,7 @@ private:
     AlertWindowState alertWindowState_{ALERT_WINDOW_DESTRUCT};
     SkFont font_;
     SkPaint paint_;
+    std::mutex lockMsgDrawing_;
 
     void processAlertMessages(std::shared_ptr<Alert> alertPtr=NULL);
     void drawMsg();

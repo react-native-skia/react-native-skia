@@ -11,8 +11,6 @@
 namespace facebook {
 namespace react {
 
-std::mutex lockMsgDrawing;
-
 //TODO:
 //Need to use different FONT_SIZE values for 720p and 1080p
 #define FONT_SIZE 24
@@ -28,7 +26,7 @@ RSkAlertManager::RSkAlertManager(
 }
 
 void RSkAlertManager::processAlertMessages(std::shared_ptr<Alert> alertPtr) {
-  std::scoped_lock lock(lockMsgDrawing);
+  std::scoped_lock lock(lockMsgDrawing_);
   if (alertPtr) {
     alertList_.push_back(alertPtr);
     if (ALERT_WINDOW_DESTRUCT == alertWindowState_) {
@@ -122,7 +120,7 @@ void RSkAlertManager::drawMsg() {
 }
 
 void RSkAlertManager::windowReadyToDrawCB() {
-  std::scoped_lock lock(lockMsgDrawing);
+  std::scoped_lock lock(lockMsgDrawing_);
   alertWindowState_ = ALERT_WINDOW_ACTIVE;
   drawMsg();
   commitDrawCall();
