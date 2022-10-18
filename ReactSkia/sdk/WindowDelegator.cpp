@@ -75,6 +75,7 @@ void  WindowDelegator::createNativeWindow() {
       windowContext_->makeContextCurrent();
       backBuffer_ = windowContext_->getBackbufferSurface();
       windowDelegatorCanvas_ = backBuffer_->getCanvas();
+      supportsPartialUpdate_=windowContext_->supportsPartialUpdate();
       windowActive = true;
       if(displayPlatForm_ == RnsShell::PlatformDisplay::Type::X11) {
         sem_post(&semReadyToDraw_);
@@ -139,7 +140,11 @@ inline void WindowDelegator::renderToDisplay(std::string pictureCommandKey,Pictu
     auto iter=componentCommandBin_.find(pictureCommandKey);
     if(iter != componentCommandBin_.end()) {
       RNS_LOG_ERROR("Updating old dirty Rect");
-      appendDirtyRect(dirtyRect,iter->second.dirtyRect);
+      #if USE(RNS_SHELL_PARTIAL_UPDATES)
+      if(supportsPartialUpdate_) {
+        generateDirtyRect(dirtyRect,iter->second.dirtyRect);
+      }
+      #endif/*RNS_SHELL_PARTIAL_UPDATES*/
     }
   }
 
@@ -153,15 +158,20 @@ inline void WindowDelegator::renderToDisplay(std::string pictureCommandKey,Pictu
     for( ;it != componentCommandBin_.rend() ;it++ ) {
       if(it->second.pictureCommand.get() ) {
         it->second.pictureCommand->playback(windowDelegatorCanvas_);
-        if((bufferAge ==0 ) && !windowAddedAsDirtyRect) {
-          //Update complete Screen if Buffer Age is "0"
-          RNS_LOG_DEBUG("Updating complete screen : width : "<<windowContext_->width()<<" height: "<<windowContext_->height());
-          dirtyRect.push_back(SkIRect::MakeXYWH (0,0,windowContext_->width(),windowContext_->height()));
-          windowAddedAsDirtyRect=true;
-        } else if(!windowAddedAsDirtyRect && (it->first).compare(basePictureCommandKey_)) {
-          RNS_LOG_DEBUG("Updating dirty Rect for component : "<<it->first);
-          appendDirtyRect(dirtyRect,(it->second).dirtyRect);
-        }
+
+        #if USE(RNS_SHELL_PARTIAL_UPDATES)
+          if(supportsPartialUpdate_) {
+            if((bufferAge ==0 ) && !windowAddedAsDirtyRect) {
+              //Update complete Screen if Buffer Age is "0"
+              RNS_LOG_DEBUG("Updating complete screen : width : "<<windowContext_->width()<<" height: "<<windowContext_->height());
+              dirtyRect.push_back(SkIRect::MakeXYWH (0,0,windowContext_->width(),windowContext_->height()));
+              windowAddedAsDirtyRect=true;
+            } else if(!windowAddedAsDirtyRect && (it->first).compare(basePictureCommandKey_)) {
+              RNS_LOG_DEBUG("Updating dirty Rect for component : "<<it->first);
+              generateDirtyRect(dirtyRect,(it->second).dirtyRect);
+            }
+          }
+        #endif/*RNS_SHELL_PARTIAL_UPDATES*/
       }
     }
   } else
@@ -171,7 +181,12 @@ inline void WindowDelegator::renderToDisplay(std::string pictureCommandKey,Pictu
       RNS_LOG_DEBUG("Rendering component  " << pictureCommandKey << " Command Count : "<<
                 pictureObj.pictureCommand.get()->approximateOpCount() << " operations and size : " << pictureObj.pictureCommand.get()->approximateBytesUsed());
       pictureObj.pictureCommand->playback(windowDelegatorCanvas_);
-      appendDirtyRect(dirtyRect,pictureObj.dirtyRect);
+
+      #if USE(RNS_SHELL_PARTIAL_UPDATES)
+      if(supportsPartialUpdate_) {
+        generateDirtyRect(dirtyRect,pictureObj.dirtyRect);
+      }
+      #endif/*RNS_SHELL_PARTIAL_UPDATES*/
     }
   }
 
@@ -192,7 +207,8 @@ inline void WindowDelegator::renderToDisplay(std::string pictureCommandKey,Pictu
   }
 }
 
-inline void WindowDelegator:: appendDirtyRect(std::vector<SkIRect> &dirtyRectVec ,std::vector<SkIRect> &componentDirtRectVec){
+#if USE(RNS_SHELL_PARTIAL_UPDATES)
+inline void WindowDelegator:: generateDirtyRect(std::vector<SkIRect> &dirtyRectVec ,std::vector<SkIRect> &componentDirtRectVec){
   for(SkIRect& comDirtyRect:componentDirtRectVec) {
     bool addToDirtyRect{true};
     if(!dirtyRectVec.empty()) {
@@ -215,6 +231,7 @@ inline void WindowDelegator:: appendDirtyRect(std::vector<SkIRect> &dirtyRectVec
     }
   }
 }
+#endif /*RNS_SHELL_PARTIAL_UPDATES*/
 void WindowDelegator::setWindowTittle(const char* titleString) {
   if(window_) window_->setTitle(titleString);
 }

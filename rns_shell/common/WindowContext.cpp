@@ -21,4 +21,10 @@ WindowContext::WindowContext(const DisplayParams& params)
 
 WindowContext::~WindowContext() {}
 
+bool WindowContext::supportsPartialUpdate() {
+    RNS_LOG_DEBUG("Support for Swapbuffer with damage rect : " << hasSwapBuffersWithDamage() <<
+                  " Support for Copy buffer : " <<  hasBufferCopy());
+    return (hasSwapBuffersWithDamage() || hasBufferCopy());
+}
+
 }   //namespace RnsShell

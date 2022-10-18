@@ -44,12 +44,14 @@ class WindowDelegator {
     void windowWorkerThread();
     void createNativeWindow();
     void renderToDisplay(std::string pictureCommandKey,PictureObject pictureObj);
-    void appendDirtyRect(std::vector<SkIRect> &dirtyRectVec ,std::vector<SkIRect> &componentDirtRectVec);
-
+#if USE(RNS_SHELL_PARTIAL_UPDATES)
+    void generateDirtyRect(std::vector<SkIRect> &dirtyRectVec ,std::vector<SkIRect> &componentDirtRectVec);
+#endif/*RNS_SHELL_PARTIAL_UPDATES*/
     std::unique_ptr<RnsShell::WindowContext> windowContext_{nullptr};
     RnsShell::Window* window_{nullptr};
     sk_sp<SkSurface>  backBuffer_;
     SkCanvas *windowDelegatorCanvas_{nullptr};
+    bool supportsPartialUpdate_{false};
 
 /*To fulfill OpenGl requirement of create & rendering to be handled from same thread context*/
     std::unique_ptr<RnsShell::TaskLoop> windowTaskRunner_{nullptr};
