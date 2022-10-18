@@ -135,18 +135,17 @@ inline void WindowDelegator::renderToDisplay(std::string pictureCommandKey,Pictu
 
 #ifdef RNS_SHELL_HAS_GPU_SUPPORT
   int bufferAge=windowContext_->bufferAge();
-  if(!pictureCommandKey.empty() && (bufferAge == 1)) {
-// Add last updated area of current component to dirty Rect
-    auto iter=componentCommandBin_.find(pictureCommandKey);
-    if(iter != componentCommandBin_.end()) {
-      RNS_LOG_ERROR("Updating old dirty Rect");
-      #if USE(RNS_SHELL_PARTIAL_UPDATES)
-      if(supportsPartialUpdate_) {
+
+  #if USE(RNS_SHELL_PARTIAL_UPDATES)
+    if(supportsPartialUpdate_ && !pictureCommandKey.empty() && (bufferAge == 1)) {
+  // Add last updated area of current component to dirty Rect
+      auto iter=componentCommandBin_.find(pictureCommandKey);
+      if(iter != componentCommandBin_.end()) {
+        RNS_LOG_ERROR("Updating old dirty Rect");
         generateDirtyRect(dirtyRect,iter->second.dirtyRect);
       }
-      #endif/*RNS_SHELL_PARTIAL_UPDATES*/
     }
-  }
+  #endif/*RNS_SHELL_PARTIAL_UPDATES*/
 
   componentCommandBin_[pictureCommandKey]=pictureObj;
   RNS_LOG_DEBUG("Count of component for this window :: "<< componentCommandBin_.size());

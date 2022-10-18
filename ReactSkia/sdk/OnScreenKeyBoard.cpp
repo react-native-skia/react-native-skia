@@ -124,7 +124,7 @@ void  OnScreenKeyboard::updatePlaceHolderString(std::string displayString,int cu
     sem_post(&oskHandle.sigKeyConsumed_);
   }
 #endif
-  oskHandle.sendDrawCommand(DRAW_TEXTINPUT_STRING);
+  oskHandle.triggerRenderRequestFor(OSK_TEXTINPUT_DISPLAY);
 }
 
 void OnScreenKeyboard::launchOSKWindow() {
@@ -588,8 +588,8 @@ inline void OnScreenKeyboard::processKey(rnsKey keyValue) {
         ToggleKeyMap :: iterator keyFunction =toggleKeyMap.find(oskLayout_.keyInfo->at(rowIndex).at(keyIndex).keyName);
         if((keyFunction != toggleKeyMap.end()) && (keyFunction->second != oskLayout_.kbLayoutType)) {
           oskLayout_.kbLayoutType=keyFunction->second;
-          sendDrawCommand(DRAW_KEYBOARD_LAYOUT);
-          sendDrawCommand(DRAW_KEYS);//Set default Focuss
+          triggerRenderRequestFor(OSK_KEYBOARD_LAYOUT);
+          triggerRenderRequestFor(OSK_KEYS);//Set default Focuss
         }
       }else {
         OSKkeyValue=oskLayout_.keyInfo->at(rowIndex).at(keyIndex).keyValue;
@@ -636,7 +636,7 @@ inline void OnScreenKeyboard::processKey(rnsKey keyValue) {
   if((OSKkeyValue != RNS_KEY_UnKnown) && autoActivateReturnKey_) {
     autoActivateReturnKey_=false;
     currentFocussIndex_=oskLayout_.returnKeyIndex;
-    sendDrawCommand(DRAW_KEYS);
+    triggerRenderRequestFor(OSK_KEYS);
   }
   if((lastFocussIndex_ != hlCandidate)) {
 /* To reduce the draw call and to avoid the frequency of swap buffer issue in openGL backend,
@@ -644,7 +644,7 @@ inline void OnScreenKeyboard::processKey(rnsKey keyValue) {
    taken care as part of update string call from client , followed by key emit
 */
     currentFocussIndex_=hlCandidate;
-    sendDrawCommand(DRAW_KEYS);
+    triggerRenderRequestFor(OSK_KEYS);
    }
 
   /* Emit only known keys to client*/
@@ -916,10 +916,10 @@ void OnScreenKeyboard::windowReadyToDrawCB() {
   if(oskState_== OSK_STATE_LAUNCH_INPROGRESS) {
     oskState_=OSK_STATE_ACTIVE;
     setWindowTittle("OSK Window");
-    sendDrawCommand(DRAW_OSK_BACKGROUND);
-    sendDrawCommand(DRAW_TEXTINPUT_STRING);
-    sendDrawCommand(DRAW_KEYBOARD_LAYOUT);
-    sendDrawCommand(DRAW_KEYS);
+    triggerRenderRequestFor(OSK_BACKGROUND);
+    triggerRenderRequestFor(OSK_TEXTINPUT_DISPLAY);
+    triggerRenderRequestFor(OSK_KEYBOARD_LAYOUT);
+    triggerRenderRequestFor(OSK_KEYS);
 #if ENABLE(FEATURE_KEY_THROTTLING)
     /*create Queue & KeyHandler for Repeat key Processing */
     sem_init(&sigKeyConsumed_, 0, 0);
@@ -957,40 +957,44 @@ void OnScreenKeyboard::repeatKeyProcessingThread(){
 }
 #endif
 
-void OnScreenKeyboard::sendDrawCommand(DrawCommands commands) {
-   std::scoped_lock lock(oskActiontCtrlMutex_);
-   SkPictureRecorder pictureRecorder_;
-   std::string commandKey;
-   std::vector<SkIRect>   dirtyRect;
-   pictureCanvas_ = pictureRecorder_.beginRecording(SkRect::MakeXYWH(0, 0, screenSize_.width(), screenSize_.height()));
-   switch(commands) {
-     case DRAW_OSK_BACKGROUND:
-     drawOSKBackGround(dirtyRect);
-     commandKey="OSKBackGround";
-     setBasePicCommand(commandKey);
-     break;
-     case DRAW_TEXTINPUT_STRING:
-       drawPlaceHolderDisplayString(dirtyRect);
-       commandKey="EmbededTIString";
-       break;
-      case DRAW_KEYS:
-        commandKey="HighLight";
-        drawHighLightOnKey(dirtyRect);
+void OnScreenKeyboard::triggerRenderRequestFor(OSKComponents components) {
+  std::scoped_lock lock(oskActiontCtrlMutex_);
+  SkPictureRecorder pictureRecorder_;
+  std::string commandKey;
+  std::vector<SkIRect>   dirtyRect;
+  pictureCanvas_ = pictureRecorder_.beginRecording(SkRect::MakeXYWH(0, 0, screenSize_.width(), screenSize_.height()));
+
+  switch(components) {
+    case OSK_BACKGROUND:
+      drawOSKBackGround(dirtyRect);
+      commandKey="OSKBackGround";
+      setBasePicCommand(commandKey);
+    break;
+    case OSK_TEXTINPUT_DISPLAY:
+      drawPlaceHolderDisplayString(dirtyRect);
+      commandKey="EmbededTIString";
       break;
-     case DRAW_KEYBOARD_LAYOUT:
-       commandKey="KeyBoardLayout";
-       drawKBLayout(dirtyRect);
-      break;
-     default:
+     case OSK_KEYS:
+       commandKey="HighLight";
+       drawHighLightOnKey(dirtyRect);
      break;
-   }
-   auto pic = pictureRecorder_.finishRecordingAsPicture();
-   if(pic.get()) {
-     RNS_LOG_DEBUG("SkPicture For " << commandKey << " :Command Count: " <<
-     pic.get()->approximateOpCount() << " operations and size : " << pic.get()->approximateBytesUsed() <<
-     " Dirty Rect Count : "<<dirtyRect.size());
-   }
-   if(oskState_== OSK_STATE_ACTIVE) commitDrawCall(commandKey,{dirtyRect,pic});
+    case OSK_KEYBOARD_LAYOUT:
+      commandKey="KeyBoardLayout";
+      drawKBLayout(dirtyRect);
+     break;
+    default:
+    break;
+  }
+
+  auto pic = pictureRecorder_.finishRecordingAsPicture();
+  if(pic.get()) {
+    RNS_LOG_DEBUG("SkPicture For " << commandKey << " :Command Count: " <<
+    pic.get()->approximateOpCount() << " operations and size : " << pic.get()->approximateBytesUsed() <<
+    " Dirty Rect Count : "<<dirtyRect.size());
+  }
+  if(oskState_== OSK_STATE_ACTIVE) {
+    commitDrawCall(commandKey,{dirtyRect,pic});
+  }
 }
 
 } // namespace sdk

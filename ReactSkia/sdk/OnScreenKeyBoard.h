@@ -119,12 +119,11 @@ class OnScreenKeyboard : public WindowDelegator{
       OSK_STATE_EXIT_INPROGRESS,
       OSK_STATE_INACTIVE,
     };
-    enum DrawCommands {
-      DRAW_OSK_BACKGROUND,
-      DRAW_TEXTINPUT_STRING,
-      DRAW_KEYBOARD_LAYOUT,
-      DRAW_KEYS,
-      DRAW_MAX
+    enum OSKComponents {
+      OSK_BACKGROUND,
+      OSK_TEXTINPUT_DISPLAY,
+      OSK_KEYBOARD_LAYOUT,
+      OSK_KEYS
     };
     struct OSKLayout {
       KBLayoutKeyInfoContainer*  keyInfo;
@@ -164,7 +163,7 @@ class OnScreenKeyboard : public WindowDelegator{
 
     void emitOSKKeyEvent(rnsKey keyValue);
     void windowReadyToDrawCB();
-    void sendDrawCommand(DrawCommands commands);
+    void triggerRenderRequestFor(OSKComponents components);
 
     void drawHighLightOnKey(std::vector<SkIRect> &dirtyRect);
     void drawOSKBackGround(std::vector<SkIRect> &dirtyRect);
