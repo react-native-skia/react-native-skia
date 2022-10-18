@@ -114,7 +114,7 @@ void WindowDelegator::closeWindow() {
   sem_destroy(&semReadyToDraw_);
   windowDelegatorCanvas_=nullptr;
   windowReadyTodrawCB_=nullptr;
-  if (workerThread_.joinable() ) {
+  if (workerThread_.joinable()) {
     workerThread_.join();
   }
   std::map<std::string,PictureObject> emptyMap;
