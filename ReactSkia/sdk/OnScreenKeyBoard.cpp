@@ -17,7 +17,7 @@
 namespace rns {
 namespace sdk {
 
-/* Onscreen Key Board is compose of below Internal Components in order::
+/* Onscreen Key Board composed of below Internal Components in order::
 1. Background + TI Title
  ______________________________
 |                              |

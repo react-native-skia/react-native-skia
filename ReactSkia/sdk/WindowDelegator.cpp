@@ -12,7 +12,7 @@
 
 namespace rns {
 namespace sdk {
-/* 
+/*
  *> Window & Canvas created for Client and maintained with in window delegator
  *> Supports Partial Update with dirty Rect
  *> Maintains last updated picture command + dirty Rect for each components
