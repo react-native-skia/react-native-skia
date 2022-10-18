@@ -120,10 +120,10 @@ class OnScreenKeyboard : public WindowDelegator{
       OSK_STATE_INACTIVE,
     };
     enum DrawCommands {
-      DRAW_OSK_BG, // Draw OSK Window Background
-      DRAW_PH_STRING, // Draw PlaceHolder String
-      DRAW_KB, // Draw KeyBoard Layout
-      DRAW_HL, // Draw Highlighted Key
+      DRAW_OSK_BACKGROUND,
+      DRAW_TEXTINPUT_STRING,
+      DRAW_KEYBOARD_LAYOUT,
+      DRAW_KEYS,
       DRAW_MAX
     };
     struct OSKLayout {
@@ -172,6 +172,8 @@ class OnScreenKeyboard : public WindowDelegator{
     void drawKBLayout(std::vector<SkIRect> &dirtyRect);
     void drawKBKeyFont(SkPoint index,bool onHLTile=false);
     static inline void onScreenKeyboardEventEmit(std::string eventType);
+
+    std::mutex oskActiontCtrlMutex_;
 
 // Members for OSK Layout & sytling
     OSKConfig     oskConfig_;

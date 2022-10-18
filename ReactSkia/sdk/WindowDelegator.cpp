@@ -12,7 +12,31 @@
 
 namespace rns {
 namespace sdk {
+/* 
+ *> Window & Canvas created for Client and maintained with in window delegator
+ *> Supports Partial Update with dirty Rect
+ *> Maintains last updated picture command + dirty Rect for each components
 
+    Window Dlegator Fuctional Logic :
+    ================================
+ *> Recorded canvas commands  to be sent by clients and window delegator renders it on real canvas.
+ *> Works on expectation,client knows its screen's component and screen layout is fixed.
+ *> Supports Partial Update, So Expects client would do component by component rendering all the time.
+ *> As part of recorded commands, expects dirty regions associted with this draw and the updating component name
+ *> Recent recorded command maintained for all the components.This will be used to redraw the screen, when current draw misses old frames.
+ *> Client can update it's base screen like BackGround. This information will be used while redraw the missed frames
+
+   Rendering Logic followed by Window Delegator:
+   =============================================
+ *> When a rendered component updated, Dirty Rect would be "Dirty Rect of last update for that Component" &
+   "Dirty Rect of the current update received from client".
+ (If buffer Age supported in Backend).
+ *> If Buffer Age is "1", Write buffer is up to date and just needs to render received commands from the client.
+ *>When Buffer Age is "0".Write buffer to be consider as empty and needs to redraw all the components in received order
+    to fill teh missed frames
+ *> When "Buffer Age is anything other than "0" & "1", it means it is not empty but it misses few frames.
+    In this case, update all the other component other than Base screen.
+*/
 #define SHOW_DIRTY_RECT
 void WindowDelegator::createWindow(SkSize windowSize,std::function<void ()> windowReadyCB,bool runOnTaskRunner) {
 
@@ -106,11 +130,6 @@ void WindowDelegator::commitDrawCall(std::string pictureCommandKey,PictureObject
 inline void WindowDelegator::renderToDisplay(std::string pictureCommandKey,PictureObject pictureObj) {
   if(!windowActive) return;
   std::vector<SkIRect> dirtyRect;
-/* Works on the Expection, the client would seperated its window in to sepearte component
- * and update/changes happens on portion of the screen i.e. w.r.t component
- * pictureCommandKey : component/Updating Area's key name
- * PictureObject     : Hold the recorded canvas command to the Area/component
-*/
 #ifdef SHOW_DIRTY_RECT
   SkPaint paint;
   paint.setColor(SK_ColorGREEN);
@@ -132,11 +151,10 @@ inline void WindowDelegator::renderToDisplay(std::string pictureCommandKey,Pictu
         }
     }
   }
-  // update with latest Picture Obj for current component
   drawHistorybin_[pictureCommandKey]=pictureObj;
 
   if(bufferAge != 1) {
-// when draw buffer don't have all the frame, redraw missed frames from command history bin
+// use Stored History to fill missed frames in the write buffer
     std::map<std::string,PictureObject>::reverse_iterator it = drawHistorybin_.rbegin();
     for( ;it != drawHistorybin_.rend() ;it++ ) {
       if(it->second.pictureCommand.get() ) {
@@ -145,7 +163,7 @@ inline void WindowDelegator::renderToDisplay(std::string pictureCommandKey,Pictu
         RNS_LOG_DEBUG("SkPicture ( "  << it->second.pictureCommand << " )For " <<
                 it->second.pictureCommand.get()->approximateOpCount() << " operations and size : " << it->second.pictureCommand.get()->approximateBytesUsed());
         if((bufferAge ==0) ||((it->first).compare(basePictureCommandKey_))) {
-// Base Picture command needs to be drawn  when draw buffer is empty
+// Base Picture command needs to be drawn only when draw buffer is empty
             for(auto dirtyRectIt:(it->second).dirtyRect) {
               dirtyRect.push_back(dirtyRectIt);
               RNS_LOG_ERROR("Added dirt Rect :: "<<(it->first));

@@ -17,8 +17,23 @@
 namespace rns {
 namespace sdk {
 
-std::mutex oskLaunchExitCtrlMutex;//For synchronized OSK Launch & Exit
-std::mutex drawCtrlLockMutex;
+/* Onscreen Key Board is compose of below Internal Components in order::
+1. Background + TI Title
+ ______________________________
+|                              |
+|   *************              |
+|   |TI Title   |              |
+|   *************              |
+|   ------------               |
+|   ***********************    |
+|   |2. TI Display        |    |
+|   ***********************    |
+|   ***************            |
+|   |3. KB Layout |            |
+|   ***************            |
+|______________________________|
+
+*/
 
 OnScreenKeyboard& OnScreenKeyboard::getInstance() {
   static OnScreenKeyboard oskHandle;
@@ -32,7 +47,7 @@ OSKErrorCode OnScreenKeyboard::launch(OSKConfig& oskConfig) {
   if((oskHandle.oskState_ == OSK_STATE_LAUNCH_INPROGRESS) || (oskHandle.oskState_ == OSK_STATE_ACTIVE)) {
       return OSK_ERROR_ANOTHER_INSTANCE_ACTIVE;
   }
-  std::scoped_lock lock(oskLaunchExitCtrlMutex);
+  std::scoped_lock lock(oskHandle.oskActiontCtrlMutex_);
   oskHandle.oskConfig_=oskConfig;
   oskHandle.oskState_=OSK_STATE_LAUNCH_INPROGRESS;
   onScreenKeyboardEventEmit(std::string("keyboardWillShow"));
@@ -51,7 +66,7 @@ void OnScreenKeyboard::exit() {
 
   oskHandle.oskState_=OSK_STATE_EXIT_INPROGRESS;
 
-  std::scoped_lock lock(oskLaunchExitCtrlMutex);
+  std::scoped_lock lock(oskHandle.oskActiontCtrlMutex_);
   onScreenKeyboardEventEmit(std::string("keyboardWillHide"));
   oskHandle.closeWindow();
 
@@ -109,7 +124,7 @@ void  OnScreenKeyboard::updatePlaceHolderString(std::string displayString,int cu
     sem_post(&oskHandle.sigKeyConsumed_);
   }
 #endif
-  oskHandle.sendDrawCommand(DRAW_PH_STRING);
+  oskHandle.sendDrawCommand(DRAW_TEXTINPUT_STRING);
 }
 
 void OnScreenKeyboard::launchOSKWindow() {
@@ -573,8 +588,8 @@ inline void OnScreenKeyboard::processKey(rnsKey keyValue) {
         ToggleKeyMap :: iterator keyFunction =toggleKeyMap.find(oskLayout_.keyInfo->at(rowIndex).at(keyIndex).keyName);
         if((keyFunction != toggleKeyMap.end()) && (keyFunction->second != oskLayout_.kbLayoutType)) {
           oskLayout_.kbLayoutType=keyFunction->second;
-          sendDrawCommand(DRAW_KB);
-          sendDrawCommand(DRAW_HL);//Set default Focuss
+          sendDrawCommand(DRAW_KEYBOARD_LAYOUT);
+          sendDrawCommand(DRAW_KEYS);//Set default Focuss
         }
       }else {
         OSKkeyValue=oskLayout_.keyInfo->at(rowIndex).at(keyIndex).keyValue;
@@ -621,7 +636,7 @@ inline void OnScreenKeyboard::processKey(rnsKey keyValue) {
   if((OSKkeyValue != RNS_KEY_UnKnown) && autoActivateReturnKey_) {
     autoActivateReturnKey_=false;
     currentFocussIndex_=oskLayout_.returnKeyIndex;
-    sendDrawCommand(DRAW_HL);
+    sendDrawCommand(DRAW_KEYS);
   }
   if((lastFocussIndex_ != hlCandidate)) {
 /* To reduce the draw call and to avoid the frequency of swap buffer issue in openGL backend,
@@ -629,7 +644,7 @@ inline void OnScreenKeyboard::processKey(rnsKey keyValue) {
    taken care as part of update string call from client , followed by key emit
 */
     currentFocussIndex_=hlCandidate;
-    sendDrawCommand(DRAW_HL);
+    sendDrawCommand(DRAW_KEYS);
    }
 
   /* Emit only known keys to client*/
@@ -901,10 +916,10 @@ void OnScreenKeyboard::windowReadyToDrawCB() {
   if(oskState_== OSK_STATE_LAUNCH_INPROGRESS) {
     oskState_=OSK_STATE_ACTIVE;
     setWindowTittle("OSK Window");
-    sendDrawCommand(DRAW_OSK_BG);
-    sendDrawCommand(DRAW_PH_STRING);
-    sendDrawCommand(DRAW_KB);
-    sendDrawCommand(DRAW_HL);
+    sendDrawCommand(DRAW_OSK_BACKGROUND);
+    sendDrawCommand(DRAW_TEXTINPUT_STRING);
+    sendDrawCommand(DRAW_KEYBOARD_LAYOUT);
+    sendDrawCommand(DRAW_KEYS);
 #if ENABLE(FEATURE_KEY_THROTTLING)
     /*create Queue & KeyHandler for Repeat key Processing */
     sem_init(&sigKeyConsumed_, 0, 0);
@@ -943,30 +958,26 @@ void OnScreenKeyboard::repeatKeyProcessingThread(){
 #endif
 
 void OnScreenKeyboard::sendDrawCommand(DrawCommands commands) {
-   std::scoped_lock lock(drawCtrlLockMutex);
+   std::scoped_lock lock(oskActiontCtrlMutex_);
    SkPictureRecorder pictureRecorder_;
    std::string commandKey;
    std::vector<SkIRect>   dirtyRect;
    pictureCanvas_ = pictureRecorder_.beginRecording(SkRect::MakeXYWH(0, 0, screenSize_.width(), screenSize_.height()));
    switch(commands) {
-     case DRAW_OSK_BG:
-     RNS_LOG_INFO("@@@ Got Task to work:DRAW_OSK_BG@@");
+     case DRAW_OSK_BACKGROUND:
      drawOSKBackGround(dirtyRect);
      commandKey="OSKBackGround";
      setBasePicCommand(commandKey);
      break;
-     case DRAW_PH_STRING:
-       RNS_LOG_INFO("@@@ Got Task to work:DRAW_PH_STRING@@");
+     case DRAW_TEXTINPUT_STRING:
        drawPlaceHolderDisplayString(dirtyRect);
        commandKey="EmbededTIString";
        break;
-      case DRAW_HL:
-        RNS_LOG_INFO("@@@ Got Task to work:DRAW_HL@@");
+      case DRAW_KEYS:
         commandKey="HighLight";
         drawHighLightOnKey(dirtyRect);
       break;
-     case DRAW_KB:
-       RNS_LOG_INFO("@@@ Got Task to work:DRAW_KB@@");
+     case DRAW_KEYBOARD_LAYOUT:
        commandKey="KeyBoardLayout";
        drawKBLayout(dirtyRect);
       break;
@@ -975,7 +986,7 @@ void OnScreenKeyboard::sendDrawCommand(DrawCommands commands) {
    }
    auto pic = pictureRecorder_.finishRecordingAsPicture();
    if(pic.get()) {
-     RNS_LOG_INFO("SkPicture ( "  << pic << " )For " <<
+     RNS_LOG_DEBUG("SkPicture ( "  << pic << " )For " << commandKey << " :Command Count: "
      pic.get()->approximateOpCount() << " operations and size : " << pic.get()->approximateBytesUsed());
    }
    if(oskState_== OSK_STATE_ACTIVE) commitDrawCall(commandKey,{dirtyRect,pic});
