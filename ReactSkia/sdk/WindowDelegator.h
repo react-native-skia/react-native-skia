@@ -44,6 +44,7 @@ class WindowDelegator {
     void windowWorkerThread();
     void createNativeWindow();
     void renderToDisplay(std::string pictureCommandKey,PictureObject pictureObj);
+    void appendDirtyRect(std::vector<SkIRect> &dirtyRectVec ,std::vector<SkIRect> &componentDirtRectVec);
 
     std::unique_ptr<RnsShell::WindowContext> windowContext_{nullptr};
     RnsShell::Window* window_{nullptr};
@@ -65,7 +66,7 @@ class WindowDelegator {
     SkSize windowSize_;
     bool windowActive{false};
 
-    std::map<std::string,PictureObject> drawHistorybin_;
+    std::map<std::string,PictureObject> componentCommandBin_;
     std::string basePictureCommandKey_;
 };
 

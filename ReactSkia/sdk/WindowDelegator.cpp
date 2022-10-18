@@ -33,11 +33,10 @@ namespace sdk {
  (If buffer Age supported in Backend).
  *> If Buffer Age is "1", Write buffer is up to date and just needs to render received commands from the client.
  *>When Buffer Age is "0".Write buffer to be consider as empty and needs to redraw all the components in received order
-    to fill teh missed frames
+    to fill the missed frames
  *> When "Buffer Age is anything other than "0" & "1", it means it is not empty but it misses few frames.
     In this case, update all the other component other than Base screen.
 */
-#define SHOW_DIRTY_RECT
 void WindowDelegator::createWindow(SkSize windowSize,std::function<void ()> windowReadyCB,bool runOnTaskRunner) {
 
   windowSize_=windowSize;
@@ -114,12 +113,12 @@ void WindowDelegator::closeWindow() {
   windowDelegatorCanvas_=nullptr;
   windowReadyTodrawCB_=nullptr;
   std::map<std::string,PictureObject> emptyMap;
-  drawHistorybin_.swap(emptyMap);
+  componentCommandBin_.swap(emptyMap);
 }
 
 void WindowDelegator::commitDrawCall(std::string pictureCommandKey,PictureObject pictureObj) {
   if(!windowActive) return;
-  if( ownsTaskrunner_ )  {
+  if( ownsTaskrunner_ ) {
     if( windowTaskRunner_->running() )
       windowTaskRunner_->dispatch([=](){ renderToDisplay(pictureCommandKey,pictureObj); });
   } else {
@@ -130,47 +129,38 @@ void WindowDelegator::commitDrawCall(std::string pictureCommandKey,PictureObject
 inline void WindowDelegator::renderToDisplay(std::string pictureCommandKey,PictureObject pictureObj) {
   if(!windowActive) return;
   std::vector<SkIRect> dirtyRect;
-#ifdef SHOW_DIRTY_RECT
-  SkPaint paint;
-  paint.setColor(SK_ColorGREEN);
-  paint.setStrokeWidth(2);
-  paint.setStyle(SkPaint::kStroke_Style);
-#endif /*SHOW_DIRTY_RECT*/
+
   std::scoped_lock lock(renderCtrlMutex_);
+
 #ifdef RNS_SHELL_HAS_GPU_SUPPORT
   int bufferAge=windowContext_->bufferAge();
   if(!pictureCommandKey.empty() && (bufferAge == 1)) {
 // Add last updated area of current component to dirty Rect
-    auto iter=drawHistorybin_.find(pictureCommandKey);
-    if(iter != drawHistorybin_.end()) {
-        for(auto oldDirtyRectIt:iter->second.dirtyRect) {
-          dirtyRect.push_back(oldDirtyRectIt);
-          #ifdef SHOW_DIRTY_RECT
-          windowDelegatorCanvas_->drawIRect(oldDirtyRectIt,paint);
-          #endif/*SHOW_DIRTY_RECT*/
-        }
+    auto iter=componentCommandBin_.find(pictureCommandKey);
+    if(iter != componentCommandBin_.end()) {
+      RNS_LOG_ERROR("Updating old dirty Rect");
+      appendDirtyRect(dirtyRect,iter->second.dirtyRect);
     }
   }
-  drawHistorybin_[pictureCommandKey]=pictureObj;
+
+  componentCommandBin_[pictureCommandKey]=pictureObj;
+  RNS_LOG_DEBUG("Count of component for this window :: "<< componentCommandBin_.size());
 
   if(bufferAge != 1) {
 // use Stored History to fill missed frames in the write buffer
-    std::map<std::string,PictureObject>::reverse_iterator it = drawHistorybin_.rbegin();
-    for( ;it != drawHistorybin_.rend() ;it++ ) {
+    std::map<std::string,PictureObject>::reverse_iterator it = componentCommandBin_.rbegin();
+    bool windowAddedAsDirtyRect{false};
+    for( ;it != componentCommandBin_.rend() ;it++ ) {
       if(it->second.pictureCommand.get() ) {
-          RNS_LOG_ERROR("Parsing dirt Rect :: "<<(it->first));
         it->second.pictureCommand->playback(windowDelegatorCanvas_);
-        RNS_LOG_DEBUG("SkPicture ( "  << it->second.pictureCommand << " )For " <<
-                it->second.pictureCommand.get()->approximateOpCount() << " operations and size : " << it->second.pictureCommand.get()->approximateBytesUsed());
-        if((bufferAge ==0) ||((it->first).compare(basePictureCommandKey_))) {
-// Base Picture command needs to be drawn only when draw buffer is empty
-            for(auto dirtyRectIt:(it->second).dirtyRect) {
-              dirtyRect.push_back(dirtyRectIt);
-              RNS_LOG_ERROR("Added dirt Rect :: "<<(it->first));
-              #ifdef SHOW_DIRTY_RECT
-              windowDelegatorCanvas_->drawIRect(dirtyRectIt,paint);
-              #endif/*SHOW_DIRTY_RECT*/
-            }
+        if((bufferAge ==0 ) && !windowAddedAsDirtyRect) {
+          //Update complete Screen if Buffer Age is "0"
+          RNS_LOG_DEBUG("Updating complete screen : width : "<<windowContext_->width()<<" height: "<<windowContext_->height());
+          dirtyRect.push_back(SkIRect::MakeXYWH (0,0,windowContext_->width(),windowContext_->height()));
+          windowAddedAsDirtyRect=true;
+        } else if(!windowAddedAsDirtyRect && (it->first).compare(basePictureCommandKey_)) {
+          RNS_LOG_DEBUG("Updating dirty Rect for component : "<<it->first);
+          appendDirtyRect(dirtyRect,(it->second).dirtyRect);
         }
       }
     }
@@ -178,26 +168,53 @@ inline void WindowDelegator::renderToDisplay(std::string pictureCommandKey,Pictu
 #endif/*RNS_SHELL_HAS_GPU_SUPPORT*/
   {
     if(pictureObj.pictureCommand.get()) {
-      RNS_LOG_INFO("SkPicture ( "  << pictureObj.pictureCommand << " )For " <<
+      RNS_LOG_DEBUG("Rendering component  " << pictureCommandKey << " Command Count : "<<
                 pictureObj.pictureCommand.get()->approximateOpCount() << " operations and size : " << pictureObj.pictureCommand.get()->approximateBytesUsed());
       pictureObj.pictureCommand->playback(windowDelegatorCanvas_);
-      for(auto dirtyRectIt:pictureObj.dirtyRect) {
-        dirtyRect.push_back(dirtyRectIt);
-        RNS_LOG_ERROR("Added dirt Rect :: "<<pictureCommandKey);
-        #ifdef SHOW_DIRTY_RECT
-        windowDelegatorCanvas_->drawIRect(dirtyRectIt,paint);
-        #endif/*SHOW_DIRTY_RECT*/
-      }
-      RNS_LOG_ERROR("Draw Current Command :pictureCommandKey :: "<<pictureCommandKey<< "Map Size : "<<drawHistorybin_.size());
+      appendDirtyRect(dirtyRect,pictureObj.dirtyRect);
     }
   }
+
+#ifdef SHOW_DIRTY_RECT
+  SkPaint paint;
+  paint.setColor(SK_ColorGREEN);
+  paint.setStrokeWidth(2);
+  paint.setStyle(SkPaint::kStroke_Style);
+  RNS_LOG_INFO(" Count of Dirty Rect :: "<<dirtyRect.size());
+  for(SkIRect rectIt:dirtyRect) {
+    windowDelegatorCanvas_->drawIRect(rectIt,paint);
+  }
+#endif/*SHOW_DIRTY_RECT*/
+
   if(backBuffer_)  backBuffer_->flushAndSubmit();
   if(windowContext_) {
-    RNS_LOG_INFO(" DIRTY RECT SIZE :: "<<dirtyRect.size());
     windowContext_->swapBuffers(dirtyRect);
   }
 }
 
+inline void WindowDelegator:: appendDirtyRect(std::vector<SkIRect> &dirtyRectVec ,std::vector<SkIRect> &componentDirtRectVec){
+  for(SkIRect& comDirtyRect:componentDirtRectVec) {
+    bool addToDirtyRect{true};
+    if(!dirtyRectVec.empty()) {
+      std::vector<SkIRect>::iterator it = dirtyRectVec.begin();
+      while( it != dirtyRectVec.end()) {
+        SkIRect &dirtyRect = *it;
+        if((dirtyRect == comDirtyRect) || dirtyRect.contains(comDirtyRect) ) {
+          addToDirtyRect=false;// If same or part of existing ignore
+          break;
+        }
+        if(comDirtyRect.contains(dirtyRect)) {
+          it=dirtyRectVec.erase(it);//Erase existing dirtRect , if it is part of new one
+        } else {
+          ++it;
+        }
+      }
+    }
+    if(addToDirtyRect){
+      dirtyRectVec.push_back(comDirtyRect);
+    }
+  }
+}
 void WindowDelegator::setWindowTittle(const char* titleString) {
   if(window_) window_->setTitle(titleString);
 }

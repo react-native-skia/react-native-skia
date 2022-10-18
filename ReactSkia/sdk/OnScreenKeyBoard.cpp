@@ -986,8 +986,9 @@ void OnScreenKeyboard::sendDrawCommand(DrawCommands commands) {
    }
    auto pic = pictureRecorder_.finishRecordingAsPicture();
    if(pic.get()) {
-     RNS_LOG_DEBUG("SkPicture ( "  << pic << " )For " << commandKey << " :Command Count: "
-     pic.get()->approximateOpCount() << " operations and size : " << pic.get()->approximateBytesUsed());
+     RNS_LOG_DEBUG("SkPicture For " << commandKey << " :Command Count: " <<
+     pic.get()->approximateOpCount() << " operations and size : " << pic.get()->approximateBytesUsed() <<
+     " Dirty Rect Count : "<<dirtyRect.size());
    }
    if(oskState_== OSK_STATE_ACTIVE) commitDrawCall(commandKey,{dirtyRect,pic});
 }
