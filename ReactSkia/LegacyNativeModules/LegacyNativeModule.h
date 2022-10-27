@@ -16,7 +16,7 @@
 namespace facebook {
 namespace react {
 
-using RSkLegacyNativeModuleProviderProtocol = std::unique_ptr<xplat::module::CxxModule>(*)();
+using RSkLegacyNativeModuleProviderProtocol = xplat::module::CxxModule*(*)();
 
 class LegacyNativeModule : public CxxNativeModule {
  public:

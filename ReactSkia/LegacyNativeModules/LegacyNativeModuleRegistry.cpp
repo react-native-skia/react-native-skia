@@ -51,7 +51,7 @@ bool LegacyNativeModuleRegistry::ModuleNotFound(std::string moduleName, std::wea
     auto nativeModule = std::make_unique<LegacyNativeModule>(moduleName,
                                                             rnInstance,
                                                             [=]() -> std::unique_ptr<xplat::module::CxxModule> {
-                                                              auto module = createModule();
+                                                              std::unique_ptr<xplat::module::CxxModule> module(createModule());
                                                               std::lock_guard<std::mutex> lock(registryMutex_);
                                                               modules_[moduleName.c_str()] = module.get();
                                                               return module;

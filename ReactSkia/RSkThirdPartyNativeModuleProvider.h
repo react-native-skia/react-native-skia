@@ -4,6 +4,7 @@
 #pragma GCC diagnostic ignored "-Wreturn-type-c-linkage"
 
 #include "ReactSkia/LegacyNativeModules/LegacyNativeModule.h"
+#include "ReactSkia/utils/RnsUtils.h"
 
 namespace facebook {
 namespace react {
