@@ -31,6 +31,8 @@
 
 #pragma once
 
+using NotificationCompleteVoidCallback = std::function<void()>;
+
 class NotificationCenter {
     private:
         struct ListenerBase {
@@ -70,6 +72,10 @@ class NotificationCenter {
         static NotificationCenter& defaultCenter();
         static void initializeDefault();
 
+        //Notification center to handle events from subWindows
+        static NotificationCenter& subWindowCenter();
+        static void initializeSubWindowCenter();
+
         template <typename... Args>
         unsigned int addListener(std::string eventName, std::function<void (Args...)> cb);
 
@@ -91,9 +97,9 @@ unsigned int NotificationCenter::addListener(std::string eventName, std::functio
     if (!cb) {
         // throw does not work as exception is disbaled with -fno-exceptions 
         //throw std::invalid_argument("NotificationCenter::addListener: No callbak provided.");
+
         std::cout << "NotificationCenter::addListener: No callback provided.";
     }
-
     std::lock_guard<std::mutex> lock(mutex);
 
     unsigned int listener_id = ++last_listener;
@@ -110,9 +116,9 @@ unsigned int NotificationCenter::on(std::string eventName, std::function<void (A
 template <typename... Args>
 void NotificationCenter::emit(std::string eventName, Args... args) {
     std::list<std::shared_ptr<Listener<Args...>>> handlers;
+    
     {
         std::lock_guard<std::mutex> lock(mutex);
-
         auto range = listeners.equal_range(eventName);
         handlers.resize(std::distance(range.first, range.second));
         std::transform(range.first, range.second, handlers.begin(), [] (std::pair<const std::string, std::shared_ptr<ListenerBase>> p) {
@@ -126,5 +132,3 @@ void NotificationCenter::emit(std::string eventName, Args... args) {
         h->cb(args...);
     }        
 }
-
-

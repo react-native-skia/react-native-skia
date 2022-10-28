@@ -1,6 +1,6 @@
 /*
 * Copyright 2016 Google Inc.
-* Copyright (C) 1994-2021 OpenTV, Inc. and Nagravision S.A.
+* Copyright (C) 1994-2022 OpenTV, Inc. and Nagravision S.A.
 *
 * Use of this source code is governed by a BSD-style license that can be
 * found in the LICENSE file.
@@ -8,16 +8,33 @@
 
 #include "compositor/layers/Layer.h"
 #include "compositor/layers/PictureLayer.h"
+#include "compositor/layers/ScrollLayer.h"
 
 namespace RnsShell {
 
 #if USE(RNS_SHELL_PARTIAL_UPDATES)
-static inline void addDamageRect(PaintContext& context, SkIRect dirtyAbsFrameRect) {
-    // TODO Walk through the dirtyRect vector and
-    // 1. If new dirty rect contains inside any pf existing dirtyRect then ignore
-    // 2. If new dirty rect entirely covers any of existing dirtyRect then remove them from vector and add the new one
+void Layer::addDamageRect(PaintContext& context, SkIRect dirtyAbsFrameRect) {
+    std::vector<SkIRect>& damageRectList = context.damageRect;
+    bool checkIfAlreadyCovered = true;
 
-    context.damageRect.push_back(dirtyAbsFrameRect);
+    for (auto it = damageRectList.begin(); it != damageRectList.end(); it++) {
+        // Check 1 : If new dirty rect fully covers any of existing dirtyRect in the list then remove them from vector
+        SkIRect &dirtRect = *it;
+        if (dirtyAbsFrameRect != dirtRect && dirtyAbsFrameRect.contains(dirtRect)) {
+            damageRectList.erase(it--); // Need to decrement the iterator.
+            RNS_LOG_TRACE("Remove existing dirty rect [" << dirtRect.x() << dirtRect.y() << dirtRect.width() << dirtRect.height() << "] because new dirty rect [" <<
+              dirtyAbsFrameRect.x() << dirtyAbsFrameRect.y() << dirtyAbsFrameRect.width() << dirtyAbsFrameRect.height() << "] will cover it");
+            // If we entered here, it means that there cannot be an existing rect which already covers this new rect. So we can skip Check 2
+            checkIfAlreadyCovered = false;
+        }
+        // Check 2: If new dirty rect is inside any of existing dirtyRects then ignore and return
+        if(checkIfAlreadyCovered && dirtRect.contains(dirtyAbsFrameRect)) {
+            RNS_LOG_TRACE("Skip new dirtyrect [" << dirtyAbsFrameRect.x() << dirtyAbsFrameRect.y() << dirtyAbsFrameRect.width() << dirtyAbsFrameRect.height() << "] because existing dirty rect [" <<
+              dirtRect.x() << dirtRect.y() << dirtRect.width() << dirtRect.height() << "] already covers it");
+            return;
+        }
+    }
+    damageRectList.push_back(dirtyAbsFrameRect); // Add new unique dirty rect
 }
 #endif
 
@@ -25,6 +42,8 @@ SharedLayer Layer::Create(Client& layerClient, LayerType type) {
     switch(type) {
         case LAYER_TYPE_PICTURE:
             return std::make_shared<PictureLayer>(layerClient);
+        case LAYER_TYPE_SCROLL:
+            return std::make_shared<ScrollLayer>(layerClient);
         case LAYER_TYPE_DEFAULT:
         default:
             RNS_LOG_ASSERT(false, "Default layers can be created only from RSkComponent constructor");
@@ -53,6 +72,7 @@ Layer::Layer(Client& layerClient, LayerType type)
     , client_(&layerClient)
     , frame_(SkIRect::MakeEmpty())
     , absFrame_(SkIRect::MakeEmpty())
+    , bounds_(SkIRect::MakeEmpty())
     , anchorPosition_(SkPoint::Make(0.5,0.5)) // Default anchor point as centre
     , invalidateMask_(LayerInvalidateAll) {
     RNS_LOG_DEBUG("Layer Constructed(" << this << ") with ID : " << layerId_ << " and LayerClient : " << client_);
@@ -110,37 +130,51 @@ void Layer::removeFromParent() {
 }
 
 void Layer::preRoll(PaintContext& context, bool forceLayout) {
-    // Layer Layout has changed or parent has forced Layout change for child. Need to recalculate absolute frame and update absFrame_
+    // Layer Layout has changed or parent has forced Layout change for child. Need to recalculate absolute frame and update absFrame_ & bounds
      if(forceLayout || (invalidateMask_ & LayerLayoutInvalidate)) {
         // Adjust absolute position w.r.t transformation matrix
         calculateTransformMatrix();
         SkRect mapRect=SkRect::Make(frame_);
         absoluteTransformMatrix_.mapRect(&mapRect);
+        absFrame_ = SkIRect::MakeXYWH(mapRect.x(), mapRect.y(), mapRect.width(), mapRect.height());
+        SkIRect newBounds = absFrame_;
+        frameBounds_ = frame_;
+        if(shadowFilter) {
+            SkMatrix identityMatrix;
+            frameBounds_ = shadowFilter->filterBounds(
+                                               frame_,
+                                               identityMatrix,
+                                               SkImageFilter::kForward_MapDirection,
+                                               nullptr);
 
-        SkIRect newAbsFrame = SkIRect::MakeXYWH(mapRect.x(), mapRect.y(), mapRect.width(), mapRect.height());
+            //Calculate absolute frame bounds
+            SkRect mapRect=SkRect::Make(frameBounds_);
+            absoluteTransformMatrix_.mapRect(&mapRect);
+            newBounds = SkIRect::MakeXYWH(mapRect.x(), mapRect.y(), mapRect.width(), mapRect.height());
+        }
 #if USE(RNS_SHELL_PARTIAL_UPDATES)
         if((invalidateMask_ & LayerLayoutInvalidate)) {
-            // Add previous frame to damage rect only if layer layout was invalidated and new layout is different from old layout
+            // Add previous bounds to damage rect only if layer layout was invalidated and new layout is different from old layout
             if(context.supportPartialUpdate) {
-                if(absFrame_.isEmpty() != true && newAbsFrame.contains(absFrame_) != true ) {
-                    addDamageRect(context, absFrame_); // Previous frame rect
-                    RNS_LOG_DEBUG("New frame layout is different from previous frame. Add to damage rect..");
+                if(bounds_.isEmpty() != true && newBounds.contains(bounds_) != true ) {
+                    addDamageRect(context, bounds_); // Previous bounds
+                    RNS_LOG_DEBUG("New bounds is different from previous bounds. Add to damage rect..");
                 }
             }
             RNS_LOG_DEBUG("PreRoll Layer(ID:" << layerId_ << ", ParentID:" << (parent_ ? parent_->layerId() : -1) <<
                 ") Frame [" << frame_.x() << "," << frame_.y() << "," << frame_.width() << "," << frame_.height() <<
-                "], AbsFrame(Prev,New) ([" << absFrame_.x() << "," << absFrame_.y() << "," << absFrame_.width() << "," << absFrame_.height() << "]" <<
-                " - [" << newAbsFrame.x() << "," << newAbsFrame.y() << "," << newAbsFrame.width() << "," << newAbsFrame.height() << "])");
+                "], Bounds(Prev,New) ([" << bounds_.x() << "," << bounds_.y() << "," << bounds_.width() << "," << bounds_.height() << "]" <<
+                " - [" << newBounds.x() << "," << newBounds.y() << "," << newBounds.width() << "," << newBounds.height() << "])");
         }
 #endif
-        absFrame_ = newAbsFrame; // Save new absFrame
+        bounds_ = newBounds; // Save new bounds
     }
 
 #if USE(RNS_SHELL_PARTIAL_UPDATES)
     if(context.supportPartialUpdate && ( invalidateMask_ != LayerInvalidateNone)) {// As long as there is some invalidation , it creates a dirty rect.
         RNS_LOG_DEBUG("AddDamage Layer(ID:" << layerId_ <<
-            ") AbsFrame[" << absFrame_.x() << "," << absFrame_.y() << "," << absFrame_.width() << "," << absFrame_.height() << "]");
-        addDamageRect(context, absFrame_); // Previous frame rect
+            ") Bounds[" << bounds_.x() << "," << bounds_.y() << "," << bounds_.width() << "," << bounds_.height() << "]");
+        addDamageRect(context, bounds_); // new bounds
     }
 #endif
 }
@@ -149,12 +183,25 @@ void Layer::prePaint(PaintContext& context, bool forceLayout) {
     //Adjust absolute Layout frame and dirty rects
     bool forceChildrenLayout = (forceLayout || (invalidateMask_ & LayerLayoutInvalidate));
     preRoll(context, forceLayout);
-    invalidateMask_ = LayerInvalidateNone;
+    // It will reset the invalidate mask.
+    invalidateMask_ = static_cast<LayerInvalidateMask>(invalidateMask_ & LayerRemoveInvalidate) ;
 
     // prePaint children recursively
+    size_t index = 0;
+    std::map <size_t , SharedLayer> recycleChildList;
     for (auto& layer : children()) {
         layer->prePaint(context, forceChildrenLayout);
+        if(layer->invalidateMask_ == LayerRemoveInvalidate){
+            recycleChildList[index] = layer;
+        }
+        index++;
     }
+
+    //remove children marked with remove mask from parent list
+    for(auto recycleChildIter = recycleChildList.rbegin();recycleChildIter != recycleChildList.rend();++recycleChildIter)
+         removeChild(recycleChildIter->second.get(),recycleChildIter->first);
+
+    recycleChildList.clear();
 }
 
 void Layer::paintSelf(PaintContext& context) {
@@ -170,26 +217,35 @@ void Layer::paintSelf(PaintContext& context) {
 #endif
 }
 
+void Layer::paintChildren(PaintContext& context) {
+    for (auto& layer : children_) {
+        if(layer->needsPainting(context)) {
+            RNS_LOG_DEBUG("Paint Layer(ID:" << layer->layerId_ << ", ParentID:" << layerId_ <<
+                ") Frame [" << layer->frame_.x() << "," << layer->frame_.y() << "," << layer->frame_.width() << "," << layer->frame_.height() <<
+                "], Bounds [" << layer->bounds_.x() << "," << layer->bounds_.y() << "," << layer->bounds_.width() << "," << layer->bounds_.height() << "]");
+            layer->paint(context);
+        }
+    }
+}
+
 void Layer::paint(PaintContext& context) {
     RNS_LOG_DEBUG("Layer (" << layerId_ << ") has " << children_.size() << " childrens");
 
     SkAutoCanvasRestore save(context.canvas, true); // Save current clip and matrix state.
 
-    context.canvas->setMatrix(absoluteTransformMatrix_); //Apply self & parent's combined transformation matrix before paint
+    setLayerTransformMatrix(context);
+    setLayerOpacity(context);
     paintSelf(context); // First paint self and then children if any
 
     if(masksToBounds_) { // Need to clip children.
-        SkRect intRect = SkRect::Make(absFrame_);
+        SkRect intRect = SkRect::Make(frame_);
         if(!context.dirtyClipBound.isEmpty() && intRect.intersect(context.dirtyClipBound) == false) {
             RNS_LOG_WARN("We should not call paint if it doesnt intersect with non empty dirtyClipBound...");
         }
-        context.canvas->clipRect(intRect);
+        context.canvas->clipRect(intRect,SkClipOp::kIntersect);
     }
 
-    for (auto& layer : children_) {
-        if(layer->needsPainting(context))
-            layer->paint(context);
-    }
+    paintChildren(context);
 }
 
 bool Layer::hasAncestor(const Layer* ancestor) const {
@@ -224,7 +280,12 @@ bool Layer::needsPainting(PaintContext& context) {
     // As long as paintBounds interset with one of the dirty rect, we will need repainting.
     SkIRect dummy;
     for (auto& dirtRect : context.damageRect) {
-        if(dummy.intersect(absFrame_, dirtRect)) { // this layer intersects with one of the dirty rect, so needs repainting
+        SkIRect bounds = bounds_;
+        //If scrolling offset available,check bounds with offset value
+        if(!context.offset.isZero()){
+          bounds.offset(context.offset.x(),context.offset.y());
+        }
+        if(dummy.intersect(bounds, dirtRect)) { // this layer intersects with one of the dirty rect, so needs repainting
             return true;
         }
     }
@@ -236,7 +297,7 @@ bool Layer::needsPainting(PaintContext& context) {
 void Layer::calculateTransformMatrix() {
 
 /* Step 1: calculate transform matrix set by parent */
-    if(parent_) {
+    if((!skipParentMatrix_) && parent_) {
         absoluteTransformMatrix_=parent_->absoluteTransformMatrix_;
         absoluteTransformMatrix_.preTranslate(parent_->frame_.x(),parent_->frame_.y());
     }
@@ -258,6 +319,33 @@ so starting from step 3 to step 1
         absoluteTransformMatrix_.preTranslate(-Xtrans,-Ytrans);
 
     }
+}
+
+bool Layer::requireInvalidate(bool skipChildren) {
+    if(invalidateMask_ != LayerInvalidateNone) return true;
+    if(!skipChildren) {
+       for (auto &layer :children())
+          if(layer->requireInvalidate(skipChildren)) return true;
+    }
+    return false;
+}
+
+void Layer::setLayerOpacity(PaintContext& context) {
+    if(opacity <= 0.0) return; //if transparent,paint self & children not required
+    if(opacity < 0xFF) {
+      SkRect layerBounds = SkRect::Make(frameBounds_);
+      context.canvas->saveLayerAlpha(&layerBounds,opacity);
+    }
+}
+
+void Layer::setLayerTransformMatrix(PaintContext& context) {
+    SkMatrix screenMatrix;
+    //If scrolling offset is available,concat the offset to transform matrix
+    if(!context.offset.isZero()) {
+        screenMatrix.setTranslate(context.offset.x(),context.offset.y());
+    }
+    screenMatrix.preConcat(absoluteTransformMatrix_);
+    context.canvas->setMatrix(screenMatrix);
 }
 
 }   // namespace RnsShell

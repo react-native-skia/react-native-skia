@@ -28,6 +28,10 @@ config("rns_shell_config") {
       defines += ["USE_RNS_SHELL_PARTIAL_UPDATES"]
     }
   }
+
+  if(rns_enable_scroll_layer_bitmap) {
+    defines += ["USE_SCROLL_LAYER_BITMAP"]
+  }
 }
 
 if(is_linux && gl_has_gpu ) {
@@ -58,6 +62,7 @@ if(is_linux && gl_display_backend == "x11") {
     "platform/graphics/x11/PlatformDisplayX11.cpp",
     "platform/graphics/x11/WindowX11.h",
     "platform/graphics/x11/WindowX11.cpp",
+    "platform/graphics/x11/X11KeyMap.cpp",
   ]
 
   if(!gl_has_gpu) {
@@ -82,6 +87,7 @@ if(is_linux && gl_display_backend == "libwpe") {
     "platform/graphics/libwpe/PlatformDisplayLibWPE.cpp",
     "platform/graphics/libwpe/PlatformDisplayLibWPE.h",
     "platform/graphics/libwpe/WindowLibWPE.cpp",
+    "platform/graphics/libwpe/WpeKeyMap.cpp",
   ]
   if(gl_has_gpu) {
     libwpe_platform_source += [ "platform/graphics/gl/egl/GLWindowContextEGLLibWPE.cpp" ]
@@ -114,6 +120,8 @@ source_set("rns_shell") {
     "compositor/layers/Layer.cpp",
     "compositor/layers/PictureLayer.h",
     "compositor/layers/PictureLayer.cpp",
+    "compositor/layers/ScrollLayer.h",
+    "compositor/layers/ScrollLayer.cpp",
   ]
 
   if(gl_has_gpu) {

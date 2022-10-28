@@ -1,4 +1,4 @@
-# Copyright (C) 1994-2021 OpenTV, Inc. and Nagravision S.A. All rights reserved.
+# Copyright (C) 1994-2022 OpenTV, Inc. and Nagravision S.A. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
@@ -22,6 +22,10 @@ declare_args() {
 
     # Use partial updates ( dirty region painting and swaping) if system support.
     rns_enable_partial_updates = true
+
+    # Use bitmap for scroll layer.
+    # Enable if scroll layer children do not have any runtime updates,to improve performance.
+    rns_enable_scroll_layer_bitmap = false
   }
 }
 

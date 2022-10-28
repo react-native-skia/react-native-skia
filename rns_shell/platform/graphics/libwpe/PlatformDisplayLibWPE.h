@@ -19,9 +19,8 @@ namespace RnsShell {
 
 class Display {
 public:
-    struct wpe_view_backend* viewBackend() const { return viewBackend_; }
 
-    Display();
+    Display(){};
     struct Screen {
         int     width;
         int     height;
@@ -29,8 +28,7 @@ public:
     Screen screen() { return screen_;}
     void setScreenSize(int w, int h) { screen_.width = w; screen_.height = h;}
 private:
-    ~Display();
-    struct wpe_view_backend* viewBackend_ = { nullptr };
+    ~Display(){};
     Screen screen_;
 };
 
@@ -49,6 +47,7 @@ private:
     PlatformDisplayLibWPE(Display *display);
 
     Type type() const override { return PlatformDisplay::Type::WPE; }
+    SkSize screenSize() override;
 
     Display* display_;
     struct wpe_renderer_backend_egl* rendererBackend_ = { nullptr };

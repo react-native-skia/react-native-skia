@@ -11,6 +11,7 @@
 #include "ReactSkia/utils/RnsUtils.h"
 
 #include <X11/Xlib.h>
+#include <X11/X.h>
 #if USE(GLX)
 #include <GL/glx.h>
 #endif
@@ -21,6 +22,8 @@
 #include "Window.h"
 #include "PlatformDisplay.h"
 
+#include "ReactSkia/sdk/RNSKeyCodeMapping.h"
+#include "ReactSkia/sdk/NotificationCenter.h"
 typedef Window XWindow;
 
 namespace RnsShell {
@@ -36,11 +39,21 @@ public:
             , visualInfo_(nullptr)
 #endif
             , MSAASampleCount_(1) {}
-    ~WindowX11() override { this->closeWindow(); }
 
-    bool initWindow(PlatformDisplay* display);
+    ~WindowX11() override {
+        if(this == mainWindow_)
+            mainWindow_ = nullptr;
+        this->closeWindow();
+    }
 
+    bool initWindow(PlatformDisplay* display,SkSize dimension,WindowType winType);
+    void closeWindow() override;
     uint64_t nativeWindowHandle() override {return (uint64_t) window_; }
+    SkSize getWindowSize() override {
+        XWindowAttributes winAttr = {0,};
+        XGetWindowAttributes(display_, window_, &winAttr);
+        return {winAttr.width, winAttr.height};
+    }
 
     bool handleEvent(const XEvent& event);
     void setTitle(const char*) override;
@@ -58,7 +71,9 @@ public:
     void setRequestedDisplayParams(const DisplayParams&, bool allowReattach) override;
 
 private:
-    void closeWindow();
+    void onKey(rnsKey eventKeyType, rnsKeyAction eventKeyAction);
+    void onExpose();
+    rnsKey  keyIdentifierForX11KeyCode(KeySym keycode);
 
     Display*     display_;
     XWindow      window_;
@@ -68,7 +83,6 @@ private:
 #endif
     int          MSAASampleCount_;
     Atom         wmDeleteMessage_;
-
     typedef Window INHERITED;
 };
 

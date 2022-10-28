@@ -5,12 +5,17 @@
 #include "react/renderer/core/LayoutConstraints.h"
 #include "react/renderer/core/ReactPrimitives.h"
 
+#include "ReactSkia/core_modules/RSkSpatialNavigator.h"
 #include "rns_shell/compositor/Compositor.h"
+#include "ReactSkia/core_modules/RSkInputEventManager.h"
 
 #include <list>
 
 namespace facebook {
 namespace react {
+
+using namespace SpatialNavigator;
+using namespace RnsShell;
 
 class RSkComponent;
 
@@ -21,6 +26,8 @@ class RSkSurfaceWindow {
   RSkSurfaceWindow &operator=(RSkSurfaceWindow &&) = default;
 
   ~RSkSurfaceWindow();
+
+  RSkSpatialNavigator* navigator() { return navigator_; }
 
   void setSize(SkSize size);
 
@@ -42,6 +49,8 @@ class RSkSurfaceWindow {
   void RecreateWindowBackend();
 
  private:
+  RSkSpatialNavigator* navigator_;
+  RSkInputEventManager* inputEventManager_;
 };
 
 } // namespace react

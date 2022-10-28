@@ -25,8 +25,6 @@ public:
 
     SkPicture* picture() const { return picture_.get(); }
     virtual void paintSelf(PaintContext& context) override;
-    void prePaint(PaintContext& context, bool forceChildrenLayout = false) override;
-    void paint(PaintContext& context) override;
 
     void setPicture(sk_sp<SkPicture> picture) { picture_ = picture; }
 

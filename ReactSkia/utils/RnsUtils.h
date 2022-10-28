@@ -11,9 +11,11 @@
 
 #define PLATFORM(RNS_FEATURE) (defined RNS_PLATFORM_##RNS_FEATURE && RNS_PLATFORM_##RNS_FEATURE)
 #define USE(RNS_FEATURE) (defined USE_##RNS_FEATURE && USE_##RNS_FEATURE)
+#define ENABLE(RNS_FEATURE) (defined ENABLE_##RNS_FEATURE && ENABLE_##RNS_FEATURE)
 
 #define RNS_EXPORT __attribute__((visibility("default")))
 #define RNS_UNUSED(val) (void)val;
+#define RNS_USED __attribute__((used))
 #define RNS_MAKE_NONCOPYABLE(ClassName) \
     private: \
         ClassName(const ClassName&) = delete; \
@@ -49,9 +51,9 @@
             RNS_LOG_INFO(msg << " Average(" <<  ( total / localCount) << ") ms"); \
         }
     #define RNS_PROFILE_START(marker) \
-            double marker= SkTime::GetMSecs();
+            double rnsProfileVar_##marker= SkTime::GetMSecs();
     #define RNS_PROFILE_END(msg, marker) \
-            RNS_LOG_INFO(msg << #marker << " took " <<  (SkTime::GetMSecs() - marker) << " ms");
+            RNS_LOG_INFO(msg << #marker << " took " <<  (SkTime::GetMSecs() - rnsProfileVar_##marker) << " ms");
 #else
     #define RNS_PROFILE_API_ON(msg, instruction) instruction
     #define RNS_PROFILE_API_AVG_ON(msg, instruction) instruction

@@ -5,10 +5,14 @@
 #include "react/renderer/components/text/ParagraphShadowNode.h"
 #include "react/renderer/components/text/RawTextShadowNode.h"
 #include "react/renderer/components/text/TextShadowNode.h"
+#include "ReactSkia/views/common/RSkDrawUtils.h"
+#include "ReactSkia/views/common/RSkTextUtils.h"
 
-#include <glog/logging.h>
+#include "ReactSkia/utils/RnsLog.h"
 
 using namespace skia::textlayout;
+using namespace facebook::react::RSkDrawUtils;
+using namespace facebook::react::RSkTextUtils;
 
 namespace facebook {
 namespace react {
@@ -27,7 +31,6 @@ void RSkComponentRawText::OnPaint(SkCanvas *canvas) {}
 
 RSkComponentParagraph::RSkComponentParagraph(const ShadowView &shadowView)
     : RSkComponent(shadowView)
-    , paraBuilder(nullptr)
     , expectedAttachmentCount(0)
     , currentAttachmentCount(0){}
 
@@ -39,54 +42,115 @@ RnsShell::LayerInvalidateMask RSkComponentParagraph::updateComponentProps(const 
 }
 
 void RSkComponentParagraph::OnPaint(SkCanvas *canvas) {
-  auto component = getComponentData();
-  auto state =
-      std::static_pointer_cast<ParagraphShadowNode::ConcreteStateT const>(
-          component.state);
-  auto const &props =
-      *std::static_pointer_cast<ParagraphProps const>(component.props);
-  auto data = state->getData();
+    SkAutoCanvasRestore(canvas, true);
+    auto component = getComponentData();
+    auto state = std::static_pointer_cast<ParagraphShadowNode::ConcreteStateT const>(component.state);
+    auto const &props = *std::static_pointer_cast<ParagraphProps const>(component.props);
+    auto data = state->getData();
+    auto borderMetrics = props.resolveBorderMetrics(component.layoutMetrics);
+    Rect borderFrame = component.layoutMetrics.frame;
+    bool isParent = false;
 
-  /* Check if this component has parent Paragraph component */
-  RSkComponentParagraph * parent = getParentParagraph();
+    /* TODO : Need to cleanup the following code under macro, once it is not required anymore.*/
+    /* Reason : After this commit (Id: fe718401e53a044f384747d3641e946250033353 ), react native framework */
+    /*          considering all type of nested texts as fragments, so no more parent-child mechanism hereafter. */
+    /*          Commented the below code under a macro to avoid child text components handling. */
+#ifdef NESTED_TEXT_PARENT_CHILD_DIFFERENTIATION_SUPPORT
+    /* Check if this component has parent Paragraph component */
+    RSkComponentParagraph* parent = getParentParagraph();
+    /* If parent, this text component is part of nested text(aka fragment attachment)*/
+    /*    - use parent paragraph builder to add text & push style */
+    /*    - draw the paragraph, when we reach the last fragment attachment*/
 
-  /* If parent, this text component is part of nested text(aka fragment attachment)*/
-  /*    - use parent paragraph builder to add text & push style */
-  /*    - draw the paragraph, when we reach the last fragment attachment*/
-  if(parent) {
-      parent->expectedAttachmentCount += data.layoutManager->buildParagraph(data.attributedString,
-                                                          props.paragraphAttributes,
-                                                          true,
-                                                          parent->paraBuilder);
-      auto paragraph = parent->paraBuilder->Build();
-      parent->currentAttachmentCount++;
-      if(!parent->expectedAttachmentCount || (parent->expectedAttachmentCount == parent->currentAttachmentCount)) {
-            auto frame = parent->getComponentData().layoutMetrics.frame;
-            paragraph->layout(frame.size.width);
-            paragraph->paint(canvas, frame.origin.x, frame.origin.y);
-      }
-   } else {
-      /* If previously created builder is available,using it will append the text in builder*/
-      /* If it reaches here,means there is an update in text.So create new paragraph builder*/
-      if(nullptr != paraBuilder) {
-          paraBuilder.reset();
-      }
+    if(parent) {
 
-      ParagraphStyle paraStyle;
-      paraBuilder = std::static_pointer_cast<ParagraphBuilder>(std::make_shared<ParagraphBuilderImpl>(paraStyle,data.layoutManager->collection_));
+        auto parentComponent = parent->getComponentData();
+        auto const &parentProps = *std::static_pointer_cast<ParagraphProps const>(parentComponent.props);
+        auto parentBorderMetrics = parentProps.resolveBorderMetrics(parentComponent.layoutMetrics);
+        
+        if (parent->textLayout.builder) {
+            isParent = true;
+            textLayout.builder = parent->textLayout.builder;
+            parent->expectedAttachmentCount += data.layoutManager->buildParagraph(textLayout,
+                                                                                    props.backgroundColor,
+                                                                                    data.attributedString,
+                                                                                    paragraphAttributes_,
+                                                                                    true);
+            textLayout.paragraph = parent->textLayout.builder->Build();
+            parent->currentAttachmentCount++;
+            borderFrame = parentComponent.layoutMetrics.frame;
+            borderFrame.origin.x=0;
+            borderFrame.origin.y=0;
 
-      expectedAttachmentCount = data.layoutManager->buildParagraph(data.attributedString, props.paragraphAttributes, true, paraBuilder);
-      currentAttachmentCount = 0;
-      auto paragraph = paraBuilder->Build();
+            if(!parent->expectedAttachmentCount || (parent->expectedAttachmentCount == parent->currentAttachmentCount)) {
+                setTextLines(textLayout,
+                            parentComponent.layoutMetrics,
+                            paragraphAttributes_);
 
-      /* If the count is 0,means we have no fragment attachments.So paint right away*/
-      if(!expectedAttachmentCount) {
-          auto frame = component.layoutMetrics.frame;
-          paragraph->layout(frame.size.width);
-          paragraph->paint(canvas, frame.origin.x, frame.origin.y);
-      }
-   }
+                drawText(textLayout.paragraph,
+                            canvas,
+                            data.attributedString,
+                            parentComponent.layoutMetrics,
+                            parentProps,
+                            isParent);
+
+                drawBorder(canvas,
+                            borderFrame,
+                            parentBorderMetrics,
+                            parentProps.backgroundColor);
+            }
+        }
+    }
+    else
+#endif 
+    {
+        /* If previously created builder is available,using it will append the text in builder*/
+        /* If it reaches here,means there is an update in text.So create new paragraph builder*/
+        if(nullptr != textLayout.builder) {
+            textLayout.builder.reset();
+        }
+        textLayout.builder = std::static_pointer_cast<ParagraphBuilder>(std::make_shared<ParagraphBuilderImpl>(textLayout.paraStyle,data.layoutManager->collection_));
+        if(layer()->shadowOpacity && layer()->shadowFilter) {
+            textLayout.shadow={layer()->shadowColor,SkPoint::Make(layer()->shadowOffset.width(),layer()->shadowOffset.height()),layer()->shadowRadius};
+        }
+
+        expectedAttachmentCount = data.layoutManager->buildParagraph(textLayout,
+                                                                        props.backgroundColor,
+                                                                        data.attributedString,
+                                                                        paragraphAttributes_,
+                                                                        true);
+        currentAttachmentCount = 0;
+        textLayout.paragraph = textLayout.builder->Build();
+
+        /* If the count is 0,means we have no fragment attachments.So paint right away*/
+        if(!expectedAttachmentCount) {
+
+            if(layer()->shadowOpacity && layer()->shadowFilter) {
+                drawShadow(canvas,
+                          borderFrame,
+                          borderMetrics,
+                          props.backgroundColor,
+                          layer()->shadowOpacity,
+                          layer()->shadowFilter);
+            }
+
+            setTextLines(textLayout,
+                        component.layoutMetrics,
+                        paragraphAttributes_);
+
+            drawText(textLayout.paragraph,
+                        canvas,
+                        data.attributedString,
+                        component.layoutMetrics,
+                        props,
+                        isParent);
+
+            drawBorder(canvas,
+                        borderFrame,
+                        borderMetrics,
+                        props.backgroundColor);
+        }
+    }
 }
-
 } // namespace react
 } // namespace facebook

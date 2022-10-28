@@ -21,7 +21,7 @@
 #endif // USE(OPENGL_ES)
 
 #if USE(EGL)
-#define EGL_GLEXT_PROTOTYPES 1
+#define EGL_EGLEXT_PROTOTYPES 1
 #include <EGL/egl.h>
 #include <EGL/eglext.h>
 #include <EGL/eglplatform.h>
@@ -37,12 +37,6 @@
 #include "PlatformDisplay.h"
 #include "WindowContext.h"
 
-#if USE(EGL)
-typedef EGLNativeWindowType GLNativeWindowType;
-#else
-typedef uint64_t GLNativeWindowType;
-#endif
-
 namespace RnsShell {
 
 class GLWindowContext : public WindowContext {
@@ -55,6 +49,7 @@ public:
 #if USE(RNS_SHELL_PARTIAL_UPDATES)
     bool hasSwapBuffersWithDamage() override;
     bool hasBufferCopy() override;
+    int32_t bufferAge() override;
 #endif
 
     void setDisplayParams(const DisplayParams& params) override;
@@ -76,6 +71,7 @@ protected:
 #if USE(RNS_SHELL_PARTIAL_UPDATES)
     virtual bool onHasSwapBuffersWithDamage() = 0;
     virtual bool onHasBufferCopy() = 0;
+    virtual int32_t getBufferAge() = 0;
 #endif
     sk_sp<const GrGLInterface> backendContext_;
     sk_sp<SkSurface>           surface_;

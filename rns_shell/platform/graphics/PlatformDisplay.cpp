@@ -160,4 +160,12 @@ bool PlatformDisplay::initialize() {
 #endif
 }
 
+SkSize PlatformDisplay::getCurrentScreenSize() {
+    return currentScreenSize_;
+}
+
+void PlatformDisplay::setCurrentScreenSize(int width,int height) {
+    currentScreenSize_.set(width,height);
+}
+
 } // namespace RnsShell

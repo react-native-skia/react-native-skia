@@ -23,7 +23,7 @@ public:
     void scheduleRenderingUpdate();
     void beginRenderingUpdate();
     void setRootLayer(SharedLayer rootLayer);
-    void commit();
+    void commit(bool immediate);
     void begin();
 
     // Layer Client Implementation

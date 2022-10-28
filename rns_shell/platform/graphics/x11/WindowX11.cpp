@@ -25,20 +25,28 @@
 namespace RnsShell {
 
 SkTDynamicHash<WindowX11, XWindow> WindowX11::gWindowMap;
+Window* Window::mainWindow_;
+
 const long kEventMask = ExposureMask | StructureNotifyMask |
                         KeyPressMask | KeyReleaseMask |
                         PointerMotionMask | ButtonPressMask | ButtonReleaseMask;
 
-Window* Window::createNativeWindow(void* platformData) {
+Window* Window::createNativeWindow(void* platformData,SkSize dimension,WindowType type) {
     PlatformDisplay *pDisplay = (PlatformDisplay*) platformData;
 
     RNS_LOG_ASSERT(pDisplay, "Invalid Platform Display");
 
     WindowX11* window = new WindowX11();
-    if (!window->initWindow(pDisplay)) {
+    if (!window->initWindow(pDisplay,dimension,type)) {
         delete window;
         return nullptr;
     }
+    if(!mainWindow_) {
+        Display* display = dynamic_cast<PlatformDisplayX11*>(pDisplay)->native();
+        XSelectInput (display, DefaultRootWindow(display), ExposureMask | StructureNotifyMask); // Root window is used to monitor screen resolution change in X11
+        mainWindow_ = window;
+    }
+    window->winType=type;
     return window;
 }
 
@@ -49,24 +57,54 @@ void Window::createEventLoop(Application* app) {
     const int x11_fd = ConnectionNumber(display);
 
     bool done = false;
+
     while (!done) {
         if (int count = XPending(display)) {
             while (count-- && !done) {
                 XEvent event;
                 XNextEvent(display, &event);
-
                 switch (event.type) {
-                    case ConfigureNotify:
-                        RNS_LOG_INFO("Resize Request with (Width x Height) : (" << event.xconfigurerequest.width <<
+                    case ConfigureNotify:{
+
+                        if(event.xconfigurerequest.window == DefaultRootWindow(display)) {
+                            RNS_LOG_INFO(" ROOT Window(Screen) Size :" << event.xconfigurerequest.width << "x" << event.xconfigurerequest.height);
+                            auto screenSize = pDisplay.getCurrentScreenSize();
+
+                            if(((screenSize.width()!=event.xconfigurerequest.width) ||
+                                (screenSize.height()!=event.xconfigurerequest.height))) {
+
+                                pDisplay.setCurrentScreenSize(event.xconfigurerequest.width,event.xconfigurerequest.height);
+                                NotificationCenter::defaultCenter().emit("dimensionEventNotification");
+
+                            }
+
+                        } else {
+                                RNS_LOG_INFO("Resize Request with (Width x Height) : (" << event.xconfigurerequest.width <<
                                     " x " << event.xconfigurerequest.height << ")");
-                        app->sizeChanged(event.xconfigurerequest.width, event.xconfigurerequest.height);
-                        break;
-                    default:
-                        WindowX11* win = WindowX11::gWindowMap.find(event.xany.window);
-                        if (win->handleEvent(event)) {
-                            done = true;
+                                WindowX11* win = WindowX11::gWindowMap.find(event.xconfigurerequest.window);
+                                if(win && (win->winType == MainWindow )) { // Only for main window
+                                    auto windowDimension = win->getWindowDimension();
+
+                                    if((windowDimension.width()!=event.xconfigurerequest.width) ||
+                                    (windowDimension.height()!=event.xconfigurerequest.height)) {
+
+                                        win->setWindowDimension(event.xconfigurerequest.width,event.xconfigurerequest.height);
+                                        app->sizeChanged(event.xconfigurerequest.width, event.xconfigurerequest.height);
+                                        NotificationCenter::defaultCenter().emit("dimensionEventNotification");
+                                    }
+                                }
                         }
                         break;
+                    }
+                    case UnmapNotify:
+                        RNS_LOG_DEBUG("Nothing to be done for UnmapNotify: Happens on window closure");
+                    break;
+                    default:
+                        WindowX11* win = WindowX11::gWindowMap.find(event.xany.window);
+                        if (win && (win->handleEvent(event))) {
+                            done = true;
+                        }
+                    break;
                 } // switch
             }// while
         }// if(XPending)
@@ -76,7 +114,7 @@ void Window::createEventLoop(Application* app) {
     TaskLoop::main().stop();
 }
 
-bool WindowX11::initWindow(PlatformDisplay *platformDisplay) {
+bool WindowX11::initWindow(PlatformDisplay *platformDisplay,SkSize dimension,WindowType type) {
 
     Display* display = (dynamic_cast<PlatformDisplayX11*>(platformDisplay))->native();
 
@@ -95,7 +133,10 @@ bool WindowX11::initWindow(PlatformDisplay *platformDisplay) {
     Screen *screen = nullptr;
 
     /* Read first screens display resolution*/
-    if(ScreenCount(display) > 0 && (screen = ScreenOfDisplay(display, 0))) {
+    if(!dimension.isEmpty()) {
+       initialWidth =  dimension.width();
+       initialHeight = dimension.height();
+    } else if(ScreenCount(display) > 0 && (screen = ScreenOfDisplay(display, 0))) {
         initialWidth = screen->width;
         initialHeight = screen->height;
     }
@@ -231,6 +272,30 @@ void WindowX11::closeWindow() {
 }
 
 bool WindowX11::handleEvent(const XEvent& event) {
+    int shiftLevel= (event.xkey.state & ShiftMask) ? 1 : 0;
+    int capsLock = (event.xkey.state & LockMask) ? 1 : 0;
+    /* Shift & CapsLock Combination Logic
+     * There two possibilties
+     * 1. CapsLock ON
+     *    a. shift ON  --> LowerCase
+     *    b. shift OFF --> UpperCase
+     *
+     * 2. CapsLock OFF 
+     *    a. shift ON  --> UpperCase
+     *    b. shift OFF --> LowerCase
+     */
+    if (event.type == KeyRelease && XEventsQueued(display_, QueuedAfterReading)) {
+        XEvent nev;
+        XPeekEvent(display_, &nev);
+        if (nev.type == KeyPress && nev.xkey.time == event.xkey.time &&
+            nev.xkey.keycode == event.xkey.keycode){
+            //Unlike wpe backend, X11 sends both key press and release when key-repeat is on. 
+            //this code is for ignoring key release when keyrepeat is on
+            RNS_LOG_DEBUG("[handleEvent] KeyRelease is ignored in Key Repeate mode");
+            return false;
+        }
+    }
+    KeySym keysym = XkbKeycodeToKeysym(display_, event.xkey.keycode,0,(shiftLevel^capsLock));
     switch (event.type) {
         case MapNotify:
             break;
@@ -242,10 +307,17 @@ bool WindowX11::handleEvent(const XEvent& event) {
             }
             break;
 
+        case KeyRelease:
+            RNS_LOG_DEBUG("[handleEvent] Actual KeyRelease");
+        case KeyPress:
+            onKey( keyIdentifierForX11KeyCode(keysym), (event.type == KeyRelease ) ? RNS_KEY_Release : RNS_KEY_Press);
+            break; 
         case ButtonPress:
             RNS_LOG_NOT_IMPL;
             break;
-
+        case Expose:
+            onExpose();
+        break;
         default:
             // these events should be handled in the main event loop
             RNS_LOG_ASSERT(event.type != ConfigureNotify, "Should handle this is main loop ??");
@@ -267,6 +339,20 @@ void WindowX11::show() {
 void WindowX11::setRequestedDisplayParams(const DisplayParams& params, bool allowReattach) {
     RNS_LOG_NOT_IMPL;
     //INHERITED::setRequestedDisplayParams(params, allowReattach);
+}
+
+void WindowX11::onExpose() {
+    NotificationCenter::defaultCenter().emit("windowExposed",(Window*)this);
+}
+
+void WindowX11::onKey(rnsKey eventKeyType, rnsKeyAction eventKeyAction){
+#if ENABLE(FEATURE_ONSCREEN_KEYBOARD)
+    if(winType == SubWindow)
+        NotificationCenter::subWindowCenter().emit("onHWKeyEvent", eventKeyType, eventKeyAction);
+    else
+#endif/*FEATURE_ONSCREEN_KEYBOARD*/
+        NotificationCenter::defaultCenter().emit("onHWKeyEvent", eventKeyType, eventKeyAction);
+    return;
 }
 
 }   // namespace RnsShell

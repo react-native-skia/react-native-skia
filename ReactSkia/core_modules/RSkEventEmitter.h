@@ -12,6 +12,9 @@
 
 namespace facebook {
 namespace react {
+
+using EmitterCompleteVoidCallback = std::function<void()>;
+
 class RSkEventEmitter: public TurboModule {
     public:
       RSkEventEmitter(
@@ -24,7 +27,7 @@ class RSkEventEmitter: public TurboModule {
         return {};
       }
 
-      void sendEventWithName(std::string eventName, folly::dynamic &&params);
+      void sendEventWithName(std::string eventName, folly::dynamic &&params, EmitterCompleteVoidCallback completeCallback=nullptr);
 
       virtual void startObserving() = 0;
 

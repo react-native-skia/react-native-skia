@@ -1,6 +1,6 @@
 /*
 * Copyright 2016 Google Inc.
-* Copyright (C) 1994-2021 OpenTV, Inc. and Nagravision S.A.
+* Copyright (C) 1994-2022 OpenTV, Inc. and Nagravision S.A.
 *
 * Use of this source code is governed by a BSD-style license that can be
 * found in the LICENSE file.
@@ -9,6 +9,7 @@
 #include "include/core/SkPaint.h"
 #include "include/core/SkSurface.h"
 #include "include/core/SkCanvas.h"
+#include "include/core/SkRegion.h"
 
 #include "ReactSkia/utils/RnsLog.h"
 
@@ -65,8 +66,7 @@ Compositor::~Compositor() {
 
 void Compositor::createWindowContext() {
     RNS_LOG_ASSERT((nativeWindowHandle_), "Invalid Native Window Handle");
-    windowContext_ = WCF::createContextForWindow(reinterpret_cast<GLNativeWindowType>(nativeWindowHandle_),
-                        &PlatformDisplay::sharedDisplayForCompositing(), DisplayParams());
+    windowContext_ = WCF::createContextForWindow(nativeWindowHandle_, &PlatformDisplay::sharedDisplayForCompositing(), DisplayParams());
 
     if (!windowContext_ || !windowContext_->makeContextCurrent())
         return;
@@ -79,22 +79,38 @@ void Compositor::invalidate() {
     backBuffer_ = nullptr;
 }
 
-SkRect Compositor::beginClip(SkCanvas *canvas) {
+SkRect Compositor::beginClip(PaintContext& context, bool useClipRegion) {
     SkRect clipBound = SkRect::MakeEmpty();
-    if(surfaceDamage_.size() == 0)
+    if(context.damageRect.size() == 0)
         return clipBound;
 
-    SkPath clipPath = SkPath();
-    for (auto& rect : surfaceDamage_) {
-        RNS_LOG_DEBUG("Add Damage " << rect.x() << " " << rect.y() << " " << rect.width() << " " << rect.height());
-        clipPath.addRect(rect.left(), rect.top(), rect.right(), rect.bottom());
+    // Use clipRegion for clipping
+    if(useClipRegion) {
+        SkRegion clipRgn(SkIRect::MakeEmpty());
+        clipRgn.setRects(context.damageRect.data(),context.damageRect.size());
+
+        if(clipRgn.getBounds().isEmpty()) {
+            return clipBound;
+        }
+
+        context.canvas->clipRegion(clipRgn);
+        clipBound = SkRect::Make(clipRgn.getBounds());
+
+    } else {
+        // Use clipPath for clipping
+        SkPath clipPath = SkPath();
+        for (auto& rect : context.damageRect) {
+            RNS_LOG_DEBUG("Add Damage " << rect.x() << " " << rect.y() << " " << rect.width() << " " << rect.height());
+            clipPath.addRect(rect.left(), rect.top(), rect.right(), rect.bottom());
+        }
+
+        if(clipPath.getBounds().isEmpty()) {
+            return clipBound;
+        }
+
+        context.canvas->clipPath(clipPath);
+        clipBound = clipPath.getBounds();
     }
-
-    if(clipPath.getBounds().isEmpty())
-        return clipBound;
-
-    canvas->clipPath(clipPath);
-    clipBound = clipPath.getBounds();
 
     return clipBound;
 }
@@ -141,11 +157,20 @@ void Compositor::renderLayerTree() {
 #endif
             clipBound, // After prePaint we need to update this with beginClip
             nullptr, // GrDirectContext
+            {0,0} //scrollOffset is zero for rootLayer
         };
         RNS_PROFILE_API_OFF("Render Tree Pre-Paint", rootLayer_.get()->prePaint(paintContext));
-        clipBound = beginClip(canvas);
+        clipBound = beginClip(paintContext);
+        /* Check if paint required*/
+        if(!rootLayer_.get()->needsPainting(paintContext)) return;
+#ifdef RNS_SHELL_HAS_GPU_SUPPORT
+        WindowContext::grTransactionBegin();
+#endif
         RNS_PROFILE_API_OFF("Render Tree Paint", rootLayer_.get()->paint(paintContext));
         RNS_PROFILE_API_OFF("SkSurface Flush & Submit", backBuffer_->flushAndSubmit());
+#ifdef RNS_SHELL_HAS_GPU_SUPPORT
+        WindowContext::grTransactionEnd();
+#endif
 #ifdef RNS_ENABLE_FRAME_RATE_CONTROL
         {
             static double prevSwapTimestamp = SkTime::GetNSecs() * 1e-3;
@@ -165,20 +190,29 @@ void Compositor::renderLayerTree() {
 }
 
 void Compositor::begin() {
-    // Locke until render tree has rendered current tree and only then modify the render tree
+    // Lock until render tree has rendered current tree
     isMutating.lock();
     surfaceDamage_.clear(); // Clear the previous damage rects.
 }
 
-void Compositor::commit() {
-
-    isMutating.unlock(); // Now we can unlock the render tree for commit.
-    if(!windowContext_)
+void Compositor::commit(bool immediate=false) {
+    if(!windowContext_) {
+        isMutating.unlock();
         return;
+    }
 
+    if(immediate) {
+       RNS_PROFILE_API_OFF("RenderTree Immediate:", renderLayerTree());
+       // Unlock here, after rendering of tree is done for immediate rendering
+       isMutating.unlock();
+       return;
+    }
+
+    // Unlock here, to ensure updates and rendering of tree is synchronous
+    isMutating.unlock();
     TaskLoop::main().dispatch([&]() {
         std::scoped_lock lock(isMutating); // Lock to make sure render tree is not mutated during the rendering
-        RNS_PROFILE_API_OFF("RenderTree :", renderLayerTree());
+        RNS_PROFILE_API_OFF("RenderTree Scheduled:", renderLayerTree());
     });
 }
 

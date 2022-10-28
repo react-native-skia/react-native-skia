@@ -1,13 +1,18 @@
-#include "ReactSkia/components/RSkComponentView.h"
-#include "include/core/SkPaint.h"
-#include "react/renderer/components/view/ViewShadowNode.h"
-#include "ReactSkia/views/common/RSkDrawUtils.h"
 #include <glog/logging.h>
+
+#include "include/core/SkPaint.h"
+
+#include "react/renderer/components/view/ViewShadowNode.h"
+
+#include "ReactSkia/views/common/RSkDrawUtils.h"
+#include "ReactSkia/components/RSkComponentImage.h"
+#include "ReactSkia/components/RSkComponentView.h"
 
 namespace facebook {
 namespace react {
 
 using namespace RSkDrawUtils;
+
 RSkComponentView::RSkComponentView(const ShadowView &shadowView)
     : RSkComponent(shadowView) {}
 RnsShell::LayerInvalidateMask  RSkComponentView::updateComponentProps(const ShadowView &newShadowView,bool forceUpdate) {return RnsShell::LayerInvalidateNone;}
@@ -17,17 +22,13 @@ void RSkComponentView::OnPaint(SkCanvas *canvas) {
   /* apply view style props */
   auto borderMetrics=viewProps.resolveBorderMetrics(component.layoutMetrics);
   Rect frame = component.layoutMetrics.frame;
-  /*Retrieve Shadow Props*/
-  ShadowMetrics shadowMetrics{};
-  shadowMetrics.shadowColor=viewProps.shadowColor;
-  shadowMetrics.shadowOffset=viewProps.shadowOffset;
-  shadowMetrics.shadowOpacity=viewProps.shadowOpacity;
-  shadowMetrics.shadowRadius=viewProps.shadowRadius;
 
 /*Draw Order : 1. Shadow 2. BackGround 3 Border*/
-  drawShadow(canvas,frame,borderMetrics,shadowMetrics);
-  drawBackground(canvas,frame,borderMetrics,viewProps.backgroundColor,viewProps.opacity);
-  drawBorder(canvas,frame,borderMetrics,viewProps.backgroundColor,viewProps.opacity);
+    if(layer()->shadowOpacity && layer()->shadowFilter){
+        drawShadow(canvas,frame,borderMetrics,viewProps.backgroundColor,layer()->shadowOpacity,layer()->shadowFilter);
+  }
+    drawBackground(canvas,frame,borderMetrics,viewProps.backgroundColor);
+    drawBorder(canvas,frame,borderMetrics,viewProps.backgroundColor);
 }
 
 } // namespace react

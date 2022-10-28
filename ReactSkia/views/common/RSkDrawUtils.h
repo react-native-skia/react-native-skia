@@ -17,27 +17,22 @@ namespace react {
 
 namespace RSkDrawUtils{
 
-struct ShadowMetrics{
-    SharedColor shadowColor{};
-    Size shadowOffset{0, 0};
-    Float shadowOpacity{0};
-    Float shadowRadius{0};
-};
 /*Function: Draw Background & Border */
   void drawBackground(SkCanvas *canvas,
                                Rect frame,
                                BorderMetrics borderMetrics,
-                               SharedColor bgColor,
-                               Float opacity);
+                               SharedColor bgColor);
   void drawBorder(SkCanvas *canvas,
                                Rect frame,
                                BorderMetrics borderMetrics,
-                               SharedColor bgColor,
-                               Float opacity);
-  void drawShadow(SkCanvas *canvas,
+                               SharedColor bgColor);
+  bool drawShadow(SkCanvas *canvas,
                                Rect frame,
                                BorderMetrics borderMetrics,
-                               ShadowMetrics shadowMetrics);
+                               SharedColor bgColor,
+                               Float shadowOpacity,
+                               sk_sp<SkImageFilter> shadowFilter);
+  void drawUnderline(SkCanvas *canvas,Rect frame,SharedColor underlineColor);
 
 }//namespace RSkDrawUtils
 } // namespace react

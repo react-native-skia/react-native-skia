@@ -1,0 +1,290 @@
+  [{
+     "imageFile" : "1.jpg",
+     "title" : "Frozen II",
+     "genre" : "Musical,Comedy",
+     "duration" : "1h 43m",
+     "year" : "2019",
+     "description" : 
+  "Elsa the Snow Queen has an extraordinary gift -- the power to create ice and snow. But no matter how happy she is to be surrounded by the people of Arendelle, Elsa finds herself strangely unsettled."
+  },
+  {
+     "imageFile" : "2.jpg",
+     "title" : "Bodied",
+     "genre" : "Comedy",
+     "duration" : "2h 01m",
+     "year" : "2017",
+     "description" : 
+   "A progressive graduate student finds success and sparks outrage when his interest in battle rap as a thesis subject turns into a competitive obsession."
+  },
+  {
+     "imageFile" : "3.jpg",
+     "title" : "Black Panther",
+     "genre" : "Action",
+     "duration" : "2h 02m",
+     "year" : "2018",
+     "description" : 
+   "After the death of his father, T'Challa returns home to the African nation of Wakanda to take his rightful place as king. When a powerful enemy suddenly reappears...."
+  },
+  {
+     "imageFile" : "4.jpg",
+     "title" : "The Lion King",
+     "genre" : "Adventure",
+     "duration" : "1h 58m",
+     "year" : "2019",
+     "description" : 
+   "Betrayed and exiled from his kingdom, lion cub Simba must figure out how to grow up and take back his royal destiny on the plains of the African savanna."
+  },
+  {
+     "imageFile" : "5.jpg",
+     "title" : "Joker",
+     "genre" : "Crime,Drama",
+     "duration" : "2h 02m",
+     "year" : "2019",
+     "description" : 
+   "Isolated, bullied and disregarded by society, failed comedian Arthur Fleck begins a slow descent into madness as he transforms into the criminal mastermind known as the Joker."
+  },
+  {
+     "imageFile" : "6.jpg",
+     "title" : "The Adams Family",
+     "genre" : "Comedy",
+     "duration" : "1h 27m",
+     "year" : "2019",
+     "description" : 
+   "Members of the mysterious and spooky Addams family -- Gomez, Morticia, Pugsley, Wednesday, Uncle Fester and Grandma -- encounter a shady TV personality who despises their eerie hilltop mansion."
+  },
+  {
+     "imageFile" : "7.jpg",
+     "title" : "Acceleration",
+     "genre" : "Action",
+     "duration" : "1h 25m",
+     "year" : "2019",
+     "description" : 
+   "When an evil crime lord is double-crossed by his most trusted operative, he kidnaps her young son."
+  },
+  {
+     "imageFile" : "8.jpg",
+     "title" : "Rambo : Last Blood",
+     "genre" : "Action",
+     "duration" : "1h 29m",
+     "year" : "2019",
+     "description" : 
+   "Vietnam War veteran John Rambo tries to find some semblance of peace by raising horses on a ranch in Arizona. He's also developed a special familial bond with a woman named Maria and her teenage   granddaughter Gabriela."
+  },
+  {
+     "imageFile" : "12.jpg",
+     "title" : "Dr. Seuss' How the Grinch Stole Christmas",
+     "genre" : "Comedy",
+     "duration" : "1h 44m",
+     "year" : "2000",
+     "description" : 
+   "Luego de su experiencia con los Vengadores, Peter Parker regresa a casa, donde vive con su tía May bajo la atenta mirada de su mentor Tony Stark."
+  },
+  {
+     "imageFile" : "11.jpg",
+     "title" : "Cloudy With a Chance of Meatballs",
+     "genre" : "Comedy",
+     "duration" : "1h 29m",
+     "year" : "2009",
+     "description" : 
+   "En la tercera entrega de la película, Po debe hacer frente a dos desafíos épicos: uno, de origen sobrenatural; el otro, muy cerca de su hogar, con la aparición del que dice ser su padre biológico."
+  },
+  {
+     "imageFile" : "16.jpg",
+     "title" : "Ted",
+     "genre" : "Comedy",
+     "duration" : "1h 45m",
+     "year" : "2012",
+     "description" : 
+   "El Grinch era en su niñez un habitante más del pueblo de Villaquién, pero no era bien recibido. Hoy, vive apartado en la cima de una montaña."
+  },
+  {
+     "imageFile" : "21.jpg",
+     "title" : "Four Christmases",
+     "genre" : "Comedy,Romance,Drama",
+     "duration" : "1h 28m",
+     "year" : "2008",
+     "description" : 
+   "Joan y Tom han estado casados durante muchos años. Hay una facilidad en su relación que proviene de pasar toda la vida juntos, una profundidad de amor que se expresa a través de la ternura y el humor."
+  },
+  {
+     "imageFile" : "10.jpg",
+     "title" : "Closer",
+     "genre" : "Romance,Drama",
+     "duration" : "1h 43m",
+     "year" : "2004",
+     "description" : 
+   "Un joven científico sueña con inventar una máquina que mejore la vida de sus vecinos."
+  },
+  {
+     "imageFile" : "9.jpg",
+     "title" : "Annie: A Royal Adventure",
+     "genre" : "Musical",
+     "duration" : "1h 32m",
+     "year" : "1995",
+     "description" : 
+      "Un viaje a Londres abre las puertas de una nueva aventura compartida entre Annie, su padre, sus amigos y el profesor Eli, que descubre un nuevo combustible."
+  },
+  {
+     "imageFile" : "19.jpg",
+     "title" : "Happy Family",
+     "genre" : "Animation",
+     "duration" : "1h 32m",
+     "year" : "2017",
+     "description" : 
+   "El afamado simbologista Robert Langdon (Tom Hanks) acude una noche al Museo del Louvre, luego del asesinato de un restaurador."
+  },
+  {
+     "imageFile" : "24.jpg",
+     "title" : "Big Trip",
+     "genre" : "Comedy,Adventure",
+     "duration" : "1h 23m",
+     "year" : "2019",
+     "description" : 
+   "Los Wünschmann no son exactamente una familia feliz, pero mamá Emma animará a todos a dejar sus diferencias de lado e ir juntos a un parque temático. Luego de una broma inocente, todos ellos son convertidos en monstruos."
+  },
+  {
+     "imageFile" : "13.jpg",
+     "title" : "Jumanji : Welcome To The Jungle",
+     "genre" : "Comedy,Adventure",
+     "duration" : "1h 59m",
+     "year" : "2017",
+     "description" : 
+   "Una torpe cigüeña entrega un panda bebé a la dirección incorrecta. Entonces, un oso y sus amigos se embarcan en una audaz aventura para ayudar al pequeño panda a conocer finalmente a su verdadera familia y devolverlo a su hogar."
+  },
+  {
+     "imageFile" : "15.jpg",
+     "title" : "Spider-Man : Homecoming",
+     "genre" : "Action,Thriller",
+     "duration" : "2h 13m",
+     "year" : "2017",
+     "description" : 
+   "Cuatro adolescentes en detención descubren una vieja consola de videojuegos. Cuando deciden jugar, son inmediatamente succionados hacia la jungla de Jumanji."
+  },
+  {
+     "imageFile" : "20.jpg",
+     "title" : "Islands Of Creation",
+     "genre" : "0h 48m",
+     "duration" : "2015",
+     "year" : "",
+     "description" : 
+   "Dear John, narra la historia de John Tyree (Channing Tatum), un joven soldado que está de visita en la casa de su padre y Savannah Curtis (Amanda Seyfried) la universitaria idealista que se enamora durante las vacaciones de Pascua."
+  },
+  {
+     "imageFile" : "23.jpg",
+     "title" : "Ordinary Love",
+     "genre" : "Romance,Drama",
+     "duration" : "1h 31m",
+     "year" : "2019",
+     "description" : 
+   "En las selvas de un remoto archipiélago del Pacífico Sur, un biólogo intenta lograr algo que Charles Darwin y Ernst Mayr nunca lograron: captar la evolución en el acto de crear nuevas especies."
+  },
+  {
+     "imageFile" : "14.jpg",
+     "title" : "Kung Fu Panda 3",
+     "genre" : "Action,Adventure",
+     "duration" : "1h 35m",
+     "year" : "2016",
+     "description" : 
+   "Cuando era niño, el mayor deseo de John se cumplió y su oso de peluche cobró vida. Pero 27 años después, el milagro dejó de ser simpático."
+  },
+  {
+     "imageFile" : "22.jpg",
+     "title" : "Dear John",
+     "genre" : "Romance,Drama",
+     "duration" : "1h 47m",
+     "year" : "2010",
+     "description" : 
+   "A new king rises in the north; a Khaleesi finds new hope in the season finale."
+  },
+  {
+     "imageFile" : "18.jpg",
+     "title" : "Underworld",
+     "genre" : "Action,Thriller",
+     "duration" : "2h 13m",
+     "year" : "2003",
+     "description" : 
+   "Brad y Kate suelen viajar cada Navidad para alejarse de sus familias, pero este año se ven obligados a cancelar sus planes y asistir a cuatro celebraciones familiares el mismo día."
+  },
+  {
+     "imageFile" : "17.jpg",
+     "title" : "Da Vinci Code",
+     "genre" : "Thriller,Drama",
+     "duration" : "2h 28m",
+     "year" : "2006",
+     "description" : 
+   "Durante siglos, dos razas han ido evolucionando en las profundidades de la Tierra: los vampiros y los hombres-lobo (Lycans)."
+  },
+  {
+     "imageFile" : "2.jpg",
+     "title" : "Bodied",
+     "genre" : "Comedy",
+     "duration" : "2h 01m",
+     "year" : "2017",
+     "description" : 
+   "A progressive graduate student finds success and sparks outrage when his interest in battle rap as a thesis subject turns into a competitive obsession."
+  },
+  {
+     "imageFile" : "5.jpg",
+     "title" : "Joker",
+     "genre" : "Crime,Drama",
+     "duration" : "2h 02m",
+     "year" : "2019",
+     "description" : 
+   "Isolated, bullied and disregarded by society, failed comedian Arthur Fleck begins a slow descent into madness as he transforms into the criminal mastermind known as the Joker."
+  },
+  {
+     "imageFile" : "8.jpg",
+     "title" : "Rambo : Last Blood",
+     "genre" : "Action",
+     "duration" : "1h 29m",
+     "year" : "2019",
+     "description" : 
+   "Vietnam War veteran John Rambo tries to find some semblance of peace by raising horses on a ranch in Arizona. He's also developed a special familial bond with a woman named Maria and her teenage   granddaughter Gabriela."
+  },
+  {
+     "imageFile" : "12.jpg",
+     "title" : "Dr. Seuss' How the Grinch Stole Christmas",
+     "genre" : "Comedy",
+     "duration" : "1h 44m",
+     "year" : "2000",
+     "description" : 
+   "Luego de su experiencia con los Vengadores, Peter Parker regresa a casa, donde vive con su tía May bajo la atenta mirada de su mentor Tony Stark."
+  },
+  {
+     "imageFile" : "21.jpg",
+     "title" : "Four Christmases",
+     "genre" : "Comedy,Romance,Drama",
+     "duration" : "1h 28m",
+     "year" : "2008",
+     "description" : 
+   "Joan y Tom han estado casados durante muchos años. Hay una facilidad en su relación que proviene de pasar toda la vida juntos, una profundidad de amor que se expresa a través de la ternura y el humor."
+  },
+  {
+     "imageFile" : "24.jpg",
+     "title" : "Big Trip",
+     "genre" : "Comedy,Adventure",
+     "duration" : "1h 23m",
+     "year" : "2019",
+     "description" : 
+   "Los Wünschmann no son exactamente una familia feliz, pero mamá Emma animará a todos a dejar sus diferencias de lado e ir juntos a un parque temático. Luego de una broma inocente, todos ellos son convertidos en monstruos."
+  },
+  {
+     "imageFile" : "14.jpg",
+     "title" : "Kung Fu Panda 3",
+     "genre" : "Action,Adventure",
+     "duration" : "1h 35m",
+     "year" : "2016",
+     "description" : 
+   "Cuando era niño, el mayor deseo de John se cumplió y su oso de peluche cobró vida. Pero 27 años después, el milagro dejó de ser simpático."
+  },
+  {
+     "imageFile" : "16.jpg",
+     "title" : "Ted",
+     "genre" : "Comedy",
+     "duration" : "1h 45m",
+     "year" : "2012",
+     "description" : 
+   "El Grinch era en su niñez un habitante más del pueblo de Villaquién, pero no era bien recibido. Hoy, vive apartado en la cima de una montaña."
+  }]
+
+

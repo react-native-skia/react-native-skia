@@ -44,6 +44,8 @@ const timer = setTimeout(()=>{
       <Image
         style={{width:width,height:height,resizeMode: resizemodes[UseCaseCount],borderColor:"green",borderWidth:0}}
         source={resizetest[toTest]}
+        onLoad={()=>console.log("Image Loaded Succesfully")}
+        onError={()=>console.log("Image Loading Failed")}
       />
       <Text style={{ color: 'red', fontSize: 36,
                      textAlign: 'center', marginTop: 32 }}>

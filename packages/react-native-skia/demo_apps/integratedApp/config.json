@@ -1,0 +1,118 @@
+{
+	"resolution1" : {
+		"appSize": {
+			"width": 1920,
+			"height": 1080
+		},
+		"maincontainer" : {
+			"width": 500,
+			"height": 300
+		},
+		"headerFont" : {
+			"fontSize": 25
+		},
+		"tilePosition": {
+			"x1": 10,
+			"x2": 550,
+			"x3": 1090,
+			"y1": 100,
+			"y2": 500,
+			"x4": 1620,
+			"w4":150,
+			"h4":700
+		},
+		"shadowProps" : {
+			"headerTextPosition" : {
+				"xAlign0" :-100,
+				"xAlign1": 65,
+				"yAlign1": 170,
+				"xAlign3": 30
+			}
+		},
+		"animation" : {
+			"anim1Yvalue": 540,
+			"anim2ZoomOutValue" : 120
+		},
+		"demotitle" : {
+			"titleXAlign" :570,
+			"titleYAlign": 50,
+			"titleViewWidth" :500,
+			"titleViewHeight" :50
+		}
+	},
+	"resolution" : {
+		"appSize": {
+			"width": 1280,
+			"height": 720
+		},
+		"maincontainer" : {
+			"width": 350,
+			"height": 228
+		},
+		"headerFont" : {
+			"fontSize": 19
+		},
+		"tilePosition": {
+			"x1": 10,
+			"x2": 400,
+			"x3": 800,
+			"y1": 100,
+			"y2": 368,
+			"x4": 1180,
+			"w4":80,
+			"h4":495
+		},
+		"shadowProps" : {
+			"headerTextPosition" : {
+				"xAlign0" :-80,
+				"xAlign1": 45,
+				"yAlign1": 100,
+				"xAlign3": 20
+			}
+		},
+		"animation" : {
+			"anim1Yvalue": 390,
+			"anim2ZoomOutValue" : 70
+		},
+		"demotitle" : {
+			"titleXAlign" :380,
+			"titleYAlign": 50,
+			"titleViewWidth" :400,
+			"titleViewHeight" :50
+		}
+	},
+	"main": {
+		"mainBackground" : "#5B636A",
+		"tilesBackground" : "#35393C",
+		"focusBackground" : "#35393C",
+		"shadowColor" : "black",
+		"subtileFocus" : "#FFBA08",
+		"subtileBackground" : "#8D959D",
+		"textBackground" : "black"
+	},
+	"textApp" : {
+		"textBackground": "yellow",
+		"textColor":"white"
+	 },
+	"textApp2" : {
+		"view" : {
+			"backgroundColor" : "#A9D6E5",
+			"borderColor" : "#A9D6E5",
+			"shadowColor" : "#0d0d0d"
+		}
+	},
+	"animation": {
+		"backgroundColor" : "#FFBA08",
+		"shadowColor" : "black"
+	},
+	"shadowProps": {
+		"view" : {
+			"bgColor" : "#FFBA08",
+			"borderColor" : "#A9D6E5",
+			"shadowColor" : "#E9ECEF"
+		}
+	},
+    "websocket" : {
+		  "url" : "ws://localhost:9898"
+	  }
+  }

@@ -1,6 +1,6 @@
 /*
 * Copyright 2016 Google Inc.
-* Copyright (C) 1994-2021 OpenTV, Inc. and Nagravision S.A.
+* Copyright (C) 1994-2022 OpenTV, Inc. and Nagravision S.A.
 *
 * Use of this source code is governed by a BSD-style license that can be
 * found in the LICENSE file.
@@ -39,8 +39,7 @@ public:
     SkSize& viewport() { return attributes_.viewportSize; }
     void invalidate();
     void begin(); // Call this before modifying render layer tree
-    void commit(); // Commit the changes in render layer tree
-
+    void commit(bool immediate); // Commit the changes in render layer tree - immediately/schedule
 #if USE(RNS_SHELL_PARTIAL_UPDATES)
     bool supportsPartialUpdates() { return supportPartialUpdate_; } // Wheather compositor can support partial paint and update
     void addDamageRect(SkIRect damage) { if(supportPartialUpdate_ && !damage.isEmpty()) surfaceDamage_.push_back(damage); }
@@ -49,12 +48,12 @@ public:
 #ifdef RNS_SHELL_HAS_GPU_SUPPORT
     GrDirectContext* getDirectContext(); // interface to expose directcontext of gpu backend
 #endif
+    static SkRect beginClip(PaintContext& context, bool useClipRegion=false);
 
 private:
 
     void createWindowContext();
     void renderLayerTree();
-    SkRect beginClip(SkCanvas *canvas);
 
     std::mutex isMutating; // Lock the renderLayer tree while updating and rendering
 
@@ -62,7 +61,7 @@ private:
     SharedLayer rootLayer_;
     std::unique_ptr<WindowContext> windowContext_;
     sk_sp<SkSurface> backBuffer_;
-    uint64_t nativeWindowHandle_;
+    GLNativeWindowType nativeWindowHandle_;
 
 #if USE(RNS_SHELL_PARTIAL_UPDATES)
     bool supportPartialUpdate_;

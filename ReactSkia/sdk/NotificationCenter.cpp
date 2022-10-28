@@ -26,6 +26,7 @@
 #include "NotificationCenter.h"
 
 static std::unique_ptr<NotificationCenter> defaultCenter_;
+static std::unique_ptr<NotificationCenter> subWindowCenter_;//SubWindow Notification center
 
 void NotificationCenter::removeListener(unsigned int listener_id) {
     std::lock_guard<std::mutex> lock(mutex);
@@ -51,4 +52,13 @@ NotificationCenter& NotificationCenter::defaultCenter() {
 void NotificationCenter::initializeDefault() {
     if(defaultCenter_.get() == nullptr)
         defaultCenter_ = std::make_unique<NotificationCenter>();
+}
+
+NotificationCenter& NotificationCenter::subWindowCenter() {
+    return *subWindowCenter_;
+}
+
+void NotificationCenter::initializeSubWindowCenter() {
+    if(subWindowCenter_.get() == nullptr)
+        subWindowCenter_ = std::make_unique<NotificationCenter>();
 }

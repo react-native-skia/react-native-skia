@@ -25,6 +25,7 @@
 #include "include/core/SkTypes.h"
 #include "include/private/SkTHash.h"
 
+#include "ReactSkia/sdk/NotificationCenter.h"
 #include "ReactSkia/utils/RnsLog.h"
 
 #include "Application.h"
@@ -38,7 +39,10 @@ static bool platformInitialize(char **argv) {
     bool status = false;
 
     TaskLoop::initializeMain();
-
+    NotificationCenter::initializeDefault();
+#if ENABLE(FEATURE_ONSCREEN_KEYBOARD)
+    NotificationCenter::initializeSubWindowCenter();//Intializing Notification center for Events from subWindows
+#endif/*FEATURE_ONSCREEN_KEYBOARD*/
 #if PLATFORM(LIBWPE) || USE(WEP_RENDERER)
     wpe_renderer_host_create_client(); // Has to be called before wpe_loader_init
     wpe_loader_init(wpe_loader_get_loaded_implementation_library_name());

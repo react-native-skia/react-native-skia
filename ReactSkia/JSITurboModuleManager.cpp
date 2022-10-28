@@ -1,12 +1,18 @@
-#include "ReactSkia/JSITurboModuleManager.h"
-
-#include "ReactSkia/utils/RnsLog.h"
+#include <folly/io/async/ScopedEventBaseThread.h>
 
 #include "cxxreact/Instance.h"
 #include "jsi/JSIDynamic.h"
 
-#include <folly/io/async/ScopedEventBaseThread.h>
+#include "JSITurboModuleManager.h"
+#include "version.h"
+#include "core_modules/RSkDeviceInfo.h"
+#include "core_modules/RSkImageLoader.h"
 #include "core_modules/RSkTimingModule.h"
+#include "core_modules/RSkKeyboardObserver.h"
+#include "modules/platform/nopoll/RSkWebSocketModule.h"
+#include "modules/platform/libcurl/RSkNetworkingModule.h"
+#include "modules/RSkTVNavigationEventEmitter.h"
+#include "utils/RnsLog.h"
 
 namespace facebook {
 namespace react {
@@ -104,22 +110,6 @@ class AppStateModule : public TurboModule {
   }
 };
 
-class WebSocketModule : public TurboModule {
- public:
-  WebSocketModule(
-      const std::string &name,
-      std::shared_ptr<CallInvoker> jsInvoker)
-      : TurboModule(name, jsInvoker) {
-    methodMap_["connect"] = MethodMetadata{4, NoOp};
-    methodMap_["send"] = MethodMetadata{2, NoOp};
-    methodMap_["sendBinary"] = MethodMetadata{2, NoOp};
-    methodMap_["ping"] = MethodMetadata{1, NoOp};
-    methodMap_["close"] = MethodMetadata{3, NoOp};
-    methodMap_["addListener"] = MethodMetadata{1, NoOp};
-    methodMap_["removeListeners"] = MethodMetadata{1, NoOp};
-  }
-};
-
 class UnimplementedTurboModule : public TurboModule {
  public:
   UnimplementedTurboModule(
@@ -146,9 +136,15 @@ JSITurboModuleManager::JSITurboModuleManager(Instance *bridgeInstance)
 
   staticModule =
       std::make_shared<StaticTurboModule>("PlatformConstants", jsInvoker);
-  auto rnVersion = folly::dynamic::object("major", 0)("minor", 0)("patch", 0);
+  auto rnVersion = folly::dynamic::object("major", RN_MAJOR_VERSION)("minor", RN_MINOR_VERSION)("patch", RN_PATCH_VERSION);
   staticModule->SetConstants(folly::dynamic::object("isTesting", true)(
-      "reactNativeVersion", std::move(rnVersion)));
+      "reactNativeVersion", std::move(rnVersion)) ("osVersion",STRINGIFY(RNS_OS_VERSION))
+#if defined(TARGET_OS_TV) && TARGET_OS_TV
+      ("interfaceIdiom", STRINGIFY(tv))
+#else
+      ("interfaceIdiom", STRINGIFY(unknown))
+#endif //TARGET_OS_TV
+    );
   modules_["PlatformConstants"] = std::move(staticModule);
 
   modules_["ExceptionsManager"] =
@@ -156,38 +152,32 @@ JSITurboModuleManager::JSITurboModuleManager(Instance *bridgeInstance)
 
   modules_["Timing"] =
       std::make_shared<RSkTimingModule>("Timing", jsInvoker, bridgeInstance);
-
   modules_["AppState"] =
       std::make_shared<AppStateModule>("AppState", jsInvoker);
-
-  modules_["WebSocketModule"] =
-      std::make_shared<WebSocketModule>("WebSocketModule", jsInvoker);
-
   modules_["Networking"] =
-      std::make_shared<UnimplementedTurboModule>("Networking", jsInvoker);
+      std::make_shared<RSkNetworkingModule>("Networking", jsInvoker, bridgeInstance );
+  modules_["WebSocketModule"] =
+      std::make_shared<RSkWebSocketModule>("WebSocketModule", jsInvoker, bridgeInstance);
+  modules_["KeyboardObserver"] =
+      std::make_shared<RSkKeyboardObserver>("KeyboardObserver", jsInvoker, bridgeInstance);
+  modules_["DeviceInfo"] =
+      std::make_shared<RSkDeviceInfoModule>("DeviceInfo", jsInvoker, bridgeInstance);
+  modules_["ImageLoader"] =
+      std::make_shared<RSkImageLoader>("ImageLoader", jsInvoker);
+
+#if defined(TARGET_OS_TV) && TARGET_OS_TV
+  modules_["TVNavigationEventEmitter"] =
+      std::make_shared<RSkTVNavigationEventEmitter>("TVNavigationEventEmitter",jsInvoker, bridgeInstance);
+#endif //TARGET_OS_TV
+
   modules_["DevSettings"] =
       std::make_shared<UnimplementedTurboModule>("DevSettings", jsInvoker);
-  modules_["ImageLoader"] =
-      std::make_shared<UnimplementedTurboModule>("ImageLoader", jsInvoker);
   modules_["StatusBarManager"] =
       std::make_shared<UnimplementedTurboModule>("StatusBarManager", jsInvoker);
   modules_["Appearance"] =
       std::make_shared<UnimplementedTurboModule>("Appearance", jsInvoker);
-  modules_["KeyboardObserver"] =
-      std::make_shared<UnimplementedTurboModule>("KeyboardObserver", jsInvoker);
   modules_["NativeAnimatedModule"] = std::make_shared<UnimplementedTurboModule>(
       "NativeAnimatedModule", jsInvoker);
-
-  staticModule = std::make_shared<StaticTurboModule>("DeviceInfo", jsInvoker);
-  auto windowMetrics = folly::dynamic::object("width", 1024)("height", 768)(
-      "scale", 1)("fontScale", 1);
-  auto screenMetrics = folly::dynamic::object("width", 1024)("height", 768)(
-      "scale", 1)("fontScale", 1);
-  auto dimension = folly::dynamic::object("window", std::move(windowMetrics))(
-      "screen", std::move(screenMetrics));
-  staticModule->SetConstants(
-      folly::dynamic::object("Dimensions", std::move(dimension)));
-  modules_["DeviceInfo"] = std::move(staticModule);
 }
 
 TurboModuleProviderFunctionType JSITurboModuleManager::GetProvider() {

@@ -288,7 +288,9 @@ crypto_sources = [
   "src/third_party/fiat/p256_32.h",
   "src/third_party/fiat/p256_64.h",
 ]
-
+decrepit = [
+  "src/decrepit/bio/base64_bio.c",
+]
 crypto_headers = [
   "src/include/openssl/aead.h",
   "src/include/openssl/aes.h",

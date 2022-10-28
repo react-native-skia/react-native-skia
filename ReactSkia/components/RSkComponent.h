@@ -1,11 +1,14 @@
 #pragma once
+#include "include/core/SkCanvas.h"
+
+#include "react/renderer/mounting/ShadowView.h"
+#include "react/renderer/components/view/ViewProps.h"
+
+#include "ReactSkia/core_modules/RSkSpatialNavigatorContainer.h"
 
 #include "ReactSkia/utils/RnsUtils.h"
 #include "ReactSkia/utils/RnsLog.h"
-
-#include "include/core/SkCanvas.h"
-#include "react/renderer/mounting/ShadowView.h"
-#include "react/renderer/components/view/ViewProps.h"
+#include "ReactSkia/sdk/RNSKeyCodeMapping.h"
 
 #include "rns_shell/compositor/layers/Layer.h"
 
@@ -13,6 +16,12 @@ namespace facebook {
 namespace react {
 
 using namespace RnsShell;
+
+enum PictureType {
+   PictureTypeShadow = 1,
+   PictureTypeBorder,
+   PictureTypeAll
+};
 
 enum ComponentUpdateMask {
   ComponentUpdateMaskNone = 0,
@@ -54,7 +63,7 @@ struct Component {
 
 class RSkComponent;
 
-class RSkComponent : public RnsShell::Layer, public std::enable_shared_from_this<RSkComponent>  {
+class RSkComponent : public RnsShell::Layer , public SpatialNavigator::Container, public std::enable_shared_from_this<RSkComponent>  {
  public:
   RSkComponent(const ShadowView &shadowView);
   RSkComponent(RSkComponent &&) = default;
@@ -71,26 +80,43 @@ class RSkComponent : public RnsShell::Layer, public std::enable_shared_from_this
     const int index);
 
   virtual void updateComponentData(const ShadowView &newShadowView , const uint32_t updateMask , bool forceUpdate);
+
+  virtual RnsShell::LayerInvalidateMask updateComponentProps(const ShadowView &newShadowView,bool forceUpadate) = 0;
+
+  virtual RnsShell::LayerInvalidateMask updateComponentState(const ShadowView &newShadowView,bool forceUpadate) {
+     /* TODO Return default None here when state update is handled with proper mask */
+     return RnsShell::LayerInvalidateAll;
+  };
+  virtual void handleCommand(std::string commandName,folly::dynamic args){RNS_LOG_NOT_IMPL;};
+  virtual void onHandleKey(rnsKey  eventKeyType, bool keyRepeat, bool* stopPropagate){*stopPropagate=false;};
+  virtual bool isContainer() const { return false; }
+  virtual void onHandleBlur() {RNS_LOG_DEBUG("[onHandleBlur] componentName "<<component_.componentName);};
+  virtual void onHandleFocus() {RNS_LOG_DEBUG("[onHandleFocus]componentName "<<component_.componentName);};
   Component getComponentData() { return component_;}
   std::shared_ptr<RnsShell::Layer> layer() { return layer_; }
   const SkIRect& getLayerAbsoluteFrame(){ return(layer_->absoluteFrame());}
-  void requiresLayer(const ShadowView &shadowView, Layer::Client& layerClient);
+  const SkIRect getScreenFrame();
   RSkComponent *getParent() {return parent_; };
 
+  SpatialNavigator::Container *nearestAncestorContainer();
+  bool hasAncestor(const SpatialNavigator::Container* ancestor);
+  bool isFocusable();
+
+  void requiresLayer(const ShadowView &shadowView, Layer::Client& layerClient);
   RnsShell::LayerInvalidateMask updateProps(const ShadowView &newShadowView , bool forceUpdate);
-  virtual RnsShell::LayerInvalidateMask updateComponentProps(const ShadowView &newShadowView,bool forceUpadate) = 0;
+
  protected:
   virtual void OnPaint(SkCanvas *canvas) = 0;
-
+  virtual void OnPaintShadow(SkCanvas *canvas);
+  virtual void OnPaintBorder(SkCanvas *canvas);
+  sk_sp<SkPicture> getPicture(PictureType type=PictureTypeAll);
  private:
-  sk_sp<SkPicture> getPicture();
   // RnsShell::Layer implementations
   void onPaint(SkCanvas*) override;
 
  private:
   RSkComponent *parent_;
   std::shared_ptr<RnsShell::Layer> layer_;
-  Point absOrigin_;
   Component component_;
 
   typedef Layer INHERITED;

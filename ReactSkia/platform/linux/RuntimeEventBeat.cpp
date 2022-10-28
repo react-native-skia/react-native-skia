@@ -1,16 +1,15 @@
 /*
  * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (C) 1994-2021 OpenTV, Inc. and Nagravision S.A.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
-#include <thread>
-
 #include "RuntimeEventBeat.h"
 #include "ReactSkia/utils/RnsLog.h"
 
-#define BEAT_INTERVAL  1000 /*unit ms. Beat interval Set to:1 sec as temp fix*/
+#define BEAT_INTERVAL  10 /*unit ms. Beat interval Set to:10 milli sec as temp fix*/
 
 namespace facebook {
 namespace react {
@@ -37,6 +36,7 @@ void RuntimeEventBeat::startObserving() const noexcept
 
 void RuntimeEventBeat::beat(){
   this->activityDidChange(activities_);
+  RNS_LOG_DEBUG("!!!!!! [RunLoopObserver][Activity]see Timestamp !!!!! ");
   beatThread_.getEventBase()->scheduleAt(std::bind(&RuntimeEventBeat::beat,this), \
            std::chrono::steady_clock::now() + std::chrono::milliseconds(BEAT_INTERVAL));
 }

@@ -22,17 +22,6 @@
 
 namespace RnsShell {
 
-Display::Display()
-    :viewBackend_(wpe_view_backend_create()) {
-}
-
-Display::~Display() {
-    if(viewBackend_) {
-        wpe_view_backend_destroy(viewBackend_);
-        viewBackend_ = nullptr;
-    }
-}
-
 std::unique_ptr<PlatformDisplayLibWPE> PlatformDisplayLibWPE::create() {
     static Display *display = new Display();
     if (!display)
@@ -65,6 +54,16 @@ bool PlatformDisplayLibWPE::initialize(int hostFd) {
 #else
     return true;
 #endif
+}
+
+SkSize PlatformDisplayLibWPE::screenSize() {
+    SkSize size = SkSize::MakeEmpty();
+    uint32_t width = 0, height = 0;
+
+    if(wpe_renderer_backend_egl_get_screen_size(rendererBackend_, &width, &height) == 0)
+        size.set(width, height);
+
+    return size;
 }
 
 } // namespace RnsShell

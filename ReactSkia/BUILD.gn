@@ -3,16 +3,40 @@
 declare_args() {
   # Enable API profiling
   rns_enable_api_profiling = false
+
+  # Enable OnScreenKeyBoard Feature
+  rns_enable_onscreen_keyboard = true
+
+  # Enable key throttling
+  rns_enable_key_throttling = false
+
+  # Enable ScrollBar Feature
+  rns_enable_scrollindicator = true
 }
 
 import("//build/config/gclient_args.gni")
 config("ReactSkia_config") {
+  include_dirs = [
+     "//ReactSkia/core_modules"
+  ]
   defines = []
   if(rns_enable_api_profiling) {
     defines += ["RNS_ENABLE_API_PERF"]
   }
   if( react_native_platform == "tvos") {
      defines += ["TARGET_OS_TV=1"]
+  }
+  if(rns_enable_onscreen_keyboard) {
+     defines += ["ENABLE_FEATURE_ONSCREEN_KEYBOARD"]
+  }
+
+  # Enable key throttling
+  if(rns_enable_key_throttling) {
+    defines += ["ENABLE_FEATURE_KEY_THROTTLING"]
+  }
+
+  if(rns_enable_scrollindicator) {
+     defines += ["ENABLE_FEATURE_SCROLL_INDICATOR"]
   }
 }
 
@@ -24,6 +48,12 @@ config("textlayoutmanager_config") {
     "//skia/config",
   ]
 }
+config("textinput_config") {
+  include_dirs = [
+    "//ReactSkia/textinput",
+  ]
+}
+
 
 import("//react-native/common.gni")
 rn_cxx_component("textlayoutmanager") {
@@ -45,24 +75,74 @@ rn_cxx_component("textlayoutmanager") {
   public_configs = [":textlayoutmanager_config"]
 }
 
+rn_cxx_component("textinput") {
+  sources = [
+    "textinput/react/renderer/components/textinput/TextInputEventEmitter.cpp",
+    "textinput/react/renderer/components/textinput/TextInputProps.cpp",
+    "textinput/react/renderer/components/textinput/TextInputShadowNode.cpp",
+  ]
+
+  deps = [
+    "//folly",
+    "//react-native/ReactCommon/react/renderer/attributedstring:attributedstring",
+    "//react-native/ReactCommon/react/renderer/componentregistry:componentregistry",
+    "//react-native/ReactCommon/react/renderer/components/text:text",
+    "//react-native/ReactCommon/react/renderer/components/view:view",
+    "//react-native/ReactCommon/react/renderer/core:core",
+    "//react-native/ReactCommon/react/renderer/debug:debug",
+    "//react-native/ReactCommon/react/renderer/graphics:graphics",
+    "//react-native/ReactCommon/react/renderer/textlayoutmanager:textlayoutmanager",
+    "//react-native/ReactCommon/react/renderer/uimanager:uimanager",
+    "//react-native/ReactCommon/react/utils:utils",
+    "//react-native/ReactCommon/yoga:yoga",
+    "//third_party/glog:glog",
+
+  ]
+
+  with_exceptions = true
+  with_rtti = true
+  public_configs = [":textinput_config"]
+}
+
+
 source_set("ReactSkia") {
   sources = [
     "ComponentViewRegistry.cpp",
     "ComponentViewRegistry.h",
-    "LegacyNativeModuleRegistry.cpp",
-    "LegacyNativeModuleRegistry.h",
     "JSITurboModuleManager.cpp",
     "JSITurboModuleManager.h",
     "MountingManager.cpp",
     "MountingManager.h",
     "RNInstance.cpp",
     "RNInstance.h",
+    "sdk/CurlNetworking.h",
+    "sdk/CurlNetworking.cpp",
+    "sdk/FollyTimer.h",
+    "sdk/FollyTimer.cpp",
     "sdk/NotificationCenter.cpp",
     "sdk/NotificationCenter.h",
+    "sdk/NopollWebsocket.cpp",
+    "sdk/NopollWebsocket.h",
+    "sdk/ThreadSafeQueue.h",
+    "sdk/ThreadSafeCache.h",
+    "sdk/WindowDelegator.cpp",
+    "sdk/WindowDelegator.h",
+    "core_modules/RSkDeviceInfo.cpp",
+    "core_modules/RSkDeviceInfo.h",
     "core_modules/RSkEventEmitter.cpp",
     "core_modules/RSkEventEmitter.h",
+    "core_modules/RSkImageLoader.cpp",
+    "core_modules/RSkImageLoader.h",
+    "core_modules/RSkKeyboardObserver.cpp",
+    "core_modules/RSkKeyboardObserver.h",
+    "core_modules/RSkSpatialNavigator.cpp",
+    "core_modules/RSkSpatialNavigator.h",
+    "core_modules/RSkSpatialNavigatorContainer.cpp",
+    "core_modules/RSkSpatialNavigatorContainer.h",
     "core_modules/RSkTimingModule.h",
     "core_modules/RSkTimingModule.cpp",
+    "core_modules/RSkInputEventManager.cpp",
+    "core_modules/RSkInputEventManager.h",
     "RSkSurfaceWindow.cpp",
     "RSkSurfaceWindow.h",
     "components/RSkComponent.cpp",
@@ -74,22 +154,71 @@ source_set("ReactSkia") {
     "components/RSkComponentProviderImage.h",
     "components/RSkComponentProviderRootView.cpp",
     "components/RSkComponentProviderRootView.h",
+    "components/RSkComponentProviderScrollView.cpp",
+    "components/RSkComponentProviderScrollView.h",
     "components/RSkComponentProviderText.cpp",
     "components/RSkComponentProviderText.h",
+    "components/RSkComponentProviderTextInput.cpp",
+    "components/RSkComponentProviderTextInput.h",
+    "components/RSkComponentProviderUnimplementedView.cpp",
+    "components/RSkComponentProviderUnimplementedView.h",
     "components/RSkComponentProviderView.cpp",
     "components/RSkComponentProviderView.h",
     "components/RSkComponentRootView.cpp",
     "components/RSkComponentRootView.h",
+    "components/RSkComponentScrollView.cpp",
+    "components/RSkComponentScrollView.h",
     "components/RSkComponentText.cpp",
     "components/RSkComponentText.h",
+    "components/RSkComponentTextInput.cpp",
+    "components/RSkComponentTextInput.h",
+    "components/RSkComponentUnimplementedView.cpp",
+    "components/RSkComponentUnimplementedView.h",
     "components/RSkComponentView.cpp",
     "components/RSkComponentView.h",
+    "modules/RSkWebSocketModuleBase.h",
+    "modules/RSkWebSocketModuleBase.cpp",
+    "modules/RSkNetworkingModuleBase.h",
+    "modules/RSkNetworkingModuleBase.cpp",
     "views/common/RSkDrawUtils.cpp",
     "views/common/RSkDrawUtils.h",
+    "views/common/RSkTextUtils.cpp",
+    "views/common/RSkTextUtils.h",
     "views/common/RSkImageCacheManager.cpp",
     "views/common/RSkImageCacheManager.h",
     "views/common/RSkImageUtils.cpp",
     "views/common/RSkImageUtils.h",
+  ]
+
+  if(rns_enable_onscreen_keyboard) {
+    sources += [
+      "sdk/OnScreenKeyBoard.cpp",
+      "sdk/OnScreenKeyBoard.h",
+    ]
+  }
+
+  if( react_native_platform == "tvos") {
+    sources += [
+      "modules/RSkTVNavigationEventEmitter.cpp",
+      "modules/RSkTVNavigationEventEmitter.h",
+    ]
+  }
+
+  # Legace Native modules and viewManager
+  sources += [
+    "LegacyNativeModules/LegacyNativeModuleRegistry.cpp",
+    "LegacyNativeModules/LegacyNativeModuleRegistry.h",
+    "LegacyNativeModules/LegacyNativeModule.h",
+    "LegacyNativeModules/uimanager/UiManagerModule.cpp",
+    "LegacyNativeModules/uimanager/UiManagerModule.h",
+  ]
+
+  # Thirdparty Codegen Fabric Components and Native modules
+  sources += [
+    "RSkThirdPartyFabricComponentsProvider.cpp",
+    "RSkThirdPartyFabricComponentsProvider.h",
+    "RSkThirdPartyNativeModuleProvider.cpp",
+    "RSkThirdPartyNativeModuleProvider.h",
   ]
 
   if (is_mac) {
@@ -109,6 +238,10 @@ source_set("ReactSkia") {
       "platform/linux/MainRunLoopEventBeat.cpp",
       "platform/linux/RuntimeEventBeat.h",
       "platform/linux/RuntimeEventBeat.cpp",
+      "modules/platform/nopoll/RSkWebSocketModule.cpp",
+      "modules/platform/nopoll/RSkWebSocketModule.h",
+      "modules/platform/libcurl/RSkNetworkingModule.cpp",
+      "modules/platform/libcurl/RSkNetworkingModule.h",
     ]
     defines = ["OS_LINUX"]
   }
@@ -132,8 +265,10 @@ source_set("ReactSkia") {
     "//react-native/ReactCommon/react/renderer/scheduler",
     "//react-native/ReactCommon/react/renderer/graphics",
     "//react-native/ReactCommon/react/renderer/components/image",
+    "//react-native/ReactCommon/react/renderer/components/scrollview",
     "//react-native/ReactCommon/react/renderer/components/text",
     "//react-native/ReactCommon/react/renderer/textlayoutmanager",
+    "//ReactSkia:textinput",
     "//rns_shell",
     "//skia",
   ]
@@ -154,6 +289,13 @@ source_set("ReactSkia") {
   configs += [
     ":ReactSkia_config",
   ]
+
+
+  if (is_linux) {
+    configs += ["//third_party/nopoll:nopoll_from_pkgconfig"]
+    public_deps += ["//third_party/libcurl:libcurl"]
+  }
+
 }
 
 executable("ReactSkiaApp") {
@@ -164,6 +306,7 @@ executable("ReactSkiaApp") {
 
   deps = [
     ":ReactSkia",
+    "//react-native/ReactCommon/react/renderer/components/unimplementedview",
   ]
 
   configs -= [ "//build/config/compiler:chromium_code" ]

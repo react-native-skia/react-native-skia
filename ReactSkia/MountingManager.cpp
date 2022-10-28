@@ -14,6 +14,7 @@
 #include "ReactSkia/RSkSurfaceWindow.h"
 
 #include "rns_shell/compositor/RendererDelegate.h"
+#include "rns_shell/platform/linux/TaskLoop.h"
 
 namespace facebook {
 namespace react {
@@ -28,35 +29,42 @@ void MountingManager::BindSurface(RSkSurfaceWindow *surface) {
 
 void MountingManager::schedulerDidFinishTransaction(
     MountingCoordinator::Shared const &mountingCoordinator) {
-  auto transaction = mountingCoordinator->pullTransaction();
-  if (!transaction.has_value()) {
+
+  RNS_LOG_DEBUG("schedulerDidFinishTransaction transactionInFlight[" << transactionInFlight_ << "] followUpTransactionRequired["<< followUpTransactionRequired_ << "]");
+  /* If transaction processing ongoing,set flag for followUp and return*/
+  if(transactionInFlight_){
+    followUpTransactionRequired_ = true;
     return;
   }
 
-  auto surfaceId = transaction->getSurfaceId();
-  auto &mutations = transaction->getMutations();
+  /* Set the flag when schedule for transaction processing*/
+  transactionInFlight_ = true;
+  TaskLoop::main().dispatch([&,mountingCoordinator]() {
+     performTransaction(mountingCoordinator);
+  });
 
-  if (mutations.empty()) {
-    return;
-  }
-
-  // auto telemetry = transaction->getTelemetry();
-  // auto number = transaction->getNumber();
-
-  ProcessMutations(mutations, surfaceId);
 }
 
 void MountingManager::schedulerDidRequestPreliminaryViewAllocation(
     SurfaceId surfaceId,
     const ShadowView &shadowView) {
-  // Does nothing for now.
+  /* TODO : Needs implementation*/
+  RNS_LOG_DEBUG("surfaceId:" << surfaceId << " shadowView tag[" << shadowView.tag <<  "] name["<< shadowView.componentName << "]");
 }
 
 void MountingManager::schedulerDidDispatchCommand(
     const ShadowView &shadowView,
     const std::string &commandName,
     const folly::dynamic args) {
-  // TODO
+
+  RNS_LOG_DEBUG("dispatch command shadowView tag[" << shadowView.tag <<  "] name["<< shadowView.componentName << "] commandName [" << commandName <<"]");
+
+  TaskLoop::main().dispatch([&,shadowView,commandName,args]() {
+     auto component = GetComponent(shadowView);
+     if( component != NULL ){
+       component->handleCommand(commandName,args);
+     }
+  });
 }
 
 void MountingManager::schedulerDidSetJSResponder(
@@ -64,20 +72,62 @@ void MountingManager::schedulerDidSetJSResponder(
     const ShadowView &shadowView,
     const ShadowView &initialShadowView,
     bool blockNativeResponder) {
-  // Does nothing for now.
+  RNS_LOG_NOT_IMPL;
+  RNS_LOG_TODO("surfaceId:" << surfaceId << "shadowView tag[" << shadowView.tag <<  "] name["<< shadowView.componentName << "] blockNativeResponder: " << blockNativeResponder);
 }
 
 void MountingManager::schedulerDidClearJSResponder() {
-  // Does nothing for now.
+  RNS_LOG_NOT_IMPL;
 }
+
+void MountingManager::performTransaction(
+    MountingCoordinator::Shared const &mountingCoordinator) {
+
+  do {
+    followUpTransactionRequired_ = false;
+    transactionInFlight_ = true;
+
+    auto surfaceId = mountingCoordinator->getSurfaceId();
+    mountingCoordinator->getTelemetryController().pullTransaction(
+      [](MountingTransactionMetadata metadata) {
+          RNS_LOG_DEBUG("[TODO] : TelemetryController PullTransaction WillMount");
+      },
+      [&,surfaceId](ShadowViewMutationList const &mutations) {
+          ProcessMutations(mutations,surfaceId);
+      },
+      [](MountingTransactionMetadata metadata) {
+          RNS_LOG_DEBUG("[TODO] : TelemetryController PullTransaction DidMount");
+      });
+
+     transactionInFlight_ = false;
+   } while (followUpTransactionRequired_);
+
+}
+
 
 void MountingManager::ProcessMutations(
     ShadowViewMutationList const &mutations,
     SurfaceId surfaceId) {
 
+  if(mutations.empty()) return;
+
+  RNS_LOG_DEBUG(" ProcessMutations mutations[" << mutations.size() <<"]");
+
   nativeRenderDelegate_.begin();
 
   for (auto const &mutation : mutations) {
+    RNS_LOG_DEBUG("\n============\n Mutation type : "<< mutation.type <<
+                 "\n ParentShadowView" <<
+                 "\n\tTag:" << mutation.parentShadowView.tag <<
+                 "\n\tName:" << (mutation.parentShadowView.componentName?mutation.parentShadowView.componentName : "null") <<
+                 "\n OldChildShadowView" <<
+                 "\n\tTag:" << mutation.oldChildShadowView.tag <<
+                 "\n\tName:" << (mutation.oldChildShadowView.componentName?mutation.oldChildShadowView.componentName : "null") <<
+                 "\n NewChildShadowView" <<
+                 "\n\tTag:" << mutation.newChildShadowView.tag <<
+                 "\n\tName:" << (mutation.newChildShadowView.componentName?mutation.newChildShadowView.componentName : "null") <<
+                 "\n Mutation index : "<< mutation.index <<
+                 "\n============\n");
     switch (mutation.type) {
       case ShadowViewMutation::Create: {
         CreateMountInstruction(mutation, surfaceId);
@@ -107,9 +157,9 @@ void MountingManager::ProcessMutations(
   RNS_LOG_INFO_EVERY_N(60, "Calling Compositor Commit(" << std::this_thread::get_id()) << ") : after " << SkTime::GetMSecs() - prevTime << " ms";
   prevTime = SkTime::GetMSecs();
 #endif
-  nativeRenderDelegate_.commit();
-}
+  nativeRenderDelegate_.commit(true);
 
+}
 
 void MountingManager::CreateMountInstruction(
     ShadowViewMutation const &mutation,
@@ -182,9 +232,8 @@ void MountingManager::UpdateMountInstruction(
     if(oldChildShadowView.layoutMetrics != newChildShadowView.layoutMetrics)
       updateMask |= ComponentUpdateMaskLayoutMetrics;
 
-    if(updateMask != ComponentUpdateMaskNone) {
+    if(updateMask != ComponentUpdateMaskNone)
       newChildComponent->updateComponentData(mutation.newChildShadowView,updateMask,false);
-    }
   }
 }
 

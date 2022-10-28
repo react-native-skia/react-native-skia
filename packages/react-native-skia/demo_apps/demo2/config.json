@@ -1,0 +1,85 @@
+{
+	"resolution1" : {
+		"appSize": {
+			"width": 1920,
+			"height": 1080
+		},
+		"maincontainer" : {
+			"width": 350,
+			"height": 200
+		},
+		"tilePosition": {
+			"x1": 200,
+			"x2": 558,
+			"x3": 915,
+			"x4": 1273,
+			"y1": 480,
+			"y2": 720
+		},
+		"posterView":{
+			"width":925,
+			"height":460,
+			"top":30,
+			"left":695
+		},
+		"descriptionView" : {
+			"width":430,
+			"height":460,
+			"top": 200,
+			"left":200
+		},
+		"subHeaders": {
+			"width": 200,
+			"height": 40,
+			"left": 190,
+			"top1": 470,
+			"top2":710
+		}
+	},
+	"resolution" : {
+		"appSize": {
+			"width": 1280,
+			"height": 720
+		},
+		"maincontainer" : {
+			"width": 300,
+			"height": 160
+		},
+		"tilePosition": {
+			"x1": 15,
+			"x2": 325,
+			"x3": 635,
+			"x4": 945,
+			"y1": 285,
+			"y2": 480
+		},
+		"posterView":{
+			"width":716,
+			"height":300,
+			"top":10,
+			"left":530
+		},
+		"descriptionView" : {
+			"width":430,
+			"height":400,
+			"top": 50,
+			"left":20
+		},
+		"subHeaders": {
+			"width": 200,
+			"height": 40,
+			"left": 10,
+			"top1": 280,
+			"top2":472
+		}
+	},
+	"main": {
+		"mainBackground" : "#5B636A",
+		"tilesBackground" : "#35393C",
+		"focusBackground" : "#35393C",
+		"shadowColor" : "black",
+		"subtileFocus" : "#FFBA08",
+		"subtileBackground" : "#8D959D",
+		"textBackground" : "black"
+	}
+  }

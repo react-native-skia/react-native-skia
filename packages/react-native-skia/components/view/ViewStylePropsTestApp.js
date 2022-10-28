@@ -37,7 +37,7 @@ const SimpleViewApp = React.Node = () => {
                borderColor:borderColor,
                opacity:opacity,
                margin: 20,
-               borderRadius:baseRadius,
+	       borderRadius:baseRadius,
            }}>
            </View> 
 }
@@ -48,7 +48,7 @@ const roundedBorderTest =(width,radius)=>{
                backgroundColor: bgColor,
                borderWidth:width,
                borderColor:borderColor,
-              opacity:baseOpacity,
+               opacity:baseOpacity,
                margin: 20,
                borderRadius:radius,
            }}>
@@ -71,7 +71,6 @@ const complexRoundedBorderTest =(radius,color,width)=>{
                borderRightColor:color,
                borderBottomColor:borderColor,
                borderTopColor:borderColor,
-
               shadowOffset: {
                  width: subViewWidth/2,
                  height:subViewHeight/2
@@ -200,7 +199,7 @@ const renderMainView = () => {
                borderColor:mainViewborderColor,
                opacity:baseOpacity*10,
              }}>
-	   {renderImage(baseOpacity/2)}
+           {renderImage(baseOpacity/2)}
            {renderImage(baseOpacity)}
            </View>)
    }

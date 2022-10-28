@@ -18,6 +18,8 @@ RSkSurfaceWindow::RSkSurfaceWindow() {
   moduleName = "SimpleViewApp";
   properties = folly::dynamic::object();
 
+  navigator_ = RSkSpatialNavigator::sharedSpatialNavigator();
+  inputEventManager_ = RSkInputEventManager::getInputKeyEventManager();
 }
 
 RSkSurfaceWindow::~RSkSurfaceWindow() {

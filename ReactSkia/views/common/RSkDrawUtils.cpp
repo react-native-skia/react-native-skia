@@ -5,12 +5,19 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "ReactSkia/views/common/RSkDrawUtils.h"
-#include "include/core/SkPaint.h"
-#include "include/core/SkMaskFilter.h"
 #include <math.h>
 
+#include "include/core/SkPaint.h"
+#include "include/effects/SkImageFilters.h"
+#include "include/core/SkClipOp.h"
+
+#include "ReactSkia/views/common/RSkDrawUtils.h"
+#include "ReactSkia/views/common/RSkConversion.h"
+
+
 #define DEFAULT_COLOUR   SK_ColorBLACK /*Black*/
+#define UNDERLINEWIDTH   1
+#define BOTTOMALIGNMENT 3
 
 namespace facebook {
 namespace react {
@@ -18,7 +25,8 @@ namespace {
 
 enum DrawMethod {
      Background,
-     Border 
+     Border,
+     None
 };
 enum BorderEdges {
      RightEdge = 0,
@@ -61,25 +69,14 @@ void setStyle(int strokeWidth,SkPaint::Style style,BorderStyle borderStyle,SkPai
         setPathEffect(borderStyle,strokeWidth,paint);
     }
 }
-void setColor(SharedColor Color,Float opacity,SkPaint *paint)
+void setColor(SharedColor Color,SkPaint *paint)
 {
-    float ratio = 255.9999;
     paint->setAntiAlias(true);
-    if(Color){
-        auto colorValue=colorComponentsFromColor(Color);
-        paint->setColor(SkColorSetARGB(
-            colorValue.alpha * ratio,
-            colorValue.red * ratio,
-            colorValue.green * ratio,
-            colorValue.blue * ratio));
-    }else{
-        paint->setColor(DEFAULT_COLOUR);
-    }
-    paint->setAlphaf((opacity >1.0 ? 1.0:opacity));
+    paint->setColor(RSkColorFromSharedColor(Color, DEFAULT_COLOUR));
 }
-bool isDrawVisible(SharedColor Color,Float opacity,Float thickness=1.0)
+bool isDrawVisible(SharedColor Color,Float thickness=1.0)
 {
-    return (Color !=clearColor() && opacity >0.0 && thickness > 0.0)? true:false;
+    return (Color !=clearColor() && thickness > 0.0)? true:false;
 }
 bool hasUniformBorderEdges(BorderMetrics borderProps)
 {
@@ -139,18 +136,17 @@ void drawRect(DrawMethod drawMethod,SkCanvas *canvas,
                                         Rect frame,
                                         BorderMetrics borderProps,
                                         SharedColor Color,
-                                        Float opacity,
                                         SkPaint *paint=NULL)
 {
     if(canvas == NULL) return;
 /*Case DrawRect assumes same width for all the sides.So referring left */
     auto rectStrokeWidth = borderProps.borderWidths.left;
 
-    SkRRect rRect ;
+    SkRRect rRect;
     SkRect rect;
     SkPaint paintObj;
     if(paint != NULL){ paintObj = *paint; }
-	
+
   /*Creating basic layout from props*/
     rect=SkRect::MakeXYWH(frame.origin.x,frame.origin.y,\
          frame.size.width,frame.size.height);
@@ -160,7 +156,7 @@ void drawRect(DrawMethod drawMethod,SkCanvas *canvas,
                        {borderProps.borderRadii.bottomRight,borderProps.borderRadii.bottomRight }, \
                        {borderProps.borderRadii.bottomLeft,borderProps.borderRadii.bottomLeft}};
 
-    setColor(Color,opacity,&paintObj );
+    setColor(Color,&paintObj );
     /* To sync with the border draw type, resetting the stroke width for background*/
     if(!hasUniformBorderEdges(borderProps) && (drawMethod == Background))
         rectStrokeWidth=0;
@@ -178,13 +174,11 @@ void drawRect(DrawMethod drawMethod,SkCanvas *canvas,
     }
     canvas->drawRRect(rRect, paintObj);
 }
-void drawEdges(BorderEdges borderEdge,SkCanvas *canvas,
+SkPath drawEdges(BorderEdges borderEdge,SkCanvas *canvas,
                                         Rect frame,
                                         BorderMetrics borderProps,
-                                        SharedColor backgroundColor,
-                                        Float opacity)
+                                        bool needsDraw = true)
 {
-    if(canvas == NULL) return;
 
     SkPath path;
     SkPaint paint;
@@ -254,7 +248,7 @@ void drawEdges(BorderEdges borderEdge,SkCanvas *canvas,
      if(borderEdge == TopEdge){
          edgeColor=borderProps.borderColors.top;
          strokeWidth=borderProps.borderWidths.top;
-     
+
          pathMetrics.outterStart.x=rectOriginX;
          pathMetrics.outterStart.y=rectOriginY;
          pathMetrics.outterEnd.x=rectDestX;
@@ -269,75 +263,160 @@ void drawEdges(BorderEdges borderEdge,SkCanvas *canvas,
          pathMetrics.angle=270;
      }
      createEdge(pathMetrics,borderEdge,&path);
-     setColor(edgeColor,opacity,&paint);
-     path.setFillType(SkPathFillType::kEvenOdd);
-     canvas->drawPath(path, paint);
+    if(needsDraw && (canvas != NULL) ) {
+       setColor(edgeColor,&paint);
+       path.setFillType(SkPathFillType::kEvenOdd);
+       canvas->drawPath(path, paint);
+    }
+    return path;
+}
+bool createshadowPath( SkCanvas *canvas,Rect frame,
+                        BorderMetrics borderProps,
+                        SkPath *shadowPath ) {
+
+    bool pathExist = false;
+    if(shadowPath == NULL)
+        return false;
+
+    if(isDrawVisible(borderProps.borderColors.right,borderProps.borderWidths.right)){
+        pathExist=true;
+        shadowPath->addPath(drawEdges(RightEdge,canvas,frame,borderProps,false));
+    }
+    if(isDrawVisible(borderProps.borderColors.left,borderProps.borderWidths.left)){
+        shadowPath->addPath(drawEdges(LeftEdge,canvas,frame,borderProps,false));
+        pathExist=true;
+    }
+    if(isDrawVisible(borderProps.borderColors.top,borderProps.borderWidths.top)){
+        shadowPath->addPath(drawEdges(TopEdge,canvas,frame,borderProps,false));
+        pathExist=true;
+    }
+    if(isDrawVisible(borderProps.borderColors.bottom,borderProps.borderWidths.bottom)){
+        shadowPath->addPath(drawEdges(BottomEdge,canvas,frame,borderProps,false));
+        pathExist=true;
+    }
+    return pathExist;
 }
 } //namespace
 namespace RSkDrawUtils{
 void  drawBackground(SkCanvas *canvas, 
                                Rect frame,
                                BorderMetrics borderProps,
-                               SharedColor backgroundColor,
-                               Float opacity)
+                               SharedColor backgroundColor)
 {
-    if( backgroundColor && isDrawVisible(backgroundColor,opacity) ){
-      drawRect(Background,canvas,frame,borderProps,backgroundColor,opacity);
+    if( backgroundColor && isDrawVisible(backgroundColor) ){
+      drawRect(Background,canvas,frame,borderProps,backgroundColor);
     }
 }
 void drawBorder(SkCanvas *canvas,
                                Rect frame,
                                BorderMetrics borderProps,
-                               SharedColor backgroundColor,
-                               Float opacity)
+                               SharedColor backgroundColor)
 {
     if(hasUniformBorderEdges(borderProps) && \
        ((backgroundColor != borderProps.borderColors.left)&& \
    /*Skia draw with hairline thickness in case of Strokewidth Zero. So avoid drawing border if 
      borderWidth/StrokeWidth is Zero*/
-          (isDrawVisible(borderProps.borderColors.left,opacity,borderProps.borderWidths.left) ))){
-             drawRect(Border,canvas,frame,borderProps,borderProps.borderColors.left,opacity);
+          (isDrawVisible(borderProps.borderColors.left,borderProps.borderWidths.left) ))){
+             drawRect(Border,canvas,frame,borderProps,borderProps.borderColors.left);
     }else{
          /*Draw Right Side*/
          if((backgroundColor != borderProps.borderColors.right) && \
-                 (isDrawVisible(borderProps.borderColors.right,opacity,borderProps.borderWidths.right) )){
-             drawEdges(RightEdge,canvas,frame,borderProps,backgroundColor,opacity);
+                 (isDrawVisible(borderProps.borderColors.right,borderProps.borderWidths.right) )){
+             drawEdges(RightEdge,canvas,frame,borderProps);
          }
          /*Draw Left Side*/
          if((backgroundColor != borderProps.borderColors.left) && \
-                 (isDrawVisible(borderProps.borderColors.left,opacity,borderProps.borderWidths.left))){
-             drawEdges(LeftEdge,canvas,frame,borderProps,backgroundColor,opacity);
+                 (isDrawVisible(borderProps.borderColors.left,borderProps.borderWidths.left))){
+             drawEdges(LeftEdge,canvas,frame,borderProps);
          }
          /*Draw Top Side*/
          if((backgroundColor != borderProps.borderColors.top) && \
-                 (isDrawVisible(borderProps.borderColors.top,opacity,borderProps.borderWidths.top) )){
-             drawEdges(TopEdge,canvas,frame,borderProps,backgroundColor,opacity);
+                 (isDrawVisible(borderProps.borderColors.top,borderProps.borderWidths.top) )){
+             drawEdges(TopEdge,canvas,frame,borderProps);
          }
          /*Draw Bottom Side*/
          if((backgroundColor != borderProps.borderColors.bottom) && \
-                 (isDrawVisible(borderProps.borderColors.bottom,opacity,borderProps.borderWidths.bottom))){
-             drawEdges(BottomEdge,canvas,frame,borderProps,backgroundColor,opacity);
+                 (isDrawVisible(borderProps.borderColors.bottom,borderProps.borderWidths.bottom))){
+             drawEdges(BottomEdge,canvas,frame,borderProps);
          }
     }
 }
-void  drawShadow(SkCanvas *canvas, 
-                               Rect frame,
-                               BorderMetrics borderProps,
-                               ShadowMetrics shadowMetrics)
-{
- 
-    if(isDrawVisible(shadowMetrics.shadowColor,shadowMetrics.shadowOpacity)){
-/*+ve shadowOffset.width  => move shadow towards Right, -ve => move shadow towards left
-  +ve shadowOffset.height => move shadow towards bottom, -ve => mov shadow towards top
- */
-         frame.origin.x= frame.origin.x+shadowMetrics.shadowOffset.width;
-         frame.origin.y=frame.origin.y+shadowMetrics.shadowOffset.height;
-/*Shadow effect acheived by drawing background with Blur effect*/
-         SkPaint paint;
-         paint.setMaskFilter(SkMaskFilter::MakeBlur(kNormal_SkBlurStyle, shadowMetrics.shadowRadius));
-         drawRect(Background,canvas,frame,borderProps,shadowMetrics.shadowColor,shadowMetrics.shadowOpacity,&paint);
+bool  drawShadow(SkCanvas *canvas,Rect frame,
+                        BorderMetrics borderProps,
+                        SharedColor backgroundColor,
+                        Float shadowOpacity,
+                        sk_sp<SkImageFilter> shadowFilter) {
+
+    if(shadowFilter == NULL) return false;
+    SkPaint paint;
+    paint.setImageFilter( shadowFilter);
+
+    DrawMethod shadowOn = None;
+    /*Shadow on Background : If bg  visible */
+    if(backgroundColor && isDrawVisible(backgroundColor)) {
+        shadowOn=Background;
     }
-} 
+    /*Shadow on Border : None of the Border width to be '0' and border color not transparent */
+    else if(borderProps.borderColors.isUniform() && isDrawVisible(borderProps.borderColors.left) \
+        && (borderProps.borderWidths.left !=0) && (borderProps.borderWidths.top !=0)  \
+        && (borderProps.borderWidths.right !=0) && (borderProps.borderWidths.bottom !=0)) {
+
+           shadowOn = Border;
+    }
+    if(shadowOn != None) {
+        SkRect clipRect = SkRect::MakeXYWH(frame.origin.x, frame.origin.y, frame.size.width, frame.size.height);
+        SkVector radii[4]={{borderProps.borderRadii.topLeft,borderProps.borderRadii.topLeft},
+                       {borderProps.borderRadii.topRight,borderProps.borderRadii.topRight}, \
+                       {borderProps.borderRadii.bottomRight,borderProps.borderRadii.bottomRight }, \
+                       {borderProps.borderRadii.bottomLeft,borderProps.borderRadii.bottomLeft}};
+        if(borderProps.borderWidths.left) {
+            clipRect.inset(borderProps.borderWidths.left/2,borderProps.borderWidths.left/2);
+        }
+
+        SkRRect clipRRect;
+        clipRRect.setRectRadii(clipRect,radii);
+
+        bool needsSaveLayer =((!(isOpaque(shadowOpacity))) || (shadowOn == Background));
+
+        if(needsSaveLayer)
+            canvas->saveLayerAlpha(NULL,shadowOpacity);
+        if(shadowOn == Background)
+            canvas->clipRRect(clipRRect,SkClipOp::kDifference);
+        drawRect(shadowOn,canvas,frame,borderProps,backgroundColor,&paint);
+        if(needsSaveLayer)
+            canvas->restore();
+    /* Return true only for shadow on Border Case , to update components to handle shadowOnContent.*/
+        return (shadowOn == Background) ? false : true;
+    }
+
+/*Shadow on Path */
+    if(!borderProps.borderWidths.isUniform() ) {
+        SkPath shadowPath;
+        bool pathExist=createshadowPath(canvas,frame,borderProps,&shadowPath);;
+
+       if(pathExist) {
+           if(!(isOpaque(shadowOpacity)))
+               canvas->saveLayerAlpha(NULL,shadowOpacity);
+           canvas->clipPath(shadowPath,SkClipOp::kDifference);
+           canvas->drawPath(shadowPath,paint);
+           if(!(isOpaque(shadowOpacity)))
+               canvas->restore();
+        }
+        return true;
+    }
+    return true;
+}
+
+void drawUnderline(SkCanvas *canvas,Rect frame,SharedColor underlineColor){
+    SkPaint paint;
+    setColor(underlineColor, &paint);
+    paint.setAntiAlias(true);
+    paint.setStyle(SkPaint::kStroke_Style);
+    paint.setStrokeWidth(UNDERLINEWIDTH);
+    auto frameOrigin = frame.origin;
+    auto frameSize = frame.size;
+    canvas->drawLine(frameOrigin.x,frameOrigin.y+frameSize.height-BOTTOMALIGNMENT,frameOrigin.x+frameSize.width,frameOrigin.y+frameSize.height-BOTTOMALIGNMENT, paint);
+}
 } // namespace RSkDrawUtils
 } // namespace react
 } // namespace facebook

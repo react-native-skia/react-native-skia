@@ -24,6 +24,13 @@ class SkSurface;
 
 namespace RnsShell {
 
+#if USE(EGL)
+#include <EGL/egl.h>
+typedef EGLNativeWindowType GLNativeWindowType;
+#else
+typedef uint64_t GLNativeWindowType;
+#endif
+
 class WindowContext {
 public:
     WindowContext(const DisplayParams&);
@@ -43,10 +50,15 @@ public:
 #if USE(RNS_SHELL_PARTIAL_UPDATES)
     virtual bool hasSwapBuffersWithDamage() = 0; // Support for swapping/flipping multiple regions of backbuffer to frontbuffer
     virtual bool hasBufferCopy() = 0; // Support for copying frontbuffer to backbuffer. Required/used only when hasSwapBuffersWithDamage is false
+#ifdef RNS_SHELL_HAS_GPU_SUPPORT
+    virtual int32_t bufferAge() = 0; // Age of current backbuffer
+#endif
 #endif
 
 #ifdef RNS_SHELL_HAS_GPU_SUPPORT
     GrDirectContext* directContext() const { return context_.get(); }
+    static void grTransactionBegin() { grTransactionMutex_.lock(); }
+    static void grTransactionEnd() { grTransactionMutex_.unlock(); }
 #endif
     int width() const { return width_; }
     int height() const { return height_; }
@@ -58,6 +70,7 @@ protected:
 
 #ifdef RNS_SHELL_HAS_GPU_SUPPORT
     sk_sp<GrDirectContext> context_;
+    static std::mutex grTransactionMutex_;
 #endif
     int               width_;
     int               height_;

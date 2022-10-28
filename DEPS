@@ -14,8 +14,6 @@ gclient_gn_args = [
 ]
 
 vars = {
-  "react_native_revision": "react_native_tvos_revision",
-  "react_native_git": "react_native_tvos_git",
   'react_native_default_revision': 'deb66012fe550d536420931e47f5573e798e048a',
   'react_native_tvos_revision': 'tvos-v0.64.2',
   'skia_revision': 'chrome/m86',
@@ -23,6 +21,7 @@ vars = {
   # Note this revision should be updated with
   # third_party/boringssl/roll_boringssl.py, not roll-dep.
   'boringssl_revision': '430a7423039682e4bbc7b522e3b57b2c8dca5e3b',
+  'libcurl_revision': 'curl-7_77_0',
 
   # buildtools
   'gn_version': 'git_revision:7d7e8deea36d126397bda2cf924682504271f0e1',
@@ -48,9 +47,9 @@ vars = {
   'checkout_openxr' : False,
   'mac_xcode_version': 'default',
 
-  'react_native_platform':'default',
-  'react_native_platform_git':'react_native_default_git',
-  'react_native_platform_revision':'react_native_default_revision',
+  'react_native_platform':'tvos',
+  'react_native_platform_git':'react_native_tvos_git',
+  'react_native_platform_revision':'react_native_tvos_revision',
 }
 
 deps = {
@@ -85,6 +84,8 @@ deps = {
 
   # boringssl
   'src/third_party/boringssl/src'         : 'https://boringssl.googlesource.com/boringssl.git' + '@' + Var('boringssl_revision'),
+  # libcurl
+  'src/third_party/libcurl' : 'https://github.com/curl/curl.git' + '@' + Var('libcurl_revision'),  
 
   # buildtools
   'src/third_party/depot_tools': Var('chromium_git') + '/chromium/tools/depot_tools.git' + '@' + '0bfbd890c3e2f3aa734119507d14162248409664',

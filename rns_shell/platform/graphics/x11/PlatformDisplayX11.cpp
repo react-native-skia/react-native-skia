@@ -39,6 +39,9 @@ std::unique_ptr<PlatformDisplay> PlatformDisplayX11::create(Display* display) {
 PlatformDisplayX11::PlatformDisplayX11(Display* display, bool displayOwned)
     : PlatformDisplay(displayOwned)
     , display_(display) {
+    SkSize screenDimension = screenSize();
+
+    setCurrentScreenSize(screenDimension.width(),screenDimension.height());
 }
 
 PlatformDisplayX11::~PlatformDisplayX11() {
@@ -68,6 +71,17 @@ void PlatformDisplayX11::initializeEGLDisplay()
     PlatformDisplay::initializeEGLDisplay();
 }
 #endif // USE(EGL)
+
+SkSize PlatformDisplayX11::screenSize() {
+    XWindowAttributes winAttr;
+    Window rootWin = DefaultRootWindow(display_); // Root Window always returns the updated screen size.
+    SkSize size = SkSize::MakeEmpty();
+
+    XGetWindowAttributes(display_, rootWin, &winAttr);
+    size.set(winAttr.width, winAttr.height);
+
+    return size;
+}
 
 } // namespace RnsShell
 

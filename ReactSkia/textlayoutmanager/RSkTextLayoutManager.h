@@ -15,29 +15,51 @@
 #include "modules/skparagraph/include/ParagraphBuilder.h"
 #include "modules/skparagraph/src/ParagraphBuilderImpl.h"
 
+#include "include/core/SkImageFilter.h"
+#include "include/effects/SkImageFilters.h"
+
 namespace facebook {
 namespace react {
+
+   struct RSkSkTextLayout {
+      skia::textlayout::TextShadow shadow;
+      skia::textlayout::ParagraphStyle paraStyle;
+      std::shared_ptr<skia::textlayout::Paragraph> paragraph{nullptr};
+      std::shared_ptr<skia::textlayout::ParagraphBuilder> builder{nullptr};
+   };
 
 class RSkTextLayoutManager {
 
 public:
+   
+
    RSkTextLayoutManager();
    ~RSkTextLayoutManager(){};
 
    /* Measures attributedString layout using skia's skparagraph module */ 
-   TextMeasurement doMeasure (AttributedString attributedString,
+   TextMeasurement doMeasure (SharedColor backGroundColor, 
+                                 AttributedString attributedString,
                                  ParagraphAttributes paragraphAttributes,
                                  LayoutConstraints layoutConstraints) const;
+   
+   void buildText (struct RSkSkTextLayout &textLayout,
+                     SharedColor backGroundColor,
+                     ParagraphAttributes paragraphAttributes,
+                     TextAttributes textAttributes,
+                     std::string textString,
+                     bool fontDecorationRequired) const;
 
    /* Build attributedString  paragraph using skia's skparagraph module */ 
    /* Set fontDecorationRequired to true, to consider font paint & decoration attributes for paragraph build */
-   uint32_t buildParagraph (AttributedString attributedString,
-                                ParagraphAttributes paragraphAttributes,
-                                bool fontDecorationRequired=false,
-                                std::shared_ptr<skia::textlayout::ParagraphBuilder> builder=nullptr) const;
+   uint32_t buildParagraph (struct RSkSkTextLayout &textLayout,
+                              SharedColor backGroundColor,
+                              AttributedString attributedString,
+                              ParagraphAttributes paragraphAttributes,
+                              bool fontDecorationRequired=false) const;
 
    /* Font collection manager */
    sk_sp<skia::textlayout::FontCollection> collection_;
+
 };
 
 } // namespace react

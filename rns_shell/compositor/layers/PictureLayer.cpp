@@ -1,5 +1,5 @@
 /*
-* Copyright (C) 1994-2021 OpenTV, Inc. and Nagravision S.A.
+* Copyright (C) 1994-2022 OpenTV, Inc. and Nagravision S.A.
 *
 * Use of this source code is governed by a BSD-style license that can be
 * found in the LICENSE file.
@@ -16,19 +16,7 @@ SharedPictureLayer PictureLayer::Create(Client& layerClient) {
 
 PictureLayer::PictureLayer(Client& layerClient)
     : INHERITED(layerClient, LAYER_TYPE_PICTURE) {
-    RNS_LOG_INFO("Picture Layer Constructed(" << this << ") with ID : " << layerId() << " and LayerClient : " << &layerClient);
-}
-
-void PictureLayer::prePaint(PaintContext& context, bool forceLayout) {
-    //Adjust absolute Layout frame and dirty rects
-    bool forceChildrenLayout = (forceLayout || (invalidateMask_ & LayerLayoutInvalidate));
-    preRoll(context, forceLayout);
-    invalidateMask_ = LayerInvalidateNone;
-
-    // prePaint children recursively
-    for (auto& layer : children()) {
-        layer->prePaint(context, forceChildrenLayout);
-    }
+    RNS_LOG_DEBUG("Picture Layer Constructed(" << this << ") with ID : " << layerId() << " and LayerClient : " << &layerClient);
 }
 
 void PictureLayer::paintSelf(PaintContext& context) {
@@ -46,24 +34,4 @@ void PictureLayer::paintSelf(PaintContext& context) {
 #endif
 }
 
-void PictureLayer::paint(PaintContext& context) {
-    RNS_LOG_DEBUG("Picture Layer (" << layerId() << ") has " << children().size() << " childrens");
-    SkAutoCanvasRestore save(context.canvas, true); // Save current clip and matrix state
-
-    context.canvas->setMatrix(absoluteTransformMatrix_);
-    paintSelf(context);// First paint self and then children if any
-
-    if(masksToBounds()) { // Need to clip children.
-        SkRect intRect = SkRect::Make(getFrame());
-        if(!context.dirtyClipBound.isEmpty() && intRect.intersect(context.dirtyClipBound) == false) {
-            RNS_LOG_WARN("We should not call paint if it doesnt intersect with non empty dirtyClipBound...");
-        }
-        context.canvas->clipRect(intRect);
-    }
-
-    for (auto& layer : children()) {
-        if(layer->needsPainting(context))
-            layer->paint(context);
-    }
-}
 }   // namespace RnsShell

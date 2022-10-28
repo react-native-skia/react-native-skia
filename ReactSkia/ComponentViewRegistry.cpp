@@ -24,10 +24,16 @@ void ComponentViewRegistry::Register(
   registry_[descriptorProvider.handle] = std::move(provider);
 }
 
+void ComponentViewRegistry::Register(
+    std::unique_ptr<RSkComponentProvider> provider,
+    ComponentHandle handle) {
+  registry_[handle] = std::move(provider); //Dont have to add descriptorProvider to descriptorProviderRegistry_. Use other overloaded Register function for that
+}
+
 RSkComponentProvider *ComponentViewRegistry::GetProvider(
     ComponentName componentName) {
   for (const auto &kv : registry_) {
-    if (kv.second->GetDescriptorProvider().name == componentName) {
+    if (strcmp(kv.second->GetDescriptorProvider().name, componentName) == 0) {
       return kv.second.get();
     }
   }

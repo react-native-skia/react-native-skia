@@ -6,7 +6,7 @@
 */
 
 #include <algorithm>
-#include <glog/logging.h>
+#include "ReactSkia/utils/RnsLog.h"
 
 #include "RSkEventEmitter.h"
 
@@ -37,7 +37,6 @@ jsi::Value RSkEventEmitter::addListenerWrapper(
     auto eventName = nameValue.utf8(rt);
     
     // Call specific Event listener in Class object 
-
     return self.addListener(eventName.data());
 }
 
@@ -48,13 +47,12 @@ jsi::Value RSkEventEmitter::addListener(std::string eventName) {
         // be responsible to observing different types of events 
         startObserving();
     }
-    
     return jsi::Value::undefined();
 }
 
-void RSkEventEmitter::sendEventWithName(std::string eventName, folly::dynamic &&params) {
+void RSkEventEmitter::sendEventWithName(std::string eventName, folly::dynamic &&params, EmitterCompleteVoidCallback completeCallback) {
     if (bridgeInstance_ == NULL) {
-        LOG(ERROR) << "EventEmitter not initialized with Bridge instance";
+        RNS_LOG_ERROR("EventEmitter not initialized with Bridge instance");
     }
 
     // TODO: check if the eventName is in supportedEvents()
@@ -64,6 +62,8 @@ void RSkEventEmitter::sendEventWithName(std::string eventName, folly::dynamic &&
             params != NULL ? folly::dynamic::array(folly::dynamic::array(eventName), 
                 params)
             : folly::dynamic::array(eventName));
+            if(completeCallback)
+              bridgeInstance_->getJSCallInvoker()->invokeAsync(std::move(completeCallback));
     }
 }
 
@@ -91,7 +91,6 @@ jsi::Value RSkEventEmitter::removeListeners(int removeCount) {
         // be responsible to observing different types of events 
         stopObserving();
     }
-    
     return jsi::Value::undefined();
 }
 
