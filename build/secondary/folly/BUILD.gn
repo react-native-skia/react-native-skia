@@ -14,6 +14,10 @@ config("folly_config") {
       "FOLLY_HAVE_MEMRCHR=1",
     ]
   }
+
+  cflags_cc = [
+    "-Wno-unknown-warning-option",
+  ]
 }
 
 group("folly") {
@@ -36,7 +40,6 @@ source_set("rn_oss") {
     "folly/String.cpp",
 
     "folly/hash/SpookyHashV2.cpp",
-    "folly/lang/Assume.cpp",
     "folly/lang/SafeAssert.cpp",
     "folly/net/NetOps.cpp",
     "folly/portability/SysUio.cpp",
@@ -62,6 +65,7 @@ source_set("rn_oss") {
     "//third_party/glog:glog",
     "//third_party/double-conversion:double-conversion",
     "//third_party/boost:headers_only",
+    "//third_party/fmt:fmt",
   ]
 
   configs -= [ "//build/config/compiler:no_exceptions" ]
@@ -81,19 +85,16 @@ source_set("rn_oss") {
 
 source_set("folly_detail") {
   sources = [
-    "folly/detail/Demangle.cpp",
     "folly/container/detail/F14Table.cpp",
     "folly/memory/detail/MallocImpl.cpp",
 
     # Added for async_io
-    "folly/detail/AtFork.cpp",
     "folly/detail/Futex.cpp",
     "folly/detail/UniqueInstance.cpp",
     "folly/detail/MemoryIdler.cpp",
     "folly/detail/ThreadLocalDetail.cpp",
     "folly/detail/StaticSingletonManager.cpp",
     "folly/detail/IPAddress.cpp",
-    "folly/detail/SingletonStackTrace.cpp",
     "folly/detail/SocketFastOpen.cpp",
   ]
 
@@ -103,6 +104,7 @@ source_set("folly_detail") {
     "//third_party/glog:glog",
     "//third_party/double-conversion:double-conversion",
     "//third_party/boost:headers_only",
+    "//third_party/fmt:fmt",
   ]
 
   configs += [
@@ -125,11 +127,13 @@ config("internal_configs") {
   visibility = [ ":*" ]
 
   cflags_cc = [
+    "-std=c++17",
     "-Wno-sign-compare",
     "-Wno-unreachable-code",
     "-Wno-unused-local-typedef",
     "-Wno-unreachable-code-return",
     "-Wno-unused-but-set-variable",
+    "-Wno-nullability-completeness",
   ]
 
   if (is_clang) {
@@ -202,6 +206,7 @@ source_set("async") {
     "//third_party/glog:glog",
     "//third_party/double-conversion:double-conversion",
     "//third_party/boost:headers_only",
+    "//third_party/fmt:fmt",
     "//third_party/libevent",
     "//third_party/boringssl",
   ]
@@ -223,7 +228,6 @@ source_set("async") {
 
 source_set("synchronization") {
   sources = [
-    "folly/synchronization/AsymmetricMemoryBarrier.cpp",
     "folly/synchronization/AtomicNotification.cpp",
     "folly/synchronization/DistributedMutex.cpp",
     "folly/synchronization/Hazptr.cpp",
@@ -243,6 +247,7 @@ source_set("synchronization") {
     "//third_party/glog:glog",
     "//third_party/double-conversion:double-conversion",
     "//third_party/boost:headers_only",
+    "//third_party/fmt:fmt",
     "//third_party/libevent",
     "//third_party/boringssl",
   ]

@@ -17,6 +17,7 @@ component("double-conversion") {
 
   cflags_cc = [
     "-Wno-unused-const-variable",
+    "-Wno-shadow",
   ]
 }
 

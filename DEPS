@@ -58,13 +58,12 @@ vars = {
 deps = {
   'src/react-native'                      : Var(Var('react_native_platform_git')) + '@' + Var(Var('react_native_platform_revision')),
 
-  # 'src/folly'                             : 'https://github.com/facebook/folly.git' + '@' + 'v2020.01.13.00',
-  # folly custom patch to support boringssl, might not be necessary after we replace folly/async with flutter/fml
-  'src/folly'                             : 'https://github.com/Kudo/folly.git' + '@' + '2b9b7144fdafcc7c78d09465449f1c3a72386ac5',
+  'src/folly'                             : 'https://github.com/Kudo/folly.git' + '@' + '54b476465136e5b1430546b09f248910d7846815',
 
-  'src/third_party/boost'                 : 'https://github.com/react-native-community/boost-for-react-native.git' + '@' + 'v1.63.0-0',
+  'src/third_party/boost'                 : 'https://github.com/Kudo/boost-for-react-native.git' + '@' + 'd9197dd08f1f43a4f910be988fe57bffc26930b2',
   'src/third_party/glog'                  : 'https://github.com/google/glog.git' + '@' + 'v0.3.5',
   'src/third_party/double-conversion'     : 'https://github.com/google/double-conversion.git' + '@' + 'v1.1.6',
+  'src/third_party/fmt'                   : 'https://github.com/fmtlib/fmt.git' + '@' + '9.1.0',
 
   # flutter
   # 'src/flutter'                           : Var('chromium_git') + '/external/github.com/flutter/engine' + '@' + 'd1bc06f032f9d6c148ea6b96b48261d6f545004f',

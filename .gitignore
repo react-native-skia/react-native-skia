@@ -19,6 +19,7 @@
 /third_party/depot_tools/
 /third_party/libcurl/
 /third_party/expat/src/
+/third_party/fmt/
 
 # Build output
 /out*/

@@ -1,0 +1,15 @@
+source_set("fmt") {
+  sources = [
+    # "src/fmt.cc", # No C++ module support
+    "src/format.cc",
+    "src/os.cc",
+  ]
+
+  public_configs = [ ":fmt-config" ]
+}
+
+config("fmt-config") {
+  include_dirs = [
+    "//third_party/fmt/include",
+  ]
+}
