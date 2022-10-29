@@ -1,10 +1,10 @@
-# Copyright 2014 The Chromium Authors. All rights reserved.
+# Copyright 2014 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
 import("//build/config/chromecast_build.gni")
 import("//build/config/freetype/freetype.gni")
-import("//third_party/harfbuzz/harfbuzz.gni")
+import("//third_party/harfbuzz-ng/harfbuzz.gni")
 
 assert(!use_system_freetype, "Not used when using system freetype.")
 
@@ -59,7 +59,6 @@ config("freetype-warnings") {
       # https://savannah.nongnu.org/bugs/index.php?54852
       "-Wno-deprecated-declarations",
 
-      "-Wno-shadow",
       "-Wno-unused-function",
     ]
   }
@@ -132,7 +131,7 @@ source_set("freetype_source") {
     ]
   }
 
-  if (is_linux || is_chromeos || is_chromecast) {
+  if (is_linux || is_chromeos || is_cast_android) {
     # Needed for content_shell on Linux and Chromecast, since fontconfig
     # requires FT_Get_BDF_Property.
     sources += [ "src/src/base/ftbdf.c" ]
@@ -146,9 +145,9 @@ source_set("freetype_source") {
   defines += [ "FT2_BUILD_LIBRARY" ]
 
   if (use_system_harfbuzz) {
-    configs += [ "//third_party/harfbuzz:harfbuzz_from_pkgconfig" ]
+    configs += [ "//third_party/harfbuzz-ng:harfbuzz_from_pkgconfig" ]
   } else {
-    configs += [ "//third_party/harfbuzz:harfbuzz_config" ]
+    configs += [ "//third_party/harfbuzz-ng:harfbuzz_config" ]
   }
   configs -= [ "//build/config/compiler:chromium_code" ]
   configs += [ "//build/config/compiler:no_chromium_code" ]
