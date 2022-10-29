@@ -1,12 +1,16 @@
 #!/usr/bin/env python3
-# Copyright (c) 2021 The Chromium Authors. All rights reserved.
+# Copyright 2021 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import os
+import sys
 import time
 import unittest
 
-import PRESUBMIT
+# Add src/testing/ into sys.path for importing PRESUBMIT without pylint errors.
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+from buildbot import PRESUBMIT
 
 
 class PresubmitError:
