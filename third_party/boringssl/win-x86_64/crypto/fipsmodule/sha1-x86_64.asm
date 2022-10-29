@@ -33,6 +33,8 @@ $L$SEH_begin_sha1_block_data_order:
 	mov	r10d,DWORD[8+r10]
 	test	r8d,512
 	jz	NEAR $L$ialu
+	test	r10d,536870912
+	jnz	NEAR _shaext_shortcut
 	and	r10d,296
 	cmp	r10d,296
 	je	NEAR _avx2_shortcut
@@ -1277,6 +1279,198 @@ $L$epilogue:
 	DB	0F3h,0C3h		;repret
 
 $L$SEH_end_sha1_block_data_order:
+
+ALIGN	32
+sha1_block_data_order_shaext:
+	mov	QWORD[8+rsp],rdi	;WIN64 prologue
+	mov	QWORD[16+rsp],rsi
+	mov	rax,rsp
+$L$SEH_begin_sha1_block_data_order_shaext:
+	mov	rdi,rcx
+	mov	rsi,rdx
+	mov	rdx,r8
+
+
+_shaext_shortcut:
+
+	lea	rsp,[((-72))+rsp]
+	movaps	XMMWORD[(-8-64)+rax],xmm6
+	movaps	XMMWORD[(-8-48)+rax],xmm7
+	movaps	XMMWORD[(-8-32)+rax],xmm8
+	movaps	XMMWORD[(-8-16)+rax],xmm9
+$L$prologue_shaext:
+	movdqu	xmm0,XMMWORD[rdi]
+	movd	xmm1,DWORD[16+rdi]
+	movdqa	xmm3,XMMWORD[((K_XX_XX+160))]
+
+	movdqu	xmm4,XMMWORD[rsi]
+	pshufd	xmm0,xmm0,27
+	movdqu	xmm5,XMMWORD[16+rsi]
+	pshufd	xmm1,xmm1,27
+	movdqu	xmm6,XMMWORD[32+rsi]
+DB	102,15,56,0,227
+	movdqu	xmm7,XMMWORD[48+rsi]
+DB	102,15,56,0,235
+DB	102,15,56,0,243
+	movdqa	xmm9,xmm1
+DB	102,15,56,0,251
+	jmp	NEAR $L$oop_shaext
+
+ALIGN	16
+$L$oop_shaext:
+	dec	rdx
+	lea	r8,[64+rsi]
+	paddd	xmm1,xmm4
+	cmovne	rsi,r8
+	movdqa	xmm8,xmm0
+DB	15,56,201,229
+	movdqa	xmm2,xmm0
+DB	15,58,204,193,0
+DB	15,56,200,213
+	pxor	xmm4,xmm6
+DB	15,56,201,238
+DB	15,56,202,231
+
+	movdqa	xmm1,xmm0
+DB	15,58,204,194,0
+DB	15,56,200,206
+	pxor	xmm5,xmm7
+DB	15,56,202,236
+DB	15,56,201,247
+	movdqa	xmm2,xmm0
+DB	15,58,204,193,0
+DB	15,56,200,215
+	pxor	xmm6,xmm4
+DB	15,56,201,252
+DB	15,56,202,245
+
+	movdqa	xmm1,xmm0
+DB	15,58,204,194,0
+DB	15,56,200,204
+	pxor	xmm7,xmm5
+DB	15,56,202,254
+DB	15,56,201,229
+	movdqa	xmm2,xmm0
+DB	15,58,204,193,0
+DB	15,56,200,213
+	pxor	xmm4,xmm6
+DB	15,56,201,238
+DB	15,56,202,231
+
+	movdqa	xmm1,xmm0
+DB	15,58,204,194,1
+DB	15,56,200,206
+	pxor	xmm5,xmm7
+DB	15,56,202,236
+DB	15,56,201,247
+	movdqa	xmm2,xmm0
+DB	15,58,204,193,1
+DB	15,56,200,215
+	pxor	xmm6,xmm4
+DB	15,56,201,252
+DB	15,56,202,245
+
+	movdqa	xmm1,xmm0
+DB	15,58,204,194,1
+DB	15,56,200,204
+	pxor	xmm7,xmm5
+DB	15,56,202,254
+DB	15,56,201,229
+	movdqa	xmm2,xmm0
+DB	15,58,204,193,1
+DB	15,56,200,213
+	pxor	xmm4,xmm6
+DB	15,56,201,238
+DB	15,56,202,231
+
+	movdqa	xmm1,xmm0
+DB	15,58,204,194,1
+DB	15,56,200,206
+	pxor	xmm5,xmm7
+DB	15,56,202,236
+DB	15,56,201,247
+	movdqa	xmm2,xmm0
+DB	15,58,204,193,2
+DB	15,56,200,215
+	pxor	xmm6,xmm4
+DB	15,56,201,252
+DB	15,56,202,245
+
+	movdqa	xmm1,xmm0
+DB	15,58,204,194,2
+DB	15,56,200,204
+	pxor	xmm7,xmm5
+DB	15,56,202,254
+DB	15,56,201,229
+	movdqa	xmm2,xmm0
+DB	15,58,204,193,2
+DB	15,56,200,213
+	pxor	xmm4,xmm6
+DB	15,56,201,238
+DB	15,56,202,231
+
+	movdqa	xmm1,xmm0
+DB	15,58,204,194,2
+DB	15,56,200,206
+	pxor	xmm5,xmm7
+DB	15,56,202,236
+DB	15,56,201,247
+	movdqa	xmm2,xmm0
+DB	15,58,204,193,2
+DB	15,56,200,215
+	pxor	xmm6,xmm4
+DB	15,56,201,252
+DB	15,56,202,245
+
+	movdqa	xmm1,xmm0
+DB	15,58,204,194,3
+DB	15,56,200,204
+	pxor	xmm7,xmm5
+DB	15,56,202,254
+	movdqu	xmm4,XMMWORD[rsi]
+	movdqa	xmm2,xmm0
+DB	15,58,204,193,3
+DB	15,56,200,213
+	movdqu	xmm5,XMMWORD[16+rsi]
+DB	102,15,56,0,227
+
+	movdqa	xmm1,xmm0
+DB	15,58,204,194,3
+DB	15,56,200,206
+	movdqu	xmm6,XMMWORD[32+rsi]
+DB	102,15,56,0,235
+
+	movdqa	xmm2,xmm0
+DB	15,58,204,193,3
+DB	15,56,200,215
+	movdqu	xmm7,XMMWORD[48+rsi]
+DB	102,15,56,0,243
+
+	movdqa	xmm1,xmm0
+DB	15,58,204,194,3
+DB	65,15,56,200,201
+DB	102,15,56,0,251
+
+	paddd	xmm0,xmm8
+	movdqa	xmm9,xmm1
+
+	jnz	NEAR $L$oop_shaext
+
+	pshufd	xmm0,xmm0,27
+	pshufd	xmm1,xmm1,27
+	movdqu	XMMWORD[rdi],xmm0
+	movd	DWORD[16+rdi],xmm1
+	movaps	xmm6,XMMWORD[((-8-64))+rax]
+	movaps	xmm7,XMMWORD[((-8-48))+rax]
+	movaps	xmm8,XMMWORD[((-8-32))+rax]
+	movaps	xmm9,XMMWORD[((-8-16))+rax]
+	mov	rsp,rax
+$L$epilogue_shaext:
+	mov	rdi,QWORD[8+rsp]	;WIN64 epilogue
+	mov	rsi,QWORD[16+rsp]
+	DB	0F3h,0C3h		;repret
+
+$L$SEH_end_sha1_block_data_order_shaext:
 
 ALIGN	16
 sha1_block_data_order_ssse3:
@@ -5423,6 +5617,38 @@ se_handler:
 
 
 ALIGN	16
+shaext_handler:
+	push	rsi
+	push	rdi
+	push	rbx
+	push	rbp
+	push	r12
+	push	r13
+	push	r14
+	push	r15
+	pushfq
+	sub	rsp,64
+
+	mov	rax,QWORD[120+r8]
+	mov	rbx,QWORD[248+r8]
+
+	lea	r10,[$L$prologue_shaext]
+	cmp	rbx,r10
+	jb	NEAR $L$common_seh_tail
+
+	lea	r10,[$L$epilogue_shaext]
+	cmp	rbx,r10
+	jae	NEAR $L$common_seh_tail
+
+	lea	rsi,[((-8-64))+rax]
+	lea	rdi,[512+r8]
+	mov	ecx,8
+	DD	0xa548f3fc
+
+	jmp	NEAR $L$common_seh_tail
+
+
+ALIGN	16
 ssse3_handler:
 	push	rsi
 	push	rdi
@@ -5514,6 +5740,9 @@ ALIGN	4
 	DD	$L$SEH_begin_sha1_block_data_order wrt ..imagebase
 	DD	$L$SEH_end_sha1_block_data_order wrt ..imagebase
 	DD	$L$SEH_info_sha1_block_data_order wrt ..imagebase
+	DD	$L$SEH_begin_sha1_block_data_order_shaext wrt ..imagebase
+	DD	$L$SEH_end_sha1_block_data_order_shaext wrt ..imagebase
+	DD	$L$SEH_info_sha1_block_data_order_shaext wrt ..imagebase
 	DD	$L$SEH_begin_sha1_block_data_order_ssse3 wrt ..imagebase
 	DD	$L$SEH_end_sha1_block_data_order_ssse3 wrt ..imagebase
 	DD	$L$SEH_info_sha1_block_data_order_ssse3 wrt ..imagebase
@@ -5528,6 +5757,9 @@ ALIGN	8
 $L$SEH_info_sha1_block_data_order:
 DB	9,0,0,0
 	DD	se_handler wrt ..imagebase
+$L$SEH_info_sha1_block_data_order_shaext:
+DB	9,0,0,0
+	DD	shaext_handler wrt ..imagebase
 $L$SEH_info_sha1_block_data_order_ssse3:
 DB	9,0,0,0
 	DD	ssse3_handler wrt ..imagebase

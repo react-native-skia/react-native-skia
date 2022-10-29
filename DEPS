@@ -21,7 +21,7 @@ vars = {
 
   # Note this revision should be updated with
   # third_party/boringssl/roll_boringssl.py, not roll-dep.
-  'boringssl_revision': '430a7423039682e4bbc7b522e3b57b2c8dca5e3b',
+  'boringssl_revision': '1ee71185a2322dc354bee5e5a0abfb1810a27dc6',
   'libcurl_revision': 'curl-7_77_0',
 
   # buildtools
