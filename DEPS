@@ -77,11 +77,11 @@ deps = {
   'src/third_party/harfbuzz-ng/src'       : Var('chromium_git') + '/external/github.com/harfbuzz/harfbuzz.git' + '@' + '56c467093598ec559a7148b61e112e9de52b7076',
   'src/third_party/icu'                   : Var('chromium_git') + '/chromium/deps/icu.git' + '@' + 'da07448619763d1cde255b361324242646f5b268',
   'src/third_party/libjpeg-turbo'         : Var('chromium_git') + '/chromium/deps/libjpeg_turbo.git' + '@' + 'ed683925e4897a84b3bffc5c1414c85b97a129a3',
-  'src/third_party/nasm'                  : Var('chromium_git') + '/chromium/deps/nasm.git' + '@' + '4fa54ca5f7fc3a15a8c78ac94688e64d3e4e4fa1',
-  'src/third_party/libwebp'               : Var('chromium_git') + '/webm/libwebp.git' + '@' + '0fe1a89dbf1930fc2554dbe76adad5d962054ead',
-  'src/third_party/wuffs'                 : Var('skia_git') + '/external/github.com/google/wuffs.git' + '@' + '00cc8a50aa0c86b6bcb37e9ece8fb100047cc17b',
-  'src/third_party/swiftshader'           : 'https://swiftshader.googlesource.com/SwiftShader.git' + '@' + 'cb58662302c8e73845116fc5f14acaa08c037cb2',
-  'src/third_party/expat/src'           : 'https://chromium.googlesource.com/external/github.com/libexpat/libexpat.git' + '@' + 'e976867fb57a0cd87e3b0fe05d59e0ed63c6febb',
+  'src/third_party/nasm'                  : Var('chromium_git') + '/chromium/deps/nasm.git' + '@' + '9215e8e1d0fe474ffd3e16c1a07a0f97089e6224',
+  'src/third_party/libwebp'               : Var('chromium_git') + '/webm/libwebp.git' + '@' + '7366f7f394af26de814296152c50e673ed0a832f',
+  'src/third_party/wuffs'                 : Var('skia_git') + '/external/github.com/google/wuffs-mirror-release-c.git' + '@' + 'a8205c2fe7564b12fea81ee028ba670112cc7719',
+  'src/third_party/swiftshader'           : 'https://swiftshader.googlesource.com/SwiftShader.git' + '@' + 'b22b1b1f2dddcf5eacc8d2a37e7d27f650e1c1e2',
+  'src/third_party/expat/src'           : 'https://chromium.googlesource.com/external/github.com/libexpat/libexpat.git' + '@' + '53fbdf5b8925a426e1b41a9e09b833986b87524e',
 
   # boringssl
   'src/third_party/boringssl/src'         : 'https://boringssl.googlesource.com/boringssl.git' + '@' + Var('boringssl_revision'),
