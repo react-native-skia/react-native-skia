@@ -1,4 +1,4 @@
-// Copyright (c) 2011 The Chromium Authors. All rights reserved.
+// Copyright 2011 The Chromium Authors
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -34,10 +34,6 @@ bool GetWritablePixels(SkCanvas* canvas, SkPixmap* result) {
 
   result->reset(info, pixels, row_bytes);
   return true;
-}
-
-size_t PlatformCanvasStrideForWidth(unsigned width) {
-  return 4 * width;
 }
 
 #if !defined(WIN32)

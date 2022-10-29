@@ -17,7 +17,7 @@ gclient_gn_args = [
 vars = {
   'react_native_default_revision': 'deb66012fe550d536420931e47f5573e798e048a',
   'react_native_tvos_revision': 'tvos-v0.64.2',
-  'skia_revision': 'chrome/m86',
+  'skia_revision': 'chrome/m108',
 
   # Note this revision should be updated with
   # third_party/boringssl/roll_boringssl.py, not roll-dep.
