@@ -1,0 +1,24 @@
+Name: libpng
+URL: http://libpng.org/
+Version: 1.6.37
+CPEPrefix: cpe:/a:libpng:libpng:1.6.37
+Security Critical: yes
+License: libpng license
+License Android Compatible: yes
+
+Description:
+Updated to 1.6.37, stripped all unneeded files.
+
+- Use custom configuration file pnglibconf.h, which turns off all features that
+  are not in use.
+- Use custom prefix file pngprefix.h, which avoids namespace conflicts with
+  pdfium's copy of libpng.
+- Configures custom png chunk user limits (crbug.com/117369) in pnglibconf.h.
+- Applies the patch in patches/0001-chunkerror.patch (modify
+  png_check_chunk_length to call png_benign_error instead of png_chunk_error --
+  see crbug.com/827754).
+- Keeps the fuzz target in contrib/oss-fuzz/ for running on clusterfuzz.
+- Applies the patch in patches/0002-fuzzeroom.patch to prevent clusterfuzz
+  running into OOM errors.
+- Applies the patch from https://github.com/glennrp/libpng/pull/285 to keep
+  clang-cl build working.
