@@ -25,11 +25,11 @@ vars = {
   'libcurl_revision': 'curl-7_77_0',
 
   # buildtools
-  'gn_version': 'git_revision:90294ccdcf9334ed25a76ac9b67689468e506342',
-  'clang_format_revision': '99876cacf78329e5f99c244dbe42ccd1654517a0',
-  'libcxx_revision':       '79a2e924d96e2fc1e4b937c42efd08898fa472d7',
-  'libcxxabi_revision':    '4c6e0991b109638204f08c93600b008c21f01da5',
-  'libunwind_revision':    '99015718c37b30d44c3bcbcc92a03fb85fb85a99',
+  'gn_version': 'git_revision:b9c6c19be95a3863e02f00f1fe403b2502e345b6',
+  'clang_format_revision': '8b525d2747f2584fc35d8c7e612e66f377858df7',
+  'libcxx_revision':       '64d36e572d3f9719c5d75011a718f33f11126851',
+  'libcxxabi_revision':    '9572e56a12c88c011d504a707ca94952be4664f9',
+  'libunwind_revision':    '1111799723f6a003e6f52202b9bf84387c552081',
 
   'react_native_default_git': 'https://github.com/Kudo/react-native.git',
   'react_native_tvos_git': 'https://github.com/nagra-opentv/react-native-tvos.git',
@@ -91,7 +91,7 @@ deps = {
   'src/third_party/libcurl' : 'https://github.com/curl/curl.git' + '@' + Var('libcurl_revision'),  
 
   # buildtools
-  'src/third_party/depot_tools': Var('chromium_git') + '/chromium/tools/depot_tools.git' + '@' + 'a91f399a8a1f3199cb1f91b19bd2c3b88bb42d6c',
+  'src/third_party/depot_tools': Var('chromium_git') + '/chromium/tools/depot_tools.git' + '@' + '2c0a8c736a59044e4acc7be9e172343adc5c4310',
   'src/buildtools/clang_format/script':
     Var('chromium_git') + '/external/github.com/llvm/llvm-project/clang/tools/clang-format.git@' +
     Var('clang_format_revision'),
