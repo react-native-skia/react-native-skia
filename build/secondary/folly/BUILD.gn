@@ -4,11 +4,16 @@ config("folly_config") {
   defines = [
     "FOLLY_NO_CONFIG=1",
     "FOLLY_HAVE_CLOCK_GETTIME=1",
-    "FOLLY_HAVE_MEMRCHR=1",
     "FOLLY_USE_LIBCPP=1",
     "FOLLY_MOBILE=1",
     "FOLLY_HAVE_PTHREAD=1",
   ]
+
+  if (is_linux) {
+    defines += [
+      "FOLLY_HAVE_MEMRCHR=1",
+    ]
+  }
 }
 
 group("folly") {
