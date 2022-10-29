@@ -78,7 +78,7 @@ deps = {
   'src/third_party/icu'                   : Var('chromium_git') + '/chromium/deps/icu.git' + '@' + 'da07448619763d1cde255b361324242646f5b268',
   'src/third_party/libjpeg-turbo'         : Var('chromium_git') + '/chromium/deps/libjpeg_turbo.git' + '@' + 'ed683925e4897a84b3bffc5c1414c85b97a129a3',
   'src/third_party/nasm'                  : Var('chromium_git') + '/chromium/deps/nasm.git' + '@' + '9215e8e1d0fe474ffd3e16c1a07a0f97089e6224',
-  'src/third_party/libwebp'               : Var('chromium_git') + '/webm/libwebp.git' + '@' + '7366f7f394af26de814296152c50e673ed0a832f',
+  'src/third_party/libwebp/src'           : Var('chromium_git') + '/webm/libwebp.git' + '@' + '7366f7f394af26de814296152c50e673ed0a832f',
   'src/third_party/wuffs'                 : Var('skia_git') + '/external/github.com/google/wuffs-mirror-release-c.git' + '@' + 'a8205c2fe7564b12fea81ee028ba670112cc7719',
   'src/third_party/swiftshader'           : 'https://swiftshader.googlesource.com/SwiftShader.git' + '@' + 'b22b1b1f2dddcf5eacc8d2a37e7d27f650e1c1e2',
   'src/third_party/expat/src'           : 'https://chromium.googlesource.com/external/github.com/libexpat/libexpat.git' + '@' + '53fbdf5b8925a426e1b41a9e09b833986b87524e',
