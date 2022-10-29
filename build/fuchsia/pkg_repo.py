@@ -1,4 +1,4 @@
-# Copyright 2019 The Chromium Authors. All rights reserved.
+# Copyright 2019 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
@@ -11,12 +11,15 @@ import subprocess
 import tempfile
 import time
 
-from six.moves import urllib
-
 # Maximum amount of time to block while waiting for "pm serve" to come up.
-_PM_SERVE_LIVENESS_TIMEOUT_SECS = 10
+_PM_SERVE_LISTEN_TIMEOUT_SECS = 10
 
-_MANAGED_REPO_NAME = 'chrome-runner'
+# Amount of time to sleep in between busywaits for "pm serve"'s port file.
+_PM_SERVE_POLL_INTERVAL = 0.1
+
+_MANAGED_REPO_NAME = 'chromium-test-package-server'
+
+_HOSTS = ['fuchsia.com', 'chrome.com', 'chromium.org']
 
 
 class PkgRepo(object):
@@ -56,35 +59,37 @@ class ManagedPkgRepo(PkgRepo):
     self._pkg_root = tempfile.mkdtemp()
     pm_tool = common.GetHostToolPathFromPlatform('pm')
     subprocess.check_call([pm_tool, 'newrepo', '-repo', self._pkg_root])
-    logging.info('Creating and serving temporary package root: {}.'.format(
+    logging.debug('Creating and serving temporary package root: {}.'.format(
         self._pkg_root))
 
-    serve_port = common.GetAvailableTcpPort()
-    # Flags for `pm serve`:
-    # https://fuchsia.googlesource.com/fuchsia/+/refs/heads/main/src/sys/pkg/bin/pm/cmd/pm/serve/serve.go
-    # -l <port>: Port to listen on
-    # -c 2: Use config.json format v2, the default for pkgctl
-    # -q: Don't print out information about requests
-    self._pm_serve_task = subprocess.Popen([
-        pm_tool, 'serve', '-d',
-        os.path.join(self._pkg_root, 'repository'), '-l',
-        ':%d' % serve_port, '-c', '2', '-q'
-    ])
+    with tempfile.NamedTemporaryFile() as pm_port_file:
+      # Flags for `pm serve`:
+      # https://fuchsia.googlesource.com/fuchsia/+/refs/heads/main/src/sys/pkg/bin/pm/cmd/pm/serve/serve.go
+      self._pm_serve_task = subprocess.Popen([
+          pm_tool, 'serve',
+          '-d', os.path.join(self._pkg_root, 'repository'),
+          '-c', '2',  # Use config.json format v2, the default for pkgctl.
+          '-q',  # Don't log transfer activity.
+          '-l', ':0',  # Bind to ephemeral port.
+          '-f', pm_port_file.name  # Publish port number to |pm_port_file|.
+      ]) # yapf: disable
 
-    # Block until "pm serve" starts serving HTTP traffic at |serve_port|.
-    timeout = time.time() + _PM_SERVE_LIVENESS_TIMEOUT_SECS
-    while True:
-      try:
-        urllib.request.urlopen('http://localhost:%d' % serve_port,
-                               timeout=1).read()
-        break
-      except urllib.error.URLError:
-        logging.info('Waiting until \'pm serve\' is up...')
+      # Busywait until 'pm serve' starts the server and publishes its port to
+      # a temporary file.
+      timeout = time.time() + _PM_SERVE_LISTEN_TIMEOUT_SECS
+      serve_port = None
+      while not serve_port:
+        if time.time() > timeout:
+          raise Exception(
+              'Timeout waiting for \'pm serve\' to publish its port.')
 
-      if time.time() >= timeout:
-        raise Exception('Timed out while waiting for \'pm serve\'.')
+        with open(pm_port_file.name, 'r', encoding='utf8') as serve_port_file:
+          serve_port = serve_port_file.read()
 
-      time.sleep(1)
+        time.sleep(_PM_SERVE_POLL_INTERVAL)
+
+      serve_port = int(serve_port)
+      logging.debug('pm serve is active on port {}.'.format(serve_port))
 
     remote_port = common.ConnectPortForwardingTask(target, serve_port, 0)
     self._RegisterPkgRepository(self._pkg_root, remote_port)
@@ -94,7 +99,8 @@ class ManagedPkgRepo(PkgRepo):
     return self
 
   def __exit__(self, type, value, tb):
-    # Allows the repository to delete itself when it leaves the scope of a 'with' block.
+    # Allows the repository to delete itself when it leaves the scope of a
+    # 'with' block.
     self._with_count -= 1
     if self._with_count > 0:
       return
@@ -139,11 +145,11 @@ class ManagedPkgRepo(PkgRepo):
     json.dump(
         {
             'repo_url':
-            "fuchsia-pkg://%s" % _MANAGED_REPO_NAME,
+            'fuchsia-pkg://{}'.format(_MANAGED_REPO_NAME),
             'root_keys':
             root_keys,
             'mirrors': [{
-                "mirror_url": "http://127.0.0.1:%d" % remote_port,
+                "mirror_url": 'http://127.0.0.1:{}'.format(remote_port),
                 "subscribe": True
             }],
             'root_threshold':
@@ -155,37 +161,45 @@ class ManagedPkgRepo(PkgRepo):
 
     # Register the repo.
     return_code = self._target.RunCommand([
-        ('pkgctl repo rm fuchsia-pkg://%s; ' +
-         'pkgctl repo add url http://127.0.0.1:%d/repo_config.json; ') %
-        (_MANAGED_REPO_NAME, remote_port)
+        ('pkgctl repo rm fuchsia-pkg://{}; ' +
+         'pkgctl repo add url http://127.0.0.1:{}/repo_config.json; ').format(
+             _MANAGED_REPO_NAME, remote_port)
     ])
     if return_code != 0:
-      raise Exception('Error code %d when running pkgctl repo add.' %
-                      return_code)
+      raise Exception(
+          'Error code {} when running pkgctl repo add.'.format(return_code))
 
-    rule_template = """'{"version":"1","content":[{"host_match":"fuchsia.com","host_replacement":"%s","path_prefix_match":"/","path_prefix_replacement":"/"}]}'"""
-    return_code = self._target.RunCommand([
-        ('pkgctl rule replace json %s') % (rule_template % (_MANAGED_REPO_NAME))
-    ])
-    if return_code != 0:
-      raise Exception('Error code %d when running pkgctl rule replace.' %
-                      return_code)
+    self._AddHostReplacementRule(_MANAGED_REPO_NAME)
 
   def _UnregisterPkgRepository(self):
     """Unregisters the package repository."""
 
     logging.debug('Unregistering package repository.')
     self._target.RunCommand(
-        ['pkgctl', 'repo', 'rm',
-         'fuchsia-pkg://%s' % (_MANAGED_REPO_NAME)])
+        ['pkgctl', 'repo', 'rm', 'fuchsia-pkg://{}'.format(_MANAGED_REPO_NAME)])
 
     # Re-enable 'devhost' repo if it's present. This is useful for devices that
     # were booted with 'fx serve'.
-    self._target.RunCommand([
-        'pkgctl', 'rule', 'replace', 'json',
-        """'{"version":"1","content":[{"host_match":"fuchsia.com","host_replacement":"devhost","path_prefix_match":"/","path_prefix_replacement":"/"}]}'"""
-    ],
-                            silent=True)
+    self._AddHostReplacementRule('devhost', silent=True)
+
+  def _AddHostReplacementRule(self, host_replacement, silent=False):
+    rule = json.dumps({
+        'version':
+        '1',
+        'content': [{
+            'host_match': host,
+            'host_replacement': host_replacement,
+            'path_prefix_match': '/',
+            'path_prefix_replacement': '/'
+        } for host in _HOSTS]
+    })
+
+    return_code = self._target.RunCommand(
+        ['pkgctl', 'rule', 'replace', 'json', "'{}'".format(rule)])
+    if not silent and return_code != 0:
+      raise Exception(
+          'Error code {} when running pkgctl rule replace with {}'.format(
+              return_code, rule))
 
 
 class ExternalPkgRepo(PkgRepo):
@@ -199,9 +213,8 @@ class ExternalPkgRepo(PkgRepo):
     self._symbol_root = symbol_root
 
     logging.info('Using existing package root: {}'.format(pkg_root))
-    logging.info(
-        'ATTENTION: This will not start a package server. Please run "fx serve" manually.'
-    )
+    logging.info('ATTENTION: This will not start a package server. ' +
+                 'Please run "fx serve" manually.')
 
   def GetPath(self):
     return self._pkg_root

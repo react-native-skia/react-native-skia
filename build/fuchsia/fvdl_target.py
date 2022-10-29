@@ -1,4 +1,4 @@
-# Copyright 2021 The Chromium Authors. All rights reserved.
+# Copyright 2021 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 """Implements commands for running and interacting with Fuchsia on FVDL."""
@@ -40,12 +40,14 @@ class FvdlTarget(emu_target.EmuTarget):
   _FVDL_PATH = os.path.join(common.SDK_ROOT, 'tools', 'x64', 'fvdl')
 
   def __init__(self, out_dir, target_cpu, require_kvm, enable_graphics,
-               hardware_gpu, with_network, ram_size_mb, logs_dir, custom_image):
+               hardware_gpu, with_network, cpu_cores, ram_size_mb, logs_dir,
+               custom_image):
     super(FvdlTarget, self).__init__(out_dir, target_cpu, logs_dir)
     self._require_kvm = require_kvm
     self._enable_graphics = enable_graphics
     self._hardware_gpu = hardware_gpu
     self._with_network = with_network
+    self._cpu_cores = cpu_cores
     self._ram_size_mb = ram_size_mb
     self._custom_image = custom_image
 
@@ -73,8 +75,8 @@ class FvdlTarget(emu_target.EmuTarget):
   def CreateFromArgs(args):
     return FvdlTarget(args.out_dir, args.target_cpu, args.require_kvm,
                       args.enable_graphics, args.hardware_gpu,
-                      args.with_network, args.ram_size_mb, args.logs_dir,
-                      args.custom_image)
+                      args.with_network, args.cpu_cores, args.ram_size_mb,
+                      args.logs_dir, args.custom_image)
 
   @staticmethod
   def RegisterArgs(arg_parser):
@@ -84,8 +86,17 @@ class FvdlTarget(emu_target.EmuTarget):
                            default=False,
                            help='Run emulator with emulated nic via tun/tap.')
     fvdl_args.add_argument('--custom-image',
-                           help='Specify an image used for booting up the '
-                           'emulator.')
+                           help='Specify an image used for booting up the '\
+                                'emulator.')
+    fvdl_args.add_argument('--enable-graphics',
+                           action='store_true',
+                           default=False,
+                           help='Start emulator with graphics instead of '\
+                                'headless.')
+    fvdl_args.add_argument('--hardware-gpu',
+                           action='store_true',
+                           default=False,
+                           help='Use local GPU hardware instead Swiftshader.')
 
   def _BuildCommand(self):
     boot_data.ProvisionSSH()
@@ -100,9 +111,8 @@ class FvdlTarget(emu_target.EmuTarget):
         boot_data.GetTargetFile('storage-full.blk', self._image_arch,
                                 self._image_type))
     aemu_path = common.EnsurePathExists(
-        os.path.join(common.GetEmuRootForPlatform(self.EMULATOR_NAME),
+        os.path.join(common.GetHostToolPathFromPlatform('aemu_internal'),
                      'emulator'))
-
     emu_command = [
         self._FVDL_PATH,
         '--sdk',
@@ -116,6 +126,12 @@ class FvdlTarget(emu_target.EmuTarget):
         # no-interactive requires a --vdl-output flag to shutdown the emulator.
         '--vdl-output',
         self._vdl_output_file.name,
+        '-c',
+        ' '.join(boot_data.GetKernelArgs()),
+
+        # Use an existing emulator checked out by Chromium.
+        '--aemu-path',
+        aemu_path,
 
         # Use existing images instead of downloading new ones.
         '--kernel-image',
@@ -127,13 +143,11 @@ class FvdlTarget(emu_target.EmuTarget):
         '--image-architecture',
         self._target_cpu,
 
-        # Use an existing emulator checked out by Chromium.
-        '--aemu-path',
-        aemu_path,
-
         # Use this flag and temp file to define ram size.
         '--device-proto',
-        self._device_proto_file.name
+        self._device_proto_file.name,
+        '--cpu-count',
+        str(self._cpu_cores)
     ]
     self._ConfigureEmulatorLog(emu_command)
 
@@ -145,8 +159,6 @@ class FvdlTarget(emu_target.EmuTarget):
       emu_command.append('--host-gpu')
     if self._with_network:
       emu_command.append('-N')
-
-    logging.info('FVDL command: ' + ' '.join(emu_command))
 
     return emu_command
 
@@ -164,16 +176,20 @@ class FvdlTarget(emu_target.EmuTarget):
       ]
       if self._hardware_gpu:
         vulkan_icd_file = os.path.join(
-            common.GetEmuRootForPlatform(self.EMULATOR_NAME), 'lib64', 'vulkan',
-            'vk_swiftshader_icd.json')
+            common.GetHostToolPathFromPlatform('aemu_internal'), 'lib64',
+            'vulkan', 'vk_swiftshader_icd.json')
         env_flags.append('VK_ICD_FILENAMES=%s' % vulkan_icd_file)
       for flag in env_flags:
         emu_command.extend(['--envs', flag])
 
-  def _WaitUntilReady(self):
-    # Indicates the FVDL command finished running.
+  def _HasNetworking(self):
+    return self._with_network
+
+  def _ConnectToTarget(self):
+    # Wait for the emulator to finish starting up.
+    logging.info('Waiting for fvdl to start...')
     self._emu_process.communicate()
-    super(FvdlTarget, self)._WaitUntilReady()
+    super(FvdlTarget, self)._ConnectToTarget()
 
   def _IsEmuStillRunning(self):
     if not self._pid:
@@ -188,15 +204,19 @@ class FvdlTarget(emu_target.EmuTarget):
         logging.error('vdl_output file no longer found. '
                       'Cannot get emulator pid.')
         return False
-    if subprocess.check_output(['ps', '-p', self._pid, 'o', 'comm=']):
-      return True
+    try:
+      if subprocess.check_output(['ps', '-p', self._pid, 'o', 'comm=']):
+        return True
+    except subprocess.CalledProcessError:
+      # The process must be gone.
+      pass
     logging.error('Emulator pid no longer found. Emulator must be down.')
     return False
 
   def _GetEndpoint(self):
     if self._with_network:
       return self._GetNetworkAddress()
-    return ('localhost', self._host_ssh_port)
+    return (self.LOCAL_ADDRESS, self._host_ssh_port)
 
   def _GetNetworkAddress(self):
     if self._host:
@@ -215,7 +235,7 @@ class FvdlTarget(emu_target.EmuTarget):
       logging.error('vdl_output file not found. Cannot get network address.')
       raise
 
-  def Shutdown(self):
+  def _Shutdown(self):
     if not self._emu_process:
       logging.error('%s did not start' % (self.EMULATOR_NAME))
       return
