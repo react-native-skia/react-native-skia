@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env vpython3
 # Copyright 2018 The Chromium Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
@@ -9,10 +9,9 @@ This is a wrapper around the device's oatdump executable, parsing desired output
 and accommodating API-level-specific details, such as file paths.
 """
 
-from __future__ import print_function
+
 
 import argparse
-import exceptions
 import logging
 import os
 import re
@@ -45,7 +44,7 @@ def DetermineDeviceToUse(devices):
   Returns:
     A single device_utils.DeviceUtils instance.
   Raises:
-    device_errors.NoDevicesError: Raised when no non-blacklisted devices exist.
+    device_errors.NoDevicesError: Raised when no non-denylisted devices exist.
     device_errors.MultipleDevicesError: Raise when multiple devices exist, but
         |devices| does not distinguish which to use.
   """
@@ -189,7 +188,7 @@ def _PrintVerificationResults(target_status, java_classes, show_summary):
     if java_class.verification_status == target_status:
       print(java_class.name)
     if java_class.verification_status not in d:
-      raise exceptions.RuntimeError('Unexpected status: {0}'.format(
+      raise RuntimeError('Unexpected status: {0}'.format(
           java_class.verification_status))
     else:
       d[java_class.verification_status] += 1

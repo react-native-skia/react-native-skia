@@ -4,11 +4,16 @@ config("folly_config") {
   defines = [
     "FOLLY_NO_CONFIG=1",
     "FOLLY_HAVE_CLOCK_GETTIME=1",
-    "FOLLY_HAVE_MEMRCHR=1",
     "FOLLY_USE_LIBCPP=1",
     "FOLLY_MOBILE=1",
     "FOLLY_HAVE_PTHREAD=1",
   ]
+
+  if (is_linux) {
+    defines += [
+      "FOLLY_HAVE_MEMRCHR=1",
+    ]
+  }
 }
 
 group("folly") {
@@ -123,6 +128,8 @@ config("internal_configs") {
     "-Wno-sign-compare",
     "-Wno-unreachable-code",
     "-Wno-unused-local-typedef",
+    "-Wno-unreachable-code-return",
+    "-Wno-unused-but-set-variable",
   ]
 
   if (is_clang) {

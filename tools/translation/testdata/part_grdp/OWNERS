@@ -1,0 +1,3 @@
+# This OWNERS file is for testing. Point it to the original so as not to break
+# this directory.
+file://tools/translation/OWNERS

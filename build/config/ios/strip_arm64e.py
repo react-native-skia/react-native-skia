@@ -33,6 +33,7 @@ def parse_args(args):
   parser = argparse.ArgumentParser()
   parser.add_argument('--input', required=True, help='Path to input binary')
   parser.add_argument('--output', required=True, help='Path to output binary')
+  parser.add_argument('--xcode-version', required=True, help='Version of Xcode')
   return parser.parse_args(args)
 
 

@@ -1,4 +1,4 @@
-#!/usr/bin/env vpython
+#!/usr/bin/env vpython3
 # Copyright 2020 The Chromium Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
@@ -6,9 +6,13 @@
 #pylint: disable=protected-access
 
 import os
+import sys
 import unittest
 
-import mock
+if sys.version_info[0] == 2:
+  import mock
+else:
+  import unittest.mock as mock
 
 from skia_gold_common import skia_gold_properties
 from skia_gold_common import unittest_utils
@@ -23,6 +27,10 @@ class SkiaGoldPropertiesInitializationTest(unittest.TestCase):
     self.assertEqual(instance._local_pixel_tests,
                      expected.get('local_pixel_tests'))
     self.assertEqual(instance._no_luci_auth, expected.get('no_luci_auth'))
+    self.assertEqual(instance._code_review_system,
+                     expected.get('code_review_system'))
+    self.assertEqual(instance._continuous_integration_system,
+                     expected.get('continuous_integration_system'))
     self.assertEqual(instance._git_revision, expected.get('git_revision'))
     self.assertEqual(instance._issue, expected.get('gerrit_issue'))
     self.assertEqual(instance._patchset, expected.get('gerrit_patchset'))
@@ -49,6 +57,16 @@ class SkiaGoldPropertiesInitializationTest(unittest.TestCase):
     args = createSkiaGoldArgs(no_luci_auth=True)
     sgp = skia_gold_properties.SkiaGoldProperties(args)
     self.verifySkiaGoldProperties(sgp, {'no_luci_auth': True})
+
+  def test_initializeSkiaGoldAttributes_explicitCrs(self):
+    args = createSkiaGoldArgs(code_review_system='foo')
+    sgp = skia_gold_properties.SkiaGoldProperties(args)
+    self.verifySkiaGoldProperties(sgp, {'code_review_system': 'foo'})
+
+  def test_initializeSkiaGoldAttributes_explicitCis(self):
+    args = createSkiaGoldArgs(continuous_integration_system='foo')
+    sgp = skia_gold_properties.SkiaGoldProperties(args)
+    self.verifySkiaGoldProperties(sgp, {'continuous_integration_system': 'foo'})
 
   def test_initializeSkiaGoldAttributes_bypassExplicitTrue(self):
     args = createSkiaGoldArgs(bypass_skia_gold_functionality=True)

@@ -1,9 +1,6 @@
 # TODO(crbug.com/979355): Enable this.
 -AutotestPrivateWithPolicyApiTest.PolicyAPITest
 
-# TODO(crbug.com/977738): Enable this.
--ChromePluginTest.InstalledPlugins
-
 # TODO(crbug.com/976083): Enable this.
 -MSE_Widevine/EncryptedMediaTest.*
 
@@ -15,10 +12,6 @@
 
 # TODO(crbug.com/978051): Enable this.
 -TabManagerTestWithTwoTabs.TabProactiveDiscardAndFocusBeforeFreezeCompletes
-
-# TODO(crbug.com/1002652): Enable this.
--TabStripTabListTest.All
--TabStripTabTest.All
 
 # TODO(crbug.com/977749): Enable this.
 -TestAsNormalAndGuestUser/SpokenFeedbackTest.OverviewMode/0

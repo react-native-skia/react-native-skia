@@ -2,8 +2,10 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+
 import logging
 
+from six.moves import range  # pylint: disable=redefined-builtin
 from devil import base_error
 from devil.android import device_errors
 from devil.android import device_utils
@@ -32,7 +34,9 @@ class LocalEmulatorEnvironment(local_device_environment.LocalDeviceEnvironment):
     self._writable_system = ((hasattr(args, 'use_webview_provider')
                               and args.use_webview_provider)
                              or (hasattr(args, 'replace_system_package')
-                                 and args.replace_system_package))
+                                 and args.replace_system_package)
+                             or (hasattr(args, 'system_packages_to_remove')
+                                 and args.system_packages_to_remove))
 
     self._emulator_instances = []
     self._device_serials = []

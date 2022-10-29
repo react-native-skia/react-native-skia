@@ -1,0 +1,16 @@
+#!/usr/bin/env vpython
+# Copyright 2018 The Chromium Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+"""This tool provides a command line interface for the flakiness dashboard."""
+
+import sys
+
+from core import external_modules
+from cli_tools import flakiness_cli
+
+
+if __name__ == '__main__':
+  external_modules.RequireModules()
+  sys.exit(flakiness_cli.Main())

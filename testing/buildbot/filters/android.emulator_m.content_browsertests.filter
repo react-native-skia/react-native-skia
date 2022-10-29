@@ -8,10 +8,10 @@
 -BackForwardCacheBrowserTest.VideoSuspendAndResume
 
 # crbug.com/1096612
--SitePerProcessBrowserTest.DetachedIframeUnloadHandlerABCB*
+-All/SitePerProcessBrowserTest.DetachedIframeUnloadHandlerABCB/*
 
 # crbug.com/1058447
--SitePerProcessBrowserTest.FrameViewportOffsetTestSimple
+-All/SitePerProcessBrowserTest.FrameViewportOffsetTestSimple/*
 
 # crbug.com/1056325
 -WebRtcAudioBrowserTest.*
@@ -54,3 +54,9 @@
 
 # crbug.com/954217
 -RenderFrameHostImplBrowserTest.VisibilityScrolledOutOfView
+
+# crbug.com/1120813
+-P/CompositorImplBrowserTestRefreshRate.VideoPreference/*
+
+# crbug.com/1047994
+-WebRtcBrowserTest.CanSetupH264VideoCallOnSupportedDevice

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #
 # Copyright (c) 2015 The Chromium Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
@@ -112,25 +112,6 @@ def _ParseArgs(args):
       action='store_true',
       help='Use zip -9 rather than zip -1')
   parser.add_argument(
-      '--stamp', help='If passed, the script touches the passed in stamp file.')
-  parser.add_argument(
-      '--expected-native-libs-and-assets',
-      help='Expected list of native libraries and assets.')
-  parser.add_argument(
-      '--native-libs-and-assets-expectation-failure-file',
-      help='Write to this file if the expected list of native libraries and '
-      'assets does not match the actual list.')
-  parser.add_argument(
-      '--only-verify-expectations',
-      action="store_true",
-      help='When passed, the script ends execution after verifying '
-      'expectations.')
-  parser.add_argument(
-      '--fail-on-expectations',
-      action="store_true",
-      help='When passed, fails the build on libraries and assets expectation '
-      'mismatches.')
-  parser.add_argument(
       '--library-always-compress',
       action='append',
       help='The list of library files that we always compress.')
@@ -138,6 +119,10 @@ def _ParseArgs(args):
       '--library-renames',
       action='append',
       help='The list of library files that we prepend crazy. to their names.')
+  parser.add_argument('--warnings-as-errors',
+                      action='store_true',
+                      help='Treat all warnings as errors.')
+  diff_utils.AddCommandLineFlags(parser)
   options = parser.parse_args(args)
   options.assets = build_utils.ParseGnList(options.assets)
   options.uncompressed_assets = build_utils.ParseGnList(
@@ -179,9 +164,6 @@ def _ParseArgs(args):
                                    and options.secondary_android_abi):
     raise Exception('Must specify --is-multi-abi with both --android-abi '
                     'and --secondary-android-abi.')
-  if options.only_verify_expectations and not options.stamp:
-    raise Exception('Must specify --stamp when using '
-                    '--only-verify-expectations.')
   return options
 
 
@@ -310,56 +292,16 @@ def _GetNativeLibrariesToAdd(native_libs, android_abi, uncompress, fast_align,
   return libraries_to_add
 
 
-def _VerifyNativeLibsAndAssets(
-    native_libs, assets, expectation_file_path,
-    unexpected_native_libs_and_assets_failure_file_path, fail_on_mismatch):
-  """Verifies the native libraries and assets are as expected.
-
-  Check that the native libraries and assets being added are consistent with
-  the expectation file.
-  """
-
+def _CreateExpectationsData(native_libs, assets):
+  """Creates list of native libraries and assets."""
   native_libs = sorted(native_libs)
   assets = sorted(assets)
 
-  with tempfile.NamedTemporaryFile() as generated_output:
-    for apk_path, _, compress, alignment in native_libs + assets:
-      generated_output.write('apk_path=%s, compress=%s, alignment=%s\n' %
-                             (apk_path, compress, alignment))
-
-      generated_output.flush()
-
-    msg = diff_utils.DiffFileContents(
-        expectation_file_path, generated_output.name, show_files_compared=False)
-    if not msg:
-      return
-
-    msg_header = """\
-Native Libraries and Assets expectations file needs updating. For details see:
-https://chromium.googlesource.com/chromium/src/+/HEAD/chrome/android/java/README.md
-"""
-    sys.stderr.write(msg_header)
-    sys.stderr.write(msg)
-    if unexpected_native_libs_and_assets_failure_file_path:
-      build_utils.MakeDirectory(
-          os.path.dirname(unexpected_native_libs_and_assets_failure_file_path))
-      with open(unexpected_native_libs_and_assets_failure_file_path, 'w') as f:
-        f.write(msg_header)
-        f.write(msg)
-
-    if fail_on_mismatch:
-      sys.exit(1)
-
-
-def _MaybeWriteDepAndStampFiles(options, depfile_deps):
-  if options.stamp:
-    build_utils.Touch(options.stamp)
-  if options.depfile:
-    if options.only_verify_expectations:
-      output = options.stamp
-    else:
-      output = options.output_apk
-    build_utils.WriteDepfile(options.depfile, output, inputs=depfile_deps)
+  ret = []
+  for apk_path, _, compress, alignment in native_libs + assets:
+    ret.append('apk_path=%s, compress=%s, alignment=%s\n' %
+               (apk_path, compress, alignment))
+  return ''.join(ret)
 
 
 def main(args):
@@ -399,15 +341,16 @@ def main(args):
     depfile_deps += secondary_native_libs
 
   if options.java_resources:
-    # Included via .build_config, so need to write it to depfile.
+    # Included via .build_config.json, so need to write it to depfile.
     depfile_deps.extend(options.java_resources)
 
   assets = _ExpandPaths(options.assets)
   uncompressed_assets = _ExpandPaths(options.uncompressed_assets)
 
-  # Included via .build_config, so need to write it to depfile.
+  # Included via .build_config.json, so need to write it to depfile.
   depfile_deps.extend(x[0] for x in assets)
   depfile_deps.extend(x[0] for x in uncompressed_assets)
+  depfile_deps.append(options.resource_apk)
 
   # Bundle modules have a structure similar to APKs, except that resources
   # are compiled in protobuf format (instead of binary xml), and that some
@@ -430,22 +373,16 @@ def main(args):
     apk_dex_dir = ''
 
   def _GetAssetDetails(assets, uncompressed_assets, fast_align, allow_reads):
-    asset_details = _GetAssetsToAdd(
-        assets, fast_align, disable_compression=False, allow_reads=allow_reads)
-    asset_details.extend(
-        _GetAssetsToAdd(
-            uncompressed_assets,
-            fast_align,
-            disable_compression=True,
-            allow_reads=allow_reads))
-    return asset_details
-
-  # We compute expectations without reading the files. This allows us to check
-  # expectations for different targets by just generating their build_configs
-  # and not have to first generate all the actual files and all their
-  # dependencies (for example by just passing --only-verify-expectations).
-  expectation_asset_details = _GetAssetDetails(
-      assets, uncompressed_assets, fast_align, allow_reads=False)
+    ret = _GetAssetsToAdd(assets,
+                          fast_align,
+                          disable_compression=False,
+                          allow_reads=allow_reads)
+    ret.extend(
+        _GetAssetsToAdd(uncompressed_assets,
+                        fast_align,
+                        disable_compression=True,
+                        allow_reads=allow_reads))
+    return ret
 
   libs_to_add = _GetNativeLibrariesToAdd(
       native_libs, options.android_abi, options.uncompress_shared_libraries,
@@ -457,14 +394,24 @@ def main(args):
             options.uncompress_shared_libraries, fast_align,
             options.library_always_compress, options.library_renames))
 
-  if options.expected_native_libs_and_assets:
-    _VerifyNativeLibsAndAssets(
-        libs_to_add, expectation_asset_details,
-        options.expected_native_libs_and_assets,
-        options.native_libs_and_assets_expectation_failure_file,
-        options.fail_on_expectations)
+  if options.expected_file:
+    # We compute expectations without reading the files. This allows us to check
+    # expectations for different targets by just generating their build_configs
+    # and not have to first generate all the actual files and all their
+    # dependencies (for example by just passing --only-verify-expectations).
+    asset_details = _GetAssetDetails(assets,
+                                     uncompressed_assets,
+                                     fast_align,
+                                     allow_reads=False)
+
+    actual_data = _CreateExpectationsData(libs_to_add, asset_details)
+    diff_utils.CheckExpectations(actual_data, options)
+
     if options.only_verify_expectations:
-      _MaybeWriteDepAndStampFiles(options, depfile_deps)
+      if options.depfile:
+        build_utils.WriteDepfile(options.depfile,
+                                 options.actual_file,
+                                 inputs=depfile_deps)
       return
 
   # If we are past this point, we are going to actually create the final apk so
@@ -508,7 +455,7 @@ def main(args):
       # 3. Dex files
       logging.debug('Adding classes.dex')
       if options.dex_file:
-        with open(options.dex_file) as dex_file_obj:
+        with open(options.dex_file, 'rb') as dex_file_obj:
           if options.dex_file.endswith('.dex'):
             max_dex_number = 1
             # This is the case for incremental_install=true.
@@ -527,7 +474,7 @@ def main(args):
                     compress=not options.uncompress_dex)
 
       if options.jdk_libs_dex_file:
-        with open(options.jdk_libs_dex_file) as dex_file_obj:
+        with open(options.jdk_libs_dex_file, 'rb') as dex_file_obj:
           add_to_zip(
               apk_dex_dir + 'classes{}.dex'.format(max_dex_number + 1),
               dex_file_obj.read(),
@@ -593,12 +540,21 @@ def main(args):
 
     if options.format == 'apk':
       zipalign_path = None if fast_align else options.zipalign_path
-      finalize_apk.FinalizeApk(options.apksigner_jar, zipalign_path, f.name,
-                               f.name, options.key_path, options.key_passwd,
-                               options.key_name, int(options.min_sdk_version))
+      finalize_apk.FinalizeApk(options.apksigner_jar,
+                               zipalign_path,
+                               f.name,
+                               f.name,
+                               options.key_path,
+                               options.key_passwd,
+                               options.key_name,
+                               int(options.min_sdk_version),
+                               warnings_as_errors=options.warnings_as_errors)
     logging.debug('Moving file into place')
 
-    _MaybeWriteDepAndStampFiles(options, depfile_deps)
+    if options.depfile:
+      build_utils.WriteDepfile(options.depfile,
+                               options.output_apk,
+                               inputs=depfile_deps)
 
 
 if __name__ == '__main__':

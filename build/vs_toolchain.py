@@ -19,6 +19,21 @@ import sys
 
 from gn_helpers import ToGNString
 
+# VS 2019 16.61 with 10.0.19041 SDK, and 10.0.20348 version of
+# d3dcompiler_47.dll, with ARM64 libraries and UWP support.
+# See go/chromium-msvc-toolchain for instructions about how to update the
+# toolchain.
+#
+# When updating the toolchain, consider the following areas impacted by the
+# toolchain version:
+#
+# * //base/win/windows_version.cc NTDDI preprocessor check
+#   Triggers a compiler error if the available SDK is older than the minimum.
+# * //build/config/win/BUILD.gn NTDDI_VERSION value
+#   Affects the availability of APIs in the toolchain headers.
+# * //docs/windows_build_instructions.md mentions of VS or Windows SDK.
+#   Keeps the document consistent with the toolchain version.
+TOOLCHAIN_HASH = '3bda71a11e'
 
 script_dir = os.path.dirname(os.path.realpath(__file__))
 json_data_file = os.path.join(script_dir, 'win_toolchain.json')
@@ -68,8 +83,6 @@ def SetEnvironmentAndGetRuntimeDllDirs():
     toolchain = toolchain_data['path']
     version = toolchain_data['version']
     win_sdk = toolchain_data.get('win_sdk')
-    if not win_sdk:
-      win_sdk = toolchain_data['win8sdk']
     wdk = toolchain_data['wdk']
     # TODO(scottmg): The order unfortunately matters in these. They should be
     # split into separate keys for x64/x86/arm64. (See CopyDlls call below).
@@ -307,17 +320,16 @@ def _CopyUCRTRuntime(target_dir, source_dir, target_cpu, suffix):
     if not suffix.startswith('.'):
       # ucrtbased.dll is located at {win_sdk_dir}/bin/{a.b.c.d}/{target_cpu}/
       # ucrt/.
-      sdk_redist_root = os.path.join(win_sdk_dir, 'bin')
-      sdk_bin_sub_dirs = os.listdir(sdk_redist_root)
+      sdk_bin_root = os.path.join(win_sdk_dir, 'bin')
+      sdk_bin_sub_dirs = glob.glob(os.path.join(sdk_bin_root, '10.*'))
       # Select the most recent SDK if there are multiple versions installed.
       _SortByHighestVersionNumberFirst(sdk_bin_sub_dirs)
       for directory in sdk_bin_sub_dirs:
-        sdk_redist_root_version = os.path.join(sdk_redist_root, directory)
+        sdk_redist_root_version = os.path.join(sdk_bin_root, directory)
         if not os.path.isdir(sdk_redist_root_version):
           continue
-        if re.match(r'10\.\d+\.\d+\.\d+', directory):
-          source_dir = os.path.join(sdk_redist_root_version, target_cpu, 'ucrt')
-          break
+        source_dir = os.path.join(sdk_redist_root_version, target_cpu, 'ucrt')
+        break
     _CopyRuntimeImpl(os.path.join(target_dir, 'ucrtbase' + suffix),
                      os.path.join(source_dir, 'ucrtbase' + suffix))
 
@@ -333,14 +345,13 @@ def FindVCComponentRoot(component):
   assert ('GYP_MSVS_OVERRIDE_PATH' in os.environ)
   vc_component_msvc_root = os.path.join(os.environ['GYP_MSVS_OVERRIDE_PATH'],
       'VC', component, 'MSVC')
-  vc_component_msvc_contents = os.listdir(vc_component_msvc_root)
+  vc_component_msvc_contents = glob.glob(
+      os.path.join(vc_component_msvc_root, '14.*'))
   # Select the most recent toolchain if there are several.
   _SortByHighestVersionNumberFirst(vc_component_msvc_contents)
   for directory in vc_component_msvc_contents:
-    if not os.path.isdir(os.path.join(vc_component_msvc_root, directory)):
-      continue
-    if re.match(r'14\.\d+\.\d+', directory):
-      return os.path.join(vc_component_msvc_root, directory)
+    if os.path.isdir(directory):
+      return directory
   raise Exception('Unable to find the VC %s directory.' % component)
 
 
@@ -419,37 +430,21 @@ def _CopyDebugger(target_dir, target_cpu):
       if is_optional:
         continue
       else:
-        raise Exception('%s not found in "%s"\r\nYou must install the '
-                        '"Debugging Tools for Windows" feature from the Windows'
-                        ' 10 SDK, the 10.0.19041.0 version.'
-                        % (debug_file, full_path))
+        raise Exception('%s not found in "%s"\r\nYou must install'
+                        'Windows 10 SDK version 10.0.19041.0 including the '
+                        '"Debugging Tools for Windows" feature.' %
+                        (debug_file, full_path))
     target_path = os.path.join(target_dir, debug_file)
     _CopyRuntimeImpl(target_path, full_path)
 
 
 def _GetDesiredVsToolchainHashes():
   """Load a list of SHA1s corresponding to the toolchains that we want installed
-  to build with.
-
-  When updating the toolchain, consider the following areas impacted by the
-  toolchain version:
-
-  * //base/win/windows_version.cc NTDDI preprocessor check
-    Triggers a compiler error if the available SDK is older than the minimum.
-  * //build/config/win/BUILD.gn NTDDI_VERSION value
-    Affects the availability of APIs in the toolchain headers.
-  * //docs/windows_build_instructions.md mentions of VS or Windows SDK.
-    Keeps the document consistent with the toolchain version.
-  """
-  # VS 2019 16.61 with 10.0.19041 SDK, and 10.0.17134 version of
-  # d3dcompiler_47.dll, with ARM64 libraries and UWP support.
-  # See go/chromium-msvc-toolchain for instructions about how to update the
-  # toolchain.
-  toolchain_hash = 'a687d8e2e4114d9015eb550e1b156af21381faac'
+  to build with."""
   # Third parties that do not have access to the canonical toolchain can map
   # canonical toolchain version to their own toolchain versions.
-  toolchain_hash_mapping_key = 'GYP_MSVS_HASH_%s' % toolchain_hash
-  return [os.environ.get(toolchain_hash_mapping_key, toolchain_hash)]
+  toolchain_hash_mapping_key = 'GYP_MSVS_HASH_%s' % TOOLCHAIN_HASH
+  return [os.environ.get(toolchain_hash_mapping_key, TOOLCHAIN_HASH)]
 
 
 def ShouldUpdateToolchain():

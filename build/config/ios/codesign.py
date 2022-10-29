@@ -9,6 +9,7 @@ import codecs
 import datetime
 import fnmatch
 import glob
+import json
 import os
 import plistlib
 import shutil
@@ -57,30 +58,94 @@ def LoadPlistFile(plist_path):
   Returns:
     The content of the property list file as a python object.
   """
-  return ReadPlistFromString(
-      subprocess.check_output(
-          ['xcrun', 'plutil', '-convert', 'xml1', '-o', '-', plist_path]))
+  if sys.version_info.major == 2:
+    return plistlib.readPlistFromString(
+        subprocess.check_output(
+            ['xcrun', 'plutil', '-convert', 'xml1', '-o', '-', plist_path]))
+  else:
+    with open(plist_path, 'rb') as fp:
+      return plistlib.load(fp)
+
+
+def CreateSymlink(value, location):
+  """Creates symlink with value at location if the target exists."""
+  target = os.path.join(os.path.dirname(location), value)
+  if os.path.exists(location):
+    os.unlink(location)
+  os.symlink(value, location)
 
 
 class Bundle(object):
   """Wraps a bundle."""
 
-  def __init__(self, bundle_path):
+  def __init__(self, bundle_path, platform):
     """Initializes the Bundle object with data from bundle Info.plist file."""
     self._path = bundle_path
-    self._data = LoadPlistFile(os.path.join(self._path, 'Info.plist'))
+    self._kind = Bundle.Kind(platform, os.path.splitext(bundle_path)[-1])
+    self._data = None
+
+  def Load(self):
+    self._data = LoadPlistFile(self.info_plist_path)
+
+  @staticmethod
+  def Kind(platform, extension):
+    if platform == 'iphonesimulator' or platform == 'iphoneos':
+      return 'ios'
+    if platform == 'macosx':
+      if extension == '.framework':
+        return 'mac_framework'
+      return 'mac'
+    raise ValueError('unknown bundle type %s for %s' % (extension, platform))
+
+  @property
+  def kind(self):
+    return self._kind
 
   @property
   def path(self):
     return self._path
 
   @property
+  def contents_dir(self):
+    if self._kind == 'mac':
+      return os.path.join(self.path, 'Contents')
+    if self._kind == 'mac_framework':
+      return os.path.join(self.path, 'Versions/A')
+    return self.path
+
+  @property
+  def executable_dir(self):
+    if self._kind == 'mac':
+      return os.path.join(self.contents_dir, 'MacOS')
+    return self.contents_dir
+
+  @property
+  def resources_dir(self):
+    if self._kind == 'mac' or self._kind == 'mac_framework':
+      return os.path.join(self.contents_dir, 'Resources')
+    return self.path
+
+  @property
+  def info_plist_path(self):
+    if self._kind == 'mac_framework':
+      return os.path.join(self.resources_dir, 'Info.plist')
+    return os.path.join(self.contents_dir, 'Info.plist')
+
+  @property
+  def signature_dir(self):
+    return os.path.join(self.contents_dir, '_CodeSignature')
+
+  @property
   def identifier(self):
     return self._data['CFBundleIdentifier']
 
   @property
+  def binary_name(self):
+    return self._data['CFBundleExecutable']
+
+  @property
   def binary_path(self):
-    return os.path.join(self._path, self._data['CFBundleExecutable'])
+    return os.path.join(self.executable_dir, self.binary_name)
 
   def Validate(self, expected_mappings):
     """Checks that keys in the bundle have the expected value.
@@ -119,6 +184,14 @@ class ProvisioningProfile(object):
   @property
   def path(self):
     return self._path
+
+  @property
+  def team_identifier(self):
+    return self._data.get('TeamIdentifier', [''])[0]
+
+  @property
+  def name(self):
+    return self._data.get('Name', '')
 
   @property
   def application_identifier_pattern(self):
@@ -189,11 +262,19 @@ class Entitlements(object):
 
   def LoadDefaults(self, defaults):
     for key, value in defaults.items():
+      # TODO(crbug.com/1270127): Re-enable this entitlement after verifying
+      # that it doesn't increase memory usage.
+      if key == "com.apple.developer.kernel.extended-virtual-addressing":
+        continue
       if key not in self._data:
         self._data[key] = value
 
   def WriteTo(self, target_path):
-    plistlib.writePlist(self._data, target_path)
+    with open(target_path, 'wb') as fp:
+      if sys.version_info.major == 2:
+        plistlib.writePlist(self._data, fp)
+      else:
+        plistlib.dump(self._data, fp)
 
 
 def FindProvisioningProfile(bundle_identifier, required):
@@ -248,9 +329,11 @@ def FindProvisioningProfile(bundle_identifier, required):
 
 
 def CodeSignBundle(bundle_path, identity, extra_args):
-  process = subprocess.Popen(['xcrun', 'codesign', '--force', '--sign',
-      identity, '--timestamp=none'] + list(extra_args) + [bundle_path],
-      stderr=subprocess.PIPE)
+  process = subprocess.Popen(
+      ['xcrun', 'codesign', '--force', '--sign', identity, '--timestamp=none'] +
+      list(extra_args) + [bundle_path],
+      stderr=subprocess.PIPE,
+      universal_newlines=True)
   _, stderr = process.communicate()
   if process.returncode:
     sys.stderr.write(stderr)
@@ -302,19 +385,18 @@ def GenerateEntitlements(path, provisioning_profile, bundle_identifier):
   return entitlements
 
 
-def GenerateBundleInfoPlist(bundle_path, plist_compiler, partial_plist):
+def GenerateBundleInfoPlist(bundle, plist_compiler, partial_plist):
   """Generates the bundle Info.plist for a list of partial .plist files.
 
   Args:
-    bundle_path: path to the bundle
+    bundle: a Bundle instance
     plist_compiler: string, path to the Info.plist compiler
     partial_plist: list of path to partial .plist files to merge
   """
 
   # Filter empty partial .plist files (this happens if an application
-  # does not include need to compile any asset catalog, in which case
-  # the partial .plist file from the asset catalog compilation step is
-  # just a stamp file).
+  # does not compile any asset catalog, in which case the partial .plist
+  # file from the asset catalog compilation step is just a stamp file).
   filtered_partial_plist = []
   for plist in partial_plist:
     plist_size = os.stat(plist).st_size
@@ -323,8 +405,13 @@ def GenerateBundleInfoPlist(bundle_path, plist_compiler, partial_plist):
 
   # Invoke the plist_compiler script. It needs to be a python script.
   subprocess.check_call([
-      'python', plist_compiler, 'merge', '-f', 'binary1',
-      '-o', os.path.join(bundle_path, 'Info.plist'),
+      'python',
+      plist_compiler,
+      'merge',
+      '-f',
+      'binary1',
+      '-o',
+      bundle.info_plist_path,
   ] + filtered_partial_plist)
 
 
@@ -383,13 +470,16 @@ class CodeSignBundleAction(Action):
     if not args.identity:
       args.identity = '-'
 
-    if args.partial_info_plist:
-      GenerateBundleInfoPlist(
-          args.path,
-          args.plist_compiler_path,
-          args.partial_info_plist)
+    bundle = Bundle(args.path, args.platform)
 
-    bundle = Bundle(args.path)
+    if args.partial_info_plist:
+      GenerateBundleInfoPlist(bundle, args.plist_compiler_path,
+                              args.partial_info_plist)
+
+    # The bundle Info.plist may have been updated by GenerateBundleInfoPlist()
+    # above. Load the bundle information from Info.plist after the modification
+    # have been written to disk.
+    bundle.Load()
 
     # According to Apple documentation, the application binary must be the same
     # as the bundle name without the .app suffix. See crbug.com/740476 for more
@@ -426,18 +516,36 @@ class CodeSignBundleAction(Action):
       os.unlink(embedded_provisioning_profile)
 
     # Delete existing code signature.
-    signature_file = os.path.join(args.path, '_CodeSignature', 'CodeResources')
-    if os.path.isfile(signature_file):
-      shutil.rmtree(os.path.dirname(signature_file))
+    if os.path.exists(bundle.signature_dir):
+      shutil.rmtree(bundle.signature_dir)
 
     # Install system frameworks if requested.
     for framework_path in args.frameworks:
       InstallSystemFramework(framework_path, args.path, args)
 
     # Copy main binary into bundle.
-    if os.path.isfile(bundle.binary_path):
-      os.unlink(bundle.binary_path)
+    if not os.path.isdir(bundle.executable_dir):
+      os.makedirs(bundle.executable_dir)
     shutil.copy(args.binary, bundle.binary_path)
+
+    if bundle.kind == 'mac_framework':
+      # Create Versions/Current -> Versions/A symlink
+      CreateSymlink('A', os.path.join(bundle.path, 'Versions/Current'))
+
+      # Create $binary_name -> Versions/Current/$binary_name symlink
+      CreateSymlink(os.path.join('Versions/Current', bundle.binary_name),
+                    os.path.join(bundle.path, bundle.binary_name))
+
+      # Create optional symlinks.
+      for name in ('Headers', 'Resources', 'Modules'):
+        target = os.path.join(bundle.path, 'Versions/A', name)
+        if os.path.exists(target):
+          CreateSymlink(os.path.join('Versions/Current', name),
+                        os.path.join(bundle.path, name))
+        else:
+          obsolete_path = os.path.join(bundle.path, name)
+          if os.path.exists(obsolete_path):
+            os.unlink(obsolete_path)
 
     if args.no_signature:
       return
@@ -536,6 +644,31 @@ class GenerateEntitlementsAction(Action):
     entitlements.WriteTo(args.path)
 
 
+class FindProvisioningProfileAction(Action):
+  """Class implementing the find-codesign-identity action."""
+
+  name = 'find-provisioning-profile'
+  help = 'find provisioning profile for use by Xcode project generator'
+
+  @staticmethod
+  def _Register(parser):
+    parser.add_argument('--bundle-id',
+                        '-b',
+                        required=True,
+                        help='bundle identifier')
+
+  @staticmethod
+  def _Execute(args):
+    provisioning_profile_info = {}
+    provisioning_profile = FindProvisioningProfile(args.bundle_id, False)
+    for key in ('team_identifier', 'name'):
+      if provisioning_profile:
+        provisioning_profile_info[key] = getattr(provisioning_profile, key)
+      else:
+        provisioning_profile_info[key] = ''
+    print(json.dumps(provisioning_profile_info))
+
+
 def Main():
   # Cache this codec so that plistlib can find it. See
   # https://crbug.com/999461#c12 for more details.
@@ -548,6 +681,7 @@ def Main():
       CodeSignBundleAction,
       CodeSignFileAction,
       GenerateEntitlementsAction,
+      FindProvisioningProfileAction,
   ]
 
   for action in actions:

@@ -18,10 +18,13 @@
 import goma_ld
 import goma_link
 
+from io import StringIO
 import os
 import re
+import shlex
 import subprocess
 import unittest
+from unittest import mock
 
 from goma_link_test_utils import named_directory, working_directory
 
@@ -45,24 +48,24 @@ def _create_inputs(path):
     f.write('int bar() {\n  return 9;\n}\n')
 
 
-class GomaLinkUnixWhitelistMain(goma_ld.GomaLinkUnix):
+class GomaLinkUnixAllowMain(goma_ld.GomaLinkUnix):
   """
-  Same as goma_ld.GomaLinkUnix, but whitelists "main".
-  """
-
-  def __init__(self, *args, **kwargs):
-    super(GomaLinkUnixWhitelistMain, self).__init__(*args, **kwargs)
-    self.WHITELISTED_TARGETS = {'main'}
-
-
-class GomaLinkWindowsWhitelistMain(goma_link.GomaLinkWindows):
-  """
-  Same as goma_ld.GomaLinkWindows, but whitelists "main".
+  Same as goma_ld.GomaLinkUnix, but has "main" on the allow list.
   """
 
   def __init__(self, *args, **kwargs):
-    super(GomaLinkWindowsWhitelistMain, self).__init__(*args, **kwargs)
-    self.WHITELISTED_TARGETS = {'main.exe'}
+    super(GomaLinkUnixAllowMain, self).__init__(*args, **kwargs)
+    self.ALLOWLIST = {'main'}
+
+
+class GomaLinkWindowsAllowMain(goma_link.GomaLinkWindows):
+  """
+  Same as goma_ld.GomaLinkWindows, but has "main" on the allow list.
+  """
+
+  def __init__(self, *args, **kwargs):
+    super(GomaLinkWindowsAllowMain, self).__init__(*args, **kwargs)
+    self.ALLOWLIST = {'main.exe'}
 
 
 class GomaLinkIntegrationTest(unittest.TestCase):
@@ -109,8 +112,10 @@ class GomaLinkIntegrationTest(unittest.TestCase):
         codegen_text = codegen_match.group(0)
         self.assertIn('my_goma.sh', codegen_text)
         self.assertNotIn('-flto', codegen_text)
-        self.assertIn('build common_objs/obj/main.obj : codegen ', buildrules)
-        self.assertIn('build common_objs/obj/foo.obj : codegen ', buildrules)
+        self.assertIn('build common_objs/obj/main.obj.stamp : codegen ',
+                      buildrules)
+        self.assertIn('build common_objs/obj/foo.obj.stamp : codegen ',
+                      buildrules)
         self.assertIn(' index = common_objs/empty.thinlto.bc', buildrules)
         link_match = re.search('^build main.exe : native-link\\b.*?^[^ ]',
                                buildrules, re.MULTILINE | re.DOTALL)
@@ -123,7 +128,7 @@ class GomaLinkIntegrationTest(unittest.TestCase):
       # functions, one of which calls the other.
       self.assertTrue(b'call' in disasm or b'jmp' in disasm)
 
-  def test_distributed_lto_whitelisted(self):
+  def test_distributed_lto_allowlist(self):
     with named_directory() as d, working_directory(d):
       _create_inputs(d)
       os.makedirs('obj')
@@ -143,7 +148,7 @@ class GomaLinkIntegrationTest(unittest.TestCase):
           ['llvm-ar', 'crsT', 'obj/foobar.lib', 'obj/bar.obj', 'obj/foo.obj'])
       with open('main.rsp', 'w') as f:
         f.write('obj/main.obj\n' 'obj/foobar.lib\n')
-      rc = GomaLinkWindowsWhitelistMain().main([
+      rc = GomaLinkWindowsAllowMain().main([
           'goma_link.py', '--gomacc', 'gomacc', '--',
           self.lld_link(), '-nodefaultlib', '-entry:main', '-machine:X86',
           '-opt:lldlto=2', '-mllvm:-import-instr-limit=10', '-out:main.exe',
@@ -162,8 +167,10 @@ class GomaLinkIntegrationTest(unittest.TestCase):
         self.assertIn('-m32', codegen_text)
         self.assertIn('-mllvm -import-instr-limit=10', codegen_text)
         self.assertNotIn('-flto', codegen_text)
-        self.assertIn('build lto.main.exe/obj/main.obj : codegen ', buildrules)
-        self.assertIn('build lto.main.exe/obj/foo.obj : codegen ', buildrules)
+        self.assertIn('build lto.main.exe/obj/main.obj.stamp : codegen ',
+                      buildrules)
+        self.assertIn('build lto.main.exe/obj/foo.obj.stamp : codegen ',
+                      buildrules)
         link_match = re.search('^build main.exe : native-link\\b.*?^[^ ]',
                                buildrules, re.MULTILINE | re.DOTALL)
         self.assertIsNotNone(link_match)
@@ -175,6 +182,41 @@ class GomaLinkIntegrationTest(unittest.TestCase):
       # function, with no calls or jmps.
       self.assertNotIn(b'jmp', disasm)
       self.assertNotIn(b'call', disasm)
+
+  def test_override_allowlist(self):
+    with named_directory() as d, working_directory(d):
+      _create_inputs(d)
+      os.makedirs('obj')
+      subprocess.check_call([
+          self.clangcl(), '-c', '-O2', '-flto=thin', 'main.cpp',
+          '-Foobj/main.obj'
+      ])
+      subprocess.check_call([
+          self.clangcl(), '-c', '-O2', '-flto=thin', 'foo.cpp', '-Foobj/foo.obj'
+      ])
+      rc = goma_link.GomaLinkWindows().main([
+          'goma_link.py', '--generate', '--allowlist', '--',
+          self.lld_link(), '-nodefaultlib', '-entry:main', '-opt:lldlto=2',
+          '-out:main.exe', 'obj/main.obj', 'obj/foo.obj'
+      ])
+      # Should succeed.
+      self.assertEqual(rc, 0)
+      # Check that we have rules for main and foo, and that they are
+      # not common objects.
+      with open(os.path.join(d, 'lto.main.exe', 'build.ninja')) as f:
+        buildrules = f.read()
+        codegen_match = re.search(r'^rule codegen\b.*?^[^ ]', buildrules,
+                                  re.MULTILINE | re.DOTALL)
+        self.assertIsNotNone(codegen_match)
+        codegen_text = codegen_match.group(0)
+        self.assertNotIn('-flto', codegen_text)
+        self.assertIn('build lto.main.exe/obj/main.obj.stamp : codegen ',
+                      buildrules)
+        self.assertIn('build lto.main.exe/obj/foo.obj.stamp : codegen ',
+                      buildrules)
+        link_match = re.search(r'^build main.exe : native-link\b.*?^[^ ]',
+                               buildrules, re.MULTILINE | re.DOTALL)
+        self.assertIsNotNone(link_match)
 
 
 class GomaLdIntegrationTest(unittest.TestCase):
@@ -188,7 +230,7 @@ class GomaLdIntegrationTest(unittest.TestCase):
           [self.clangxx(), '-c', '-Os', 'main.cpp', '-o', 'main.o'])
       subprocess.check_call(
           [self.clangxx(), '-c', '-Os', 'foo.cpp', '-o', 'foo.o'])
-      rc = GomaLinkUnixWhitelistMain().main([
+      rc = GomaLinkUnixAllowMain().main([
           'goma_ld.py', '--gomacc', 'gomacc', '--',
           self.clangxx(), '-fuse-ld=lld', 'main.o', 'foo.o', '-o', 'main'
       ])
@@ -235,7 +277,7 @@ class GomaLdIntegrationTest(unittest.TestCase):
       ])
       subprocess.check_call(
           [self.clangxx(), '-c', '-Os', '-flto=thin', 'foo.cpp', '-o', 'foo.o'])
-      rc = GomaLinkUnixWhitelistMain().main([
+      rc = GomaLinkUnixAllowMain().main([
           'goma_ld.py', '-j', '16', '--',
           self.clangxx(), '-fuse-ld=lld', '-flto=thin', 'main.o', 'foo.o', '-o',
           'main'
@@ -246,8 +288,8 @@ class GomaLdIntegrationTest(unittest.TestCase):
       with open(os.path.join(d, 'lto.main', 'build.ninja')) as f:
         buildrules = f.read()
         self.assertIn('gomacc ', buildrules)
-        self.assertIn('build lto.main/main.o : codegen ', buildrules)
-        self.assertIn('build lto.main/foo.o : codegen ', buildrules)
+        self.assertIn('build lto.main/main.o.stamp : codegen ', buildrules)
+        self.assertIn('build lto.main/foo.o.stamp : codegen ', buildrules)
       # Check that main does not call foo.
       disasm = subprocess.check_output(['llvm-objdump', '-d', 'main'])
       main_idx = disasm.index(b' <main>:\n')
@@ -267,7 +309,7 @@ class GomaLdIntegrationTest(unittest.TestCase):
           [self.clangxx(), '-c', '-Os', '-flto=thin', 'bar.cpp', '-o', 'bar.o'])
       subprocess.check_call(
           ['llvm-ar', 'crsT', 'libfoobar.a', 'bar.o', 'foo.o'])
-      rc = GomaLinkUnixWhitelistMain().main([
+      rc = GomaLinkUnixAllowMain().main([
           'goma_ld.py',
           self.clangxx(), '-fuse-ld=lld', '-flto=thin', 'main.o', 'libfoobar.a',
           '-o', 'main'
@@ -278,8 +320,8 @@ class GomaLdIntegrationTest(unittest.TestCase):
       with open(os.path.join(d, 'lto.main', 'build.ninja')) as f:
         buildrules = f.read()
         self.assertIn('gomacc ', buildrules)
-        self.assertIn('build lto.main/main.o : codegen ', buildrules)
-        self.assertIn('build lto.main/foo.o : codegen ', buildrules)
+        self.assertIn('build lto.main/main.o.stamp : codegen ', buildrules)
+        self.assertIn('build lto.main/foo.o.stamp : codegen ', buildrules)
       # Check that main does not call foo.
       disasm = subprocess.check_output(['llvm-objdump', '-d', 'main'])
       main_idx = disasm.index(b' <main>:\n')
@@ -305,7 +347,7 @@ class GomaLdIntegrationTest(unittest.TestCase):
       ])
       subprocess.check_call(
           ['llvm-ar', 'crsT', 'obj/libfoobar.a', 'obj/bar.o', 'obj/foo.o'])
-      rc = GomaLinkUnixWhitelistMain().main([
+      rc = GomaLinkUnixAllowMain().main([
           'goma_ld.py',
           self.clangxx(), '-fuse-ld=lld', '-flto=thin', 'obj/main.o',
           'obj/libfoobar.a', '-o', 'main'
@@ -316,8 +358,8 @@ class GomaLdIntegrationTest(unittest.TestCase):
       with open(os.path.join(d, 'lto.main', 'build.ninja')) as f:
         buildrules = f.read()
         self.assertIn('gomacc ', buildrules)
-        self.assertIn('build lto.main/obj/main.o : codegen ', buildrules)
-        self.assertIn('build lto.main/obj/foo.o : codegen ', buildrules)
+        self.assertIn('build lto.main/obj/main.o.stamp : codegen ', buildrules)
+        self.assertIn('build lto.main/obj/foo.o.stamp : codegen ', buildrules)
       # Check that main does not call foo.
       disasm = subprocess.check_output(['llvm-objdump', '-d', 'main'])
       main_idx = disasm.index(b' <main>:\n')
@@ -339,7 +381,7 @@ class GomaLdIntegrationTest(unittest.TestCase):
       ])
       with open('main.rsp', 'w') as f:
         f.write('obj/main.o\n' 'obj/foo.o\n')
-      rc = GomaLinkUnixWhitelistMain().main([
+      rc = GomaLinkUnixAllowMain().main([
           'goma_ld.py',
           self.clangxx(), '-fuse-ld=lld', '-flto=thin', '-g', '-gsplit-dwarf',
           '-Wl,--lto-O2', '-o', 'main', '@main.rsp'
@@ -377,7 +419,7 @@ class GomaLdIntegrationTest(unittest.TestCase):
                 '-fwhole-program-vtables\n'
                 'obj/main.o\n'
                 'obj/libfoobar.a\n')
-      rc = GomaLinkUnixWhitelistMain().main([
+      rc = GomaLinkUnixAllowMain().main([
           'goma_ld.py',
           self.clangxx(), '-fuse-ld=lld', '-flto=thin', '-m32', '-Wl,-mllvm',
           '-Wl,-generate-type-units', '-Wl,--lto-O2', '-o', 'main',
@@ -396,8 +438,8 @@ class GomaLdIntegrationTest(unittest.TestCase):
         self.assertIn('-m32', codegen_text)
         self.assertIn('-mllvm -generate-type-units', codegen_text)
         self.assertNotIn('-flto', codegen_text)
-        self.assertIn('build lto.main/obj/main.o : codegen ', buildrules)
-        self.assertIn('build lto.main/obj/foo.o : codegen ', buildrules)
+        self.assertIn('build lto.main/obj/main.o.stamp : codegen ', buildrules)
+        self.assertIn('build lto.main/obj/foo.o.stamp : codegen ', buildrules)
         link_match = re.search('^build main : native-link\\b.*?^[^ ]',
                                buildrules, re.MULTILINE | re.DOTALL)
         self.assertIsNotNone(link_match)
@@ -418,7 +460,7 @@ class GomaLdIntegrationTest(unittest.TestCase):
       ])
       subprocess.check_call(
           [self.clangxx(), '-c', '-Os', '-flto=thin', 'foo.cpp', '-o', 'foo.o'])
-      rc = GomaLinkUnixWhitelistMain().main([
+      rc = GomaLinkUnixAllowMain().main([
           'goma_ld.py', '--no-gomacc', '-j', '16', '--',
           self.clangxx(), '-fuse-ld=lld', '-flto=thin', 'main.o', 'foo.o', '-o',
           'main'
@@ -429,14 +471,69 @@ class GomaLdIntegrationTest(unittest.TestCase):
       with open(os.path.join(d, 'lto.main', 'build.ninja')) as f:
         buildrules = f.read()
         self.assertNotIn('gomacc ', buildrules)
-        self.assertIn('build lto.main/main.o : codegen ', buildrules)
-        self.assertIn('build lto.main/foo.o : codegen ', buildrules)
+        self.assertIn('build lto.main/main.o.stamp : codegen ', buildrules)
+        self.assertIn('build lto.main/foo.o.stamp : codegen ', buildrules)
       # Check that main does not call foo.
       disasm = subprocess.check_output(['llvm-objdump', '-d', 'main'])
       main_idx = disasm.index(b' <main>:\n')
       after_main_idx = disasm.index(b'\n\n', main_idx)
       main_disasm = disasm[main_idx:after_main_idx]
       self.assertNotIn(b'foo', main_disasm)
+
+  def test_generate_no_codegen(self):
+    with named_directory() as d, working_directory(d):
+      with open('main.o', 'wb') as f:
+        f.write(b'\7fELF')
+      with mock.patch('sys.stderr', new_callable=StringIO) as stderr:
+        rc = GomaLinkUnixAllowMain().main([
+            'goma_ld.py', '--generate', '--',
+            self.clangxx(), 'main.o', '-o', 'main'
+        ])
+        self.assertEqual(rc, 5)
+        self.assertIn('no ninja file generated.\n', stderr.getvalue())
+
+  def test_generate(self):
+    with named_directory() as d, working_directory(d):
+      with open('main.o', 'wb') as f:
+        f.write(b'BC\xc0\xde')
+      with mock.patch('sys.stderr', new_callable=StringIO) as stderr:
+        rc = GomaLinkUnixAllowMain().main([
+            'goma_ld.py', '--generate', '--',
+            self.clangxx(), 'main.o', '-o', 'main'
+        ])
+        self.assertEqual(rc, 0)
+        m = re.search('ninja file (.*)', stderr.getvalue())
+        self.assertIsNotNone(m)
+        path = shlex.split(m.group(1))[0]
+        self.assertTrue(os.path.exists(path))
+        content = open(path).read()
+        self.assertRegex(
+            content,
+            re.compile('^build [^:]+/main\\.o\\.stamp : codegen ',
+                       re.MULTILINE))
+
+  def test_override_allowlist(self):
+    with named_directory() as d, working_directory(d):
+      _create_inputs(d)
+      subprocess.check_call([
+          self.clangxx(), '-c', '-Os', '-flto=thin', 'main.cpp', '-o', 'main.o'
+      ])
+      subprocess.check_call(
+          [self.clangxx(), '-c', '-Os', '-flto=thin', 'foo.cpp', '-o', 'foo.o'])
+      rc = goma_ld.GomaLinkUnix().main([
+          'goma_ld.py', '--generate', '--allowlist', '--',
+          self.clangxx(), '-fuse-ld=lld', '-flto=thin', 'main.o', 'foo.o', '-o',
+          'main'
+      ])
+      # Should succeed.
+      self.assertEqual(rc, 0)
+      # build.ninja file should have rules for main and foo.
+      ninjafile = os.path.join(d, 'lto.main', 'build.ninja')
+      self.assertTrue(os.path.exists(ninjafile))
+      with open(ninjafile) as f:
+        buildrules = f.read()
+        self.assertIn('build lto.main/main.o.stamp : codegen ', buildrules)
+        self.assertIn('build lto.main/foo.o.stamp : codegen ', buildrules)
 
 
 if __name__ == '__main__':

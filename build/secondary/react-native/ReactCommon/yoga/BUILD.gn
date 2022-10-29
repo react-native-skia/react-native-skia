@@ -5,6 +5,7 @@ config("yoga_config") {
 
   cflags_cc = [
     "-Wno-header-hygiene",
+    "-Wno-deprecated-copy",
   ]
 }
 
@@ -29,6 +30,7 @@ rn_cxx_component("yoga") {
   cflags_cc = [
     "-Wno-c++98-compat-extra-semi",
     "-Wno-extra-semi",
+    "-Wno-bitwise-instead-of-logical",
   ]
 
   public_configs = [ ":yoga_config" ]

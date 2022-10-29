@@ -9,7 +9,8 @@
 #include <string>
 #include <iostream>
 #include <thread>
-#include <filesystem>
+
+#include <libgen.h>
 
 #include "ReactSkia/utils/RnsUtils.h"
 // Must be added before X11 headrs because Folly uses "Struct None" and X11 has "#define None 0L" which conflicts
@@ -33,7 +34,6 @@
 #include "PlatformDisplay.h"
 
 using namespace RnsShell;
-namespace fs = std::filesystem;
 
 static bool platformInitialize(char **argv) {
     bool status = false;
@@ -63,9 +63,15 @@ static bool platformInitialize(char **argv) {
 
     // Js bundle path papssed as first argument
     if(argv[1]) {
-        fs::path p(argv[1]);
-        RNS_LOG_INFO("Load " << p.filename() << ", from " << fs::canonical(p.parent_path()));
-        fs::current_path(fs::canonical(p.parent_path())); // Change current directory to app directory
+        char bundlePath[PATH_MAX];
+        if(realpath(argv[1], bundlePath) == nullptr) {
+            RNS_LOG_FATAL("Failed to load argument path " << argv[1]);
+            return EXIT_FAILURE;
+        }
+        std::string filename = basename(bundlePath);
+        std::string dirPath = dirname(bundlePath); // Note that `dirname()` will mutate `bundlePath`
+        RNS_LOG_INFO("Load " << filename << ", from " << dirPath);
+        chdir(dirPath.c_str()); // Change current directory to app directory
     }
     status = PlatformDisplay::initialize();
 

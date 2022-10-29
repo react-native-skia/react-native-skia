@@ -5,13 +5,16 @@ which is used to ensure test coverage of active field trials.
 
 For each study, the first available experiment after platform filtering is used
 as the default experiment for Chromium builds. This experiment is also used for
-perf bots and browser tests in the waterfall.
+perf bots and various browser tests in the waterfall (e.g. browser_tests,
+components_browsertests, content_browsertests, extensions_browsertests, interactive_ui_tests and
+sync_integration_tests). It is not used by unit test targets.
 
 > Note: This configuration applies specifically to Chromium developer builds.
 > Chrome branded / official builds do not use these definitions.
 
-> Note: This configuration is NOT used for content_browsertests or other test
-> targets based on content_shell.
+> Note: Non-developer builds of Chromium (for example, non-Chrome browsers,
+> or Chromium builds provided by Linux distros) should disable the testing
+> config via the GN flag `disable_fieldtrial_testing_config=true`.
 
 ## Config File Format
 
@@ -45,7 +48,7 @@ array of *study configurations*. The study name in the configuration file
 > rely on the [Feature List API][FeatureListAPI] instead. Nonetheless, if a
 > study has a server-side configuration, the study `name` specified here
 > must still match the name specified in the server-side configuration; this is
-> used to implement sanity-checks on the server.
+> used to implement consistency checks on the server.
 
 ### Study Configurations
 

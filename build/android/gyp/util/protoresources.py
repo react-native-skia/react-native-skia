@@ -28,12 +28,12 @@ from proto import Resources_pb2
 
 # First bytes in an .flat.arsc file.
 # uint32: Magic ("ARSC"), version (1), num_entries (1), type (0)
-_FLAT_ARSC_HEADER = 'AAPT\x01\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00'
+_FLAT_ARSC_HEADER = b'AAPT\x01\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00'
 
 # The package ID hardcoded for shared libraries. See
 # _HardcodeSharedLibraryDynamicAttributes() for more details. If this value
 # changes make sure to change REQUIRED_PACKAGE_IDENTIFIER in WebLayerImpl.java.
-SHARED_LIBRARY_HARDCODED_ID = 12
+SHARED_LIBRARY_HARDCODED_ID = 36
 
 
 def _ProcessZip(zip_path, process_func):
@@ -201,7 +201,7 @@ def HardcodeSharedLibraryDynamicAttributes(zip_path,
       table.ParseFromString(data)
       _HardcodeInTable(table, is_bundle_module, shared_resources_allowlist)
       data = table.SerializeToString()
-    elif filename.endswith('.xml'):
+    elif filename.endswith('.xml') and not filename.startswith('res/raw'):
       xml_node = Resources_pb2.XmlNode()
       xml_node.ParseFromString(data)
       _ProcessProtoXmlNode(xml_node)
@@ -284,8 +284,8 @@ def _FlatBytesFromTable(table):
   proto_bytes = table.SerializeToString()
   size = struct.pack('<Q', len(proto_bytes))
   overage = len(proto_bytes) % 4
-  padding = '\0' * (4 - overage) if overage else ''
-  return ''.join((_FLAT_ARSC_HEADER, size, proto_bytes, padding))
+  padding = b'\0' * (4 - overage) if overage else b''
+  return b''.join((_FLAT_ARSC_HEADER, size, proto_bytes, padding))
 
 
 def StripUnwantedResources(partial_path, keep_predicate):

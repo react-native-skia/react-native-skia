@@ -64,20 +64,26 @@ class ResultRecorder(object):
     if is_control:
       self._noisy_control_stories.add(name)
 
-  def remove_failure(self, name, benchmark, is_control=False):
+  def remove_failure(self, name, benchmark, is_control=False,
+                      invalidation_reason=None):
     self.output['tests'][benchmark][name]['actual'] = 'PASS'
     self.output['tests'][benchmark][name]['is_unexpected'] = False
     self._failed_stories.remove(name)
     self.fails -= 1
     if is_control:
       self._noisy_control_stories.remove(name)
+    if invalidation_reason:
+      self.add_invalidation_reason(name, benchmark, invalidation_reason)
 
   def invalidate_failures(self, benchmark):
     # The method is for invalidating the failures in case of noisy control test
-    for story in self._failed_stories:
+    for story in self._failed_stories.copy():
       print(story + ' [Invalidated Failure]: The story failed but was ' +
         'invalidated as a result of noisy control test.')
-      self.output['tests'][benchmark][story]['is_unexpected'] = False
+      self.remove_failure(story, benchmark, False, 'Noisy control test')
+
+  def add_invalidation_reason(self, name, benchmark, reason):
+    self.output['tests'][benchmark][name]['invalidation_reason'] = reason
 
   @property
   def failed_stories(self):
@@ -90,10 +96,7 @@ class ResultRecorder(object):
   def get_output(self, return_code):
     self.output['seconds_since_epoch'] = time.time() - self.start_time
     self.output['num_failures_by_type']['PASS'] = self.tests - self.fails
-    if self.fails > 0 and not self.is_control_stories_noisy:
-      self.output['num_failures_by_type']['FAIL'] = self.fails
-    else:
-      self.output['num_failures_by_type']['FAIL'] = 0
+    self.output['num_failures_by_type']['FAIL'] = self.fails
     if return_code == 1:
       self.output['interrupted'] = True
 
@@ -101,7 +104,7 @@ class ResultRecorder(object):
     tests = lambda n: plural(n, 'test', 'tests')
 
     print('[  PASSED  ] ' + tests(self.tests - self.fails) + '.')
-    if self.fails > 0 and not self.is_control_stories_noisy:
+    if self.fails > 0:
       print('[  FAILED  ] ' + tests(self.fails) + '.')
       self.return_code = 1
 
@@ -139,8 +142,6 @@ class RenderingRepresentativePerfTest(object):
 
     re_run_test_output = os.path.join(re_run_output_dir,
       os.path.basename(self.options.isolated_script_test_output))
-    re_run_test_perf_output = os.path.join(re_run_output_dir,
-      os.path.basename(self.options.isolated_script_test_perf_output))
 
     self.set_platform_specific_attributes()
 
@@ -162,8 +163,7 @@ class RenderingRepresentativePerfTest(object):
     self.args.extend(['--story-tag-filter', self.story_tag])
 
     self.re_run_args = replace_arg_values(list(sys.argv), [
-      ('--isolated-script-test-output', re_run_test_output),
-      ('--isolated-script-test-perf-output', re_run_test_perf_output)])
+      ('--isolated-script-test-output', re_run_test_output)])
 
   def parse_csv_results(self, csv_obj):
     """ Parses the raw CSV data
@@ -180,8 +180,8 @@ class RenderingRepresentativePerfTest(object):
     values_per_story = {}
     for row in csv_obj:
       # For now only frame_times is used for testing representatives'
-      # performance.
-      if row['name'] != METRIC_NAME:
+      # performance and cpu_wall_time_ratio is used for validation.
+      if row['name'] != METRIC_NAME and row['name'] != 'cpu_wall_time_ratio':
         continue
       story_name = row['stories']
       if (story_name not in self.upper_limit_data):
@@ -189,13 +189,16 @@ class RenderingRepresentativePerfTest(object):
       if story_name not in values_per_story:
         values_per_story[story_name] = {
           'averages': [],
-          'ci_095': []
+          'ci_095': [],
+          'cpu_wall_time_ratio': []
         }
 
-      if (row['avg'] == '' or row['count'] == 0):
-        continue
-      values_per_story[story_name]['ci_095'].append(float(row['ci_095']))
-      values_per_story[story_name]['averages'].append(float(row['avg']))
+      if row['name'] == METRIC_NAME and row['avg'] != '' and row['count'] != 0:
+        values_per_story[story_name]['ci_095'].append(float(row['ci_095']))
+        values_per_story[story_name]['averages'].append(float(row['avg']))
+      elif row['name'] == 'cpu_wall_time_ratio' and row['avg'] != '':
+        values_per_story[story_name]['cpu_wall_time_ratio'].append(
+          float(row['avg']))
 
     return values_per_story
 
@@ -219,10 +222,14 @@ class RenderingRepresentativePerfTest(object):
         self.result_recorder[rerun].add_failure(story_name, self.benchmark)
         continue
 
-      upper_limit_avg = self.upper_limit_data[story_name]['avg']
-      upper_limit_ci = self.upper_limit_data[story_name]['ci_095']
+      upper_limits = self.upper_limit_data
+      upper_limit_avg = upper_limits[story_name]['avg']
+      upper_limit_ci = upper_limits[story_name]['ci_095']
+      lower_limit_cpu_ratio = upper_limits[story_name]['cpu_wall_time_ratio']
       measured_avg = np.mean(np.array(values_per_story[story_name]['averages']))
       measured_ci = np.mean(np.array(values_per_story[story_name]['ci_095']))
+      measured_cpu_ratio = np.mean(np.array(
+        values_per_story[story_name]['cpu_wall_time_ratio']))
 
       if (measured_ci > upper_limit_ci * CI_ERROR_MARGIN and
         self.is_control_story(story_name)):
@@ -233,10 +240,18 @@ class RenderingRepresentativePerfTest(object):
         self.result_recorder[rerun].add_failure(
           story_name, self.benchmark, True)
       elif (measured_avg > upper_limit_avg * AVG_ERROR_MARGIN):
-        print(('[  FAILED  ] {}/{} higher average {}({:.3f}) compared' +
-          ' to upper limit ({:.3f})').format(self.benchmark, story_name,
-          METRIC_NAME, measured_avg, upper_limit_avg))
-        self.result_recorder[rerun].add_failure(story_name, self.benchmark)
+        if (measured_cpu_ratio >= lower_limit_cpu_ratio):
+          print(('[  FAILED  ] {}/{} higher average {}({:.3f}) compared' +
+            ' to upper limit ({:.3f})').format(self.benchmark, story_name,
+            METRIC_NAME, measured_avg, upper_limit_avg))
+          self.result_recorder[rerun].add_failure(story_name, self.benchmark)
+        else:
+          print(('[       OK ] {}/{} higher average {}({:.3f}) compared ' +
+            'to upper limit({:.3f}). Invalidated for low cpu_wall_time_ratio'
+            ).format(self.benchmark, story_name, METRIC_NAME, measured_avg,
+                      upper_limit_avg))
+          self.result_recorder[rerun].add_invalidation_reason(
+            story_name, self.benchmark, 'Low cpu_wall_time_ratio')
       else:
         print(('[       OK ] {}/{} lower average {}({:.3f}) compared ' +
           'to upper limit({:.3f}).').format(self.benchmark, story_name,

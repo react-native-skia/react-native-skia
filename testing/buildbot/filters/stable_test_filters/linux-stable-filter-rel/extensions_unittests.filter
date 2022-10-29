@@ -1,0 +1,11 @@
+-APIPermissionSetTest.IPC
+-CastChannelEnumUtilTest.TestToChannelError
+-CastChannelEnumUtilTest.TestToReadyState
+-CastChannelOpenFunctionTest.TestParseConnectInfo
+-CompositeMatcherTest.HostPermissionsAlwaysRequired
+-CompositeMatcherTest.RulePlacement
+-ExtensionMessageTypesTest.TestLoadedParams
+-MimeHandlerServiceImplTest.SetPdfPluginAttributesInvalidBackgroundColor
+-MimeHandlerServiceImplTest.SetValidPdfPluginAttributes
+-SocketPermissionTest.IPC
+-SocketsManifestPermissionTest.IPC

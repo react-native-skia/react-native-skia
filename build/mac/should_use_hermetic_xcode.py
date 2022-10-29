@@ -1,4 +1,5 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
+
 # Copyright 2016 The Chromium Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
@@ -28,15 +29,21 @@ import mac_toolchain
 
 
 def _IsCorpMachine():
-  return os.path.isdir('/Library/GoogleCorpSupport/')
+  if sys.platform == 'darwin':
+    return os.path.isdir('/Library/GoogleCorpSupport/')
+  if sys.platform.startswith('linux'):
+    import subprocess
+    try:
+      return subprocess.check_output(['lsb_release',
+                                      '-sc']).rstrip() == b'rodete'
+    except:
+      return False
+  return False
 
 
 def main():
   parser = argparse.ArgumentParser(description='Download hermetic Xcode.')
   parser.add_argument('platform')
-  parser.add_argument('--xcode-version',
-                      choices=('default', 'xcode_12_beta'),
-                      default='default')
   args = parser.parse_args()
 
   force_toolchain = os.environ.get('FORCE_MAC_TOOLCHAIN')
@@ -44,8 +51,7 @@ def main():
     return "3"
   allow_corp = args.platform == 'mac' and _IsCorpMachine()
   if force_toolchain or allow_corp:
-    if not mac_toolchain.PlatformMeetsHermeticXcodeRequirements(
-        args.xcode_version):
+    if not mac_toolchain.PlatformMeetsHermeticXcodeRequirements():
       return "2"
     return "1"
   else:

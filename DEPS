@@ -10,6 +10,7 @@ gclient_gn_args = [
   'checkout_oculus_sdk',
   'checkout_openxr',
   'mac_xcode_version',
+  'generate_location_tags',
   'react_native_platform',
 ]
 
@@ -24,11 +25,11 @@ vars = {
   'libcurl_revision': 'curl-7_77_0',
 
   # buildtools
-  'gn_version': 'git_revision:7d7e8deea36d126397bda2cf924682504271f0e1',
-  'clang_format_revision': '96636aa0e9f047f17447f2d45a094d0b59ed7917',
-  'libcxx_revision':       'd9040c75cfea5928c804ab7c235fed06a63f743a',
-  'libcxxabi_revision':    '196ba1aaa8ac285d94f4ea8d9836390a45360533',
-  'libunwind_revision':    'd999d54f4bca789543a2eb6c995af2d9b5a1f3ed',
+  'gn_version': 'git_revision:90294ccdcf9334ed25a76ac9b67689468e506342',
+  'clang_format_revision': '99876cacf78329e5f99c244dbe42ccd1654517a0',
+  'libcxx_revision':       '79a2e924d96e2fc1e4b937c42efd08898fa472d7',
+  'libcxxabi_revision':    '4c6e0991b109638204f08c93600b008c21f01da5',
+  'libunwind_revision':    '99015718c37b30d44c3bcbcc92a03fb85fb85a99',
 
   'react_native_default_git': 'https://github.com/Kudo/react-native.git',
   'react_native_tvos_git': 'https://github.com/nagra-opentv/react-native-tvos.git',
@@ -46,6 +47,8 @@ vars = {
   'checkout_oculus_sdk' : False,
   'checkout_openxr' : False,
   'mac_xcode_version': 'default',
+  'generate_location_tags': False,
+  'llvm_force_head_revision': False,
 
   'react_native_platform':'tvos',
   'react_native_platform_git':'react_native_tvos_git',
@@ -70,10 +73,10 @@ deps = {
   # skia
   'src/third_party/skia'                  : Var('skia_git') + '/skia.git' + '@' + Var('skia_revision'),
   'src/third_party/angle'                 : Var('chromium_git') + '/angle/angle.git' + '@' + '745e071241ab4d7dede3019e8bb374ed7e64ed79',
-  'src/third_party/freetype/src'          : Var('chromium_git') + '/chromium/src/third_party/freetype2.git' + '@' + 'a4434747558d872c55e55ce428019a8e15d222dc',
-  'src/third_party/harfbuzz/src'          : Var('chromium_git') + '/external/github.com/harfbuzz/harfbuzz.git' + '@' + 'e3af529e511ca492284cdd9f4584666b88a9e00f',
-  'src/third_party/icu'                   : Var('chromium_git') + '/chromium/deps/icu.git' + '@' + 'dbd3825b31041d782c5b504c59dcfb5ac7dda08c',
-  'src/third_party/libjpeg-turbo'         : Var('chromium_git') + '/chromium/deps/libjpeg_turbo.git' + '@' + '64fc43d52351ed52143208ce6a656c03db56462b',
+  'src/third_party/freetype/src'          : Var('chromium_git') + '/chromium/src/third_party/freetype2.git' + '@' + '9ed5332fe632ada7de8fd345c9ef579b678c4042',
+  'src/third_party/harfbuzz/src'          : Var('chromium_git') + '/external/github.com/harfbuzz/harfbuzz.git' + '@' + '9bd7ba5019381bb8584811ee63a0ba0cee7dca99',
+  'src/third_party/icu'                   : Var('chromium_git') + '/chromium/deps/icu.git' + '@' + 'eedbaf76e49d28465d9119b10c30b82906e606ff',
+  'src/third_party/libjpeg-turbo'         : Var('chromium_git') + '/chromium/deps/libjpeg_turbo.git' + '@' + '49836d72bd22c7a78bc0250483f04162278cdc6a',
   'src/third_party/nasm'                  : Var('chromium_git') + '/chromium/deps/nasm.git' + '@' + '4fa54ca5f7fc3a15a8c78ac94688e64d3e4e4fa1',
   'src/third_party/libpng'                : Var('skia_git') + '/third_party/libpng.git' + '@' + '386707c6d19b974ca2e3db7f5c61873813c6fe44',
   'src/third_party/libwebp'               : Var('chromium_git') + '/webm/libwebp.git' + '@' + '0fe1a89dbf1930fc2554dbe76adad5d962054ead',
@@ -88,9 +91,9 @@ deps = {
   'src/third_party/libcurl' : 'https://github.com/curl/curl.git' + '@' + Var('libcurl_revision'),  
 
   # buildtools
-  'src/third_party/depot_tools': Var('chromium_git') + '/chromium/tools/depot_tools.git' + '@' + '0bfbd890c3e2f3aa734119507d14162248409664',
+  'src/third_party/depot_tools': Var('chromium_git') + '/chromium/tools/depot_tools.git' + '@' + 'a91f399a8a1f3199cb1f91b19bd2c3b88bb42d6c',
   'src/buildtools/clang_format/script':
-    Var('chromium_git') + '/chromium/llvm-project/cfe/tools/clang-format.git@' +
+    Var('chromium_git') + '/external/github.com/llvm/llvm-project/clang/tools/clang-format.git@' +
     Var('clang_format_revision'),
   'src/buildtools/linux64': {
     'packages': [
@@ -142,29 +145,29 @@ hooks = [
     'name': 'win_toolchain',
     'pattern': '.',
     'condition': 'checkout_win',
-    'action': ['python', 'src/build/vs_toolchain.py', 'update', '--force'],
+    'action': ['python3', 'src/build/vs_toolchain.py', 'update', '--force'],
   },
   {
     # Update the Mac toolchain if necessary.
     'name': 'mac_toolchain',
     'pattern': '.',
-    'condition': 'checkout_mac',
-    'action': ['python', 'src/build/mac_toolchain.py',
-               '--xcode-version', Var('mac_xcode_version')],
+    'condition': 'checkout_mac or checkout_ios',
+    'action': ['python3', 'src/build/mac_toolchain.py'],
   },
   {
     # Update the prebuilt clang toolchain.
     # Note: On Win, this should run after win_toolchain, as it may use it.
     'name': 'clang',
     'pattern': '.',
-    'action': ['python', 'src/tools/clang/scripts/update.py'],
+    'condition': 'not llvm_force_head_revision',
+    'action': ['python3', 'src/tools/clang/scripts/update.py'],
   },
   # Pull clang-format binaries using checked-in hashes.
   {
     'name': 'clang_format_win',
     'pattern': '.',
     'condition': 'host_os == "win"',
-    'action': [ 'python',
+    'action': [ 'python3',
                 'src/third_party/depot_tools/download_from_google_storage.py',
                 '--no_resume',
                 '--no_auth',
@@ -176,7 +179,7 @@ hooks = [
     'name': 'clang_format_mac',
     'pattern': '.',
     'condition': 'host_os == "mac"',
-    'action': [ 'python',
+    'action': [ 'python3',
                 'src/third_party/depot_tools/download_from_google_storage.py',
                 '--no_resume',
                 '--no_auth',
@@ -188,7 +191,7 @@ hooks = [
     'name': 'clang_format_linux',
     'pattern': '.',
     'condition': 'host_os == "linux"',
-    'action': [ 'python',
+    'action': [ 'python3',
                 'src/third_party/depot_tools/download_from_google_storage.py',
                 '--no_resume',
                 '--no_auth',

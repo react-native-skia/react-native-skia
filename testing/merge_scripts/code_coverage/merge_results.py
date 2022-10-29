@@ -1,11 +1,11 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 # Copyright 2019 The Chromium Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
-"""Merge results from code coverage swarming runs.
+"""Merge results from code-coverage/pgo swarming runs.
 
-This script merges code coverage profiles from multiple shards. It also merges
-the test results of the shards.
+This script merges code-coverage/pgo profiles from multiple shards. It also
+merges the test results of the shards.
 
 It is functionally similar to merge_steps.py but it accepts the parameters
 passed by swarming api.
@@ -18,12 +18,12 @@ import os
 import subprocess
 import sys
 
-import merge_lib as coverage_merger
-
+import merge_lib as profile_merger
+import merge_js_lib as javascript_merger
 
 def _MergeAPIArgumentParser(*args, **kwargs):
   """Parameters passed to this merge script, as per:
-  https://chromium.googlesource.com/chromium/tools/build/+/master/scripts/slave/recipe_modules/swarming/resources/merge_api.py
+  https://chromium.googlesource.com/chromium/tools/build/+/main/scripts/slave/recipe_modules/swarming/resources/merge_api.py
   """
   parser = argparse.ArgumentParser(*args, **kwargs)
   parser.add_argument('--build-properties', help=argparse.SUPPRESS)
@@ -52,21 +52,15 @@ def _MergeAPIArgumentParser(*args, **kwargs):
       '--merged-jacoco-filename',
       help='filename used to uniquely name the merged exec file.')
   parser.add_argument(
+      '--javascript-coverage-dir',
+      help='directory for JavaScript coverage data')
+  parser.add_argument(
+      '--merged-js-cov-filename', help='filename to uniquely identify merged '
+                                       'json coverage data')
+  parser.add_argument(
       '--per-cl-coverage',
       action='store_true',
       help='set to indicate that this is a per-CL coverage build')
-  # TODO(crbug.com/1077304) - migrate this to sparse=False as default, and have
-  # --sparse to set sparse
-  parser.add_argument(
-      '--no-sparse',
-      action='store_false',
-      dest='sparse',
-      help='run llvm-profdata without the sparse flag.')
-  # TODO(crbug.com/1077304) - The intended behaviour is to default sparse to
-  # false. --no-sparse above was added as a workaround, and will be removed.
-  # This is being introduced now in support of the migration to intended
-  # behavior. Ordering of args matters here, as the default is set by the former
-  # (sparse defaults to False because of ordering. See unit tests for details)
   parser.add_argument(
       '--sparse',
       action='store_true',
@@ -99,19 +93,57 @@ def main():
     output_path = os.path.join(
         params.java_coverage_dir, '%s.exec' % params.merged_jacoco_filename)
     logging.info('Merging JaCoCo .exec files to %s', output_path)
-    coverage_merger.merge_java_exec_files(
+    profile_merger.merge_java_exec_files(
         params.task_output_dir, output_path, params.jacococli_path)
+
+  if params.javascript_coverage_dir:
+    if not params.merged_js_cov_filename:
+      parser.error('--merged-js-cov-filename required when merging '
+                   'JavaScript coverage')
+
+    parsed_scripts = javascript_merger.write_parsed_scripts(
+        params.task_output_dir)
+    if parsed_scripts:
+      logging.info('Raw parsed scripts written out to %s', parsed_scripts)
+      coverage_dirs = javascript_merger.get_raw_coverage_dirs(
+          params.task_output_dir)
+      logging.info(
+          'Identified directories containing coverage %s', coverage_dirs)
+
+      try:
+        logging.info('Converting raw coverage to istanbul')
+        javascript_merger.convert_raw_coverage_to_istanbul(
+            coverage_dirs, parsed_scripts, params.task_output_dir)
+
+        istanbul_coverage_dir = os.path.join(params.task_output_dir, 'istanbul')
+        output_dir = os.path.join(istanbul_coverage_dir, 'merged')
+        os.makedirs(output_dir)
+
+        coverage_file_path = os.path.join(output_dir, 'coverage.json')
+        logging.info('Merging istanbul reports to %s', coverage_file_path)
+        javascript_merger.merge_istanbul_reports(
+            istanbul_coverage_dir, parsed_scripts, coverage_file_path)
+      except RuntimeError as e:
+        logging.warn('Failed executing istanbul tasks: %s', e.message)
+
+    # Ensure JavaScript coverage dir exists.
+    if not os.path.exists(params.javascript_coverage_dir):
+      os.makedirs(params.javascript_coverage_dir)
+
+    output_path = os.path.join(params.javascript_coverage_dir,
+        '%s_javascript.json' % params.merged_js_cov_filename)
+    logging.info('Merging v8 coverage output to %s', output_path)
+    javascript_merger.merge_coverage_files(params.task_output_dir, output_path)
 
   # Name the output profdata file name as {test_target}.profdata or
   # default.profdata.
   output_prodata_filename = (params.test_target_name or 'default') + '.profdata'
 
-  # NOTE: The coverage data merge script must make sure that the profraw files
+  # NOTE: The profile data merge script must make sure that the profraw files
   # are deleted from the task output directory after merging, otherwise, other
   # test results merge script such as layout tests will treat them as json test
   # results files and result in errors.
-  logging.info('Merging code coverage profraw data')
-  invalid_profiles, counter_overflows = coverage_merger.merge_profiles(
+  invalid_profiles, counter_overflows = profile_merger.merge_profiles(
       params.task_output_dir,
       os.path.join(params.profdata_dir, output_prodata_filename), '.profraw',
       params.llvm_profdata,
@@ -132,16 +164,6 @@ def main():
               'w') as f:
       json.dump(invalid_profiles, f)
 
-    # We don't want to invalidate shards in a CQ build, because we should not
-    # interfere with the actual test results of a CQ builder.
-    # TODO(crbug.com/1050858) Remove patch_storage completely once recipe-side
-    # change passes --per-cl-coverage.
-    patch_storage = json.loads(params.build_properties).get('patch_storage')
-    if not params.per_cl_coverage and not patch_storage:
-      mark_invalid_shards(
-          coverage_merger.get_shards_to_retry(invalid_profiles),
-          params.jsons_to_merge)
-  logging.info('Merging %d test results', len(params.jsons_to_merge))
   failed = False
 
   # If given, always run the additional merge script, even if we only have one
@@ -177,32 +199,10 @@ def main():
         f_write.write(f_read.read())
   else:
     logging.warning(
-        "This script was told to merge %d test results, but no additional "
-        "merge script was given.")
+        'This script was told to merge test results, but no additional merge '
+        'script was given.')
 
   return 1 if (failed or bool(invalid_profiles)) else 0
-
-
-def mark_invalid_shards(bad_shards, jsons_to_merge):
-  """Removes results json files from bad shards.
-
-  This is needed so that the caller (e.g. recipe) knows to retry, or otherwise
-  treat the tests in that shard as not having valid results. Note that this only
-  removes the results from the local machine, as these are expected to remain in
-  the shard's isolated output.
-
-  Args:
-    bad_shards: list of task_ids of the shards that are bad or corrupted.
-    jsons_to_merge: The path to the jsons with the results of the tests.
-  """
-  if not bad_shards:
-    return
-  for f in jsons_to_merge:
-    for task_id in bad_shards:
-      if task_id in f:
-        # Remove results json if it corresponds to a bad shard.
-        os.remove(f)
-        break
 
 
 if __name__ == '__main__':

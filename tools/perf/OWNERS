@@ -1,0 +1,30 @@
+# Overall OWNERS
+johnchen@chromium.org
+wenbinzhang@google.com
+
+# For gtest perf tests, perf data upload, and functional tests
+bsheedy@chromium.org
+
+# Scheduling and builders.
+hypan@google.com
+
+# For changes related to ChromeOS.
+achuith@chromium.org
+
+# For system health stories.
+sullivan@chromium.org
+
+# For V8 and system_health stories.
+cbruni@chromium.org
+
+# For page_cycler and loading benchmarks related changes.
+kouhei@chromium.org
+
+# Perf bot sheriffs can disable stories.
+per-file expectations.config=skyostil@chromium.org
+per-file expectations.config=nuskos@chromium.org
+per-file expectations.config=sadrul@chromium.org
+per-file expectations.config=eseckler@chromium.org
+
+# emeritus:
+# perezju@chromium.org

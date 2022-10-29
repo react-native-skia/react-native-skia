@@ -3,9 +3,12 @@ This directory is used to store GN arg mapping for Chrome OS boards.
 Files in this directory are populated by running `gclient sync` with specific
 arguments set in the .gclient file. Specifically:
 * The file must have a top-level variable set: `target_os = ["chromeos"]`
-* The `"custom_vars"` parameter of the chromium/src.git solution must include the
-  parameter: `"cros_boards": "{BOARD_NAMES}"` where `{BOARD_NAMES}` is a
+* The `"custom_vars"` parameter of the chromium/src.git solution must include
+  the parameter: `"cros_boards": "{BOARD_NAMES}"` where `{BOARD_NAMES}` is a
   colon-separated list of boards you'd like to checkout.
+* If you'd like to a checkout a QEMU-bootable image for a given board, include
+  it in the `cros_boards_with_qemu_images` var rather than the `cros_boards`
+  var.
 
 A typical .gclient file is a sibling of the src/ directory, and might look like
 this:
@@ -18,7 +21,10 @@ solutions = [
     "custom_deps": {},
     "custom_vars" : {
         "checkout_src_internal": True,
-        "cros_boards": "eve",
+        "cros_boards": "eve:kevin",
+        # If a QEMU-bootable image is desired for any board, move it from
+        # the previous var to the following:
+        "cros_boards_with_qemu_images": "amd64-generic",
     },
   },
 ]

@@ -23,7 +23,7 @@ logging.basicConfig(
 def _call_profdata_tool(profile_input_file_paths,
                         profile_output_file_path,
                         profdata_tool_path,
-                        sparse=True):
+                        sparse=False):
   """Calls the llvm-profdata tool.
 
   Args:
@@ -41,8 +41,6 @@ def _call_profdata_tool(profile_input_file_paths,
   Raises:
     CalledProcessError: An error occurred merging profiles.
   """
-  logging.debug('Profile input paths: %r' % profile_input_file_paths)
-  logging.debug('Profile output path: %r' % profile_output_file_path)
   try:
     subprocess_cmd = [
         profdata_tool_path, 'merge', '-o', profile_output_file_path,
@@ -50,13 +48,12 @@ def _call_profdata_tool(profile_input_file_paths,
     if sparse:
       subprocess_cmd += ['-sparse=true',]
     subprocess_cmd.extend(profile_input_file_paths)
-    logging.info('profdata command: %r', ' '.join(subprocess_cmd))
+    logging.info('profdata command: %r', subprocess_cmd)
 
     # Redirecting stderr is required because when error happens, llvm-profdata
     # writes the error output to stderr and our error handling logic relies on
     # that output.
-    output = subprocess.check_output(subprocess_cmd, stderr=subprocess.STDOUT)
-    logging.info('Merge succeeded with output: %r', output)
+    subprocess.check_call(subprocess_cmd, stderr=subprocess.STDOUT)
   except subprocess.CalledProcessError as error:
     logging.error('Failed to merge profiles, return code (%d), output: %r' %
                   (error.returncode, error.output))
@@ -82,7 +79,7 @@ def _get_profile_paths(input_dir,
 
 def _validate_and_convert_profraws(profraw_files,
                                    profdata_tool_path,
-                                   sparse=True):
+                                   sparse=False):
   """Validates and converts profraws to profdatas.
 
   For each given .profraw file in the input, this method first validates it by
@@ -116,7 +113,6 @@ def _validate_and_convert_profraws(profraw_files,
   counter_overflows = multiprocessing.Manager().list()
 
   for profraw_file in profraw_files:
-    logging.info('Converting profraw file: %r', profraw_file)
     pool.apply_async(
         _validate_and_convert_profraw,
         (profraw_file, output_profdata_files, invalid_profraw_files,
@@ -135,7 +131,7 @@ def _validate_and_convert_profraws(profraw_files,
 
 def _validate_and_convert_profraw(profraw_file, output_profdata_files,
                                   invalid_profraw_files, counter_overflows,
-                                  profdata_tool_path, sparse=True):
+                                  profdata_tool_path, sparse=False):
   output_profdata_file = profraw_file.replace('.profraw', '.profdata')
   subprocess_cmd = [
       profdata_tool_path,
@@ -147,23 +143,19 @@ def _validate_and_convert_profraw(profraw_file, output_profdata_files,
     subprocess_cmd.append('--sparse')
 
   subprocess_cmd.append(profraw_file)
+  logging.info('profdata command: %r', subprocess_cmd)
 
   profile_valid = False
   counter_overflow = False
   validation_output = None
-
-  logging.info('profdata command: %r', ' '.join(subprocess_cmd))
 
   # 1. Determine if the profile is valid.
   try:
     # Redirecting stderr is required because when error happens, llvm-profdata
     # writes the error output to stderr and our error handling logic relies on
     # that output.
-    logging.info('Converting %r to %r', profraw_file, output_profdata_file)
     validation_output = subprocess.check_output(
         subprocess_cmd, stderr=subprocess.STDOUT)
-    logging.info('Validating and converting %r to %r succeeded with output: %r',
-                 profraw_file, output_profdata_file, validation_output)
     if 'Counter overflow' in validation_output:
       counter_overflow = True
     else:
@@ -214,8 +206,7 @@ def merge_java_exec_files(input_dir, output_path, jacococli_path):
   cmd = [_JAVA_PATH, '-jar', jacococli_path, 'merge']
   cmd.extend(exec_input_file_paths)
   cmd.extend(['--destfile', output_path])
-  output = subprocess.check_output(cmd, stderr=subprocess.STDOUT)
-  logging.info('Merge succeeded with output: %r', output)
+  subprocess.check_call(cmd, stderr=subprocess.STDOUT)
 
 
 def merge_profiles(input_dir,
@@ -223,7 +214,7 @@ def merge_profiles(input_dir,
                    input_extension,
                    profdata_tool_path,
                    input_filename_pattern='.*',
-                   sparse=True,
+                   sparse=False,
                    skip_validation=False):
   """Merges the profiles produced by the shards using llvm-profdata.
 
@@ -259,8 +250,6 @@ def merge_profiles(input_dir,
         _validate_and_convert_profraws(profile_input_file_paths,
                                        profdata_tool_path,
                                        sparse=sparse))
-    logging.info('List of converted .profdata files: %r',
-                 profile_input_file_paths)
     logging.info((
         'List of invalid .profraw files that failed to validate and convert: %r'
     ), invalid_profraw_files)

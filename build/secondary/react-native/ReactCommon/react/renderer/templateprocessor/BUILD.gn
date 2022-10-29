@@ -24,4 +24,8 @@ rn_cxx_component("templateprocessor") {
 
   with_exceptions = true
   with_rtti = true
+
+  cflags_cc = [
+    "-Wno-unreachable-code-return",
+  ]
 }

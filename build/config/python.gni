@@ -82,7 +82,7 @@ template("python_library") {
 #   }
 template("action_with_pydeps") {
   action(target_name) {
-    # Forward all variables. Ensure that testonly and visibility are forwarded
+    # Ensure that testonly and visibility are forwarded
     # explicitly, since this performs recursive scope lookups, which is
     # required to ensure their definition from scopes above the caller are
     # properly handled. All other variables are forwarded with "*", which
@@ -103,7 +103,9 @@ template("action_with_pydeps") {
     # Happens every time the template is instantiated, but benchmarking shows no
     # perceivable impact on overall 'gn gen' speed.
     _pydeps_file = invoker.script + "deps"
-    _pydeps_lines = read_file(_pydeps_file, "list lines")
+
+    _pydeps_lines =
+        read_file(_pydeps_file, "list lines")  # https://crbug.com/1102058
     _pydeps_entries = filter_exclude(_pydeps_lines, [ "#*" ])
 
     if (!defined(inputs)) {
@@ -119,7 +121,7 @@ template("action_with_pydeps") {
 
 template("action_foreach_with_pydeps") {
   action_foreach(target_name) {
-    # Forward all variables. Ensure that testonly and visibility are forwarded
+    # Ensure that testonly and visibility are forwarded
     # explicitly, since this performs recursive scope lookups, which is
     # required to ensure their definition from scopes above the caller are
     # properly handled. All other variables are forwarded with "*", which
@@ -139,7 +141,11 @@ template("action_foreach_with_pydeps") {
     # Read and filter out comments.
     # Happens every time the template is instantiated, but benchmarking shows no
     # perceivable impact on overall 'gn gen' speed.
-    _pydeps_file = invoker.script + "deps"
+    if (defined(invoker.deps_file)) {
+      _pydeps_file = invoker.deps_file
+    } else {
+      _pydeps_file = invoker.script + "deps"
+    }
     _pydeps_lines = read_file(_pydeps_file, "list lines")
     _pydeps_entries = filter_exclude(_pydeps_lines, [ "#*" ])
 

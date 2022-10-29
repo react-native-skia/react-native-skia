@@ -31,7 +31,7 @@ import("//build/util/generate_wrapper.gni")
 #
 # shards
 #   (optional, default 1) number of shards to execute tests in parallel. not
-#   the same as swamring shards.
+#   the same as swarming shards.
 #
 # wrapper_output_name
 #   (optional, default "run_${target_name}") name of the wrapper script
@@ -40,26 +40,29 @@ template("ios_test_runner_wrapper") {
   generate_wrapper(target_name) {
     forward_variables_from(invoker,
                            [
-                             "data",
-                             "data_deps",
                              "deps",
-                             "executable_args",
                              "retries",
                              "shards",
                              "wrapper_output_name",
                            ])
     testonly = true
+    executable = "//testing/test_env.py"
 
     # iOS main test runner
-    executable = "//ios/build/bots/scripts/run.py"
+    _runner_path =
+        rebase_path("//ios/build/bots/scripts/run.py", root_build_dir)
+
+    executable_args = [ "@WrappedPath(${_runner_path})" ]
 
     # arguments passed to run.py
-    if (!defined(executable_args)) {
-      executable_args = []
+    if (defined(invoker.executable_args)) {
+      executable_args += invoker.executable_args
     }
 
     _rebased_mac_toolchain = rebase_path("//mac_toolchain", root_build_dir)
     _rebased_xcode_path = rebase_path("//Xcode.app", root_build_dir)
+    _rebased_ios_runtime_cache_prefix =
+        rebase_path("//Runtime-ios-", root_build_dir)
 
     # --out-dir argument is specified in gn_isolate_map.pyl because
     # ${ISOLATED_OUTDIR} doesn't get resolved through this wrapper.
@@ -68,6 +71,8 @@ template("ios_test_runner_wrapper") {
       "@WrappedPath(${_rebased_xcode_path})",
       "--mac-toolchain-cmd",
       "@WrappedPath(${_rebased_mac_toolchain})",
+      "--runtime-cache-prefix",
+      "@WrappedPath(${_rebased_ios_runtime_cache_prefix})",
     ]
 
     # Default retries to 3
@@ -88,12 +93,14 @@ template("ios_test_runner_wrapper") {
       "${shards}",
     ]
 
-    # test runner relies on iossim if use_ios_simulator (defined in ios_sdk.gni)
-    if (use_ios_simulator) {
+    data_deps = [ "//testing:test_scripts_shared" ]
+    if (defined(invoker.data_deps)) {
+      data_deps += invoker.data_deps
+    }
+
+    # test runner relies on iossim for simulator builds.
+    if (target_environment == "simulator") {
       _rebased_root_build_dir = rebase_path("${root_build_dir}", root_build_dir)
-      if (!defined(data_deps)) {
-        data_deps = []
-      }
       data_deps += [ "//testing/iossim" ]
 
       executable_args += [
@@ -123,10 +130,17 @@ template("ios_test_runner_wrapper") {
     # to ensure those wrappers are distinct.
     wrapper_script = "${root_out_dir}/bin/${_wrapper_output_name}"
 
-    # ios/build/bot/scripts/*.py needs to be present for test runner
-    if (!defined(data)) {
-      data = []
+    data = []
+    if (defined(invoker.data)) {
+      data += invoker.data
     }
-    data += [ "//ios/build/bots/scripts/" ]
+    data += [
+      "//.vpython",
+      "//ios/build/bots/scripts/",
+
+      # Variations test utilities used by variations_runner script.
+      "//testing/scripts/variations_seed_access_helper.py",
+      "//testing/test_env.py",
+    ]
   }
 }

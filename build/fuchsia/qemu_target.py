@@ -7,8 +7,8 @@
 import boot_data
 import common
 import emu_target
+import hashlib
 import logging
-import md5
 import os
 import platform
 import qemu_image
@@ -24,27 +24,31 @@ from target import FuchsiaTargetException
 
 
 # Virtual networking configuration data for QEMU.
-GUEST_NET = '192.168.3.0/24'
-GUEST_IP_ADDRESS = '192.168.3.9'
-HOST_IP_ADDRESS = '192.168.3.2'
+HOST_IP_ADDRESS = '10.0.2.2'
 GUEST_MAC_ADDRESS = '52:54:00:63:5e:7b'
 
 # Capacity of the system's blobstore volume.
 EXTENDED_BLOBSTORE_SIZE = 1073741824  # 1GB
 
 
+def GetTargetType():
+  return QemuTarget
+
+
 class QemuTarget(emu_target.EmuTarget):
-  def __init__(self, output_dir, target_cpu, system_log_file,
-               emu_type, cpu_cores, require_kvm, ram_size_mb):
-    super(QemuTarget, self).__init__(output_dir, target_cpu,
-                                     system_log_file)
-    self._emu_type=emu_type
+  EMULATOR_NAME = 'qemu'
+
+  def __init__(self, out_dir, target_cpu, cpu_cores, require_kvm, ram_size_mb,
+               logs_dir):
+    super(QemuTarget, self).__init__(out_dir, target_cpu, logs_dir)
     self._cpu_cores=cpu_cores
     self._require_kvm=require_kvm
     self._ram_size_mb=ram_size_mb
 
-  def _GetEmulatorName(self):
-    return self._emu_type
+  @staticmethod
+  def CreateFromArgs(args):
+    return QemuTarget(args.out_dir, args.target_cpu, args.cpu_cores,
+                      args.require_kvm, args.ram_size_mb, args.logs_dir)
 
   def _IsKvmEnabled(self):
     kvm_supported = sys.platform.startswith('linux') and \
@@ -56,10 +60,17 @@ class QemuTarget(emu_target.EmuTarget):
       return True
     elif self._require_kvm:
       if same_arch:
-        raise FuchsiaTargetException('KVM required but unavailable.')
+        if not os.path.exists('/dev/kvm'):
+          kvm_error = 'File /dev/kvm does not exist. Please install KVM first.'
+        else:
+          kvm_error = 'To use KVM acceleration, add user to the kvm group '\
+                      'with "sudo usermod -a -G kvm $USER". Log out and back '\
+                      'in for the change to take effect.'
+        raise FuchsiaTargetException(kvm_error)
       else:
-        raise FuchsiaTargetException('KVM unavailable when CPU architecture of'\
-                                     ' host is different from that of target.')
+        raise FuchsiaTargetException('KVM unavailable when CPU architecture '\
+                                     'of host is different from that of'\
+                                     ' target. See --allow-no-kvm.')
     else:
       return False
 
@@ -67,46 +78,53 @@ class QemuTarget(emu_target.EmuTarget):
     boot_data.AssertBootImagesExist(self._GetTargetSdkArch(), 'qemu')
 
     emu_command = [
-        '-kernel', EnsurePathExists(
+        '-kernel',
+        EnsurePathExists(
             boot_data.GetTargetFile('qemu-kernel.kernel',
                                     self._GetTargetSdkArch(),
                                     boot_data.TARGET_TYPE_QEMU)),
-        '-initrd', EnsurePathExists(
-            boot_data.GetBootImage(self._output_dir, self._GetTargetSdkArch(),
+        '-initrd',
+        EnsurePathExists(
+            boot_data.GetBootImage(self._out_dir, self._GetTargetSdkArch(),
                                    boot_data.TARGET_TYPE_QEMU)),
-        '-m', str(self._ram_size_mb),
-        '-smp', str(self._cpu_cores),
+        '-m',
+        str(self._ram_size_mb),
+        '-smp',
+        str(self._cpu_cores),
 
         # Attach the blobstore and data volumes. Use snapshot mode to discard
         # any changes.
         '-snapshot',
-        '-drive', 'file=%s,format=qcow2,if=none,id=blobstore,snapshot=on' %
-                    _EnsureBlobstoreQcowAndReturnPath(self._output_dir,
-                                                      self._GetTargetSdkArch()),
-        '-device', 'virtio-blk-pci,drive=blobstore',
+        '-drive',
+        'file=%s,format=qcow2,if=none,id=blobstore,snapshot=on' %
+        _EnsureBlobstoreQcowAndReturnPath(self._out_dir,
+                                          self._GetTargetSdkArch()),
+        '-object',
+        'iothread,id=iothread0',
+        '-device',
+        'virtio-blk-pci,drive=blobstore,iothread=iothread0',
 
         # Use stdio for the guest OS only; don't attach the QEMU interactive
         # monitor.
-        '-serial', 'stdio',
-        '-monitor', 'none',
-      ]
+        '-serial',
+        'stdio',
+        '-monitor',
+        'none',
+    ]
 
     # Configure the machine to emulate, based on the target architecture.
     if self._target_cpu == 'arm64':
       emu_command.extend([
           '-machine','virt,gic_version=3',
       ])
-      netdev_type = 'virtio-net-pci'
     else:
       emu_command.extend([
           '-machine', 'q35',
       ])
-      netdev_type = 'e1000'
 
-    # Configure virtual network. It is used in the tests to connect to
-    # testserver running on the host.
-    netdev_config = 'user,id=net0,net=%s,dhcpstart=%s,host=%s' % \
-            (GUEST_NET, GUEST_IP_ADDRESS, HOST_IP_ADDRESS)
+    # Configure virtual network.
+    netdev_type = 'virtio-net-pci'
+    netdev_config = 'type=user,id=net0,restrict=off'
 
     self._host_ssh_port = common.GetAvailableTcpPort()
     netdev_config += ",hostfwd=tcp::%s-:22" % self._host_ssh_port
@@ -125,9 +143,8 @@ class QemuTarget(emu_target.EmuTarget):
       else:
         kvm_command.append('host,migratable=no,+invtsc')
     else:
-      logging.warning('Unable to launch %s with KVM acceleration.'
-                       % (self._emu_type) +
-                      'The guest VM will be slow.')
+      logging.warning('Unable to launch %s with KVM acceleration. '
+                      'The guest VM will be slow.' % (self.EMULATOR_NAME))
       if self._target_cpu == 'arm64':
         kvm_command = ['-cpu', 'cortex-a53']
       else:
@@ -135,7 +152,7 @@ class QemuTarget(emu_target.EmuTarget):
 
     emu_command.extend(kvm_command)
 
-    kernel_args = boot_data.GetKernelArgs(self._output_dir)
+    kernel_args = boot_data.GetKernelArgs(self._out_dir)
 
     # TERM=dumb tells the guest OS to not emit ANSI commands that trigger
     # noisy ANSI spew from the user's terminal emulator.
@@ -152,15 +169,23 @@ class QemuTarget(emu_target.EmuTarget):
     return emu_command
 
   def _BuildCommand(self):
-    qemu_exec = 'qemu-system-'+self._GetTargetSdkLegacyArch()
-    qemu_command = [os.path.join(GetEmuRootForPlatform(self._emu_type), 'bin',
-                                 qemu_exec)]
+    if self._target_cpu == 'arm64':
+      qemu_exec = 'qemu-system-' + 'aarch64'
+    elif self._target_cpu == 'x64':
+      qemu_exec = 'qemu-system-' + 'x86_64'
+    else:
+      raise Exception('Unknown target_cpu %s:' % self._target_cpu)
+
+    qemu_command = [
+        os.path.join(GetEmuRootForPlatform(self.EMULATOR_NAME), 'bin',
+                     qemu_exec)
+    ]
     qemu_command.extend(self._BuildQemuConfig())
     qemu_command.append('-nographic')
     return qemu_command
 
 def _ComputeFileHash(filename):
-  hasher = md5.new()
+  hasher = hashlib.md5()
   with open(filename, 'rb') as f:
     buf = f.read(4096)
     while buf:
@@ -170,7 +195,7 @@ def _ComputeFileHash(filename):
   return hasher.hexdigest()
 
 
-def _EnsureBlobstoreQcowAndReturnPath(output_dir, target_arch):
+def _EnsureBlobstoreQcowAndReturnPath(out_dir, target_arch):
   """Returns a file containing the Fuchsia blobstore in a QCOW format,
   with extra buffer space added for growth."""
 
@@ -179,11 +204,11 @@ def _EnsureBlobstoreQcowAndReturnPath(output_dir, target_arch):
   fvm_tool = common.GetHostToolPathFromPlatform('fvm')
   blobstore_path = boot_data.GetTargetFile('storage-full.blk', target_arch,
                                            'qemu')
-  qcow_path = os.path.join(output_dir, 'gen', 'blobstore.qcow')
+  qcow_path = os.path.join(out_dir, 'gen', 'blobstore.qcow')
 
   # Check a hash of the blobstore to determine if we can re-use an existing
   # extended version of it.
-  blobstore_hash_path = os.path.join(output_dir, 'gen', 'blobstore.hash')
+  blobstore_hash_path = os.path.join(out_dir, 'gen', 'blobstore.hash')
   current_blobstore_hash = _ComputeFileHash(blobstore_path)
 
   if os.path.exists(blobstore_hash_path) and os.path.exists(qcow_path):

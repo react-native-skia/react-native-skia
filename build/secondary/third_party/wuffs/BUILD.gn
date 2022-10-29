@@ -32,6 +32,11 @@ config("wuffs_config") {
   include_dirs = [
     "../wuffs/release/c",
   ]
+
+  cflags = [
+    "-Wno-implicit-fallthrough",
+    "-Wno-non-c-typedef-for-linkage",
+  ]
 }
 
 static_library("wuffs") {

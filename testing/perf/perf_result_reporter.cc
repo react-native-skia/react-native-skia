@@ -3,6 +3,9 @@
 // found in the LICENSE file.
 
 #include "testing/perf/perf_result_reporter.h"
+
+#include <vector>
+
 #include "base/check.h"
 #include "base/no_destructor.h"
 #include "base/notreached.h"
@@ -11,8 +14,8 @@
 namespace {
 
 // These characters mess with either the stdout parsing or the dashboard itself.
-static const base::NoDestructor<std::vector<std::string>> kInvalidCharacters(
-    {"/", ":", "="});
+static const base::NoDestructor<std::vector<std::string>> kInvalidCharacters{
+    {"/", ":", "="}};
 
 void CheckForInvalidCharacters(const std::string& str) {
   for (const auto& invalid : *kInvalidCharacters) {

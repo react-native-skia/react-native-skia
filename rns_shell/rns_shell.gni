@@ -7,6 +7,13 @@ if(is_linux) {
 }
 
 declare_args() {
+  # For platform which doesnt have gpu have to set this to false
+  gl_has_gpu = true
+
+  # Use bitmap for scroll layer.
+  # Enable if scroll layer children do not have any runtime updates,to improve performance.
+  rns_enable_scroll_layer_bitmap = false
+
   if(is_linux) {
     # x11, wayland, direcftb, libwpe
     gl_display_backend = "x11"
@@ -17,20 +24,13 @@ declare_args() {
     # For Embedded systems we will use OpenGL ES
     gl_use_opengl_es = false
 
-    # For platform which doesnt have gpu have to set this to false
-    gl_has_gpu = true
-
     # Use partial updates ( dirty region painting and swaping) if system support.
     rns_enable_partial_updates = true
-
-    # Use bitmap for scroll layer.
-    # Enable if scroll layer children do not have any runtime updates,to improve performance.
-    rns_enable_scroll_layer_bitmap = false
   }
 }
 
 declare_args() {
-  if(gl_display_backend == "libwpe") {
+  if(is_linux && gl_display_backend == "libwpe") {
     wpe_interface_version="1.0"
   }
 }

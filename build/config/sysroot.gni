@@ -35,7 +35,7 @@ if (sysroot == "") {
 
     # Android uses unified headers, and thus a single compile time sysroot
     sysroot = "$android_toolchain_root/sysroot"
-  } else if (is_linux && use_sysroot) {
+  } else if ((is_linux || is_chromeos) && use_sysroot) {
     # By default build against a sysroot image downloaded from Cloud Storage
     # during gclient runhooks.
     if (current_cpu == "x64") {

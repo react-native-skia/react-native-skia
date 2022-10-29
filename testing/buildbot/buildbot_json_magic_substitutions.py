@@ -31,13 +31,10 @@ def ChromeOSTelemetryRemote(test_config):
       if sub_str in s:
         return True
     return False
-  VM_POOLS = [
-    'chromium.tests.cros.vm',
-    'chrome.tests.cros-vm',
-  ]
-  HW_POOLS = [
-    'chrome-cros-dut',
-    'chrome.cros-dut',
+
+  TEST_POOLS = [
+      'chrome.tests',
+      'chromium.tests',
   ]
   dimensions = test_config.get('swarming', {}).get('dimension_sets', [])
   assert len(dimensions)
@@ -47,18 +44,54 @@ def ChromeOSTelemetryRemote(test_config):
         'No pool set for CrOS test, unable to determine whether running on '
         'a VM or physical hardware.')
 
-  if StringContainsSubstring(pool, VM_POOLS):
+  if (StringContainsSubstring(pool, TEST_POOLS)
+      and 'device_type' not in dimensions[0]):
     return [
       '--remote=127.0.0.1',
       # By default, CrOS VMs' ssh servers listen on local port 9222.
       '--remote-ssh-port=9222',
     ]
-  if StringContainsSubstring(pool, HW_POOLS):
+  if StringContainsSubstring(pool, TEST_POOLS):
     return [
       # Magic hostname that resolves to a CrOS device in the test lab.
       '--remote=variable_chromeos_device_hostname',
     ]
   raise RuntimeError('Unknown CrOS pool %s' % pool)
+
+
+def GPUExpectedDeviceId(test_config):
+  """Substitutes the correct expected GPU(s) for certain GPU tests.
+
+  Most configurations only need one expected GPU, but heterogeneous pools (e.g.
+  HD 630 and UHD 630 machines) require multiple.
+
+  Args:
+    test_config: A dict containing a configuration for a specific test on a
+        specific builder.
+  """
+  dimensions = test_config.get('swarming', {}).get('dimension_sets', [])
+  assert dimensions
+  gpus = []
+  for d in dimensions:
+    # Split up multiple GPU/driver combinations if the swarming OR operator is
+    # being used.
+    if 'gpu' in d:
+      gpus.extend(d['gpu'].split('|'))
+
+  # We don't specify GPU on things like Android/CrOS devices, so default to 0.
+  if not gpus:
+    return ['--expected-device-id', '0']
+
+  device_ids = set()
+  for gpu_and_driver in gpus:
+    # In the form vendor:device-driver.
+    device = gpu_and_driver.split('-')[0].split(':')[1]
+    device_ids.add(device)
+
+  retval = []
+  for device_id in sorted(device_ids):
+    retval.extend(['--expected-device-id', device_id])
+  return retval
 
 
 def TestOnlySubstitution(_):
