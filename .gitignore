@@ -31,5 +31,5 @@
 !/build/
 /build/config/gclient_args.gni
 
-# JavaScript files
-/node_modules/
+# node_modules files
+node_modules/
