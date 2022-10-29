@@ -2,7 +2,7 @@
 # will depend on the appropriate source sets or export the system packages
 # for both FreeType and HarfBuzz.
 import("//build/config/freetype/freetype.gni")
-import("//third_party//harfbuzz/harfbuzz.gni")
+import("//third_party//harfbuzz-ng/harfbuzz.gni")
 
 component("freetype_harfbuzz") {
   public_configs = []
@@ -19,11 +19,11 @@ component("freetype_harfbuzz") {
 
   if(use_system_harfbuzz) {
     public_configs += [
-      "//third_party/harfbuzz:harfbuzz_from_pkgconfig",
+      "//third_party/harfbuzz-ng:harfbuzz_from_pkgconfig",
     ]
   }else {
     public_deps += [
-      "//third_party/harfbuzz:harfbuzz_source",
+      "//third_party/harfbuzz-ng:harfbuzz_source",
     ]
   }
 }

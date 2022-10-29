@@ -9,7 +9,7 @@
 /third_party/boringssl/src/
 /third_party/angle/
 /third_party/freetype/src/
-/third_party/harfbuzz/src/
+/third_party/harfbuzz-ng/src/
 /third_party/icu/
 /third_party/libjpeg-turbo/
 /third_party/libpng/

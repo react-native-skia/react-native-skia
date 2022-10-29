@@ -73,8 +73,8 @@ deps = {
   # skia
   'src/third_party/skia'                  : Var('skia_git') + '/skia.git' + '@' + Var('skia_revision'),
   'src/third_party/angle'                 : Var('chromium_git') + '/angle/angle.git' + '@' + '745e071241ab4d7dede3019e8bb374ed7e64ed79',
-  'src/third_party/freetype/src'          : Var('chromium_git') + '/chromium/src/third_party/freetype2.git' + '@' + '9ed5332fe632ada7de8fd345c9ef579b678c4042',
-  'src/third_party/harfbuzz/src'          : Var('chromium_git') + '/external/github.com/harfbuzz/harfbuzz.git' + '@' + '9bd7ba5019381bb8584811ee63a0ba0cee7dca99',
+  'src/third_party/freetype/src'          : Var('chromium_git') + '/chromium/src/third_party/freetype2.git' + '@' + '0b62c1e43dc4b0e3c50662aac757e4f7321e5466',
+  'src/third_party/harfbuzz-ng/src'       : Var('chromium_git') + '/external/github.com/harfbuzz/harfbuzz.git' + '@' + '56c467093598ec559a7148b61e112e9de52b7076',
   'src/third_party/icu'                   : Var('chromium_git') + '/chromium/deps/icu.git' + '@' + 'eedbaf76e49d28465d9119b10c30b82906e606ff',
   'src/third_party/libjpeg-turbo'         : Var('chromium_git') + '/chromium/deps/libjpeg_turbo.git' + '@' + '49836d72bd22c7a78bc0250483f04162278cdc6a',
   'src/third_party/nasm'                  : Var('chromium_git') + '/chromium/deps/nasm.git' + '@' + '4fa54ca5f7fc3a15a8c78ac94688e64d3e4e4fa1',
