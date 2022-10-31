@@ -44,7 +44,7 @@ void  WindowDelegator::createNativeWindow() {
                                                  SkSize::Make(windowSize_.width(),windowSize_.height()),
                                                  RnsShell::SubWindow);
   if(window_) {
-    windowContext_ = RnsShell::WCF::createContextForWindow(window_->nativeWindowHandle(),
+    windowContext_ = RnsShell::WCF::createContextForWindow(reinterpret_cast<RnsShell::GLNativeWindowType>(window_->nativeWindowHandle()),
                &RnsShell::PlatformDisplay::sharedDisplayForCompositing(), RnsShell::DisplayParams());
     if(windowContext_) {
       windowContext_->makeContextCurrent();
@@ -103,13 +103,13 @@ inline void WindowDelegator::renderToDisplay() {
 
   std::scoped_lock lock(renderCtrlMutex);
 
-#ifdef RNS_SHELL_HAS_GPU_SUPPORT
+#if USE(RNS_SHELL_PARTIAL_UPDATES) && defined(RNS_SHELL_HAS_GPU_SUPPORT)
   int bufferAge=windowContext_->bufferAge();
   if((bufferAge != 1) && (forceFullScreenDraw_)) {
 // Forcing full screen redraw as damage region handling is not done
     forceFullScreenDraw_();
   }
-#endif/*RNS_SHELL_HAS_GPU_SUPPORT*/
+#endif/*RNS_SHELL_HAS_GPU_SUPPORT && RNS_SHELL_PARTIAL_UPDATES*/
 
   if(backBuffer_)  backBuffer_->flushAndSubmit();
   if(windowContext_) {

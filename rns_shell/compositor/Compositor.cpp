@@ -32,7 +32,7 @@ Compositor::Compositor(Client& client, PlatformDisplayID displayID, SkSize& view
     :client_(client)
     ,rootLayer_(nullptr) {
 
-    nativeWindowHandle_ = client_.nativeSurfaceHandle();
+    nativeWindowHandle_ = reinterpret_cast<GLNativeWindowType>(client_.nativeSurfaceHandle());
     if(nativeWindowHandle_) {
        createWindowContext();
     }
