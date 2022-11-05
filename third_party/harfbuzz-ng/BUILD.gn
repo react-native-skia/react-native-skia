@@ -32,6 +32,10 @@ if (use_system_harfbuzz) {
       # Result of 32-bit shift implicitly converted to 64 bits.
       cflags = [ "/wd4334" ]
     }
+
+    if (is_mac) {
+      cflags_cc = [ "-Wno-deprecated-declarations" ]
+    }
   }
 
   source_set("harfbuzz_source") {
