@@ -7,7 +7,7 @@
  */
 
 // Must be added before X11 headrs because Folly uses "Struct None" and X11 has "#define None 0L" which conflicts
-#include "src/gpu/gl/GrGLUtil.h"
+#include "src/gpu/ganesh/gl/GrGLUtil.h"
 // USE macro is defined here so need to include on before using USE macro
 #include "ReactSkia/utils/RnsUtils.h"
 

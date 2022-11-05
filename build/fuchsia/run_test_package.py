@@ -1,4 +1,4 @@
-# Copyright 2018 The Chromium Authors. All rights reserved.
+# Copyright 2018 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 """Contains a helper function for deploying and executing a packaged
@@ -16,9 +16,11 @@ import select
 import subprocess
 import sys
 import threading
+import time
 import uuid
 
-from symbolizer import BuildIdsPaths, RunSymbolizer, SymbolizerFilter
+from exit_on_sig_term import ExitOnSigTerm
+from symbolizer import BuildIdsPaths, RunSymbolizer
 
 FAR = common.GetHostToolPathFromPlatform('far')
 
@@ -30,16 +32,21 @@ def _AttachKernelLogReader(target):
   """Attaches a kernel log reader as a long-running SSH task."""
 
   logging.info('Attaching kernel logger.')
-  return target.RunCommandPiped(['dlog', '-f'],
+  return target.RunCommandPiped(['log_listener',
+                                 '--since_now',
+                                 '--hide_metadata',
+                                 '--tag',
+                                 'klog',
+                                ],
                                 stdin=open(os.devnull, 'r'),
                                 stdout=subprocess.PIPE,
                                 stderr=subprocess.STDOUT)
 
 
 class MergedInputStream(object):
-  """Merges a number of input streams into a UNIX pipe on a dedicated thread.
-  Terminates when the file descriptor of the primary stream (the first in
-  the sequence) is closed."""
+  """Merges a number of input streams into a UTF-8 encoded UNIX pipe on a
+  dedicated thread. Terminates when the file descriptor of the primary stream
+  (the first in the sequence) is closed."""
 
   def __init__(self, streams):
     assert len(streams) > 0
@@ -52,7 +59,7 @@ class MergedInputStream(object):
 
     read_pipe, write_pipe = os.pipe()
 
-    self._output_stream = os.fdopen(write_pipe, 'wb', 1)
+    self._output_stream = os.fdopen(write_pipe, 'wb', 0)
     self._thread = threading.Thread(target=self._Run)
     self._thread.start()
 
@@ -108,9 +115,10 @@ class MergedInputStream(object):
           del streams_by_fd[fileno]
 
 
-def _GetComponentUri(package_name):
-  return 'fuchsia-pkg://fuchsia.com/%s#meta/%s.cmx' % (package_name,
-                                                       package_name)
+def _GetComponentUri(package_name, package_component_version):
+  suffix = 'cm' if package_component_version == '2' else 'cmx'
+  return 'fuchsia-pkg://fuchsia.com/%s#meta/%s.%s' % (package_name,
+                                                      package_name, suffix)
 
 
 class RunTestPackageArgs:
@@ -123,12 +131,15 @@ class RunTestPackageArgs:
       file fetched after the test suite has run.
   use_run_test_component: If True then the test package will be run hermetically
                           via 'run-test-component', rather than using 'run'.
+  output_directory: If set, the output directory for CFv2 tests that use
+                    custom artifacts; see fxbug.dev/75690.
   """
 
   def __init__(self):
     self.code_coverage = False
     self.test_realm_label = None
     self.use_run_test_component = False
+    self.output_directory = None
 
   @staticmethod
   def FromCommonArgs(args):
@@ -149,15 +160,25 @@ def _DrainStreamToStdout(stream, quit_event):
       print(line.rstrip())
 
 
-def RunTestPackage(output_dir, target, package_paths, package_name,
-                   package_args, args):
+def _SymbolizeStream(input_fd, ids_txt_files):
+  """Returns a Popen object for a symbolizer process invocation.
+  input_fd: The data to symbolize.
+  ids_txt_files: A list of ids.txt files which contain symbol data."""
+
+  return RunSymbolizer(input_fd, subprocess.PIPE, ids_txt_files)
+
+
+def RunTestPackage(target, ffx_session, package_paths, package_name,
+                   package_component_version, package_args, args):
   """Installs the Fuchsia package at |package_path| on the target,
   executes it with |package_args|, and symbolizes its output.
 
-  output_dir: The path containing the build output files.
   target: The deployment Target object that will run the package.
+  ffx_session: An FfxSession object if the test is to be run via ffx, or None.
   package_paths: The paths to the .far packages to be installed.
   package_name: The name of the primary package to run.
+  package_component_version: The component version of the primary package to
+    run ("1" or "2").
   package_args: The arguments which will be passed to the Fuchsia process.
   args: RunTestPackageArgs instance configuring how the package will be run.
 
@@ -173,49 +194,63 @@ def RunTestPackage(output_dir, target, package_paths, package_name,
     log_output_thread.daemon = True
     log_output_thread.start()
 
-    with target.GetPkgRepo():
+    with ExitOnSigTerm(), target.GetPkgRepo():
+      on_target = True
+      start_time = time.time()
       target.InstallPackage(package_paths)
+      logging.info('Test installed in {:.2f} seconds.'.format(time.time() -
+                                                              start_time))
 
       log_output_quit_event.set()
       log_output_thread.join(timeout=_JOIN_TIMEOUT_SECS)
 
       logging.info('Running application.')
 
-      # TODO(crbug.com/1156768): Deprecate runtests.
-      if args.code_coverage:
+      component_uri = _GetComponentUri(package_name, package_component_version)
+      process = None
+      if ffx_session:
+        process = ffx_session.test_run(target.GetFfxTarget(), component_uri,
+                                       package_args)
+      elif args.code_coverage:
+        # TODO(crbug.com/1156768): Deprecate runtests.
         # runtests requires specifying an output directory and a double dash
         # before the argument list.
-        command = ['runtests', '-o', '/tmp', _GetComponentUri(package_name)]
+        command = ['runtests', '-o', '/tmp', component_uri]
         if args.test_realm_label:
           command += ['--realm-label', args.test_realm_label]
         command += ['--']
+        command.extend(package_args)
       elif args.use_run_test_component:
         command = ['run-test-component']
         if args.test_realm_label:
           command += ['--realm-label=%s' % args.test_realm_label]
-        command.append(_GetComponentUri(package_name))
+        command.append(component_uri)
         command.append('--')
+        command.extend(package_args)
       else:
-        command = ['run', _GetComponentUri(package_name)]
+        command = ['run', component_uri]
+        command.extend(package_args)
 
-      command.extend(package_args)
+      if process is None:
+        process = target.RunCommandPiped(command,
+                                         stdin=open(os.devnull, 'r'),
+                                         stdout=subprocess.PIPE,
+                                         stderr=subprocess.STDOUT)
 
-      process = target.RunCommandPiped(command,
-                                       stdin=open(os.devnull, 'r'),
-                                       stdout=subprocess.PIPE,
-                                       stderr=subprocess.STDOUT)
-
-      output_stream = MergedInputStream([process.stdout,
-                                         kernel_logger.stdout]).Start()
-
-      # Run the log data through the symbolizer process.
-      output_stream = SymbolizerFilter(output_stream,
-                                       BuildIdsPaths(package_paths))
-
-      for next_line in output_stream:
-        # TODO(crbug/1198733): Switch to having stream encode to utf-8 directly
-        # once we drop Python 2 support.
-        print(next_line.encode('utf-8').rstrip())
+      # Symbolize klog and systemlog as separate streams. The symbolizer
+      # protocol is stateful, so comingled raw stack dumps can yield
+      # unsymbolizable garbage data.
+      ids_txt_paths = BuildIdsPaths(package_paths)
+      with _SymbolizeStream(process.stdout, ids_txt_paths) as \
+              symbolized_stdout, \
+           _SymbolizeStream(kernel_logger.stdout, ids_txt_paths) as \
+               symbolized_klog:
+        output_stream = MergedInputStream([symbolized_stdout.stdout,
+                                           symbolized_klog.stdout]).Start()
+        for next_line in output_stream:
+          print(next_line.rstrip())
+        symbolized_stdout.wait()  # Should return instantly.
+        symbolized_klog.kill()    # klog is never-ending and must be killed.
 
       process.wait()
       if process.returncode == 0:

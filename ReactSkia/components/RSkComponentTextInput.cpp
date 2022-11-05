@@ -81,7 +81,7 @@ void RSkComponentTextInput::drawTextInput(SkCanvas *canvas,
   // setParagraphStyle
   textLayout.paraStyle.setMaxLines(NUMBER_OF_LINES);
   textLayout.paraStyle.setEllipsis(u"\u2026");
-  textLayout.builder->setParagraphStyle(textLayout.paraStyle);
+  // textLayout.builder->setParagraphStyle(textLayout.paraStyle);
 
   // buildParagraph
   paragraph_ = textLayout.builder->Build();

@@ -64,7 +64,7 @@ void setTextLines(struct RSkSkTextLayout &textLayout,
             if ((EllipsizeMode::Tail) == (paragraphAttributes.ellipsizeMode))
                 textLayout.paraStyle.setEllipsis(u"\u2026");
         }
-        textLayout.builder->setParagraphStyle(textLayout.paraStyle);
+        // textLayout.builder->setParagraphStyle(textLayout.paraStyle);
         textLayout.paragraph = textLayout.builder->Build();
         textLayout.paragraph->layout(layout.getContentFrame().size.width);
     }

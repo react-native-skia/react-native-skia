@@ -1,9 +1,11 @@
-# Copyright 2021 The Chromium Authors. All rights reserved.
+# Copyright 2021 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 """Code specific to disabling GTest tests."""
 
 import re
+import subprocess
+import sys
 from typing import List, Optional, Tuple, Union, Any, Dict, TypeVar
 
 import conditions
@@ -25,8 +27,8 @@ TEST_MACROS = {
 }
 
 
-# TODO: Also run clang-format on the file afterwards?
-def disabler(full_test_name: str, source_file: str, new_cond: Condition) -> str:
+def disabler(full_test_name: str, source_file: str, new_cond: Condition,
+             message: Optional[str]) -> str:
   """Disable a GTest test within the given file.
 
   Args:
@@ -56,18 +58,20 @@ def disabler(full_test_name: str, source_file: str, new_cond: Condition) -> str:
   for i in range(len(lines) - 1, -1, -1):
     line = lines[i]
 
-    if maybe in line:
+    idents = find_identifiers(line)
+
+    if maybe in idents:
       # If the test is already conditionally disabled, search backwards to find
       # the preprocessor conditional block that disables it, and parse out the
       # conditions.
       existing_cond, src_range = find_conditions(lines, i, test_name)
       current_name = maybe
       break
-    if disabled in line:
+    if disabled in idents:
       existing_cond = conditions.ALWAYS
       current_name = disabled
       break
-    if test_name in line:
+    if test_name in idents:
       existing_cond = conditions.NEVER
       current_name = test_name
       break
@@ -78,32 +82,75 @@ def disabler(full_test_name: str, source_file: str, new_cond: Condition) -> str:
 
   merged = conditions.merge(existing_cond, new_cond)
 
-  if merged == conditions.ALWAYS:
-    lines[test_name_index] = \
-        lines[test_name_index].replace(current_name, disabled)
+  comment = None
+  if message:
+    comment = f'// {message}'
+
+  # Keep track of the line numbers of the lines which have been modified. These
+  # line numbers will be fed to clang-format to ensure any modified lines are
+  # correctly formatted.
+  modified_lines = []
+
+  # Ensure that we update modified_lines upon inserting new lines into the file,
+  # as any lines after the insertion point will be shifted over.
+  def insert_lines(start_index, end_index, new_lines):
+    nonlocal lines
+    nonlocal modified_lines
+
+    prev_len = len(lines)
+    lines[start_index:end_index] = new_lines
+
+    len_diff = len(lines) - prev_len
+    i = 0
+    while i < len(modified_lines):
+      line_no = modified_lines[i]
+      if line_no >= start_index:
+        if line_no < end_index:
+          # Any existing lines with indices in [start_index, end_index) have
+          # been removed, so remove them from modified_lines too.
+          modified_lines.pop(i)
+          continue
+
+        modified_lines[i] += len_diff
+      i += 1
+
+    modified_lines += list(range(start_index, start_index + len(new_lines)))
+
+  def insert_line(index, new_line):
+    insert_lines(index, index, [new_line])
+
+  def replace_line(index, new_line):
+    insert_lines(index, index + 1, [new_line])
+
+  def delete_lines(start_index, end_index):
+    insert_lines(start_index, end_index, [])
+
+  # If it's not conditionally disabled, we don't need a pre-processor block to
+  # conditionally define the name. We just change the name within the test macro
+  # to its appropriate value, and delete any existing preprocessor block.
+  if isinstance(merged, conditions.BaseCondition):
+    if merged == conditions.ALWAYS:
+      replacement_name = disabled
+    elif merged == conditions.NEVER:
+      replacement_name = test_name
+
+    replace_line(test_name_index,
+                 lines[test_name_index].replace(current_name, replacement_name))
 
     if src_range:
-      del lines[src_range[0]:src_range[1] + 1]
+      delete_lines(src_range[0], src_range[1] + 1)
 
-    return '\n'.join(lines)
+    if comment:
+      insert_line(test_name_index, comment)
 
-  if merged == conditions.NEVER:
-    lines[test_name_index] = lines[test_name_index].replace(
-        current_name, test_name)
-
-    if src_range:
-      del lines[src_range[0]:src_range[1] + 1]
-
-    return '\n'.join(lines)
+    return clang_format('\n'.join(lines), modified_lines)
 
   # => now conditionally disabled
-  lines[test_name_index] = lines[test_name_index].replace(current_name, maybe)
+  replace_line(test_name_index,
+               lines[test_name_index].replace(current_name, maybe))
 
   condition_impl = cc_format_condition(merged)
 
-  # TODO: Split lines using backslashes if they're too long (according to
-  # whatever the limit is in the style guide). Or just use clang-format to do
-  # it.
   condition_block = [
       f'#if {condition_impl}',
       f'#define {maybe} {disabled}',
@@ -113,16 +160,22 @@ def disabler(full_test_name: str, source_file: str, new_cond: Condition) -> str:
   ]
 
   if src_range:
-    # Replace the existing condition, if there was one
-    lines[src_range[0]:src_range[1] + 1] = condition_block
+    # Replace the existing condition.
+    insert_lines(src_range[0], src_range[1] + 1, condition_block)
+    comment_index = src_range[0]
   else:
-    # If not, find where to add a new one.
+    # No existing condition, so find where to add a new one.
     for i in range(test_name_index, -1, -1):
       if any(test_macro in lines[i] for test_macro in TEST_MACROS):
         break
     else:
       raise Exception("Couldn't find where to insert test conditions")
-    lines[i:i] = condition_block
+
+    insert_lines(i, i, condition_block)
+    comment_index = i
+
+  if comment:
+    insert_line(comment_index, comment)
 
   # Insert includes.
   # First find the set of headers we need for the given condition.
@@ -190,9 +243,23 @@ def disabler(full_test_name: str, source_file: str, new_cond: Condition) -> str:
   # higher to lower indices, so we don't need to adjust later positions to
   # account for previously-inserted lines.
   for path, i in sorted(to_insert.items(), key=lambda x: x[1], reverse=True):
-    lines.insert(i, f'#include "{path}"')
+    insert_line(i, f'#include "{path}"')
 
-  return '\n'.join(lines)
+  return clang_format('\n'.join(lines), modified_lines)
+
+
+def find_identifiers(line: str) -> List[str]:
+  # Strip C++-style comments.
+  line = re.sub('//.*$', '', line)
+
+  # Strip strings.
+  line = re.sub(r'"[^"]*[^\\]"', '', line)
+
+  # Remainder is identifiers.
+  # There are probably many corner cases this doesn't handle. We accept this
+  # trade-off for simplicity of implementation, and because occurrences of the
+  # test name in such corner case contexts are likely very rare.
+  return re.findall('[a-zA-Z_][a-zA-Z_0-9]*', line)
 
 
 def find_conditions(lines: List[str], start_line: int, test_name: str):
@@ -305,6 +372,14 @@ def get_directive(lines: List[str], i: int) -> Optional[Tuple[str, Any]]:
     full_line = full_line[:-2] + lines[i]
 
   # TODO: Pre-compile regexes.
+  # Strip comments.
+  # C-style. Note that C-style comments don't nest, so we can just match them
+  # with a regex.
+  full_line = re.sub(r'/\*.*\*/', '', full_line)
+
+  # C++-style
+  full_line = re.sub('//.*$', '', full_line)
+
   # Preprocessor directives begin with a '#', which *must* be at the start of
   # the line, with only whitespace allowed to appear before them.
   match = re.match('^[ \t]*#[ \t]*(\\w*)(.*)', full_line)
@@ -407,13 +482,16 @@ BUILDFLAG_TYPE = object()
 
 # Extend conditions.TERMINALS with GTest-specific info.
 for t_name, t_repr in [
-    ('android', GTestInfo(MACRO_TYPE, 'OS_ANDROID', 'build/build_config.h')),
-    ('chromeos', GTestInfo(MACRO_TYPE, 'OS_CHROMEOS', 'build/build_config.h')),
-    ('fuchsia', GTestInfo(MACRO_TYPE, 'OS_FUCHSIA', 'build/build_config.h')),
-    ('ios', GTestInfo(MACRO_TYPE, 'OS_IOS', 'build/build_config.h')),
-    ('linux', GTestInfo(MACRO_TYPE, 'OS_LINUX', 'build/build_config.h')),
-    ('mac', GTestInfo(MACRO_TYPE, 'OS_MAC', 'build/build_config.h')),
-    ('win', GTestInfo(MACRO_TYPE, 'OS_WIN', 'build/build_config.h')),
+    ('android', GTestInfo(BUILDFLAG_TYPE, 'IS_ANDROID',
+                          'build/build_config.h')),
+    ('chromeos', GTestInfo(BUILDFLAG_TYPE, 'IS_CHROMEOS',
+                           'build/build_config.h')),
+    ('fuchsia', GTestInfo(BUILDFLAG_TYPE, 'IS_FUCHSIA',
+                          'build/build_config.h')),
+    ('ios', GTestInfo(BUILDFLAG_TYPE, 'IS_IOS', 'build/build_config.h')),
+    ('linux', GTestInfo(BUILDFLAG_TYPE, 'IS_LINUX', 'build/build_config.h')),
+    ('mac', GTestInfo(BUILDFLAG_TYPE, 'IS_MAC', 'build/build_config.h')),
+    ('win', GTestInfo(BUILDFLAG_TYPE, 'IS_WIN', 'build/build_config.h')),
     ('arm64', GTestInfo(MACRO_TYPE, 'ARCH_CPU_ARM64', 'build/build_config.h')),
     ('x86', GTestInfo(MACRO_TYPE, 'ARCH_CPU_X86', 'build/build_config.h')),
     ('x86-64', GTestInfo(MACRO_TYPE, 'ARCH_CPU_X86_64',
@@ -506,3 +584,39 @@ def cc_format_condition(cond: Condition, add_brackets=False) -> str:
     return bracket(' || '.join(cc_format_condition(arg, True) for arg in args))
 
   raise Exception(f'Unknown op "{op}"')
+
+
+# TODO: Running clang-format is ~400x slower than everything else this tool does
+# (excluding ResultDB RPCs). We may want to consider replacing this with
+# something simpler that applies only the changes we need, and doesn't require
+# shelling out to an external tool.
+def clang_format(file_contents: str, modified_lines: List[int]) -> str:
+  # clang-format accepts 1-based line numbers. Do the adjustment here to keep
+  # things simple for the calling code.
+  modified_lines = [i + 1 for i in modified_lines]
+
+  clang_format_bin = 'clang-format'
+  if sys.platform.startswith('win'):
+    clang_format_bin += '.bat'
+
+  p = subprocess.Popen([clang_format_bin, '--style=file'] +
+                       [f'--lines={i}:{i}' for i in modified_lines],
+                       stdin=subprocess.PIPE,
+                       stdout=subprocess.PIPE,
+                       stderr=subprocess.PIPE,
+                       text=True)
+
+  stdout, stderr = p.communicate(file_contents)
+
+  if p.returncode != 0:
+    # TODO: We might want to distinguish between different types of error here.
+    #
+    # If it failed because the user doesn't have clang-format in their path, we
+    # might want to raise UserError and tell them to install it. Or perhaps to
+    # just return the original file contents and forgo formatting.
+    #
+    # But if it failed because we generated bad output and clang-format is
+    # rightfully rejecting it, that should definitely be an InternalError.
+    raise errors.InternalError(f'clang-format failed with: {stderr}')
+
+  return stdout

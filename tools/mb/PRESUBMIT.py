@@ -1,4 +1,4 @@
-# Copyright 2015 The Chromium Authors. All rights reserved.
+# Copyright 2015 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
@@ -50,9 +50,16 @@ def _CommonChecks(input_api, output_api):
   pylint_checks = input_api.canned_checks.GetPylint(
       input_api,
       output_api,
+      version='2.7',
       # pylint complains about Checkfreeze not being defined, its probably
-      # finding a different PRESUBMIT.py
+      # finding a different PRESUBMIT.py. Note that this warning only appears if
+      # the number of Pylint jobs is greater than one.
       files_to_skip=['PRESUBMIT_test.py'],
+      # Disabling this warning because this pattern - involving ToSrcRelPath -
+      # seems intrinsic to how mb_unittest.py is implemented.
+      disabled_warnings=[
+          'attribute-defined-outside-init',
+      ],
   )
   results.extend(input_api.RunTests(pylint_checks))
 
@@ -62,10 +69,12 @@ def _CommonChecks(input_api, output_api):
                                                       output_api,
                                                       '.',
                                                       [r'^.+_unittest\.py$'],
+                                                      run_on_python2=False,
+                                                      run_on_python3=True,
                                                       skip_shebang_check=True))
 
   # Validate the format of the mb_config.pyl file.
-  cmd = [input_api.python_executable, 'mb.py', 'validate']
+  cmd = [input_api.python3_executable, 'mb.py', 'validate']
   kwargs = {'cwd': input_api.PresubmitLocalPath()}
   results.extend(input_api.RunTests([
       input_api.Command(name='mb_validate',

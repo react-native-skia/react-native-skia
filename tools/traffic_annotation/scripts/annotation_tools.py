@@ -1,4 +1,4 @@
-# Copyright 2018 The Chromium Authors. All rights reserved.
+# Copyright 2018 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
@@ -8,6 +8,7 @@ from __future__ import print_function
 
 import json
 import os
+import re
 import subprocess
 import sys
 
@@ -16,6 +17,9 @@ tool_dir = os.path.abspath(os.path.join(script_dir, '../../clang/pylib'))
 sys.path.insert(0, tool_dir)
 
 from clang import compile_db  # type: ignore
+
+# Valid return values for GetCurrentPlatform().
+SUPPORTED_PLATFORMS = ['android', 'linux', 'windows']
 
 
 class NetworkTrafficAnnotationTools():
@@ -39,14 +43,14 @@ class NetworkTrafficAnnotationTools():
 
     # For each platform, map the returned platform name from python sys, to
     # directory name of traffic_annotation_auditor executable.
-    platform = {
+    host_platform = {
         'linux': 'linux64',
         'linux2': 'linux64',
         'darwin': 'mac',
         'win32': 'win32',
     }[sys.platform]
 
-    path = os.path.join(self.this_dir, '..', 'bin', platform,
+    path = os.path.join(self.this_dir, '..', 'bin', host_platform,
                         'traffic_annotation_auditor')
     if sys.platform == 'win32':
       path += '.exe'
@@ -123,13 +127,15 @@ class NetworkTrafficAnnotationTools():
 
     # Change directory to src (two levels upper than build path).
     os.chdir(os.path.join(self.build_path, "..", ".."))
-    command = subprocess.Popen(args, stdout=subprocess.PIPE,
-                               stderr=subprocess.PIPE)
+    command = subprocess.Popen(args,
+                               stdout=subprocess.PIPE,
+                               stderr=subprocess.PIPE,
+                               encoding="utf-8")
     stdout_text, stderr_text = command.communicate()
 
     if stderr_text:
       print("Could not run '%s' to get the list of changed files "
-            "beacuse: %s" % (" ".join(args), stderr_text))
+            "because: %s" % (" ".join(args), stderr_text))
       os.chdir(original_path)
       return None
 
@@ -166,8 +172,10 @@ class NetworkTrafficAnnotationTools():
       command_line = [self.auditor_path, "--build-path=" + self.build_path
                       ] + args
 
-    command = subprocess.Popen(
-        command_line, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    command = subprocess.Popen(command_line,
+                               stdout=subprocess.PIPE,
+                               stderr=subprocess.PIPE,
+                               encoding="utf-8")
     stdout_text, stderr_text = command.communicate()
     return_code = command.returncode
 

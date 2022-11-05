@@ -9,18 +9,17 @@
 /third_party/boringssl/src/
 /third_party/angle/
 /third_party/freetype/src/
-/third_party/harfbuzz/src/
+/third_party/harfbuzz-ng/src/
 /third_party/icu/
 /third_party/libjpeg-turbo/
-/third_party/libpng/
-/third_party/libwebp/
+/third_party/libwebp/src/
 /third_party/nasm/
 /third_party/wuffs/
-/third_party/zlib/
 /third_party/swiftshader/
 /third_party/depot_tools/
 /third_party/libcurl/
 /third_party/expat/src/
+/third_party/fmt/
 
 # Build output
 /out*/

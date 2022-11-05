@@ -1,4 +1,4 @@
-// Copyright 2012 The Chromium Authors. All rights reserved.
+// Copyright 2012 The Chromium Authors
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -37,6 +37,14 @@ SK_API UIImage* SkBitmapToUIImageWithColorSpace(const SkBitmap& skia_bitmap,
 // Returns a vector of all the successfully decoded representations or an empty
 // vector if none can be decoded.
 SK_API std::vector<SkBitmap> ImageDataToSkBitmaps(NSData* image_data);
+
+// Decodes all image representations inside the data into a vector of SkBitmaps.
+// If a representation is bigger than max_size (either width or height), it is
+// ignored.
+// Returns a vector of all the successfully decoded representations or an empty
+// vector if none can be decoded.
+SK_API std::vector<SkBitmap> ImageDataToSkBitmapsWithMaxSize(NSData* image_data,
+                                                             CGFloat max_size);
 
 // Returns a UIColor for an SKColor. Used by iOS downstream.
 SK_API UIColor* UIColorFromSkColor(SkColor color);

@@ -1,4 +1,4 @@
-# Copyright 2019 The Chromium Authors. All rights reserved.
+# Copyright 2019 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
@@ -44,13 +44,13 @@ def _trigger_clobber(swarming_server, pool, realm, cache, bot, mount_rel_path,
       '-dimension',
       'id=' + bot,
       '-cipd-package',
-      'cpython:infra/python/cpython/${platform}=latest',
+      'cpython3:infra/3pp/tools/cpython3/${platform}=latest',
       '-named-cache',
       cache + '=' + mount_rel_path,
       '-priority',
       '10',
       '--',
-      'cpython/bin/python${EXECUTABLE_SUFFIX}',
+      'cpython3/bin/python3${EXECUTABLE_SUFFIX}',
       '-c',
       textwrap.dedent('''\
           import os, shutil, stat
@@ -115,6 +115,10 @@ def clobber_caches(swarming_server,
     bots = [bot_id]
   else:
     bots = _get_bots(swarming_server, pool, cache)
+    if not bots:
+      print(f'There are no bots on swarming server {swarming_server}'
+            f' in pool {pool} that have cache {cache}')
+      return 0
 
   print('The following bots will be clobbered:')
   print()

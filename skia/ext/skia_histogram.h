@@ -1,4 +1,4 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2016 The Chromium Authors
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -24,19 +24,25 @@
 #define SK_HISTOGRAM_BOOLEAN(name, sample) \
   SK_HISTOGRAM_POINTER_HELPER(skia::HistogramBoolean, "Skia." name, sample)
 
-#define SK_HISTOGRAM_ENUMERATION(name, sample, boundary_value)          \
-  SK_HISTOGRAM_POINTER_HELPER(skia::HistogramEnumeration, "Skia." name, \
-                              sample, boundary_value)
+#define SK_HISTOGRAM_EXACT_LINEAR(name, sample, value_max)              \
+  SK_HISTOGRAM_POINTER_HELPER(skia::HistogramExactLinear, "Skia." name, \
+                              sample, value_max)
+
+#define SK_HISTOGRAM_MEMORY_KB(name, sample) \
+  SK_HISTOGRAM_POINTER_HELPER(skia::HistogramMemoryKB, "Skia." name, sample)
 
 namespace skia {
 
 void HistogramBoolean(std::atomic_uintptr_t* atomic_histogram_pointer,
                       const char* name,
                       bool sample);
-void HistogramEnumeration(std::atomic_uintptr_t* atomic_histogram_pointer,
+void HistogramExactLinear(std::atomic_uintptr_t* atomic_histogram_pointer,
                           const char* name,
                           int sample,
-                          int boundary_value);
+                          int value_max);
+void HistogramMemoryKB(std::atomic_uintptr_t* atomic_histogram_pointer,
+                       const char* name,
+                       int sample);
 
 }  // namespace skia
 

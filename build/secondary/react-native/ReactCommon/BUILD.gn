@@ -9,8 +9,12 @@ config("react_native_config") {
     defines = ["__unused=__attribute__((unused))"]
   }
 
+  cflags_cc = [
+    "-std=c++17",
+  ]
+
   if(!is_clang) {
-    cflags_cc = [
+    cflags_cc += [
       "-Wno-unknown-pragmas",
       "-Wno-return-type",
       "-Wno-sequence-point",

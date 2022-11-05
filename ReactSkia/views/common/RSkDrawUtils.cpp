@@ -8,6 +8,9 @@
 #include <math.h>
 
 #include "include/core/SkPaint.h"
+#include "include/core/SkPath.h"
+#include "include/core/SkPathEffect.h"
+#include "include/core/SkRRect.h"
 #include "include/effects/SkImageFilters.h"
 #include "include/core/SkClipOp.h"
 
