@@ -95,8 +95,6 @@ void RSkComponentImage::OnPaint(SkCanvas *canvas) {
         canvas->save();
         canvas->clipRect(frameRect,SkClipOp::kIntersect);
     }
-    /* TODO: Handle filter quality based of configuration. Setting Low Filter Quality as default for now*/
-    paint.setFilterQuality(DEFAULT_IMAGE_FILTER_QUALITY);
     if(imageProps.resizeMode == ImageResizeMode::Repeat) {
         imageFilter = (SkImageFilters::Tile(targetRect,frameRect,nullptr));
     }
@@ -105,7 +103,8 @@ void RSkComponentImage::OnPaint(SkCanvas *canvas) {
     if(imageFilter) {
       paint.setImageFilter(std::move(imageFilter));
     }
-    canvas->drawImageRect(imageData,targetRect,&paint);
+    /* TODO: Handle filter quality based of configuration. Setting Low Filter Quality as default for now*/
+    canvas->drawImageRect(imageData,targetRect,DEFAULT_IMAGE_SAMPLING_OPTIONS,&paint);
     if(needClipAndRestore) {
       canvas->restore();
     }
