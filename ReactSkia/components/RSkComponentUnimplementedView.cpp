@@ -10,6 +10,7 @@
 #include "ReactSkia/components/RSkComponentUnimplementedView.h"
 
 #include "include/core/SkPaint.h"
+#include "include/core/SkPathEffect.h"
 #include "react/renderer/components/unimplementedview/UnimplementedViewShadowNode.h"
 #include "ReactSkia/views/common/RSkDrawUtils.h"
 

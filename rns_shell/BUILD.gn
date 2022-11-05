@@ -134,9 +134,18 @@ source_set("rns_shell") {
     sources += [
       "platform/graphics/gl/GLWindowContext.h",
       "platform/graphics/gl/GLWindowContext.cpp",
-      "platform/graphics/gl/GrGLUtil.h",
-      "platform/graphics/gl/GrGLUtil.cpp",
     ]
+
+    if (is_component_build) {
+      sources += [
+        # GLWindowContext uses some internal skia symbols, when skia is building as component build
+        # there symbols are not accessible.
+        # We add these skia implementation directly.
+        "//third_party/skia/src/gpu/ganesh/gl/GrGLUtil.cpp",
+        "//third_party/skia/src/core/SkString.cpp",
+        "//third_party/skia/src/core/SkUtils.cpp",
+      ]
+    }
   }
 
   public_deps = [

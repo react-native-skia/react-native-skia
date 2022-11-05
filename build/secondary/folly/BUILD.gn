@@ -12,6 +12,7 @@ config("folly_config") {
   if (is_linux) {
     defines += [
       "FOLLY_HAVE_MEMRCHR=1",
+      "FOLLY_HAVE_RECVMMSG=1",
     ]
   }
 
@@ -33,6 +34,7 @@ source_set("rn_oss") {
     "folly/json_pointer.cpp",
     "folly/Conv.cpp",
     "folly/Demangle.cpp",
+    "folly/ExceptionString.cpp",
     "folly/FileUtil.cpp",
     "folly/Format.cpp",
     "folly/Unicode.cpp",
@@ -40,13 +42,14 @@ source_set("rn_oss") {
     "folly/String.cpp",
 
     "folly/hash/SpookyHashV2.cpp",
+    "folly/lang/Exception.cpp",
     "folly/lang/SafeAssert.cpp",
+    "folly/lang/ToAscii.cpp",
     "folly/net/NetOps.cpp",
-    "folly/portability/SysUio.cpp",
-
     "folly/portability/Malloc.cpp",
-
+    "folly/portability/SysUio.cpp",
     "folly/synchronization/ParkingLot.cpp",
+    "folly/system/ThreadId.cpp",
 
     # Added for async_io
     "folly/SharedMutex.cpp",
@@ -64,7 +67,7 @@ source_set("rn_oss") {
   public_deps = [
     "//third_party/glog:glog",
     "//third_party/double-conversion:double-conversion",
-    "//third_party/boost:headers_only",
+    "//third_party/boost:boost",
     "//third_party/fmt:fmt",
   ]
 
@@ -89,6 +92,7 @@ source_set("folly_detail") {
     "folly/memory/detail/MallocImpl.cpp",
 
     # Added for async_io
+    "folly/detail/AsyncTrace.cpp",
     "folly/detail/Futex.cpp",
     "folly/detail/UniqueInstance.cpp",
     "folly/detail/MemoryIdler.cpp",
@@ -103,7 +107,7 @@ source_set("folly_detail") {
   deps = [
     "//third_party/glog:glog",
     "//third_party/double-conversion:double-conversion",
-    "//third_party/boost:headers_only",
+    "//third_party/boost:boost",
     "//third_party/fmt:fmt",
   ]
 
@@ -151,6 +155,8 @@ config("internal_configs") {
 
 source_set("async") {
   sources = [
+    "folly/CancellationToken.cpp",
+    "folly/ExceptionWrapper.cpp",
     "folly/File.cpp",
     "folly/Random.cpp",
     "folly/Singleton.cpp",
@@ -162,12 +168,25 @@ source_set("async") {
     "folly/io/IOBuf.cpp",
     "folly/io/IOBufQueue.cpp",
     "folly/io/ShutdownSocketSet.cpp",
+    "folly/io/SocketOptionMap.cpp",
     "folly/executors/ThreadPoolExecutor.cpp",
     "folly/executors/GlobalThreadPoolList.cpp",
     "folly/executors/CPUThreadPoolExecutor.cpp",
     "folly/executors/QueuedImmediateExecutor.cpp",
+    "folly/executors/QueueObserver.cpp",
+    "folly/experimental/observer/detail/Core.cpp",
+    "folly/experimental/observer/detail/ObserverManager.cpp",
+    "folly/fibers/Fiber.cpp",
+    "folly/fibers/FiberManager.cpp",
+    "folly/fibers/GuardPageAllocator.cpp",
+    "folly/memory/SanitizeAddress.cpp",
+    "folly/net/NetOpsDispatcher.cpp",
     "folly/ssl/Init.cpp",
+    "folly/ssl/SSLSessionManager.cpp",
+    "folly/ssl/detail/OpenSSLSession.cpp",
     "folly/ssl/detail/OpenSSLThreading.cpp",
+    "folly/system/AtFork.cpp",
+    "folly/system/Pid.cpp",
 
     "folly/io/async/AsyncPipe.cpp",
     "folly/io/async/AsyncSSLSocket.cpp",
@@ -177,6 +196,7 @@ source_set("async") {
     "folly/io/async/AsyncSocketException.cpp",
     "folly/io/async/AsyncTimeout.cpp",
     "folly/io/async/AsyncUDPSocket.cpp",
+    "folly/io/async/DelayedDestruction.cpp",
     "folly/io/async/EventBase.cpp",
     "folly/io/async/EventBaseBackendBase.cpp",
     "folly/io/async/EventBaseLocal.cpp",
@@ -198,6 +218,7 @@ source_set("async") {
 
   deps = [
     ":folly_detail",
+    "//third_party/boost:boost_context_asm",
   ]
 
   public_deps = [
@@ -205,7 +226,7 @@ source_set("async") {
     ":synchronization",
     "//third_party/glog:glog",
     "//third_party/double-conversion:double-conversion",
-    "//third_party/boost:headers_only",
+    "//third_party/boost:boost",
     "//third_party/fmt:fmt",
     "//third_party/libevent",
     "//third_party/boringssl",
@@ -246,7 +267,7 @@ source_set("synchronization") {
     ":rn_oss",
     "//third_party/glog:glog",
     "//third_party/double-conversion:double-conversion",
-    "//third_party/boost:headers_only",
+    "//third_party/boost:boost",
     "//third_party/fmt:fmt",
     "//third_party/libevent",
     "//third_party/boringssl",

@@ -6,6 +6,7 @@
  */
 #pragma once
 
+#include "include/core/SkColorSpace.h"
 #include "include/core/SkImageInfo.h"
 #include "include/core/SkSurfaceProps.h"
 #include "include/gpu/GrContextOptions.h"
@@ -17,7 +18,6 @@ struct DisplayParams {
         : colorType_(kN32_SkColorType)
         , colorSpace_(nullptr)
         , msaaSampleCount_(1)
-        , surfaceProps_(SkSurfaceProps::kLegacyFontHost_InitType)
         , disableVsync_(false)
     {}
 

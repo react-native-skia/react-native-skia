@@ -66,4 +66,10 @@ static_library("libevent") {
 
   configs -= [ "//build/config/compiler:chromium_code" ]
   configs += [ "//build/config/compiler:no_chromium_code" ]
+
+  public_configs = [ ":libevent_config" ]
+}
+
+config("libevent_config") {
+  include_dirs = [ "." ]
 }

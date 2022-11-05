@@ -83,7 +83,7 @@ void RSkComponentImage::OnPaint(SkCanvas *canvas) {
 
       if(!(isOpaque(layer()->shadowOpacity)))
         canvas->saveLayerAlpha(&frameRect,layer()->shadowOpacity);
-      canvas->drawImageRect(imageData, targetRect, &shadowPaint);
+      canvas->drawImageRect(imageData, targetRect, SkSamplingOptions(), &shadowPaint);
       if(!(isOpaque(layer()->shadowOpacity)))
         canvas->restore();
     }

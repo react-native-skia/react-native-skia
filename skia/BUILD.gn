@@ -669,9 +669,12 @@ skia_source_set("skia_core_and_effects") {
 skia_source_set("skparagraph") {
   import("//third_party/skia/modules/skparagraph/skparagraph.gni")
   import("//third_party/skia/modules/skshaper/skshaper.gni")
+  import("//third_party/skia/modules/skunicode/skunicode.gni")
   sources = skparagraph_sources + skparagraph_public
   sources += skia_shaper_primitive_sources + skia_shaper_public
   sources += skia_shaper_harfbuzz_sources
+  sources += skia_unicode_sources
+  sources += skia_unicode_builtin_icu_sources
   deps = ["//third_party:freetype_harfbuzz",
          "//third_party/icu",
   ]

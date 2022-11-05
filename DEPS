@@ -58,9 +58,9 @@ vars = {
 deps = {
   'src/react-native'                      : Var(Var('react_native_platform_git')) + '@' + Var(Var('react_native_platform_revision')),
 
-  'src/folly'                             : 'https://github.com/Kudo/folly.git' + '@' + '54b476465136e5b1430546b09f248910d7846815',
+  'src/folly'                             : 'https://github.com/Kudo/folly.git' + '@' + 'b8f14802ab5c10fad30bfc952b3243fb932ea34a',
 
-  'src/third_party/boost'                 : 'https://github.com/Kudo/boost-for-react-native.git' + '@' + 'd9197dd08f1f43a4f910be988fe57bffc26930b2',
+  'src/third_party/boost'                 : 'https://github.com/Kudo/boost-for-react-native.git' + '@' + '31c7a87aa429d74758dc0ecf3cfd03b44107da28',
   'src/third_party/glog'                  : 'https://github.com/google/glog.git' + '@' + 'v0.3.5',
   'src/third_party/double-conversion'     : 'https://github.com/google/double-conversion.git' + '@' + 'v1.1.6',
   'src/third_party/fmt'                   : 'https://github.com/fmtlib/fmt.git' + '@' + '9.1.0',

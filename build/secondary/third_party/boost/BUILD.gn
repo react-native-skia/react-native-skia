@@ -1,5 +1,70 @@
-group("headers_only") {
+group("boost") {
+  public_deps = [
+    ":headers_only",
+  ]
+}
+
+source_set("headers_only") {
   public_configs = [ ":boost-config" ]
+}
+
+source_set("boost_context_asm") {
+  asmflags = []
+  sources = []
+
+  if (is_linux) {
+    if (current_cpu == "x64") {
+      sources += [
+        "libs/context/src/asm/make_x86_64_sysv_elf_gas.S",
+        "libs/context/src/asm/jump_x86_64_sysv_elf_gas.S",
+        "libs/context/src/asm/ontop_x86_64_sysv_elf_gas.S",
+      ]
+    } else if (current_cpu == "x86") {
+      sources += [
+        "libs/context/src/asm/make_i386_sysv_elf_gas.S",
+        "libs/context/src/asm/jump_i386_sysv_elf_gas.S",
+        "libs/context/src/asm/ontop_i386_sysv_elf_gas.S",
+      ]
+    } else if (current_cpu == "arm64") {
+      sources += [
+        "libs/context/src/asm/make_arm64_aapcs_elf_gas.S",
+        "libs/context/src/asm/jump_arm64_aapcs_elf_gas.S",
+        "libs/context/src/asm/ontop_arm64_aapcs_elf_gas.S",
+      ]
+    } else if (current_cpu == "arm") {
+      sources += [
+        "libs/context/src/asm/make_arm_aapcs_elf_gas.S",
+        "libs/context/src/asm/jump_arm_aapcs_elf_gas.S",
+        "libs/context/src/asm/ontop_arm_aapcs_elf_gas.S",
+      ]
+    }
+  } else if (is_apple) {
+     if (current_cpu == "x64") {
+      sources += [
+        "libs/context/src/asm/make_x86_64_sysv_macho_gas.S",
+        "libs/context/src/asm/jump_x86_64_sysv_macho_gas.S",
+        "libs/context/src/asm/ontop_x86_64_sysv_macho_gas.S",
+      ]
+    } else if (current_cpu == "x86") {
+      sources += [
+        "libs/context/src/asm/make_i386_sysv_macho_gas.S",
+        "libs/context/src/asm/jump_i386_sysv_macho_gas.S",
+        "libs/context/src/asm/ontop_i386_sysv_macho_gas.S",
+      ]
+    } else if (current_cpu == "arm64") {
+      sources += [
+        "libs/context/src/asm/make_arm64_aapcs_macho_gas.S",
+        "libs/context/src/asm/jump_arm64_aapcs_macho_gas.S",
+        "libs/context/src/asm/ontop_arm64_aapcs_macho_gas.S",
+      ]
+    } else if (current_cpu == "arm") {
+      sources += [
+        "libs/context/src/asm/make_arm_aapcs_macho_gas.S",
+        "libs/context/src/asm/jump_arm_aapcs_macho_gas.S",
+        "libs/context/src/asm/ontop_arm_aapcs_macho_gas.S",
+      ]
+    }
+  }
 }
 
 config("boost-config") {
@@ -14,6 +79,7 @@ config("boost-config") {
   cflags_cc = [
     "-Wno-extra-semi",
     "-Wno-deprecated-copy-with-user-provided-copy",
+    "-Wno-unused-but-set-variable",
   ]
 
   if(is_clang) {
