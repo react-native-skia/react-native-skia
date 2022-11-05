@@ -7,7 +7,7 @@
 */
 
 // Must be added before X11 headrs because Folly uses "Struct None" and X11 has "#define None 0L" which conflicts
-#include "platform/linux/TaskLoop.h"
+#include "rns_shell/platform/linux/TaskLoop.h"
 
 #include <X11/Xutil.h>
 #include <X11/XKBlib.h>

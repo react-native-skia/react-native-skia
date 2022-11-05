@@ -26,6 +26,7 @@ class LayerTreeHost {
 
   PlatformDisplayID displayID() const { return displayID_; }
   Compositor* compositor() { return compositor_.get(); }
+  Window *nativeWindow() { return window_.get(); }
 
  private:
   class CompositorClient : public Compositor::Client {

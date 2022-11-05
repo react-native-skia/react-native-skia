@@ -7,6 +7,9 @@ config("yoga_config") {
     "-Wno-header-hygiene",
     "-Wno-deprecated-copy",
   ]
+  cflags_objcc = [
+    "-Wno-header-hygiene",
+  ]
 }
 
 rn_cxx_component("yoga") {

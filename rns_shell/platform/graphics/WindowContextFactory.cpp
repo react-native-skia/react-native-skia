@@ -21,6 +21,14 @@
 #endif
 #endif
 
+#if PLATFORM(MAC)
+#ifdef RNS_SHELL_HAS_GPU_SUPPORT
+#include "rns_shell/platform/graphics/gl/nsgl/GLWindowContextNSGL.h"
+#else
+#include "rns_shell/platform/mac/RasterWindowContextMac.h"
+#endif // RNS_SHELL_HAS_GPU_SUPPORT
+#endif // PLATFORM(MAC)
+
 namespace RnsShell {
 
 namespace WCF { //window_context_factory
@@ -35,6 +43,9 @@ std::unique_ptr<WindowContext> createContextForWindow(GLNativeWindowType windowH
 #elif USE(EGL)
     if(auto eglContext = GLWindowContextEGL::createContext(windowHandle, display, params))
         return eglContext;
+#elif USE(NSGL)
+    if(auto nsglContext = GLWindowContextNSGL::createContext(windowHandle, display, params))
+        return nsglContext;
 #endif
     return nullptr;
 }
@@ -47,6 +58,9 @@ std::unique_ptr<WindowContext> createContextForWindow(GLNativeWindowType windowH
         return rasterContext;
 #elif PLATFORM(LIBWPE)
     if(auto rasterContext = RasterWindowContextLibWPE::createContext(windowHandle, display, params))
+        return rasterContext;
+#elif PLATFORM(MAC)
+    if(auto rasterContext = RasterWindowContextMac::createContext(windowHandle, display, params))
         return rasterContext;
 #else
     RNS_LOG_NOT_IMPL;

@@ -83,6 +83,11 @@ SkSize PlatformDisplayX11::screenSize() {
     return size;
 }
 
+float PlatformDisplayX11::scaleFactor() {
+    // TODO
+    return 1.f;
+}
+
 } // namespace RnsShell
 
 #endif // PLATFORM(X11)

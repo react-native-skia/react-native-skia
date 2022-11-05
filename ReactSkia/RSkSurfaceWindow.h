@@ -5,8 +5,9 @@
 #include "react/renderer/core/LayoutConstraints.h"
 #include "react/renderer/core/ReactPrimitives.h"
 
-#include "ReactSkia/core_modules/RSkSpatialNavigator.h"
+#include "ReactSkia/components/RSkComponentRootView.h"
 #include "rns_shell/compositor/Compositor.h"
+#include "ReactSkia/core_modules/RSkSpatialNavigator.h"
 #include "ReactSkia/core_modules/RSkInputEventManager.h"
 
 #include <list>

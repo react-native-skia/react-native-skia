@@ -26,14 +26,18 @@ if(use_system_libcurl){
     defines = [ "CURL_ENABLED" ]
     visibility = [ "*" ]
     packages = [ "libcurl" ]
-
   }
 } else {
     config("libcurl_config") {
       include_dirs = ["lib/"]
       include_dirs += ["include/"]
       include_dirs += ["//build/secondary/third_party/libcurl/lib"]
+
+      frameworks = [
+        "SystemConfiguration.framework",
+      ]
     }
+
     source_set("libcurl_source") {
    
     visibility = ["*"]
@@ -43,9 +47,7 @@ if(use_system_libcurl){
     deps = ["//third_party/boringssl" , "//third_party/zlib"]
 
     configs -= [ "//build/config/compiler:chromium_code" ]
-    configs += [
-      "//build/config/compiler:no_chromium_code",
-    ]
+    configs += [ "//build/config/compiler:no_chromium_code" ]
     # This allows the compiler to do further optimizations in the code.
     if (!is_debug) {
       configs -= [ "//build/config/compiler:default_optimization" ]
@@ -57,8 +59,11 @@ if(use_system_libcurl){
         configs += [ "//build/config/gcc:symbol_visibility_default" ]
     }
 
+    cflags = [
+      "-Wno-deprecated-declarations",
+    ]
+
     public_configs = [ ":libcurl_config" ]
-  
   } 
 
 }

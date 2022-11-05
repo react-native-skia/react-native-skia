@@ -7,6 +7,10 @@
 
 class SkCanvas;
 
+namespace ReactSkia {
+class RSkSurfaceDelegate;
+} // namespace ReactSkia
+
 namespace facebook {
 namespace react {
 
@@ -30,6 +34,7 @@ class ReactSkiaApp : public RnsShell::Application {
  private:
   std::unique_ptr<facebook::react::RNInstance> rnInstance_;
   std::unique_ptr<facebook::react::RSkSurfaceWindow> surface_;
+  std::unique_ptr<ReactSkia::RSkSurfaceDelegate> surfaceDelegate_;
 };
 
 } // namespace react

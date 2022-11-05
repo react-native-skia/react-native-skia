@@ -16,6 +16,8 @@
 #include "PlatformDisplay.h"
 #if PLATFORM(X11)
 #include "x11/PlatformDisplayX11.h"
+#elif PLATFORM(MAC)
+#include "rns_shell/platform/mac/PlatformDisplayMac.h"
 #elif PLATFORM(LIBWPE) || USE(WPE_RENDERER)
 #include "libwpe/PlatformDisplayLibWPE.h"
 #endif
@@ -123,6 +125,8 @@ std::unique_ptr<PlatformDisplay> PlatformDisplay::createPlatformDisplay() {
 
 #if PLATFORM(WIN)
     return PlatformDisplayWin::create();
+#elif PLATFORM(MAC)
+    return PlatformDisplayMac::create();
 #elif PLATFORM(LIBWPE)
     return PlatformDisplayLibWPE::create();
 #endif
@@ -131,7 +135,7 @@ std::unique_ptr<PlatformDisplay> PlatformDisplay::createPlatformDisplay() {
 }
 
 PlatformDisplay& PlatformDisplay::sharedDisplay() {
-#if PLATFORM(X11) || PLATFORM(LIBWPE)
+#if PLATFORM(X11) || PLATFORM(LIBWPE) || PLATFORM(MAC)
     static std::once_flag onceFlag;
     static std::unique_ptr<PlatformDisplay> display;
     std::call_once(onceFlag, []{

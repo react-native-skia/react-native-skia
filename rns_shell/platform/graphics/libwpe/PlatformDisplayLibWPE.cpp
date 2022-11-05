@@ -66,6 +66,11 @@ SkSize PlatformDisplayLibWPE::screenSize() {
     return size;
 }
 
+float PlatformDisplayLibWPE::scaleFactor() {
+    // TODO
+    return 1.f;
+}
+
 } // namespace RnsShell
 
 #endif // USE(WPE_RENDERER) && USE(EGL)

@@ -85,6 +85,10 @@ void GLWindowContext::swapBuffers(std::vector<SkIRect> &damage) {
     this->onSwapBuffers(damage);
 }
 
+int32_t GLWindowContext::bufferAge() {
+    return this->getBufferAge();
+}
+
 #if USE(RNS_SHELL_PARTIAL_UPDATES)
 bool GLWindowContext::hasSwapBuffersWithDamage() {
     return this->onHasSwapBuffersWithDamage();
@@ -92,10 +96,6 @@ bool GLWindowContext::hasSwapBuffersWithDamage() {
 
 bool GLWindowContext::hasBufferCopy() {
     return this->onHasBufferCopy();
-}
-
-int32_t GLWindowContext::bufferAge() {
-    return this->getBufferAge();
 }
 
 #endif

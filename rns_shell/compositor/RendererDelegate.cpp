@@ -35,6 +35,10 @@ void RendererDelegate::setRootLayer(SharedLayer rootLayer) {
   layerTreeHost_->setRootCompositingLayer(rootLayer);
 }
 
+Window *RendererDelegate::nativeWindow() {
+  return layerTreeHost_->nativeWindow();
+}
+
 void RendererDelegate::scheduleRenderingUpdate() {
   commit(false);
 }

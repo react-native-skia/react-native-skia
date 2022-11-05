@@ -48,6 +48,7 @@ private:
 
     Type type() const override { return PlatformDisplay::Type::WPE; }
     SkSize screenSize() override;
+    float scaleFactor() override;
 
     Display* display_;
     struct wpe_renderer_backend_egl* rendererBackend_ = { nullptr };

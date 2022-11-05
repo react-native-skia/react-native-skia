@@ -1,6 +1,8 @@
 /* lib/curl_config.h.  Generated from curl_config.h.in by configure.  */
 /* lib/curl_config.h.in.  Generated from configure.ac by autoheader.  */
 
+#include "build/build_config.h"
+
 /* to enable curl debug memory tracking */
 /* #undef CURLDEBUG */
 
@@ -418,7 +420,9 @@
 /* #undef HAVE_LIBZSTD */
 
 /* Define to 1 if you have the <linux/tcp.h> header file. */
+#if BUILDFLAG(IS_LINUX)
 #define HAVE_LINUX_TCP_H 1
+#endif
 
 /* if your compiler supports LL */
 #define HAVE_LL 1

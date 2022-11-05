@@ -34,7 +34,8 @@ void  WindowDelegator::createNativeWindow() {
 
   if(displayPlatForm_ == RnsShell::PlatformDisplay::Type::X11) {
     /*For X11 draw should be done after expose event received*/
-    sem_init(&semReadyToDraw_,0,0);
+    semReadyToDraw_ = sem_open(__func__, O_CREAT | O_EXCL, S_IRWXU, 0);
+    sem_unlink(__func__);
     // Registering expose event
     std::function<void(RnsShell::Window*)> handler = std::bind(&WindowDelegator::onExposeHandler,this,
                                                                          std::placeholders::_1);
@@ -52,7 +53,7 @@ void  WindowDelegator::createNativeWindow() {
       windowDelegatorCanvas = backBuffer_->getCanvas();
       windowActive = true;
       if(displayPlatForm_ == RnsShell::PlatformDisplay::Type::X11) {
-        sem_post(&semReadyToDraw_);
+        sem_post(semReadyToDraw_);
       } else if(windowReadyTodrawCB_) windowReadyTodrawCB_();
     } else {
       RNS_LOG_ERROR("Invalid windowContext for nativeWindowHandle : " << window_->nativeWindowHandle());
@@ -82,7 +83,8 @@ void WindowDelegator::closeWindow() {
     windowContext_ = nullptr;
     backBuffer_ = nullptr;
   }
-  sem_destroy(&semReadyToDraw_);
+  sem_close(semReadyToDraw_);
+  semReadyToDraw_ = nullptr;
   windowDelegatorCanvas=nullptr;
   windowReadyTodrawCB_=nullptr;
 }
@@ -125,7 +127,7 @@ void WindowDelegator::setWindowTittle(const char* titleString) {
 void WindowDelegator::onExposeHandler(RnsShell::Window* window) {
 
   if(window  == window_) {
-    sem_wait(&semReadyToDraw_);
+    sem_wait(semReadyToDraw_);
     window_->show();
     if(exposeEventID_ != -1) {
       NotificationCenter::defaultCenter().removeListener(exposeEventID_);

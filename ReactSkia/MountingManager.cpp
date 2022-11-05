@@ -8,13 +8,17 @@
 
 #include <glog/logging.h>
 
+#include "build/build_config.h"
 #include "react/renderer/scheduler/Scheduler.h"
-
 #include "ReactSkia/MountingManager.h"
 #include "ReactSkia/RSkSurfaceWindow.h"
-
 #include "rns_shell/compositor/RendererDelegate.h"
+
+#if BUILDFLAG(IS_MAC)
+#include "rns_shell/platform/mac/TaskLoop.h"
+#elif BUILDFLAG(IS_LINUX)
 #include "rns_shell/platform/linux/TaskLoop.h"
+#endif
 
 namespace facebook {
 namespace react {

@@ -11,8 +11,6 @@ namespace RnsShell {
 namespace facebook {
 namespace react {
 
-using namespace RnsShell;
-
 class ComponentViewRegistry;
 class RSkSurfaceWindow;
 class ReactSkiaApp;

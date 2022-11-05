@@ -17,7 +17,7 @@ LayerTreeHost::LayerTreeHost(Application& app)
       compositorClient_(*this),
       displayID_(std::numeric_limits<uint32_t>::max() - app_.identifier()) {
   SkSize viewPort(SkSize::MakeEmpty());
-  compositor_ = Compositor::create(compositorClient_, displayID_, viewPort);
+  compositor_ = Compositor::create(compositorClient_, displayID_, viewPort, PlatformDisplay::sharedDisplayForCompositing().scaleFactor());
 }
 
 LayerTreeHost::~LayerTreeHost() {

@@ -1,7 +1,9 @@
-#include <folly/io/async/ScopedEventBaseThread.h>
 
 #include "ReactSkia/RNInstance.h"
 
+#include <folly/io/async/ScopedEventBaseThread.h>
+
+#include "build/build_config.h"
 #include "ReactSkia/ComponentViewRegistry.h"
 #include "ReactSkia/JSITurboModuleManager.h"
 #include "ReactSkia/LegacyNativeModules/LegacyNativeModuleRegistry.h"
@@ -15,14 +17,14 @@
 #include "ReactSkia/components/RSkComponentProviderTextInput.h"
 #include "ReactSkia/components/RSkComponentProviderUnimplementedView.h"
 #include "ReactSkia/components/RSkComponentProviderView.h"
+#include "ReactSkia/platform/common/RuntimeEventBeat.h"
 
-#if defined (OS_MACOSX)
-#include "ReactSkia/platform/macosx/MainRunLoopEventBeat.h"
-#include "ReactSkia/platform/macosx/RuntimeEventBeat.h"
-#elif defined (OS_LINUX)
+#if BUILDFLAG(IS_MAC)
+#include "ReactSkia/platform/mac/MainRunLoopEventBeat.h"
+#elif BUILDFLAG(IS_LINUX)
 #include "ReactSkia/platform/linux/MainRunLoopEventBeat.h"
-#include "ReactSkia/platform/linux/RuntimeEventBeat.h"
 #endif
+
 #include "ReactSkia/utils/RnsLog.h"
 #include "ReactSkia/utils/AppLog.h"
 #include "ReactSkia/views/common/RSkConversion.h"
@@ -153,6 +155,10 @@ xplat::module::CxxModule* RNInstance::moduleForName(std::string moduleName) {
   RNS_LOG_TODO("Write similar function for turbo modules. Change this function so that, first look for module in turbo module registry."
               "If not found then only check into legacy native module registry");
   return std::static_pointer_cast<LegacyNativeModuleRegistry>(moduleRegistry_)->moduleForName(moduleName);
+}
+
+UIManager *RNInstance::GetUIManager() {
+  return fabricScheduler_->getUIManager().get();
 }
 
 void RNInstance::InitializeJSCore() {

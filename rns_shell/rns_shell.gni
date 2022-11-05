@@ -14,6 +14,9 @@ declare_args() {
   # Enable if scroll layer children do not have any runtime updates,to improve performance.
   rns_enable_scroll_layer_bitmap = false
 
+  # Use partial updates ( dirty region painting and swaping) if system support.
+  rns_enable_partial_updates = true
+
   if(is_linux) {
     # x11, wayland, direcftb, libwpe
     gl_display_backend = "x11"
@@ -24,8 +27,8 @@ declare_args() {
     # For Embedded systems we will use OpenGL ES
     gl_use_opengl_es = false
 
-    # Use partial updates ( dirty region painting and swaping) if system support.
-    rns_enable_partial_updates = true
+  } else if (is_mac) {
+    gl_display_backend = "nsgl"
   }
 }
 

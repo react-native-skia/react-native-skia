@@ -18,6 +18,7 @@ class MessageQueueThreadImpl;
 class MountingManager;
 class RSkSurfaceWindow;
 class Scheduler;
+class UIManager;
 
 class RNInstance {
  public:
@@ -28,6 +29,7 @@ class RNInstance {
   void Start(RSkSurfaceWindow *surface, RendererDelegate &rendererDelegate);
   void Stop(RSkSurfaceWindow *surface);
   xplat::module::CxxModule* moduleForName(std::string moduleName);
+  UIManager *GetUIManager();
 
  private:
   void InitializeJSCore();

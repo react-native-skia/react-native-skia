@@ -28,6 +28,7 @@ private:
 
     Type type() const override { return PlatformDisplay::Type::X11; }
     SkSize screenSize() override;
+    float scaleFactor() override;
 
 #if USE(EGL)
     void initializeEGLDisplay() override;

@@ -5,8 +5,8 @@
 import("//rns_shell/rns_shell.gni")
 
 config("rns_shell_config") {
-  cflags_cc = [ "-std=c++17", "-frtti"]
-  cflags_objcc = [ "-std=c++17" ]
+  cflags_cc = [ "-std=c++17", "-frtti" ]
+  cflags_objcc = [ "-std=c++17", "-frtti" ]
   include_dirs = [ "." ]
 
   include_dirs += [
@@ -15,28 +15,38 @@ config("rns_shell_config") {
     "platform/graphics/gl",
   ]
 
+  defines = []
+  if (gl_has_gpu) {
+    defines += [ "RNS_SHELL_HAS_GPU_SUPPORT" ]
+  }
+  if (rns_enable_partial_updates) {
+    defines += ["USE_RNS_SHELL_PARTIAL_UPDATES"]
+  }
+  if (rns_enable_scroll_layer_bitmap) {
+    defines += ["USE_SCROLL_LAYER_BITMAP"]
+  }
+
   if(is_linux) {
-    defines = ["GOOGLE_STRIP_LOG=0"]
+    defines += ["GOOGLE_STRIP_LOG=0"]
     extra_cppflags = getenv("BUILD_CPPFLAGS")
     if(extra_cppflags != "") {
       defines += string_split(extra_cppflags)
     }
-    if(gl_has_gpu) {
-      defines += [ "RNS_SHELL_HAS_GPU_SUPPORT" ]
 
+    if (gl_has_gpu) {
       if(gl_use_glx && gl_display_backend == "x11") { # Use GLX interface. Only for x11 backend
         defines += [ "USE_GLX" ]
       } else { # Using EGL interface
         defines += [ "USE_EGL" ]
       }
     } 
-    if(rns_enable_partial_updates) {
-      defines += ["USE_RNS_SHELL_PARTIAL_UPDATES"]
-    }
   }
 
-  if(rns_enable_scroll_layer_bitmap) {
-    defines += ["USE_SCROLL_LAYER_BITMAP"]
+  if (is_mac) {
+    frameworks = [
+      "AppKit.framework",
+      "OpenGL.framework",
+    ]
   }
 }
 
@@ -54,6 +64,29 @@ if(is_linux && gl_has_gpu ) {
       packages += [ "gl" ]
     }
     visibility = [ ":rns_shell" ]
+  }
+}
+
+# macOS Platform sources and dependenices
+if (is_mac) {
+  mac_platform_source = [
+    "platform/mac/AppDelegate.h",
+    "platform/mac/AppDelegate.mm",
+    "platform/mac/PlatformDisplayMac.h",
+    "platform/mac/PlatformDisplayMac.mm",
+    "platform/mac/RootView.h",
+    "platform/mac/RootView.mm",
+    "platform/mac/WindowDelegate.h",
+    "platform/mac/WindowDelegate.mm",
+    "platform/mac/WindowMac.h",
+    "platform/mac/WindowMac.mm",
+  ]
+
+  if (!gl_has_gpu) {
+    mac_platform_source += [
+      "platform/mac/RasterWindowContextMac.h",
+      "platform/mac/RasterWindowContextMac.mm",
+    ]
   }
 }
 
@@ -116,6 +149,7 @@ source_set("rns_shell") {
     "common/WindowContext.cpp",
     "common/Performance.h",
     "common/Performance.cpp",
+
     "compositor/LayerTreeHost.h",
     "compositor/LayerTreeHost.cpp",
     "compositor/RendererDelegate.h",
@@ -154,22 +188,35 @@ source_set("rns_shell") {
     "//third_party/libevent",
   ]
 
+  sources += [
+    "platform/graphics/WindowContextFactory.cpp",
+    "platform/graphics/WindowContextFactory.h",
+    "platform/graphics/PlatformDisplay.cpp",
+    "platform/graphics/PlatformDisplay.h",
+  ]
+
   if (is_mac) {
-    defines = [ "OS_MAC" ]
+    defines = [ "OS_MAC", "RNS_PLATFORM_MAC" ]
 
     sources += [
+      "platform/mac/TaskLoop.h",
+      "platform/mac/TaskLoop.mm",
+      "platform/mac/shell.mm",
     ]
+    sources += mac_platform_source
 
-    frameworks = [
-    ]
+    assert(gl_has_gpu, "software rendering on mac is not supported yet")
+    if (gl_has_gpu && gl_display_backend == "nsgl") {
+      defines += [ "USE_NSGL" ]
+      sources += [
+        "platform/graphics/gl/nsgl/GLWindowContextNSGL.mm",
+        "platform/graphics/gl/nsgl/GrGLMakeNativeInterfaceNSGL.cpp",
+      ]
+    }
   } else if (is_linux) {
     defines = [ "OS_LINUX" ]
 
     sources += [
-      "platform/graphics/WindowContextFactory.cpp",
-      "platform/graphics/WindowContextFactory.h",
-      "platform/graphics/PlatformDisplay.cpp",
-      "platform/graphics/PlatformDisplay.h",
       "platform/linux/TaskLoop.h",
       "platform/linux/TaskLoop.cpp",
       "platform/linux/shell.cpp",
