@@ -121,6 +121,54 @@ SkRect Compositor::beginClip(PaintContext& context, bool useClipRegion) {
     return clipBound;
 }
 
+#if USE(RNS_SHELL_PARTIAL_UPDATES) && ENABLE(RNS_SHELL_BUFFER_AGE)
+SkRect Compositor::beginClip() {
+    SkRect clipBound = SkRect::MakeEmpty();
+    int32_t bufferAge = windowContext_->bufferAge();
+
+    if(surfaceDamage_.size() == 0)
+        return clipBound;
+
+    // 1. add damages caused in current frame.
+    SkPath clipPath = SkPath();
+    for (auto& rect : surfaceDamage_) {
+        RNS_LOG_DEBUG("Add Damage " << rect.x() << " " << rect.y() << " " << rect.width() << " " << rect.height());
+        clipPath.addRect(rect.left(), rect.top(), rect.right(), rect.bottom());
+    }
+
+    // 2. Based on buffer age, add damages from previous frames if required or set entire surface as damage.
+    if(bufferAge == 1) // Buffer is up to date. No need to add damages from previous frames.
+        goto safeClipReturn;
+    else if(bufferAge == 0 || // Buffer is being used for the first time or has been reset
+            (bufferAge > frameDamageHistory_.size())) { // dont have enough history, so set entire surface as damage.
+        // Need full redraw, so ignore all dirty rects & clippath then mark entire surface as damage.
+        int width = attributes_.viewportSize.width();
+        int height = attributes_.viewportSize.height();
+        surfaceDamage_.clear();
+        clipPath.reset();
+        Layer::addDamageRect(surfaceDamage_, {0, 0, width, height});
+        clipPath.addRect(0, 0, width, height);
+    } else if(bufferAge > 1) { // Need to add damages from previous frames upto buffer age.
+        auto frameDamages = frameDamageHistory_.rbegin();
+        FrameDamages &dirtyRects = (*frameDamages);
+        for (auto age = bufferAge - 1; frameDamages != frameDamageHistory_.rend() && age > 0; ++frameDamages, --age) {
+            dirtyRects = *frameDamages;
+            for (auto& rect : dirtyRects) {
+                RNS_LOG_DEBUG("Buffer Age[" << bufferAge << "], History Index[" << age << "] : Aditional Damage [" <<
+                    rect.x() << "," << rect.y() << "," << rect.width() << "," << rect.height() << "]");
+              Layer::addDamageRect(surfaceDamage_, rect);
+              clipPath.addRect(rect.left(), rect.top(), rect.right(), rect.bottom());
+            }
+        }
+    }
+
+safeClipReturn:
+    backBuffer_->getCanvas()->clipPath(clipPath);
+    clipBound = clipPath.getBounds();
+    return clipBound;
+}
+#endif // USE(RNS_SHELL_PARTIAL_UPDATES) && ENABLE(RNS_SHELL_BUFFER_AGE)
+
 void Compositor::renderLayerTree() {
 
     if(!windowContext_)
@@ -155,9 +203,10 @@ void Compositor::renderLayerTree() {
         auto canvas = backBuffer_->getCanvas();
         SkAutoCanvasRestore save(canvas, true);
         SkRect clipBound = SkRect::MakeEmpty();
+
         PaintContext paintContext = {
             canvas,  // canvas
-            surfaceDamage_, // damage rects
+            surfaceDamage_, // Holds damage rects for current frame including damages from previous frames depending on buffer age.
 #if USE(RNS_SHELL_PARTIAL_UPDATES)
             supportPartialUpdate_,
 #endif
@@ -166,7 +215,12 @@ void Compositor::renderLayerTree() {
             {0,0} //scrollOffset is zero for rootLayer
         };
         RNS_PROFILE_API_OFF("Render Tree Pre-Paint", rootLayer_.get()->prePaint(paintContext));
+#if USE(RNS_SHELL_PARTIAL_UPDATES) && ENABLE(RNS_SHELL_BUFFER_AGE)
+        FrameDamages currentFrameDamages(surfaceDamage_); // Copy dirty rects from current frame before adding any damage from previous frame
+        clipBound = beginClip();
+#else
         clipBound = beginClip(paintContext);
+#endif
         /* Check if paint required*/
         if(!rootLayer_.get()->needsPainting(paintContext)) return;
 #ifdef RNS_SHELL_HAS_GPU_SUPPORT
@@ -192,6 +246,16 @@ void Compositor::renderLayerTree() {
 #endif
         RNS_PROFILE_API_OFF("SwapBuffers", windowContext_->swapBuffers(surfaceDamage_));
         client_.didRenderFrame();
+
+#if USE(RNS_SHELL_PARTIAL_UPDATES) && ENABLE(RNS_SHELL_BUFFER_AGE)
+        // Add current frame damage to history.
+        if (frameDamageHistory_.size() >= RNS_SHELL_MAX_FRAME_DAMAGE_HISTORY) {
+          FrameDamages damages = frameDamageHistory_.front();
+          damages.clear();
+          frameDamageHistory_.pop_front();
+        }
+        frameDamageHistory_.push_back(currentFrameDamages);
+#endif
     }
 }
 
