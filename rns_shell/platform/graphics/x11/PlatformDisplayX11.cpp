@@ -57,13 +57,13 @@ PlatformDisplayX11::~PlatformDisplayX11() {
 void PlatformDisplayX11::initializeEGLDisplay()
 {
 #if defined(EGL_KHR_platform_x11)
-    const char* extensions = eglQueryString(nullptr, EGL_EXTENSIONS);
+    const char* extensions = eglQueryString(EGL_NO_DISPLAY, EGL_EXTENSIONS);
     if (GLWindowContextEGL::isExtensionSupported(extensions, "EGL_KHR_platform_base")) {
         if (auto* getPlatformDisplay = reinterpret_cast<PFNEGLGETPLATFORMDISPLAYEXTPROC>(eglGetProcAddress("eglGetPlatformDisplay")))
             eglDisplay_ = getPlatformDisplay(EGL_PLATFORM_X11_KHR, display_, nullptr);
     } else if (GLWindowContextEGL::isExtensionSupported(extensions, "EGL_EXT_platform_base")) {
         if (auto* getPlatformDisplay = reinterpret_cast<PFNEGLGETPLATFORMDISPLAYEXTPROC>(eglGetProcAddress("eglGetPlatformDisplayEXT")))
-            eglDisplay_ = getPlatformDisplay(EGL_PLATFORM_X11_KHR, display_, nullptr);
+            eglDisplay_ = getPlatformDisplay(EGL_PLATFORM_X11_EXT, display_, nullptr);
     } else
 #endif
     eglDisplay_ = eglGetDisplay(display_);

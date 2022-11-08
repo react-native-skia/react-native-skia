@@ -478,8 +478,13 @@ std::vector<EGLint> GLWindowContextEGL::rectsToInts(EGLDisplay display, EGLSurfa
 
 int32_t GLWindowContextEGL::getBufferAge() {
   EGLint bufferAge = 0;
-  eglQuerySurface(platformDisplay_.eglDisplay(), glSurface_, EGL_BUFFER_AGE_EXT, &bufferAge);
-  RNS_LOG_ERROR("Buffer Age of Current backBuffer of surface : " << bufferAge);
+
+  if(false == eglQuerySurface(platformDisplay_.eglDisplay(), glSurface_, EGL_BUFFER_AGE_EXT, &bufferAge)) {
+    RNS_LOG_ERROR("Egl Query Surface(EGL_BUFFER_AGE_EXT) Error : " << eglErrorString());
+  } else {
+    RNS_LOG_INFO("Buffer Age of Current backBuffer of surface : " << bufferAge);
+  }
+
   return bufferAge;
 }
 

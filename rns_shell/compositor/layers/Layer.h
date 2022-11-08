@@ -45,6 +45,7 @@ enum LayerInvalidateMask {
 
 typedef std::vector<std::shared_ptr<Layer> > LayerList;
 using SharedLayer = std::shared_ptr<Layer>;
+using FrameDamages = std::vector<SkIRect>;
 
 struct PaintContext {
     SkCanvas* canvas;
@@ -128,14 +129,17 @@ public:
 
     const bool masksToBounds() const { return masksToBounds_; }
     void setMasksTotBounds(bool masksToBounds) { masksToBounds_ = masksToBounds; }
-
+#if USE(RNS_SHELL_PARTIAL_UPDATES)
+    static void addDamageRect(FrameDamages& damageRectList, SkIRect dirtyAbsFrameRect);
+#endif
 public:
     friend class PictureLayer;
     friend class ScrollLayer;
 
 protected:
+#if USE(RNS_SHELL_PARTIAL_UPDATES)
     static void addDamageRect(PaintContext& context, SkIRect dirtyAbsFrameRect);
-
+#endif
 private:
     static uint64_t nextUniqueId();
 

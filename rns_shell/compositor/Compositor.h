@@ -7,6 +7,8 @@
 */
 #pragma once
 
+#include <list>
+
 #include "third_party/skia/include/core/SkRect.h"
 
 #include "WindowContext.h"
@@ -14,6 +16,7 @@
 #include "layers/Layer.h"
 
 #define RNS_TARGET_FPS_US 16666.7 // In Microseconds
+#define RNS_SHELL_MAX_FRAME_DAMAGE_HISTORY 5
 
 namespace RnsShell {
 
@@ -54,7 +57,9 @@ private:
 
     void createWindowContext();
     void renderLayerTree();
-
+#if USE(RNS_SHELL_PARTIAL_UPDATES) && ENABLE(RNS_SHELL_BUFFER_AGE)
+    SkRect beginClip();
+#endif
     std::mutex isMutating; // Lock the renderLayer tree while updating and rendering
 
     Client& client_;
@@ -67,7 +72,9 @@ private:
     bool supportPartialUpdate_;
 #endif
     std::vector<SkIRect> surfaceDamage_;
-
+#if USE(RNS_SHELL_PARTIAL_UPDATES) && ENABLE(RNS_SHELL_BUFFER_AGE)
+    std::list<FrameDamages> frameDamageHistory_;
+#endif
     struct {
         //Lock lock;
         SkSize viewportSize;

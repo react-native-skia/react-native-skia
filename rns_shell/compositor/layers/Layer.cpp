@@ -14,9 +14,11 @@ namespace RnsShell {
 
 #if USE(RNS_SHELL_PARTIAL_UPDATES)
 void Layer::addDamageRect(PaintContext& context, SkIRect dirtyAbsFrameRect) {
-    std::vector<SkIRect>& damageRectList = context.damageRect;
-    bool checkIfAlreadyCovered = true;
+    addDamageRect(context.damageRect, dirtyAbsFrameRect);
+}
 
+void Layer::addDamageRect(FrameDamages& damageRectList, SkIRect dirtyAbsFrameRect) {
+    bool checkIfAlreadyCovered = true;
     for (auto it = damageRectList.begin(); it != damageRectList.end(); it++) {
         // Check 1 : If new dirty rect fully covers any of existing dirtyRect in the list then remove them from vector
         SkIRect &dirtRect = *it;

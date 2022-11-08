@@ -34,6 +34,9 @@ config("rns_shell_config") {
     }
     if(rns_enable_partial_updates) {
       defines += ["USE_RNS_SHELL_PARTIAL_UPDATES"]
+      if(gl_has_gpu && rns_enable_buffer_age_partial_updates) {
+        defines += ["ENABLE_RNS_SHELL_BUFFER_AGE"]
+      }
     }
   }
 

@@ -26,6 +26,9 @@ declare_args() {
     # Use bitmap for scroll layer.
     # Enable if scroll layer children do not have any runtime updates,to improve performance.
     rns_enable_scroll_layer_bitmap = false
+
+    # If GPU enabled system doesn't support swapbuffer_with_damage or damage_region extensions but supports buffer_age extension, then this can be enabled to improve rendering.
+    rns_enable_buffer_age_partial_updates = false
   }
 }
 
