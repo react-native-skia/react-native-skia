@@ -253,13 +253,11 @@ inline double getCacheMaxAgeDuration(std::string cacheControlData) {
 }
 
 void RSkComponentImage::requestNetworkImageData(ImageSource source) {
-  mLock.lock();
   auto sharedCurlNetworking = CurlNetworking::sharedCurlNetworking();
   if(remoteCurlRequest_!=nullptr){
     RNS_LOG_INFO("I am clearing the abor");
     sharedCurlNetworking->abortRequest(remoteCurlRequest_);
   }
-  mLock.unlock();
   remoteCurlRequest_ = std::make_shared<CurlRequest>(nullptr,source.uri,0,"GET");
 
   folly::dynamic query = folly::dynamic::object();
@@ -306,7 +304,6 @@ void RSkComponentImage::requestNetworkImageData(ImageSource source) {
         || !processImageData(curlRequest->URL.c_str(),responseData->responseBuffer,responseData->contentSize)) && (hasToTriggerEvent_)) {
       sendErrorEvents();
     }
-    mLock.lock();
     //Reset the lamda callback so that curlRequest shared pointer dereffered from the lamda 
     // and gets auto destructored after the completion callback.
     remoteCurlRequest_->handle =  NULL;
@@ -315,7 +312,6 @@ void RSkComponentImage::requestNetworkImageData(ImageSource source) {
     mLock.unlock();
     return 0;
   };
-  mLock.lock();
   remoteCurlRequest_->curldelegator.delegatorData = remoteCurlRequest_.get();
   remoteCurlRequest_->curldelegator.CURLNetworkingHeaderCallback = headerCallback;
   remoteCurlRequest_->curldelegator.CURLNetworkingCompletionCallback=completionCallback;
@@ -339,13 +335,11 @@ inline void RSkComponentImage::sendSuccessEvents() {
   hasToTriggerEvent_ = false;
 }
 RSkComponentImage::~RSkComponentImage(){
-mLock.lock();
   RNS_LOG_INFO("calling destructor in Image component ");
   auto sharedCurlNetworking = CurlNetworking::sharedCurlNetworking();
   if(remoteCurlRequest_!=nullptr){
     sharedCurlNetworking->abortRequest(remoteCurlRequest_);
   }
-mLock.unlock();
 }
 
 } // namespace react
