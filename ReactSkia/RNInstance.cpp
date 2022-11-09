@@ -172,7 +172,7 @@ void RNInstance::InitializeJSCore() {
       moduleRegistry_);
 
   // NOTE(kudo): Workaround for TurboModules being fully initialized
-  std::this_thread::sleep_for(std::chrono::milliseconds(500));
+  //std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
   try {
     auto source = JSBigFileString::fromPath("SimpleViewApp.bundle");

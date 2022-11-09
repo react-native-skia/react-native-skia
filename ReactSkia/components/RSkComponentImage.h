@@ -12,6 +12,7 @@
 
 #include "ReactSkia/components/RSkComponent.h"
 #include "ReactSkia/views/common/RSkImageCacheManager.h"
+#include "ReactSkia/sdk/CurlNetworking.h"
 
 #define DEFAULT_IMAGE_FILTER_QUALITY kLow_SkFilterQuality /*Skia's Defualt is kNone_SkFilterQuality*/
 #define DEFAULT_MAX_CACHE_EXPIRY_TIME 1800000 // 30mins in milliseconds 1800000
@@ -31,8 +32,10 @@ class RSkComponentImage final : public RSkComponent {
  public:
   RSkComponentImage(const ShadowView &shadowView);
   RnsShell::LayerInvalidateMask updateComponentProps(const ShadowView &newShadowView,bool forceUpdate) override;
+  ~RSkComponentImage();
  private :
   ImgProps imageProps;
+  std::shared_ptr<CurlRequest> remoteCurlRequest_{nullptr};
   sk_sp<SkImage> networkImageData_;
   bool hasToTriggerEvent_{false};
   bool canCacheData_{true};

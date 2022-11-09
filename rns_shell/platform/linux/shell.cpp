@@ -50,7 +50,7 @@ static bool platformInitialize(char **argv) {
 
     // Google Logging
     {
-        FLAGS_minloglevel = 0;
+        FLAGS_minloglevel = 1;
         FLAGS_logtostderr = 1; // When set to 1 all logs printed to console instead of file
         FLAGS_colorlogtostderr = 1;
         FLAGS_v = 0; // 1 for DEBUG, 2 for TRACE

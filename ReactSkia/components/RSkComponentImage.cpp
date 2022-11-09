@@ -14,15 +14,17 @@
 #include "react/renderer/components/image/ImageEventEmitter.h"
 
 #include "ReactSkia/components/RSkComponentImage.h"
-#include "ReactSkia/sdk/CurlNetworking.h"
 #include "ReactSkia/views/common/RSkDrawUtils.h"
 #include "ReactSkia/views/common/RSkImageUtils.h"
 
 #include "ReactSkia/utils/RnsLog.h"
 #include "ReactSkia/utils/RnsUtils.h"
 #include "ReactSkia/views/common/RSkConversion.h"
+#include <mutex>
 #define MILLSEC_CONVERTER(time) time*1000
 
+using namespace std;
+mutex mLock;
 namespace facebook {
 namespace react {
 
@@ -251,8 +253,14 @@ inline double getCacheMaxAgeDuration(std::string cacheControlData) {
 }
 
 void RSkComponentImage::requestNetworkImageData(ImageSource source) {
+  mLock.lock();
   auto sharedCurlNetworking = CurlNetworking::sharedCurlNetworking();
-  std::shared_ptr<CurlRequest> remoteCurlRequest = std::make_shared<CurlRequest>(nullptr,source.uri,0,"GET");
+  if(remoteCurlRequest_!=nullptr){
+    RNS_LOG_INFO("I am clearing the abor");
+    sharedCurlNetworking->abortRequest(remoteCurlRequest_);
+  }
+  mLock.unlock();
+  remoteCurlRequest_ = std::make_shared<CurlRequest>(nullptr,source.uri,0,"GET");
 
   folly::dynamic query = folly::dynamic::object();
 
@@ -261,7 +269,7 @@ void RSkComponentImage::requestNetworkImageData(ImageSource source) {
   cacheExpiryTime_ = DEFAULT_MAX_CACHE_EXPIRY_TIME;
 
   // headercallback lambda fuction
-  auto headerCallback =  [this, weakThis = this->weak_from_this(),remoteCurlRequest](void* curlresponseData,void *userdata)->bool {
+  auto headerCallback =  [this, weakThis = this->weak_from_this()](void* curlresponseData,void *userdata)->bool {
     if(weakThis.expired()) {
       RNS_LOG_WARN("This object is already destroyed. ignoring the completion callback");
       return 0;
@@ -287,7 +295,7 @@ void RSkComponentImage::requestNetworkImageData(ImageSource source) {
 
 
   // completioncallback lambda fuction
-  auto completionCallback =  [this, weakThis = this->weak_from_this(),remoteCurlRequest](void* curlresponseData,void *userdata)->bool {
+  auto completionCallback =  [this, weakThis = this->weak_from_this()](void* curlresponseData,void *userdata)->bool {
     if(weakThis.expired()) {
       RNS_LOG_WARN("This object is already destroyed. ignoring the completion callback");
       return 0;
@@ -298,21 +306,25 @@ void RSkComponentImage::requestNetworkImageData(ImageSource source) {
         || !processImageData(curlRequest->URL.c_str(),responseData->responseBuffer,responseData->contentSize)) && (hasToTriggerEvent_)) {
       sendErrorEvents();
     }
+    mLock.lock();
     //Reset the lamda callback so that curlRequest shared pointer dereffered from the lamda 
     // and gets auto destructored after the completion callback.
-    remoteCurlRequest->curldelegator.CURLNetworkingHeaderCallback = nullptr;
-    remoteCurlRequest->curldelegator.CURLNetworkingCompletionCallback = nullptr;
+    remoteCurlRequest_->handle =  NULL;
+    remoteCurlRequest_->curldelegator.CURLNetworkingHeaderCallback = nullptr;
+    remoteCurlRequest_->curldelegator.CURLNetworkingCompletionCallback = nullptr;
+    mLock.unlock();
     return 0;
   };
-
-  remoteCurlRequest->curldelegator.delegatorData = remoteCurlRequest.get();
-  remoteCurlRequest->curldelegator.CURLNetworkingHeaderCallback = headerCallback;
-  remoteCurlRequest->curldelegator.CURLNetworkingCompletionCallback=completionCallback;
+  mLock.lock();
+  remoteCurlRequest_->curldelegator.delegatorData = remoteCurlRequest_.get();
+  remoteCurlRequest_->curldelegator.CURLNetworkingHeaderCallback = headerCallback;
+  remoteCurlRequest_->curldelegator.CURLNetworkingCompletionCallback=completionCallback;
+  mLock.unlock();
   if(!hasToTriggerEvent_) {
     imageEventEmitter_->onLoadStart();
     hasToTriggerEvent_ = true;
   }
-  sharedCurlNetworking->sendRequest(remoteCurlRequest,query);
+  sharedCurlNetworking->sendRequest(remoteCurlRequest_,query);
 }
 
 inline void RSkComponentImage::sendErrorEvents() {
@@ -325,6 +337,15 @@ inline void RSkComponentImage::sendSuccessEvents() {
   imageEventEmitter_->onLoad();
   imageEventEmitter_->onLoadEnd();
   hasToTriggerEvent_ = false;
+}
+RSkComponentImage::~RSkComponentImage(){
+mLock.lock();
+  RNS_LOG_INFO("calling destructor in Image component ");
+  auto sharedCurlNetworking = CurlNetworking::sharedCurlNetworking();
+  if(remoteCurlRequest_!=nullptr){
+    sharedCurlNetworking->abortRequest(remoteCurlRequest_);
+  }
+mLock.unlock();
 }
 
 } // namespace react
