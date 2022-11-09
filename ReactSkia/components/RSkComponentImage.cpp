@@ -21,6 +21,7 @@
 #include "ReactSkia/utils/RnsLog.h"
 #include "ReactSkia/utils/RnsUtils.h"
 #include "ReactSkia/views/common/RSkConversion.h"
+#define MILLSEC_CONVERTER(time) time*1000
 
 namespace facebook {
 namespace react {
@@ -260,7 +261,11 @@ void RSkComponentImage::requestNetworkImageData(ImageSource source) {
   cacheExpiryTime_ = DEFAULT_MAX_CACHE_EXPIRY_TIME;
 
   // headercallback lambda fuction
-  auto headerCallback =  [this, remoteCurlRequest](void* curlresponseData,void *userdata)->bool {
+  auto headerCallback =  [this, weakThis = this->weak_from_this(),remoteCurlRequest](void* curlresponseData,void *userdata)->bool {
+    if(weakThis.expired()) {
+      RNS_LOG_WARN("This object is already destroyed. ignoring the completion callback");
+      return 0;
+    }
     CurlResponse *responseData =  (CurlResponse *)curlresponseData;
     CurlRequest *curlRequest = (CurlRequest *) userdata;
 
@@ -275,14 +280,18 @@ void RSkComponentImage::requestNetworkImageData(ImageSource source) {
 
     // TODO : Parse request headers and retrieve caching details
 
-    cacheExpiryTime_ = std::min(responseMaxAgeTime,static_cast<double>(DEFAULT_MAX_CACHE_EXPIRY_TIME));
+    cacheExpiryTime_ = std::min(MILLSEC_CONVERTER(responseMaxAgeTime),static_cast<double>(DEFAULT_MAX_CACHE_EXPIRY_TIME));
     RNS_LOG_DEBUG("url [" << responseData->responseurl << "] canCacheData[" << canCacheData_ << "] cacheExpiryTime[" << cacheExpiryTime_ << "]");
     return 0;
   };
 
 
   // completioncallback lambda fuction
-  auto completionCallback =  [this, remoteCurlRequest](void* curlresponseData,void *userdata)->bool {
+  auto completionCallback =  [this, weakThis = this->weak_from_this(),remoteCurlRequest](void* curlresponseData,void *userdata)->bool {
+    if(weakThis.expired()) {
+      RNS_LOG_WARN("This object is already destroyed. ignoring the completion callback");
+      return 0;
+    }
     CurlResponse *responseData =  (CurlResponse *)curlresponseData;
     CurlRequest * curlRequest = (CurlRequest *) userdata;
     if((!responseData

@@ -9,6 +9,7 @@
 #include "ReactSkia/utils/RnsLog.h"
 #include "CurlNetworking.h"
 
+#define MILLSEC_CONVERTER(time) time*1000
 using namespace std;
 namespace facebook {
 namespace react {
@@ -20,7 +21,7 @@ CurlNetworking::CurlNetworking() {
   sem_init(&networkRequestSem_, 0, 0);
   curlMultihandle_ = curl_multi_init();
   /* Limit the amount of simultaneous connections curl should allow: */
-  curl_multi_setopt(curlMultihandle_, CURLMOPT_MAX_TOTAL_CONNECTIONS, (long)MAX_PARALLEL_CONNECTION);
+  curl_multi_setopt(curlMultihandle_, CURLMOPT_MAX_HOST_CONNECTIONS, (long)MAX_PARALLEL_CONNECTION);
   multiNetworkThread_ = std::thread([this]() {
     while(!exitLoop_){
       if(curlMultihandle_) {
@@ -84,7 +85,7 @@ inline bool CurlRequest::shouldCacheData() {
           if(responseMaxAgeTime == 0) {
             return false;
           }
-          curlResponse->cacheExpiryTime = Timer::getCurrentTimeMSecs() + std::min(std::min(responseMaxAgeTime,requestMaxAgeTime),static_cast<double>(DEFAULT_MAX_CACHE_EXPIRY_TIME));
+          curlResponse->cacheExpiryTime = Timer::getCurrentTimeMSecs() + std::min(std::min(MILLSEC_CONVERTER(responseMaxAgeTime),requestMaxAgeTime),static_cast<double>(DEFAULT_MAX_CACHE_EXPIRY_TIME));
           return true;
         }
       }

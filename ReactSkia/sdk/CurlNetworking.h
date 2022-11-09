@@ -19,7 +19,7 @@
 #define CA_CERTIFICATE       "/etc/ssl/certs/ca-certificates.crt"      /**< The certificate of the CA to establish https connection to the server*/
 #endif
 
-#define MAX_PARALLEL_CONNECTION 5
+#define MAX_PARALLEL_CONNECTION 6L
 
 namespace facebook {
 namespace react {
