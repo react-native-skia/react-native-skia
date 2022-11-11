@@ -254,8 +254,7 @@ inline double getCacheMaxAgeDuration(std::string cacheControlData) {
 
 void RSkComponentImage::requestNetworkImageData(ImageSource source) {
   auto sharedCurlNetworking = CurlNetworking::sharedCurlNetworking();
-  if(remoteCurlRequest_!=nullptr){
-    RNS_LOG_INFO("I am clearing the abor");
+  if(remoteCurlRequest_!=nullptr && isRequestinProgress_ == true){
     sharedCurlNetworking->abortRequest(remoteCurlRequest_);
   }
   remoteCurlRequest_ = std::make_shared<CurlRequest>(nullptr,source.uri,0,"GET");
@@ -281,6 +280,7 @@ void RSkComponentImage::requestNetworkImageData(ImageSource source) {
     if(responseCacheControlData != responseData->headerBuffer.items().end()) {
       std::string responseCacheControlString = responseCacheControlData->second.asString();
       canCacheData_ = shouldCacheData(responseCacheControlString);
+      canCacheData_ = false;
       if(canCacheData_) responseMaxAgeTime = getCacheMaxAgeDuration(responseCacheControlString);
     }
 
@@ -298,6 +298,7 @@ void RSkComponentImage::requestNetworkImageData(ImageSource source) {
       RNS_LOG_WARN("This object is already destroyed. ignoring the completion callback");
       return 0;
     }
+    isRequestinProgress_ = false;
     CurlResponse *responseData =  (CurlResponse *)curlresponseData;
     CurlRequest * curlRequest = (CurlRequest *) userdata;
     if((!responseData
@@ -321,6 +322,7 @@ void RSkComponentImage::requestNetworkImageData(ImageSource source) {
     hasToTriggerEvent_ = true;
   }
   sharedCurlNetworking->sendRequest(remoteCurlRequest_,query);
+  isRequestinProgress_ = true;
 }
 
 inline void RSkComponentImage::sendErrorEvents() {
@@ -337,7 +339,7 @@ inline void RSkComponentImage::sendSuccessEvents() {
 RSkComponentImage::~RSkComponentImage(){
   RNS_LOG_INFO("calling destructor in Image component ");
   auto sharedCurlNetworking = CurlNetworking::sharedCurlNetworking();
-  if(remoteCurlRequest_!=nullptr){
+  if(remoteCurlRequest_!=nullptr && (isRequestinProgress_==true)){
     sharedCurlNetworking->abortRequest(remoteCurlRequest_);
   }
 }

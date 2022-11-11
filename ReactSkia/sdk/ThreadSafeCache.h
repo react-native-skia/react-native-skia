@@ -9,7 +9,7 @@
 #include <better/optional.h>
 #include "ReactSkia/utils/RnsLog.h"
 #include "ReactSkia/sdk/FollyTimer.h"
-#define THREADSAFE_DEFAULT_MAX_CACHE_LIMIT 20*1024*1024 //20,971,520 bytes
+#define THREADSAFE_DEFAULT_MAX_CACHE_LIMIT 10*1024*1024 // 1MB
 #define THREADSAFE_MAX_CACHE_HWM_LIMIT  THREADSAFE_DEFAULT_MAX_CACHE_LIMIT*.95 //95% as High Water mark level
 using namespace std;
 namespace rns {
