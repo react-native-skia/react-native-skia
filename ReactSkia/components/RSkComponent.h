@@ -15,6 +15,7 @@
 #include "ReactSkia/utils/RnsUtils.h"
 #include "ReactSkia/utils/RnsLog.h"
 #include "ReactSkia/sdk/RNSKeyCodeMapping.h"
+#include "ReactSkia/views/common/RSkDrawUtils.h"
 
 #include "rns_shell/compositor/layers/Layer.h"
 
@@ -105,6 +106,7 @@ class RSkComponent : public RnsShell::Layer , public SpatialNavigator::Container
   SpatialNavigator::Container *nearestAncestorContainer();
   bool hasAncestor(const SpatialNavigator::Container* ancestor);
   bool isFocusable();
+  bool needsShadowPainting();
 
   void requiresLayer(const ShadowView &shadowView, Layer::Client& layerClient);
   RnsShell::LayerInvalidateMask updateProps(const ShadowView &newShadowView , bool forceUpdate);

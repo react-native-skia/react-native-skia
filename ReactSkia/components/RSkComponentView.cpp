@@ -4,14 +4,12 @@
 
 #include "react/renderer/components/view/ViewShadowNode.h"
 
-#include "ReactSkia/views/common/RSkDrawUtils.h"
 #include "ReactSkia/components/RSkComponentImage.h"
 #include "ReactSkia/components/RSkComponentView.h"
 
 namespace facebook {
 namespace react {
 
-using namespace RSkDrawUtils;
 
 RSkComponentView::RSkComponentView(const ShadowView &shadowView)
     : RSkComponent(shadowView) {}
@@ -24,9 +22,15 @@ void RSkComponentView::OnPaint(SkCanvas *canvas) {
   Rect frame = component.layoutMetrics.frame;
 
 /*Draw Order : 1. Shadow 2. BackGround 3 Border*/
-    if(layer()->shadowOpacity && layer()->shadowFilter){
-        drawShadow(canvas,frame,borderMetrics,viewProps.backgroundColor,layer()->shadowOpacity,layer()->shadowFilter);
-  }
+    auto layerRef=layer();
+    if(layerRef->isShadowVisible) {
+        drawShadow(canvas,frame,borderMetrics,
+                    viewProps.backgroundColor,
+                    layerRef->shadowColor,layerRef->shadowOffset,layerRef->shadowOpacity,
+                    layerRef->opacity,
+                    layerRef->shadowImageFilter,layerRef->shadowMaskFilter
+                   );
+    }
     drawBackground(canvas,frame,borderMetrics,viewProps.backgroundColor);
     drawBorder(canvas,frame,borderMetrics,viewProps.backgroundColor);
 }

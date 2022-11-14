@@ -6,13 +6,11 @@
 #include "react/renderer/components/text/RawTextShadowNode.h"
 #include "react/renderer/components/text/TextShadowNode.h"
 #include "ReactSkia/textlayoutmanager/react/renderer/textlayoutmanager/TextLayoutManager.h"
-#include "ReactSkia/views/common/RSkDrawUtils.h"
 #include "ReactSkia/views/common/RSkTextUtils.h"
 
 #include "ReactSkia/utils/RnsLog.h"
 
 using namespace skia::textlayout;
-using namespace facebook::react::RSkDrawUtils;
 using namespace facebook::react::RSkTextUtils;
 
 namespace facebook {
@@ -116,8 +114,9 @@ void RSkComponentParagraph::OnPaint(SkCanvas *canvas) {
             textLayout.builder.reset();
         }
         textLayout.builder = std::static_pointer_cast<ParagraphBuilder>(std::make_shared<ParagraphBuilderImpl>(textLayout.paraStyle,textLayoutManager->collection_));
-        if(layer()->shadowOpacity && layer()->shadowFilter) {
-            textLayout.shadow={layer()->shadowColor,SkPoint::Make(layer()->shadowOffset.width(),layer()->shadowOffset.height()),layer()->shadowRadius};
+        auto layerRef=layer(); 
+        if(layerRef->isShadowVisible) {
+            textLayout.shadow={layerRef->shadowColor,SkPoint::Make(layerRef->shadowOffset.width(),layerRef->shadowOffset.height()),layerRef->shadowRadius};
         }
 
         expectedAttachmentCount = textLayoutManager->buildParagraph(textLayout,
@@ -131,13 +130,18 @@ void RSkComponentParagraph::OnPaint(SkCanvas *canvas) {
         /* If the count is 0,means we have no fragment attachments.So paint right away*/
         if(!expectedAttachmentCount) {
 
-            if(layer()->shadowOpacity && layer()->shadowFilter) {
+            if(layerRef->isShadowVisible) {
                 drawShadow(canvas,
                           borderFrame,
                           borderMetrics,
                           props.backgroundColor,
-                          layer()->shadowOpacity,
-                          layer()->shadowFilter);
+                          layerRef->shadowColor,
+                          layerRef->shadowOffset,
+                          layerRef->shadowOpacity,
+                          layerRef->opacity,
+                          layerRef->shadowImageFilter,
+                          layerRef->shadowMaskFilter
+                       );
             }
 
             setTextLines(textLayout,
