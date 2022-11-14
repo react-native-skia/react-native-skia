@@ -8,8 +8,10 @@
 #include <semaphore.h>
 #include "ReactSkia/utils/RnsLog.h"
 #include "CurlNetworking.h"
-
+#include <mutex>
 #define MILLSEC_CONVERTER(time) time*1000
+
+mutex cLock;
 using namespace std;
 namespace facebook {
 namespace react {
@@ -245,6 +247,7 @@ size_t CurlNetworking::headerCallbackCurlWrapper(char* buffer, size_t size, size
 }
 
 void CurlNetworking::sendResponseCacheData(shared_ptr<CurlRequest> curlRequest) {
+  RNS_LOG_WARN("*********************calling the cached response");
   if(curlRequest->curldelegator.CURLNetworkingHeaderCallback) {
     curlRequest->curldelegator.CURLNetworkingHeaderCallback(curlRequest->curlResponse.get(),curlRequest->curldelegator.delegatorData);
   } else {
@@ -263,7 +266,7 @@ bool CurlNetworking::sendRequest(shared_ptr<CurlRequest> curlRequest, folly::dyn
   bool status = false;
   CURL *curl = nullptr;
   CURLcode res = CURLE_FAILED_INIT;
-
+  std::scoped_lock lock(cLock);
   auto cacheData = networkCache_->getCacheData(curlRequest->URL);
   if(cacheData.has_value()) {
     curlRequest->curlResponse = cacheData.value();
@@ -328,6 +331,7 @@ bool CurlNetworking::sendRequest(shared_ptr<CurlRequest> curlRequest, folly::dyn
 } 
 bool CurlNetworking::abortRequest(shared_ptr<CurlRequest> curlRequest) {
   if(curlRequest->handle) {
+    curl_multi_remove_handle(curlMultihandle_, curlRequest->handle);
     curl_easy_cleanup(curlRequest->handle);
     curlRequest->handle = NULL;
     return true;

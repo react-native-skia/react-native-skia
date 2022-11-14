@@ -254,11 +254,11 @@ inline double getCacheMaxAgeDuration(std::string cacheControlData) {
 
 void RSkComponentImage::requestNetworkImageData(ImageSource source) {
   auto sharedCurlNetworking = CurlNetworking::sharedCurlNetworking();
-  if(remoteCurlRequest_!=nullptr && isRequestinProgress_ == true){
+  if(isRequestinProgress_ == true && remoteCurlRequest_!=nullptr  && (remoteCurlRequest_->handle !=NULL)){
     sharedCurlNetworking->abortRequest(remoteCurlRequest_);
+    isRequestinProgress_=false;
   }
-  remoteCurlRequest_ = std::make_shared<CurlRequest>(nullptr,source.uri,0,"GET");
-
+  auto remoteCurlRequest = std::make_shared<CurlRequest>(nullptr,source.uri,0,"GET");
   folly::dynamic query = folly::dynamic::object();
 
   //Before network request, reset the cache info with default values
@@ -266,7 +266,7 @@ void RSkComponentImage::requestNetworkImageData(ImageSource source) {
   cacheExpiryTime_ = DEFAULT_MAX_CACHE_EXPIRY_TIME;
 
   // headercallback lambda fuction
-  auto headerCallback =  [this, weakThis = this->weak_from_this()](void* curlresponseData,void *userdata)->bool {
+  auto headerCallback =  [this, weakThis = this->weak_from_this(),remoteCurlRequest](void* curlresponseData,void *userdata)->bool {
     if(weakThis.expired()) {
       RNS_LOG_WARN("This object is already destroyed. ignoring the completion callback");
       return 0;
@@ -293,11 +293,15 @@ void RSkComponentImage::requestNetworkImageData(ImageSource source) {
 
 
   // completioncallback lambda fuction
-  auto completionCallback =  [this, weakThis = this->weak_from_this()](void* curlresponseData,void *userdata)->bool {
+  auto completionCallback =  [this, weakThis = this->weak_from_this(),remoteCurlRequest](void* curlresponseData,void *userdata)->bool {   
+    double total=0;
     if(weakThis.expired()) {
       RNS_LOG_WARN("This object is already destroyed. ignoring the completion callback");
       return 0;
     }
+    
+    curl_easy_getinfo(remoteCurlRequest->handle,CURLINFO_TOTAL_TIME,&total);
+    RNS_LOG_DEBUG("Total time taken to serve the previous request"<<total);
     isRequestinProgress_ = false;
     CurlResponse *responseData =  (CurlResponse *)curlresponseData;
     CurlRequest * curlRequest = (CurlRequest *) userdata;
@@ -307,21 +311,18 @@ void RSkComponentImage::requestNetworkImageData(ImageSource source) {
     }
     //Reset the lamda callback so that curlRequest shared pointer dereffered from the lamda 
     // and gets auto destructored after the completion callback.
-    remoteCurlRequest_->handle =  NULL;
-    remoteCurlRequest_->curldelegator.CURLNetworkingHeaderCallback = nullptr;
-    remoteCurlRequest_->curldelegator.CURLNetworkingCompletionCallback = nullptr;
-    mLock.unlock();
+    remoteCurlRequest->curldelegator.CURLNetworkingHeaderCallback = nullptr;
+    remoteCurlRequest->curldelegator.CURLNetworkingCompletionCallback = nullptr;
     return 0;
   };
-  remoteCurlRequest_->curldelegator.delegatorData = remoteCurlRequest_.get();
-  remoteCurlRequest_->curldelegator.CURLNetworkingHeaderCallback = headerCallback;
-  remoteCurlRequest_->curldelegator.CURLNetworkingCompletionCallback=completionCallback;
-  mLock.unlock();
+  remoteCurlRequest->curldelegator.delegatorData = remoteCurlRequest.get();
+  remoteCurlRequest->curldelegator.CURLNetworkingHeaderCallback = headerCallback;
+  remoteCurlRequest->curldelegator.CURLNetworkingCompletionCallback=completionCallback;
   if(!hasToTriggerEvent_) {
     imageEventEmitter_->onLoadStart();
     hasToTriggerEvent_ = true;
   }
-  sharedCurlNetworking->sendRequest(remoteCurlRequest_,query);
+  sharedCurlNetworking->sendRequest(remoteCurlRequest,query);
   isRequestinProgress_ = true;
 }
 
@@ -337,9 +338,9 @@ inline void RSkComponentImage::sendSuccessEvents() {
   hasToTriggerEvent_ = false;
 }
 RSkComponentImage::~RSkComponentImage(){
-  RNS_LOG_INFO("calling destructor in Image component ");
+  RNS_LOG_DEBUG("calling destructor in Image component");
   auto sharedCurlNetworking = CurlNetworking::sharedCurlNetworking();
-  if(remoteCurlRequest_!=nullptr && (isRequestinProgress_==true)){
+  if(isRequestinProgress_==true && remoteCurlRequest_!=nullptr &&  (remoteCurlRequest_->handle)){
     sharedCurlNetworking->abortRequest(remoteCurlRequest_);
   }
 }
