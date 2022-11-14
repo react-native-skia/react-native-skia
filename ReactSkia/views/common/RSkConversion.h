@@ -4,7 +4,7 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
-#define MAX_8BIT 255.9999
+#define MAX_8BIT 255.99
 inline SkSize RSkSkSizeFromSize(const facebook::react::Size &size) {
 
     return {size.width, size.height};
@@ -53,5 +53,5 @@ inline facebook::react::Size RCTSizeFromSkSize(const SkSize &size) {
   return {size.width(), size.height()};
 }
 inline bool isOpaque(float opacity) {
-return (opacity == MAX_8BIT) ? true:false;
+  return (opacity >= MAX_8BIT) ? true:false;
 }

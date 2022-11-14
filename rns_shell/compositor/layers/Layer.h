@@ -21,6 +21,7 @@
 #include "include/core/SkCanvas.h"
 #include "include/core/SkSurface.h"
 #include "include/core/SkImageFilter.h"
+#include "include/core/SkMaskFilter.h"
 #include "ReactSkia/utils/RnsLog.h"
 #include "ReactSkia/utils/RnsUtils.h"
 
@@ -76,13 +77,16 @@ public:
     SkColor backgroundColor;
     int  backfaceVisibility;
     float opacity{255.9999};
+    SkMatrix transformMatrix;
 
+    //Shadow filters & Properties
     float shadowOpacity{0};
     float shadowRadius{3};
     SkColor shadowColor=SK_ColorBLACK;
     SkSize shadowOffset{0,-3};
-    sk_sp<SkImageFilter> shadowFilter;
-    SkMatrix transformMatrix;
+    sk_sp<SkImageFilter> shadowImageFilter{nullptr};
+    sk_sp<SkMaskFilter> shadowMaskFilter{nullptr};
+    bool  isShadowVisible{false};
 
     static SharedLayer Create(Client& layerClient, LayerType type = LAYER_TYPE_DEFAULT);
     Layer(Client&, LayerType);
@@ -145,8 +149,10 @@ private:
 
     void setParent(Layer* layer);
     void setSkipParentMatrix(bool skipParentMatrix) {skipParentMatrix_ = skipParentMatrix;}
-    void setLayerOpacity(PaintContext& context);
-    void setLayerTransformMatrix(PaintContext& context);
+    void applyLayerOpacity(PaintContext& context);
+    void applyLayerTransformMatrix(PaintContext& context);
+
+    SkIRect getFrameBoundsWithShadow();
 
     void calculateTransformMatrix();
 

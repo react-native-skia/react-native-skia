@@ -11,12 +11,10 @@
 
 #include "include/core/SkPaint.h"
 #include "react/renderer/components/unimplementedview/UnimplementedViewShadowNode.h"
-#include "ReactSkia/views/common/RSkDrawUtils.h"
 
 namespace facebook {
 namespace react {
 
-using namespace RSkDrawUtils;
 
 RSkComponentUnimplementedView::RSkComponentUnimplementedView(const ShadowView &shadowView)
     : RSkComponent(shadowView) {}
@@ -39,8 +37,14 @@ void RSkComponentUnimplementedView::OnPaint(
   RNS_LOG_WARN("Painting an unimplemented view : " << component.componentName);
 
   // Draw Order : 1. Shadow 2. BackGround 3 Border
-  if(layer()->shadowOpacity && layer()->shadowFilter){
-    drawShadow(canvas,frame,borderMetrics,viewProps.backgroundColor,layer()->shadowOpacity,layer()->shadowFilter);
+  auto layerRef=layer();
+  if(layerRef->isShadowVisible) {
+    drawShadow(canvas,frame,borderMetrics,
+                viewProps.backgroundColor,
+                layerRef->shadowColor,layerRef->shadowOffset,layerRef->shadowOpacity,
+                layerRef->opacity,
+                layerRef->shadowImageFilter,layerRef->shadowMaskFilter
+              );
   }
   drawBackground(canvas,frame,borderMetrics,SK_ColorWHITE);
   drawBorder(canvas,frame,borderMetrics,viewProps.backgroundColor);

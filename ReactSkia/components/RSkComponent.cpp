@@ -1,12 +1,10 @@
 #include "include/core/SkPaint.h"
 #include "include/core/SkPictureRecorder.h"
 #include "include/core/SkSurface.h"
-#include "include/core/SkImageFilter.h"
 #include "include/effects/SkImageFilters.h"
 
 #include "ReactSkia/components/RSkComponent.h"
 #include "ReactSkia/views/common/RSkConversion.h"
-#include "ReactSkia/views/common/RSkDrawUtils.h"
 
 #include "rns_shell/compositor/layers/PictureLayer.h"
 #include "rns_shell/compositor/layers/ScrollLayer.h"
@@ -15,7 +13,6 @@ namespace facebook {
 namespace react {
 
 using namespace RnsShell;
-using namespace RSkDrawUtils;
 
 RSkComponent::RSkComponent(const ShadowView &shadowView)
     : INHERITED(Layer::EmptyClient::singleton(), LAYER_TYPE_DEFAULT)
@@ -45,8 +42,13 @@ void RSkComponent::OnPaintShadow(SkCanvas *canvas) {
 
   /* apply view style props */
   auto borderMetrics= viewProps.resolveBorderMetrics(component_.layoutMetrics);
-  if(layer_->shadowOpacity && layer_->shadowFilter){
-      drawShadow(canvas,component_.layoutMetrics.frame,borderMetrics,layer_->backgroundColor,layer_->shadowOpacity,layer_->shadowFilter);
+  if(layer_->isShadowVisible) {
+      drawShadow(canvas,component_.layoutMetrics.frame,borderMetrics,
+                 layer_->backgroundColor,
+                 layer_->shadowColor,layer_->shadowOffset,layer_->shadowOpacity,
+                 layer_->opacity,
+                 layer_->shadowImageFilter,layer_->shadowMaskFilter
+                 );
   }
 }
 
@@ -133,16 +135,23 @@ RnsShell::LayerInvalidateMask RSkComponent::updateProps(const ShadowView &newSha
       createShadowFilter=true;
    }
 
-   /* Reset shadow filter - if valid and shadow opacity is 0.0 */
-   /* Create shadow filter - shadow opacity is not 0 and change in any props of shadow - opacity,offset,radius */
-   if(layer_->shadowOpacity && createShadowFilter) {
-       layer_->shadowFilter= SkImageFilters::DropShadowOnly(
-                              layer_->shadowOffset.width(), layer_->shadowOffset.height(),
-                              layer_->shadowRadius, layer_->shadowRadius,
-                              layer_->shadowColor, nullptr);
-   } else if ((layer_->shadowFilter != nullptr) && (layer_->shadowOpacity == 0.0)) {
-       layer_->shadowFilter.reset();
+   layer_->isShadowVisible=needsShadowPainting();
+
+   if( createShadowFilter ) {
+/*Creating both Skia's Mask & Image filters here.
+   Mask Flter will be used for Rect frames / Affine Frames.
+   Image Filter will be used for discrete frames such as path or frames with transparent pixels.
+*/
+//TO DO : Need to Miantain only the filter needed , not the both always.
+
+       layer_->shadowImageFilter= SkImageFilters::DropShadowOnly(layer_->shadowOffset.width(),
+                                       layer_->shadowOffset.height(),
+                                       layer_->shadowRadius, layer_->shadowRadius,
+                                       layer_->shadowColor, nullptr);
+
+       layer_->shadowMaskFilter= SkMaskFilter::MakeBlur(kNormal_SkBlurStyle, layer_->shadowRadius);
    }
+
   //backgroundColor
    if ((forceUpdate) || (oldviewProps.backgroundColor != newviewProps.backgroundColor)) {
       layer_->backgroundColor = RSkColorFromSharedColor(newviewProps.backgroundColor,SK_ColorTRANSPARENT);
@@ -324,6 +333,23 @@ const SkIRect RSkComponent::getScreenFrame() {
                              -containerScrollOffset.y()).makeOffset(
                               containerScreenFrame.x(),
                               containerScreenFrame.y());
+}
+
+bool RSkComponent::needsShadowPainting() {
+
+
+ /*Shadow will not visible on below scenarios
+  1. Shadow opacity is completely Transparent.
+  2.Frame is compelety transparent.
+  3. Shadow color has Alpha as fully transparent.
+  4. shadow is directly under the frame & frame is fully opaque.
+*/
+  if ((layer_->shadowOpacity ==0)||(layer_->opacity == 0) ||
+      (SkColorGetA(layer_->shadowColor) == SK_AlphaTRANSPARENT) ||
+      (layer_->shadowOffset.isEmpty() && isOpaque(layer_->opacity)) ) {
+    return false;
+  }
+  return true;
 }
 
 } // namespace react
