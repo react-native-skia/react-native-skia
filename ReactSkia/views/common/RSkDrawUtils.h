@@ -14,13 +14,6 @@ namespace react {
 
 namespace RSkDrawUtils{
 
-enum ShadowDrawnMode
-{
-  ShadowOnBackGround, // Shadow drawn on Frame's BackGround
-  ShadowOnBorder, // Shadow drawn on Frame's Border
-  ShadowOnContent, // To intimate Shadow can be drawn on content
-  ShadowNone //// To intimate No visible shadow or shadow not Available.
-};
 /*Function: Draw Background & Border */
   void drawBackground(SkCanvas *canvas,
                                Rect frame,
@@ -30,7 +23,7 @@ enum ShadowDrawnMode
                                Rect frame,
                                BorderMetrics borderMetrics,
                                SharedColor bgColor);
-  ShadowDrawnMode drawShadow(SkCanvas *canvas,
+  bool drawShadow(SkCanvas *canvas,
                                Rect frame,
                                BorderMetrics borderMetrics,
                                SharedColor bgColor,
