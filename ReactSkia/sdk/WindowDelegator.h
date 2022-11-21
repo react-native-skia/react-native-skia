@@ -7,8 +7,10 @@
 
 #include <semaphore.h>
 #include <thread>
+#include <map>
 
 #include "include/core/SkCanvas.h"
+#include "include/core/SkPictureRecorder.h"
 
 #include "rns_shell/compositor/Compositor.h"
 #include "rns_shell/common/Window.h"
@@ -19,43 +21,56 @@
 namespace rns {
 namespace sdk {
 
+struct pictureCommand {
+  std::vector<SkIRect> dirtyRect;
+  sk_sp<SkPicture> pictureCommand;
+  bool invalidate;
+};
+
+typedef struct pictureCommand PictureObject;
 class WindowDelegator {
   public:
+
     WindowDelegator(){};
    ~WindowDelegator(){};
 
-    void createWindow(SkSize windowSize,std::function<void ()> windowReadyTodrawCB,std::function<void ()> forceFullScreenDraw=nullptr,bool runOnTaskRunner=true);
+    void createWindow(SkSize windowSize,std::function<void ()> windowReadyTodrawCB,bool runOnTaskRunner=true);
     void closeWindow();
     void setWindowTittle(const char* titleString);
-    void commitDrawCall();
-
-    SkCanvas *windowDelegatorCanvas{nullptr};
+    void commitDrawCall(std::string pictureCommandKey,PictureObject pictureObj,bool batchCommit=false);
 
   private:
     void onExposeHandler(RnsShell::Window* window);
     void windowWorkerThread();
     void createNativeWindow();
-    void renderToDisplay();
-
+    void renderToDisplay(std::string pictureCommandKey,PictureObject pictureObj,bool batchCommit);
+#if USE(RNS_SHELL_PARTIAL_UPDATES)
+    void generateDirtyRect(std::vector<SkIRect> &componentDirtRectVec);
+    bool supportsPartialUpdate_{false};
+    std::vector<SkIRect> fullScreenDirtyRectVec_;
+#endif/*RNS_SHELL_PARTIAL_UPDATES*/
     std::unique_ptr<RnsShell::WindowContext> windowContext_{nullptr};
     RnsShell::Window* window_{nullptr};
     sk_sp<SkSurface>  backBuffer_;
+    SkCanvas *windowDelegatorCanvas_{nullptr};
+    std::vector<SkIRect> dirtyRectVec_;
 
 /*To fulfill OpenGl requirement of create & rendering to be handled from same thread context*/
     std::unique_ptr<RnsShell::TaskLoop> windowTaskRunner_{nullptr};
     bool ownsTaskrunner_{false};
 /* members to fullfill X11 suggestion of "draw on receiving expose event to avoid data loss" */
     sem_t semReadyToDraw_;
-    std::mutex renderCtrlMutex;
+    std::mutex renderCtrlMutex_;
     std::thread workerThread_;
 
     std::function<void ()> windowReadyTodrawCB_{nullptr};
-    std::function<void ()> forceFullScreenDraw_{nullptr};
 
     RnsShell::PlatformDisplay::Type displayPlatForm_;
     int exposeEventID_{-1};
     SkSize windowSize_;
     bool windowActive{false};
+
+    std::map<std::string,PictureObject> recentComponentCommandMap_;
 };
 
 } // namespace sdk

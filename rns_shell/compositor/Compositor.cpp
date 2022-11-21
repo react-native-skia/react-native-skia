@@ -54,9 +54,7 @@ Compositor::Compositor(Client& client, PlatformDisplayID displayID, SkSize& view
         attributes_.needsResize = !viewportSize.isEmpty();
     }
 #if USE(RNS_SHELL_PARTIAL_UPDATES)
-    supportPartialUpdate_ = windowContext_->hasSwapBuffersWithDamage() || windowContext_->hasBufferCopy();
-    RNS_LOG_DEBUG("Support for Swapbuffer with damage rect : " << windowContext_->hasSwapBuffersWithDamage() <<
-                  " Support for Copy buffer : " <<  windowContext_->hasBufferCopy());
+    supportPartialUpdate_ = windowContext_->supportsPartialUpdate();
 #endif
     RNS_LOG_DEBUG("Native Window Handle : " << nativeWindowHandle_ << " Window Context : " << windowContext_.get() << "Back Buffer : " << backBuffer_.get());
 }
