@@ -59,6 +59,7 @@ public:
 #if USE(RNS_SHELL_PARTIAL_UPDATES)
     virtual bool hasSwapBuffersWithDamage() = 0; // Support for swapping/flipping multiple regions of backbuffer to frontbuffer
     virtual bool hasBufferCopy() = 0; // Support for copying frontbuffer to backbuffer. Required/used only when hasSwapBuffersWithDamage is false
+    bool supportsPartialUpdate();
 #endif
 
 #ifdef RNS_SHELL_HAS_GPU_SUPPORT
