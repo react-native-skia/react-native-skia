@@ -42,7 +42,10 @@ struct CommonProps{
     int pointerEvents;
     EdgeInsets hitSlop;
     int zIndex{};
-    /* TODO Add TVOS properties */
+#if defined(TARGET_OS_TV) && TARGET_OS_TV
+    bool hasTVPreferredFocus;
+    /* TODO Add TVOS remaining properties */
+#endif
 };
 struct Component {
   Component( const ShadowView &shadowView)
@@ -107,7 +110,7 @@ class RSkComponent : public RnsShell::Layer , public SpatialNavigator::Container
 
   void requiresLayer(const ShadowView &shadowView, Layer::Client& layerClient);
   RnsShell::LayerInvalidateMask updateProps(const ShadowView &newShadowView , bool forceUpdate);
-
+  void setNeedFocusUpdate();
  protected:
   virtual void OnPaint(SkCanvas *canvas) = 0;
   virtual void OnPaintShadow(SkCanvas *canvas);

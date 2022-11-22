@@ -264,10 +264,33 @@ void Compositor::commit(bool immediate=false) {
     }
 
     if(immediate) {
-       RNS_PROFILE_API_OFF("RenderTree Immediate:", renderLayerTree());
-       // Unlock here, after rendering of tree is done for immediate rendering
-       isMutating.unlock();
-       return;
+        RNS_PROFILE_API_OFF("RenderTree Immediate:", renderLayerTree());
+        // Unlock here, after rendering of tree is done for immediate rendering
+        isMutating.unlock();
+        return;
+    }
+
+    //Async RenderTree update
+    //a. If state is idle -> update to schedule state and schedule rendering
+    //b. If state is schedules -> no scheduling required
+    //c. If state is InProgress -> not handled in current rendertree solution
+    switch(renderState_.update){
+        case UpdateState::Idle:
+            //Compositor rendering is idle,schedule new rendering
+            RNS_LOG_DEBUG("Compositor RenderLayerTree update idle,so schedule");
+            renderState_.update = UpdateState::Scheduled;
+            break;
+
+        case UpdateState::InProgress:
+            RNS_LOG_WARN("Compositor RenderLayerTree update inProgress,we should not reach here in current implementation");
+            isMutating.unlock();
+            return;
+
+        case UpdateState::Scheduled:
+            //Compositor rendering has been scheduled already,so return
+            RNS_LOG_DEBUG("Compositor renderLayerTrre update already scheduled, so return");
+            isMutating.unlock();
+            return;
     }
 
     // Unlock here, to ensure updates and rendering of tree is synchronous
@@ -275,6 +298,7 @@ void Compositor::commit(bool immediate=false) {
     TaskLoop::main().dispatch([&]() {
         std::scoped_lock lock(isMutating); // Lock to make sure render tree is not mutated during the rendering
         RNS_PROFILE_API_OFF("RenderTree Scheduled:", renderLayerTree());
+        renderState_.update = UpdateState::Idle; // rendering is completed, set the state to idle now
     });
 }
 

@@ -91,15 +91,32 @@ void  WindowDelegator::createNativeWindow() {
 }
 
 void WindowDelegator::closeWindow() {
-  RNS_LOG_TODO("Sync between rendering & Exit to be handled ");
   windowActive = false;
-  std::scoped_lock lock(renderCtrlMutex_);
-  if(ownsTaskrunner_){
-   windowTaskRunner_->stop();
+
+  if(ownsTaskrunner_) {
+    if(windowTaskRunner_->running()) {
+      windowTaskRunner_->dispatch([&](){
+        closeNativeWindow();
+        sem_post(&semReadyToDraw_);
+        windowTaskRunner_->stop();
+      });
+    } else {
+      RNS_LOG_ERROR("WindowTaskRunner is not running,unable to close native Window");
+    }
+  } else {
+    closeNativeWindow();
   }
+
   if (workerThread_.joinable() ) {
     workerThread_.join();
   }
+  sem_destroy(&semReadyToDraw_);
+
+}
+
+void WindowDelegator::closeNativeWindow() {
+  std::scoped_lock lock(renderCtrlMutex_);
+
   if(exposeEventID_ != -1) {
     NotificationCenter::defaultCenter().removeListener(exposeEventID_);
     exposeEventID_=-1;
@@ -111,11 +128,11 @@ void WindowDelegator::closeWindow() {
     windowContext_ = nullptr;
     backBuffer_ = nullptr;
   }
-  sem_destroy(&semReadyToDraw_);
   windowDelegatorCanvas_=nullptr;
   windowReadyTodrawCB_=nullptr;
   std::map<std::string,PictureObject> emptyMap;
   recentComponentCommandMap_.swap(emptyMap);
+
 }
 
 void WindowDelegator::commitDrawCall(std::string pictureCommandKey,PictureObject pictureObj,bool batchCommit) {
@@ -250,7 +267,9 @@ void WindowDelegator::onExposeHandler(RnsShell::Window* window) {
 
   if(window  == window_) {
     sem_wait(&semReadyToDraw_);
-    window_->show();
+    if(window_) {
+      window_->show();
+    }
     if(exposeEventID_ != -1) {
       NotificationCenter::defaultCenter().removeListener(exposeEventID_);
       exposeEventID_=-1;
