@@ -61,7 +61,6 @@ private:
     SkRect beginClip();
 #endif
     std::mutex isMutating; // Lock the renderLayer tree while updating and rendering
-
     Client& client_;
     SharedLayer rootLayer_;
     std::unique_ptr<WindowContext> windowContext_;
@@ -82,6 +81,18 @@ private:
         bool needsResize { false };
         bool rendersNextFrame { false };
     } attributes_;
+
+    enum class UpdateState {
+        Idle, //Idle state , no rendering update is ongoing/scheduled
+        Scheduled, // Scheduled state , a rendering update has been scheduled
+        InProgress, // InProgress state , a scheduled rendering update in on-going. Not used in current implementation
+    };
+
+    struct {
+        std::mutex lock; // Lock for updating the states. Not used in current implementation.
+        UpdateState update { UpdateState::Idle }; // compositor rendering state - idle/scheduled/inprogress
+        bool pendingUpdate { false }; // compositor pending updates for rendering if in progress.Not used in current implementation
+    } renderState_;
 };
 
 }   // namespace RnsShell

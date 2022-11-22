@@ -114,7 +114,7 @@ void RSkComponentTextInput::drawCursor(SkCanvas *canvas, LayoutMetrics layout){
   SkRect cursorRect;
   float yOffset;
   std::vector<TextBox> rects;
-  if ( ( isInEditingMode_ || hasToSetFocus_ ) && !caretHidden_ ) {
+  if ( isInEditingMode_ && !caretHidden_ ) {
     int position = cursor_.end - cursor_.locationFromEnd;
     if (cursor_.locationFromEnd == cursor_.end) {
       rects = paragraph_->getRectsForRange(0, position+1, RectHeightStyle::kTight, RectWidthStyle::kTight);
@@ -164,10 +164,6 @@ void RSkComponentTextInput::OnPaint(SkCanvas *canvas) {
               );
   }
   drawTextInput(canvas, component.layoutMetrics, textInputProps, textLayout);
-  if(hasToSetFocus_){
-    requestForEditingMode(false);
-    hasToSetFocus_ = false;
-  }
   if (textInputProps.underlineColorAndroid.has_value()){
     drawUnderline(canvas,frame,textInputProps.underlineColorAndroid.value());
   }
@@ -481,7 +477,9 @@ RnsShell::LayerInvalidateMask  RSkComponentTextInput::updateComponentProps(const
   } else {
     caretHidden_ = true;
   }
-  hasToSetFocus_ = forceUpdate && textInputProps.autoFocus ? true :false;
+  if(forceUpdate && textInputProps.autoFocus) {
+    setNeedFocusUpdate();
+  }
 
 #if ENABLE(FEATURE_ONSCREEN_KEYBOARD)
 /* Fetch OnSCreenKeyBoard Props*/
@@ -604,9 +602,16 @@ RSkComponentTextInput::~RSkComponentTextInput(){
     jsUpdateSem = nullptr;
   }
 }
- void RSkComponentTextInput::onHandleBlur(){
-   RNS_LOG_DEBUG("[onHandle] In TextInput");
-   resignFromEditingMode(false);
- }
+
+void RSkComponentTextInput::onHandleBlur(){
+  RNS_LOG_DEBUG("[onHandleBlur] In TextInput");
+  resignFromEditingMode();
+}
+
+void RSkComponentTextInput::onHandleFocus(){
+  RNS_LOG_DEBUG("[onHandleFocus] In TextInput");
+  requestForEditingMode();
+}
+
 } // namespace react
 } // namespace facebook

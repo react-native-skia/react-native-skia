@@ -127,6 +127,10 @@ RnsShell::LayerInvalidateMask RSkComponentScrollView::updateComponentState(
   RnsShell::ScrollLayer* scrollLayer= SCROLL_LAYER_HANDLE;
 
   //ContentSize has changed?
+  //NOTE:
+  //We consider the contentSize provided by the ShadowView state object to handle scroll layer content size
+  //When scroll view items are defined with absolute positions, the content size provided is not proper.
+  //TODO : Needs handling to compute/determine content size when items are defined with absolute position
   if(scrollLayer->setContentSize(contentSize)) {
     SkIRect frame = scrollLayer->getFrame();
     SkPoint scrollPos;
@@ -293,10 +297,29 @@ ScrollStatus RSkComponentScrollView::scrollInDirection(RSkComponent* candidate, 
   return scrollToFocus;
 }
 
+ScrollStatus RSkComponentScrollView::scrollTo(RSkComponent* candidate) {
+  if((candidate == nullptr) || (candidate == this) || (isVisible(candidate))) {
+    return noScroll;
+  }
+
+  RnsShell::ScrollLayer *scrollLayer = SCROLL_LAYER_HANDLE;
+  SkPoint currentScrollPos = scrollLayer->getScrollPosition();
+  SkIRect candidateFrame = candidate->getLayerAbsoluteFrame();
+  rnsKey direction;
+
+  //Check if need to scroll in backward/forward direction based on scroll position
+  if(isHorizontalScroll_) {
+     direction = (candidateFrame.x() < currentScrollPos.x()) ? RNS_KEY_Left : RNS_KEY_Right;
+  } else {
+     direction = (candidateFrame.y() < currentScrollPos.y()) ? RNS_KEY_Up : RNS_KEY_Down;
+  }
+  return handleScroll(direction,candidateFrame);
+}
+
 bool RSkComponentScrollView::isVisible(RSkComponent* candidate) {
   /* 1. Get container visible frame {scrollOffset x,y,frame w,h}
    * 2. Get component abs frame
-   * 3. if abs frame intersect with visible frame
+   * 3. if abs frame fully contained within visible frame
    */
   RnsShell::ScrollLayer *scrollLayer = SCROLL_LAYER_HANDLE;
 
@@ -462,7 +485,7 @@ ScrollStatus RSkComponentScrollView::handleScroll(rnsKey direction,SkIRect candi
      default: RNS_LOG_WARN("Invalid key :" << direction);
   }
 
-  handleScroll(nextScrollPos);
+  handleScroll(nextScrollPos.fX,nextScrollPos.fY);
   return scrollToFocus;
 }
 

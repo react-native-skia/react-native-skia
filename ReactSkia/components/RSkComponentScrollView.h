@@ -57,6 +57,9 @@ class RSkComponentScrollView final : public RSkComponent {
     RSkComponent* candidate,
     rnsKey direction) override;
 
+  ScrollStatus scrollTo(
+    RSkComponent* candidate) override;
+
  protected:
   void OnPaint(SkCanvas *canvas) override;
 

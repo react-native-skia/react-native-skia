@@ -34,6 +34,7 @@ class RSkComponentTextInput final : public RSkComponent {
   */
   void handleCommand(std::string commandName,folly::dynamic args)override;
   void onHandleBlur()override;
+  void onHandleFocus()override;
  protected:
   void OnPaint(SkCanvas *canvas) override;
  private:
@@ -42,7 +43,6 @@ class RSkComponentTextInput final : public RSkComponent {
   bool caretHidden_ = false;
   bool isTextInputInFocus_=false;
   bool secureTextEntry_=false;
-  bool hasToSetFocus_=false;
   int eventCount_;
   int maxLength_;
   std::string displayString_{}; // Text to be displayed on screen

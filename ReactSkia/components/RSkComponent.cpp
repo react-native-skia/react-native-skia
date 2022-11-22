@@ -8,6 +8,7 @@
 
 #include "rns_shell/compositor/layers/PictureLayer.h"
 #include "rns_shell/compositor/layers/ScrollLayer.h"
+#include "rns_shell/platform/linux/TaskLoop.h"
 
 namespace facebook {
 namespace react {
@@ -90,6 +91,17 @@ void RSkComponent::requiresLayer(const ShadowView &shadowView, Layer::Client& la
         layer_ = Layer::Create(layerClient, LAYER_TYPE_SCROLL);
     else
         layer_ = Layer::Create(layerClient, LAYER_TYPE_PICTURE);
+}
+
+void RSkComponent::setNeedFocusUpdate(){
+  TaskLoop::main().dispatch([weakthis = this->weak_from_this()]() {
+    auto self = weakthis.lock();
+    if(self) {
+      RNS_LOG_DEBUG("setNeedFocusUpdate tag:" << self->getComponentData().tag << " name:" << self->getComponentData().componentName);
+      //set focus update(handle blur update->scroll->handle focus update) with needScroll as true
+      SpatialNavigator::RSkSpatialNavigator::sharedSpatialNavigator()->updateFocusCandidate(self.get(),true);
+    }
+  });
 }
 
 RnsShell::LayerInvalidateMask RSkComponent::updateProps(const ShadowView &newShadowView,bool forceUpdate) {
@@ -193,7 +205,16 @@ RnsShell::LayerInvalidateMask RSkComponent::updateProps(const ShadowView &newSha
       /*TODO : To be tested and confirm updateMask need for this Prop*/
       updateMask =static_cast<RnsShell::LayerInvalidateMask>(updateMask | RnsShell::LayerInvalidateAll);
    }
-    /* TODO Add TVOS properties */
+#if defined(TARGET_OS_TV) && TARGET_OS_TV
+   if((forceUpdate) || (oldviewProps.hasTVPreferredFocus != newviewProps.hasTVPreferredFocus)) {
+      component_.commonProps.hasTVPreferredFocus = newviewProps.hasTVPreferredFocus;
+      //No invalidate mask setting required for this prop
+      if(component_.commonProps.hasTVPreferredFocus) {
+         setNeedFocusUpdate();
+      }
+   }
+   /* TODO Add TVOS remaining properties */
+#endif
    /*TODO : Return UpdateMask instead of RnsShell::LayerInvalidateAll, once the shadow handling moved to layer
             and all the layer & component props have been verfied*/
    return RnsShell::LayerInvalidateAll;
@@ -206,6 +227,7 @@ void RSkComponent::updateComponentData(const ShadowView &newShadowView,const uin
 
    RnsShell::LayerInvalidateMask invalidateMask=RnsShell::LayerInvalidateNone;
 
+   //Check and update LayoutMetrics first, so that prop/state update can use the latest frame values.
    if(updateMask & ComponentUpdateMaskLayoutMetrics) {
       RNS_LOG_DEBUG("\tUpdate Layout");
       component_.layoutMetrics = newShadowView.layoutMetrics;
@@ -225,6 +247,7 @@ void RSkComponent::updateComponentData(const ShadowView &newShadowView,const uin
       SpatialNavigator::Container *containerInUpdate = nearestAncestorContainer();
       if(containerInUpdate)
           containerInUpdate->updateComponent(this);
+
    }
    if(updateMask & ComponentUpdateMaskState){
       RNS_LOG_DEBUG("\tUpdate State");
@@ -235,6 +258,16 @@ void RSkComponent::updateComponentData(const ShadowView &newShadowView,const uin
       RNS_LOG_DEBUG("\tUpdate Emitter");
       component_.eventEmitter = newShadowView.eventEmitter;
    }
+
+#if defined(TARGET_OS_TV) && TARGET_OS_TV
+   //If layout has changed and preferredFocus is true, then set focus to this item
+   if((!forceUpdate) &&
+      (component_.commonProps.hasTVPreferredFocus) &&
+      (updateMask & ComponentUpdateMaskLayoutMetrics)){
+
+      setNeedFocusUpdate();
+   }
+#endif
 
    if(layer_ && layer_.get()) {
      layer_->invalidate(invalidateMask);

@@ -42,6 +42,7 @@ class WindowDelegator {
 
     void createWindow(SkSize windowSize,std::function<void ()> windowReadyTodrawCB,bool runOnTaskRunner=true);
     void closeWindow();
+    void closeNativeWindow();
     void setWindowTittle(const char* titleString);
     void commitDrawCall(std::string pictureCommandKey,PictureObject pictureObj,bool batchCommit=false);
 
