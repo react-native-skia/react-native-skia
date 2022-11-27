@@ -28,10 +28,10 @@
 #endif
 
 #include "ReactSkia/utils/RnsLog.h"
-#include "PlatformDisplay.h"
-#include "WindowContext.h"
+#include "rns_shell/common/WindowContext.h"
+#include "rns_shell/platform/graphics/PlatformDisplay.h"
 #if PLATFORM(X11)
-#include "x11/PlatformDisplayX11.h"
+#include "rns_shell/platform/graphics/x11/PlatformDisplayX11.h"
 #endif
 
 namespace RnsShell {

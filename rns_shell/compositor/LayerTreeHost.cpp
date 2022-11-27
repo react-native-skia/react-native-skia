@@ -5,9 +5,10 @@
 * found in the LICENSE file.
 */
 
-#include "Window.h"
-#include "LayerTreeHost.h"
+#include "rns_shell/compositor/LayerTreeHost.h"
+
 #include "rns_shell/common/Application.h"
+#include "rns_shell/common/Window.h"
 
 namespace RnsShell {
 

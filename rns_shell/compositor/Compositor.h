@@ -7,11 +7,11 @@
 */
 #pragma once
 
-#include "third_party/skia/include/core/SkRect.h"
+#include "include/core/SkRect.h"
 
-#include "WindowContext.h"
-#include "PlatformDisplay.h"
-#include "layers/Layer.h"
+#include "rns_shell/common/WindowContext.h"
+#include "rns_shell/compositor/layers/Layer.h"
+#include "rns_shell/platform/graphics/PlatformDisplay.h"
 
 #define RNS_TARGET_FPS_US 16666.7 // In Microseconds
 

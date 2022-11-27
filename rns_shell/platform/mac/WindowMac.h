@@ -12,16 +12,14 @@
 #import <AppKit/AppKit.h>
 #include <map>
 
-#include "ReactSkia/utils/RnsUtils.h"
-
 #include "include/private/SkChecksum.h"
 #include "src/core/SkTDynamicHash.h"
 
-#include "PlatformDisplay.h"
-#include "Window.h"
-
+#include "rns_shell/platform/graphics/PlatformDisplay.h"
+#include "rns_shell/common/Window.h"
 #include "ReactSkia/sdk/NotificationCenter.h"
 #include "ReactSkia/sdk/RNSKeyCodeMapping.h"
+#include "ReactSkia/utils/RnsUtils.h"
 
 namespace RnsShell {
 

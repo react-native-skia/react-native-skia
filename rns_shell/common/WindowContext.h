@@ -15,7 +15,11 @@
 #ifdef RNS_SHELL_HAS_GPU_SUPPORT
 #include "include/gpu/GrTypes.h"
 #endif
-#include "DisplayParams.h"
+#include "rns_shell/common/DisplayParams.h"
+
+#if USE(EGL)
+#include <EGL/eglplatform.h>
+#endif
 
 #ifdef RNS_SHELL_HAS_GPU_SUPPORT
 class GrDirectContext;
@@ -25,7 +29,6 @@ class SkSurface;
 namespace RnsShell {
 
 #if USE(EGL)
-#include <EGL/egl.h>
 typedef EGLNativeWindowType GLNativeWindowType;
 #elif USE(NSGL)
 typedef uint64_t GLNativeWindowType;

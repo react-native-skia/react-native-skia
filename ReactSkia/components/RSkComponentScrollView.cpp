@@ -14,6 +14,8 @@
 
 #include "compositor/layers/ScrollLayer.h"
 
+using namespace RnsShell;
+
 namespace facebook {
 namespace react {
 

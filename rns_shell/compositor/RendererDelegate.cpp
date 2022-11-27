@@ -5,7 +5,7 @@
 * found in the LICENSE file.
 */
 
-#include "RendererDelegate.h"
+#include "rns_shell/compositor/RendererDelegate.h"
 
 namespace RnsShell {
 

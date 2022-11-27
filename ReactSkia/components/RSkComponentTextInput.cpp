@@ -17,6 +17,7 @@
 #include "ReactSkia/views/common/RSkSdkConversion.h"
 #include "rns_shell/compositor/layers/PictureLayer.h"
 
+#include <fcntl.h>
 #include <string.h>
 #include <iostream>
 #include <queue>
@@ -30,6 +31,7 @@ namespace react {
 
 using namespace rns::sdk;
 using namespace RSkDrawUtils;
+using namespace RnsShell;
 using namespace skia::textlayout;
 
 #define NUMBER_OF_LINES         1

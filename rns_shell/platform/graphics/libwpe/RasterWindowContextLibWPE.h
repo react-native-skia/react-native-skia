@@ -8,11 +8,10 @@
 
 #pragma once
 
-#include "include/core/SkSurface.h"
+#include "rns_shell/common/RasterWindowContext.h"
+#include "rns_shell/platform/graphics/libwpe/PlatformDisplayLibWPE.h"
 
-#include "libwpe/PlatformDisplayLibWPE.h"
-#include "WindowContextFactory.h"
-#include "RasterWindowContext.h"
+#include "include/core/SkSurface.h"
 
 namespace RnsShell {
 class RasterWindowContextLibWPE : public RasterWindowContext {

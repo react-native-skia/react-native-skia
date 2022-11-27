@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "PlatformDisplay.h"
+#include "rns_shell/platform/graphics/PlatformDisplay.h"
 
 namespace RnsShell {
 

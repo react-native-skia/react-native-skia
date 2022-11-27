@@ -6,9 +6,10 @@
 * found in the LICENSE file.
 */
 
-#include "compositor/layers/Layer.h"
-#include "compositor/layers/PictureLayer.h"
-#include "compositor/layers/ScrollLayer.h"
+#include "rns_shell/compositor/layers/Layer.h"
+
+#include "rns_shell/compositor/layers/PictureLayer.h"
+#include "rns_shell/compositor/layers/ScrollLayer.h"
 
 namespace RnsShell {
 

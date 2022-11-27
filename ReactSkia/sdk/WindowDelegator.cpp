@@ -5,8 +5,11 @@
 * LICENSE file in the root directory of this source tree.
 */
 
+#include "ReactSkia/sdk/WindowDelegator.h"
+
+#include <fcntl.h>
+
 #include "NotificationCenter.h"
-#include "WindowDelegator.h"
 
 namespace rns {
 namespace sdk {

@@ -6,7 +6,7 @@
  */
 
 #pragma once
-#include "WindowContext.h"
+#include "rns_shell/common/WindowContext.h"
 
 namespace RnsShell {
 

@@ -5,6 +5,7 @@
 * LICENSE file in the root directory of this source tree.
 */
 #include <curl/curl.h>
+#include <fcntl.h>
 #include <semaphore.h>
 #include "ReactSkia/utils/RnsLog.h"
 #include "CurlNetworking.h"

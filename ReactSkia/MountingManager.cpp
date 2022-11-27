@@ -23,7 +23,7 @@
 namespace facebook {
 namespace react {
 
-MountingManager::MountingManager(ComponentViewRegistry *componentViewRegistry, RendererDelegate &rendererDelegate)
+MountingManager::MountingManager(ComponentViewRegistry *componentViewRegistry, RnsShell::RendererDelegate &rendererDelegate)
     : nativeRenderDelegate_(rendererDelegate),
       componentViewRegistry_(componentViewRegistry) {}
 
@@ -43,7 +43,7 @@ void MountingManager::schedulerDidFinishTransaction(
 
   /* Set the flag when schedule for transaction processing*/
   transactionInFlight_ = true;
-  TaskLoop::main().dispatch([&,mountingCoordinator]() {
+  RnsShell::TaskLoop::main().dispatch([&,mountingCoordinator]() {
      performTransaction(mountingCoordinator);
   });
 
@@ -63,7 +63,7 @@ void MountingManager::schedulerDidDispatchCommand(
 
   RNS_LOG_DEBUG("dispatch command shadowView tag[" << shadowView.tag <<  "] name["<< shadowView.componentName << "] commandName [" << commandName <<"]");
 
-  TaskLoop::main().dispatch([&,shadowView,commandName,args]() {
+  RnsShell::TaskLoop::main().dispatch([&,shadowView,commandName,args]() {
      auto component = GetComponent(shadowView);
      if( component != NULL ){
        component->handleCommand(commandName,args);

@@ -110,7 +110,7 @@ static inline LayoutContext RSkGetLayoutContext(SkPoint viewportOffset) {
           .viewportOffset = RCTPointFromSkPoint(viewportOffset)};
 }
 
-RNInstance::RNInstance(RendererDelegate &rendererDelegate) {
+RNInstance::RNInstance(RnsShell::RendererDelegate &rendererDelegate) {
   InitializeJSCore();
   RegisterComponents();
   InitializeFabric(rendererDelegate);
@@ -122,7 +122,7 @@ void RNInstance::Invalidate() {
   RNS_LOG_TODO("De initilize everything and emit RCTWillInvalidateModulesNotification on default notification center");
 }
 
-void RNInstance::Start(RSkSurfaceWindow *surface, RendererDelegate &rendererDelegate) {
+void RNInstance::Start(RSkSurfaceWindow *surface, RnsShell::RendererDelegate &rendererDelegate) {
   mountingManager_->BindSurface(surface);
 
   LayoutContext layoutContext = RSkGetLayoutContext(surface->viewportOffset);
@@ -193,7 +193,7 @@ void RNInstance::InitializeJSCore() {
   }
 }
 
-void RNInstance::InitializeFabric(RendererDelegate &rendererDelegate) {
+void RNInstance::InitializeFabric(RnsShell::RendererDelegate &rendererDelegate) {
   facebook::react::ContextContainer::Shared contextContainer =
       std::make_shared<facebook::react::ContextContainer const>();
   std::shared_ptr<const facebook::react::ReactNativeConfig> reactNativeConfig =

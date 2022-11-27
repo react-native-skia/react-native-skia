@@ -253,8 +253,8 @@ source_set("ReactSkia") {
     sources += [
       "platform/linux/MainRunLoopEventBeat.h",
       "platform/linux/MainRunLoopEventBeat.cpp",
-      "platform/mac/RSkSurfaceDelegateLinux.h",
-      "platform/mac/RSkSurfaceDelegateLinux.cpp",
+      "platform/linux/RSkSurfaceDelegateLinux.h",
+      "platform/linux/RSkSurfaceDelegateLinux.cpp",
     ]
     defines = ["OS_LINUX"]
   }

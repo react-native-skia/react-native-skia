@@ -16,7 +16,6 @@ namespace facebook {
 namespace react {
 
 using namespace SpatialNavigator;
-using namespace RnsShell;
 
 class RSkComponent;
 

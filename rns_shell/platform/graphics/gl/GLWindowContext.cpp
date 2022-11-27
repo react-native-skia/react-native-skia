@@ -5,6 +5,8 @@
  * found in the LICENSE file.
  */
 
+#include "rns_shell/platform/graphics/gl/GLWindowContext.h"
+
 #include "include/core/SkCanvas.h"
 #include "include/core/SkSurface.h"
 #include "include/gpu/GrBackendSurface.h"
@@ -16,7 +18,6 @@
 #include "src/gpu/gl/GrGLDefines.h"
 #include "src/image/SkImage_Base.h"
 
-#include "GLWindowContext.h"
 
 namespace RnsShell {
 

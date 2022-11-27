@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include "compositor/LayerTreeHost.h"
+#include "rns_shell/compositor/LayerTreeHost.h"
 
 namespace RnsShell {
 

@@ -6,18 +6,19 @@
  * found in the LICENSE file.
  */
 
-#include "WindowContextFactory.h"
+#include "rns_shell/platform/graphics/WindowContextFactory.h"
+
 #if PLATFORM(X11) && USE(GLX)
-#include "glx/GLWindowContextGLX.h"
+#include "rns_shell/platform/graphics/gl/glx/GLWindowContextGLX.h"
 #elif USE(EGL)
-#include "egl/GLWindowContextEGL.h"
+#include "rns_shell/platform/graphics/gl/egl/GLWindowContextEGL.h"
 #endif
 
 #ifndef RNS_SHELL_HAS_GPU_SUPPORT
 #if PLATFORM(X11)
-#include "x11/RasterWindowContextX11.h"
+#include "rns_shell/platform/graphics/x11/RasterWindowContextX11.h"
 #elif PLATFORM(LIBWPE)
-#include "libwpe/RasterWindowContextLibWPE.h"
+#include "rns_shell/platform/graphics/libwpe/RasterWindowContextLibWPE.h"
 #endif
 #endif
 

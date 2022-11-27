@@ -8,18 +8,15 @@
 
 #pragma once
 
-#include "include/gpu/gl/GrGLInterface.h"
+#include "rns_shell/platform/graphics/gl/GLWindowContext.h"
+#include "rns_shell/platform/graphics/PlatformDisplay.h"
+#include "rns_shell/platform/graphics/WindowContextFactory.h"
 
-#include "gl/GLWindowContext.h"
-#include "PlatformDisplay.h"
-#include "WindowContextFactory.h"
+#include "include/gpu/gl/GrGLInterface.h"
 
 #if PLATFORM(LIBWPE)
 struct wpe_renderer_backend_egl_offscreen_target;
 #endif
-
-using RnsShell::DisplayParams;
-using RnsShell::GLWindowContext;
 
 namespace RnsShell {
 

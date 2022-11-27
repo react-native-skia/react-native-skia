@@ -21,8 +21,6 @@
 namespace facebook {
 namespace react {
 
-using namespace RnsShell;
-
 enum PictureType {
    PictureTypeShadow = 1,
    PictureTypeBorder,

@@ -6,8 +6,8 @@
 */
 #pragma once
 
-#include "PlatformDisplay.h"
-#include "Compositor.h"
+#include "rns_shell/compositor/Compositor.h"
+#include "rns_shell/platform/graphics/PlatformDisplay.h"
 
 namespace RnsShell {
 class Application;

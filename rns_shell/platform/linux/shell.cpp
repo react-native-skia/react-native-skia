@@ -6,15 +6,12 @@
 * found in the LICENSE file.
 */
 
+#include <libgen.h>
 #include <string>
 #include <iostream>
 #include <thread>
 
-#include <libgen.h>
-
 #include "ReactSkia/utils/RnsUtils.h"
-// Must be added before X11 headrs because Folly uses "Struct None" and X11 has "#define None 0L" which conflicts
-#include "TaskLoop.h"
 
 #if PLATFORM(X11)
 #include <X11/Xlib.h>
@@ -29,9 +26,10 @@
 #include "ReactSkia/sdk/NotificationCenter.h"
 #include "ReactSkia/utils/RnsLog.h"
 
-#include "Application.h"
-#include "Window.h"
-#include "PlatformDisplay.h"
+#include "rns_shell/common/Application.h"
+#include "rns_shell/common/Window.h"
+#include "rns_shell/platform/graphics/PlatformDisplay.h"
+#include "rns_shell/platform/linux/TaskLoop.h"
 
 using namespace RnsShell;
 

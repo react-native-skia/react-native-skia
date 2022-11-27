@@ -8,18 +8,18 @@
 #include "ReactSkia/utils/RnsUtils.h"
 
 #if USE(EGL)
-#include "egl/GLWindowContextEGL.h"
+#include "rns_shell/platform/graphics/gl/egl/GLWindowContextEGL.h"
 #elif USE(GLX)
-#include "glx/GLWindowContextGLX.h"
+#include "rns_shell/platform/graphics/gl/glx/GLWindowContextGLX.h"
 #endif
 
-#include "PlatformDisplay.h"
+#include "rns_shell/platform/graphics/PlatformDisplay.h"
 #if PLATFORM(X11)
-#include "x11/PlatformDisplayX11.h"
+#include "rns_shell/platform/graphics/x11/PlatformDisplayX11.h"
 #elif PLATFORM(MAC)
 #include "rns_shell/platform/mac/PlatformDisplayMac.h"
 #elif PLATFORM(LIBWPE) || USE(WPE_RENDERER)
-#include "libwpe/PlatformDisplayLibWPE.h"
+#include "rns_shell/platform/graphics/libwpe/PlatformDisplayLibWPE.h"
 #endif
 
 namespace RnsShell {

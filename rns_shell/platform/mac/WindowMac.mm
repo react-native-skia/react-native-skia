@@ -12,10 +12,9 @@
 #include "src/utils/SkUTF.h"
 
 #ifdef RNS_SHELL_HAS_GPU_SUPPORT
-#include "GLWindowContext.h"
+#include "rns_shell/platform/graphics/gl/GLWindowContext.h"
 #endif
-#include "WindowContextFactory.h"
-#include "WindowMac.h"
+#include "rns_shell/platform/graphics/WindowContextFactory.h"
 
 #include "rns_shell/platform/mac/PlatformDisplayMac.h"
 #include "rns_shell/platform/mac/RootView.h"

@@ -6,8 +6,9 @@
  * found in the LICENSE file.
  */
 
-#include "RasterWindowContextX11.h"
-#include "Performance.h"
+#include "rns_shell/platform/graphics/x11/RasterWindowContextX11.h"
+
+#include "rns_shell/common/Performance.h"
 
 #if PLATFORM(X11)
 using RnsShell::RasterWindowContext;

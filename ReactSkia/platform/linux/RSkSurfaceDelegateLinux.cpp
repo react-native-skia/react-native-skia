@@ -11,7 +11,7 @@
 namespace ReactSkia {
 
 // static
-std::unique_ptr<RSkSurfaceDelegate> createSurfaceDelegate() {
+std::unique_ptr<RSkSurfaceDelegate> RSkSurfaceDelegate::createSurfaceDelegate() {
   return std::make_unique<RSkSurfaceDelegateLinux>();
 }
 

@@ -6,8 +6,7 @@
 * found in the LICENSE file.
 */
 
-// Must be added before X11 headrs because Folly uses "Struct None" and X11 has "#define None 0L" which conflicts
-#include "rns_shell/platform/linux/TaskLoop.h"
+#include "rns_shell/platform/graphics/x11/WindowX11.h"
 
 #include <X11/Xutil.h>
 #include <X11/XKBlib.h>
@@ -15,12 +14,11 @@
 #include "src/utils/SkUTF.h"
 
 #ifdef RNS_SHELL_HAS_GPU_SUPPORT
-#include "GLWindowContext.h"
+#include "rns_shell/platform/graphics/gl/GLWindowContext.h"
 #endif
-#include "WindowX11.h"
-#include "WindowContextFactory.h"
-
-#include "x11/PlatformDisplayX11.h"
+#include "rns_shell/platform/graphics/WindowContextFactory.h"
+#include "rns_shell/platform/graphics/x11/PlatformDisplayX11.h"
+#include "rns_shell/platform/linux/TaskLoop.h"
 
 namespace RnsShell {
 

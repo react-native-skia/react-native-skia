@@ -6,12 +6,12 @@
  * found in the LICENSE file.
  */
 
+#include "rns_shell/platform/graphics/gl/egl/GLWindowContextEGL.h"
+
 #include "include/gpu/gl/GrGLInterface.h"
 
-#include "gl/GLWindowContext.h"
-#include "egl/GLWindowContextEGL.h"
-
-#include "Performance.h"
+#include "rns_shell/common/Performance.h"
+#include "rns_shell/platform/graphics/gl/GLWindowContext.h"
 
 #if USE(EGL)
 

@@ -16,15 +16,13 @@
 #include <GLES3/gl3.h>
 #endif
 #include <GLES2/gl2ext.h>
-#else
-
+#else // #else USE(OPENGL_ES)
 #if PLATFORM(MAC)
 #include <OpenGL/gl.h>
 #else
 #include <GL/gl.h>
 #endif // PLATFORM(MAC)
-
-#endif // USE(OPENGL_ES)
+#endif // #endif USE(OPENGL_ES)
 
 #if USE(EGL)
 #define EGL_EGLEXT_PROTOTYPES 1
@@ -35,13 +33,12 @@
 #include <GL/glx.h>
 #endif // USE(EGL)
 
-#include "include/gpu/gl/GrGLInterface.h"
-
 #include "include/core/SkRefCnt.h"
 #include "include/core/SkSurface.h"
+#include "include/gpu/gl/GrGLInterface.h"
 
-#include "PlatformDisplay.h"
-#include "WindowContext.h"
+#include "rns_shell/common/WindowContext.h"
+#include "rns_shell/platform/graphics/PlatformDisplay.h"
 
 namespace RnsShell {
 

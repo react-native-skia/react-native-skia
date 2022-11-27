@@ -5,7 +5,7 @@
 * found in the LICENSE file.
 */
 
-#include "compositor/layers/PictureLayer.h"
+#include "rns_shell/compositor/layers/PictureLayer.h"
 #include "third_party/skia/include/core/SkCanvas.h"
 
 namespace RnsShell {

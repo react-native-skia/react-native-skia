@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include "PlatformDisplay.h"
+#include "rns_shell/platform/graphics/PlatformDisplay.h"
 
 #if PLATFORM(X11)
 typedef struct _XDisplay Display;

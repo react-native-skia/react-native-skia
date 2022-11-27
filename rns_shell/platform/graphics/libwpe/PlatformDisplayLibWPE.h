@@ -13,7 +13,7 @@
 #include <wpe/wpe.h>
 #include <wpe/wpe-egl.h>
 
-#include "PlatformDisplay.h"
+#include "rns_shell/platform/graphics/PlatformDisplay.h"
 
 namespace RnsShell {
 
