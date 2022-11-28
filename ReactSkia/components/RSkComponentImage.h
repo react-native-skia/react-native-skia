@@ -33,18 +33,7 @@ class RSkComponentImage final : public RSkComponent {
   RnsShell::LayerInvalidateMask updateComponentProps(const ShadowView &newShadowView,bool forceUpdate) override;
  private :
   ImgProps imageProps;
-  sk_sp<SkImage> networkImageData_;
-  bool hasToTriggerEvent_{false};
-  bool canCacheData_{true};
-  double cacheExpiryTime_{DEFAULT_MAX_CACHE_EXPIRY_TIME};
   std::shared_ptr<ImageEventEmitter const> imageEventEmitter_;
-
-  sk_sp<SkImage> getLocalImageData(ImageSource source);
-  void requestNetworkImageData(ImageSource source);
-
-  inline string generateUriPath(string path);
-  void drawAndSubmit();
-  bool processImageData(const char* path, char* response, int size);
   inline void drawContentShadow(SkCanvas *canvas,
                               SkRect frameRect,/*actual image frame*/
                               SkRect imageTargetRect,/*area of draw image and shadow*/
@@ -56,9 +45,20 @@ class RSkComponentImage final : public RSkComponent {
   inline void setPaintFilters (SkPaint &paintObj,const ImageProps &imageProps,
                               SkRect targetRect,SkRect frameRect,
                               bool  filterForShadow, bool isOpaque);
-  inline void sendErrorEvents();
-  inline void sendSuccessEvents();
  protected:
+  sk_sp<SkImage> networkImageData_;
+  bool hasToTriggerEvent_{false};
+  bool canCacheData_{true};
+  double cacheExpiryTime_{DEFAULT_MAX_CACHE_EXPIRY_TIME};
+
+  sk_sp<SkImage> getLocalImageData(string sourceUri);
+  void requestNetworkImageData(string sourceUri);
+
+  inline string generateUriPath(string path);
+  void drawAndSubmit();
+  bool processImageData(const char* path, char* response, int size);
+  virtual inline void sendErrorEvents();
+  virtual inline void sendSuccessEvents();
   void OnPaint(SkCanvas *canvas) override;
 };
 

@@ -27,6 +27,7 @@ public:
     void waitUntilRunning();
 
     void dispatch(Func fun);
+    void scheduleDispatch(Func fun, long long timeoutMs); // schedule a task with timeout(in milliseconds)
 
 private:
     EventBase eventBase_;

@@ -309,6 +309,11 @@ executable("ReactSkiaApp") {
     "//react-native/ReactCommon/react/renderer/components/unimplementedview",
   ]
 
+  # External/Thirdparty package inclusions
+  deps += [
+    "//ReactSkia/external",
+  ]
+
   configs -= [ "//build/config/compiler:chromium_code" ]
   configs += [ "//build/config/compiler:no_chromium_code" ]
   configs -= [ "//build/config/compiler:no_exceptions" ]

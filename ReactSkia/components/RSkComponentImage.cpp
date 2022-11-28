@@ -47,9 +47,9 @@ void RSkComponentImage::OnPaint(SkCanvas *canvas) {
     if(imageData) break;
 
     if (imageProps.sources[0].type == ImageSource::Type::Local) {
-      imageData = getLocalImageData(imageProps.sources[0]);
+      imageData = getLocalImageData(imageProps.sources[0].uri);
     } else if(imageProps.sources[0].type == ImageSource::Type::Remote) {
-      requestNetworkImageData(imageProps.sources[0]);
+      requestNetworkImageData(imageProps.sources[0].uri);
     }
   } while(0);
 
@@ -121,12 +121,12 @@ void RSkComponentImage::OnPaint(SkCanvas *canvas) {
 }
 
 
-sk_sp<SkImage> RSkComponentImage::getLocalImageData(ImageSource source) {
+sk_sp<SkImage> RSkComponentImage::getLocalImageData(string sourceUri) {
   sk_sp<SkImage> imageData{nullptr};
   sk_sp<SkData> data;
   string path;
   decodedimageCacheData imageCacheData;
-  path = generateUriPath(source.uri.c_str());
+  path = generateUriPath(sourceUri.c_str());
   if(!path.c_str()) {
     RNS_LOG_ERROR("Invalid File");
     return nullptr;
@@ -140,7 +140,7 @@ sk_sp<SkImage> RSkComponentImage::getLocalImageData(ImageSource source) {
   if(imageData) {
     imageCacheData.imageData = imageData;
     imageCacheData.expiryTime = (SkTime::GetMSecs() + DEFAULT_MAX_CACHE_EXPIRY_TIME);//convert min to millisecond 30 min *60 sec *1000
-    RSkImageCacheManager::getImageCacheManagerInstance()->imageDataInsertInCache(source.uri.c_str(), imageCacheData);
+    RSkImageCacheManager::getImageCacheManagerInstance()->imageDataInsertInCache(sourceUri.c_str(), imageCacheData);
   }
   if(!hasToTriggerEvent_) {
     imageEventEmitter_->onLoadStart();
@@ -345,9 +345,9 @@ inline double getCacheMaxAgeDuration(std::string cacheControlData) {
   return DEFAULT_MAX_CACHE_EXPIRY_TIME;
 }
 
-void RSkComponentImage::requestNetworkImageData(ImageSource source) {
+void RSkComponentImage::requestNetworkImageData(string sourceUri) {
   auto sharedCurlNetworking = CurlNetworking::sharedCurlNetworking();
-  std::shared_ptr<CurlRequest> remoteCurlRequest = std::make_shared<CurlRequest>(nullptr,source.uri,0,"GET");
+  std::shared_ptr<CurlRequest> remoteCurlRequest = std::make_shared<CurlRequest>(nullptr,sourceUri,0,"GET");
 
   folly::dynamic query = folly::dynamic::object();
 

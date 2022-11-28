@@ -42,6 +42,11 @@ void TaskLoop::dispatch(Func fun) {
         eventBase_.runInEventBaseThread(std::move(fun));
 }
 
+void TaskLoop::scheduleDispatch(Func fun, long long timeoutMs) {
+    eventBase_.scheduleAt(std::move(fun),
+                          std::chrono::steady_clock::now() + std::chrono::milliseconds(timeoutMs));
+}
+
 void TaskLoop::initializeMain() {
     if(mainTaskRunner_.get() == nullptr)
         mainTaskRunner_ = std::make_unique<TaskLoop>();

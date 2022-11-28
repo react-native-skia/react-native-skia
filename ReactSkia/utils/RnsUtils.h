@@ -21,6 +21,16 @@
         ClassName(const ClassName&) = delete; \
         ClassName& operator=(const ClassName&) = delete; \
 
+#define RNS_EXPORT_MODULE(ModuleName) \
+RNS_USED xplat::module::CxxModule* ModuleName##Cls(void) { \
+  return new ModuleName();\
+}\
+
+#define RNS_EXPORT_COMPONENT_PROVIDER(ComponentName) \
+RNS_USED RSkComponentProvider* RSkComponentProvider##ComponentName##Cls(void) { \
+  return new RSkComponentProvider##ComponentName();\
+}\
+
 #define RNS_GET_TIME_STAMP_MS(marker) \
     double marker = SkTime::GetMSecs();
 
