@@ -152,7 +152,7 @@ class OnScreenKeyboard : public WindowDelegator{
     ~OnScreenKeyboard() = default;
 
     void launchOSKWindow();
-    void onHWkeyHandler(rnsKey key, rnsKeyAction eventKeyAction);
+    void onHWkeyHandler(rnsKey key, rnsKeyAction eventKeyAction,RnsShell::Window *window);
     void processKey(rnsKey keyValue);
 #if ENABLE(FEATURE_KEY_THROTTLING)
     void repeatKeyProcessingThread();

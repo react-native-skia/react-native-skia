@@ -40,7 +40,7 @@ static bool platformInitialize(char **argv) {
 
     TaskLoop::initializeMain();
     NotificationCenter::initializeDefault();
-#if ENABLE(FEATURE_ONSCREEN_KEYBOARD)
+#if ENABLE(FEATURE_ONSCREEN_KEYBOARD) || ENABLE(FEATURE_ALERT)
     NotificationCenter::initializeSubWindowCenter();//Intializing Notification center for Events from subWindows
 #endif/*FEATURE_ONSCREEN_KEYBOARD*/
 #if PLATFORM(LIBWPE) || USE(WEP_RENDERER)

@@ -14,6 +14,10 @@
 #include "modules/RSkTVNavigationEventEmitter.h"
 #include "utils/RnsLog.h"
 
+#if ENABLE(FEATURE_ALERT)
+#include "core_modules/RSkAlertManager.h"
+#endif//FEATURE_ALERT
+
 namespace facebook {
 namespace react {
 
@@ -164,7 +168,10 @@ JSITurboModuleManager::JSITurboModuleManager(Instance *bridgeInstance)
       std::make_shared<RSkDeviceInfoModule>("DeviceInfo", jsInvoker, bridgeInstance);
   modules_["ImageLoader"] =
       std::make_shared<RSkImageLoader>("ImageLoader", jsInvoker);
-
+#if ENABLE(FEATURE_ALERT)
+  modules_["AlertManager"] =
+      std::make_shared<RSkAlertManager>("AlertManager", jsInvoker, bridgeInstance);
+#endif//FEATURE_ALERT
 #if defined(TARGET_OS_TV) && TARGET_OS_TV
   modules_["TVNavigationEventEmitter"] =
       std::make_shared<RSkTVNavigationEventEmitter>("TVNavigationEventEmitter",jsInvoker, bridgeInstance);

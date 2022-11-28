@@ -265,12 +265,14 @@ void WindowLibWPE::setRequestedDisplayParams(const DisplayParams& params, bool a
 }
 
 void WindowLibWPE::onKey(rnsKey eventKeyType, rnsKeyAction eventKeyAction){
-#if ENABLE(FEATURE_ONSCREEN_KEYBOARD)
-    if(winType == SubWindow)
-       NotificationCenter::subWindowCenter().emit("onHWKeyEvent", eventKeyType, eventKeyAction);
-    else
+#if ENABLE(FEATURE_ONSCREEN_KEYBOARD) || ENABLE(FEATURE_ALERT)
+    if(winType == SubWindow) {
+        NotificationCenter::subWindowCenter().emit("onHWKeyEvent", eventKeyType, eventKeyAction,(Window*)this);
+    } else
 #endif/*FEATURE_ONSCREEN_KEYBOARD*/
+    {
         NotificationCenter::defaultCenter().emit("onHWKeyEvent", eventKeyType, eventKeyAction);
+    }
     return;
 }
 

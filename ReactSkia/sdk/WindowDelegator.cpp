@@ -78,7 +78,7 @@ void  WindowDelegator::createNativeWindow() {
       windowDelegatorCanvas_ = backBuffer_->getCanvas();
 #if USE(RNS_SHELL_PARTIAL_UPDATES)
       supportsPartialUpdate_=windowContext_->supportsPartialUpdate();
-      fullScreenDirtyRectVec_.push_back(SkIRect::MakeXYWH (0,0,windowContext_->width(),windowContext_->height()));
+      fullScreenDirtyRects_.push_back(SkIRect::MakeXYWH (0,0,windowContext_->width(),windowContext_->height()));
 #endif/*RNS_SHELL_PARTIAL_UPDATES*/
       windowActive = true;
       if(displayPlatForm_ == RnsShell::PlatformDisplay::Type::X11) {
@@ -130,9 +130,7 @@ void WindowDelegator::closeNativeWindow() {
   }
   windowDelegatorCanvas_=nullptr;
   windowReadyTodrawCB_=nullptr;
-  std::map<std::string,PictureObject> emptyMap;
-  recentComponentCommandMap_.swap(emptyMap);
-
+  recentComponentCommands_.clear();
 }
 
 void WindowDelegator::commitDrawCall(std::string pictureCommandKey,PictureObject pictureObj,bool batchCommit) {
@@ -149,11 +147,12 @@ inline void WindowDelegator::renderToDisplay(std::string pictureCommandKey,Pictu
   if(!windowActive) { return;}
 
 #ifdef SHOW_RENDER_COMMAND_INFO
-RNS_LOG_INFO("Rendering component  : " << pictureCommandKey);
-RNS_LOG_INFO("Count of Dirt Rect   : " <<  pictureObj.dirtyRect.size());
-RNS_LOG_INFO("Draw Command Count   : "<< pictureObj.pictureCommand.get()->approximateOpCount());
-RNS_LOG_INFO(" operations and size : " << pictureObj.pictureCommand.get()->approximateBytesUsed());
-RNS_LOG_INFO(" Batching Request    : "<<batchCommit);
+   RNS_LOG_INFO("Rendering component  : " << pictureCommandKey);
+   RNS_LOG_INFO("Count of Dirt Rect   : " <<  pictureObj.dirtyRect.size());
+   RNS_LOG_INFO("Invalidate Flag      : " <<  pictureObj.invalidate);
+   RNS_LOG_INFO("Draw Command Count   : "<< pictureObj.pictureCommand.get()->approximateOpCount());
+   RNS_LOG_INFO("Operations and size : " << pictureObj.pictureCommand.get()->approximateBytesUsed());
+   RNS_LOG_INFO("Batching Request    : "<<batchCommit);
 #endif
 
   std::scoped_lock lock(renderCtrlMutex_);
@@ -164,32 +163,28 @@ RNS_LOG_INFO(" Batching Request    : "<<batchCommit);
   if((bufferAge !=1) && batchCommit) {
     //To avoid reduntant painting   & dirt Rect calculation. Just store the command.
     //Rest will be handled , when Render Requested by client.
-    recentComponentCommandMap_[pictureCommandKey]=pictureObj;
+    updateRecentCommand(pictureCommandKey,pictureObj);
     return;
   }
 
-  // Add current component's old dirty Rect
-  auto iter=recentComponentCommandMap_.find(pictureCommandKey);
-  if((iter != recentComponentCommandMap_.end()) && supportsPartialUpdate_ && (bufferAge!=0)) {
-    generateDirtyRect(iter->second.dirtyRect);
-  }
-
-  recentComponentCommandMap_[pictureCommandKey]=pictureObj;
+  updateRecentCommand(pictureCommandKey,pictureObj,bufferAge,true);
 
   if(bufferAge != 1) {
-// use Stored commands to fill missed frames in the write buffer
-    std::map<std::string,PictureObject>::reverse_iterator it = recentComponentCommandMap_.rbegin();
-    bool fullScreenAddedAsDirtyRect{false};
-    for( ;it != recentComponentCommandMap_.rend() ;it++ ) {
-      if(it->second.pictureCommand.get() ) {
+// use Stored commands to fill missed frames in the write buffer in the order it received.
 
+    PictureCommandPairs::iterator it = recentComponentCommands_.begin();
+    bool fullScreenAddedAsDirtyRect{false};
+
+    for( ;it != recentComponentCommands_.end() ;it++ ) {
+      if(it->second.pictureCommand.get() ) {
+        RNS_LOG_DEBUG("playback PictureCommand for component : "<<it->first);
         it->second.pictureCommand->playback(windowDelegatorCanvas_);
 
           if(supportsPartialUpdate_ && !fullScreenAddedAsDirtyRect) {
             if(bufferAge ==0 ) {
                 //Update complete Screen if Buffer Age is "0"
                 RNS_LOG_DEBUG("Buffer Age is 0, Doing Full Screen Update : ");
-                generateDirtyRect(fullScreenDirtyRectVec_);
+                generateDirtyRect(fullScreenDirtyRects_);
                 fullScreenAddedAsDirtyRect=true;
             } else if(it->second.invalidate) {
               RNS_LOG_DEBUG("Updating dirty Rect for component : "<<it->first);
@@ -216,8 +211,8 @@ RNS_LOG_INFO(" Batching Request    : "<<batchCommit);
   paint.setColor(SK_ColorGREEN);
   paint.setStrokeWidth(2);
   paint.setStyle(SkPaint::kStroke_Style);
-  RNS_LOG_INFO(" Count of Dirty Rect :: "<<dirtyRectVec_.size());
-  for(SkIRect rectIt:dirtyRectVec_) {
+  RNS_LOG_INFO(" Count of Dirty Rect :: "<<dirtyRects_.size());
+  for(SkIRect rectIt:dirtyRects_) {
     windowDelegatorCanvas_->drawIRect(rectIt,paint);
   }
 #endif/*SHOW_DIRTY_RECT*/
@@ -227,34 +222,60 @@ RNS_LOG_INFO(" Batching Request    : "<<batchCommit);
       backBuffer_->flushAndSubmit();
     }
     if(windowContext_) {
-      windowContext_->swapBuffers(dirtyRectVec_);
+      windowContext_->swapBuffers(dirtyRects_);
       std::vector<SkIRect> emptyVect;
-      dirtyRectVec_.swap(emptyVect);
+      dirtyRects_.swap(emptyVect);
     }
   }
 }
 
+void WindowDelegator::updateRecentCommand(std::string pictureCommandKey,PictureObject &pictureObj,
+                                                  int bufferAge,bool isUpdateDirtyRect) {
+
+  PictureCommandPair commandPair=std::make_pair(pictureCommandKey,pictureObj);
+
+  auto it = std::find_if(recentComponentCommands_.begin(), recentComponentCommands_.end(),
+                            [&] (PictureCommandPair cmdPair) {
+              if(cmdPair.first == pictureCommandKey) {
+                return true;
+              }
+              return false;
+            });
+
+  if(it != recentComponentCommands_.end()) {
 #if USE(RNS_SHELL_PARTIAL_UPDATES)
-inline void WindowDelegator:: generateDirtyRect(std::vector<SkIRect> &componentDirtRectVec){
-  for(SkIRect& comDirtyRect:componentDirtRectVec) {
+    //Update component's current dirtyRect on screen
+    if(isUpdateDirtyRect && supportsPartialUpdate_ && (bufferAge!=0)) {
+      generateDirtyRect(it->second.dirtyRect);
+    }
+#endif//RNS_SHELL_PARTIAL_UPDATES
+    *it=commandPair;
+  } else {
+    recentComponentCommands_.push_back(commandPair);
+  }
+}
+
+#if USE(RNS_SHELL_PARTIAL_UPDATES)
+inline void WindowDelegator:: generateDirtyRect(std::vector<SkIRect> &componentDirtRects){
+  for(SkIRect& comDirtyRect:componentDirtRects) {
     bool addToDirtyRect{true};
-    if(!dirtyRectVec_.empty()) {
-      std::vector<SkIRect>::iterator it = dirtyRectVec_.begin();
-      while( it != dirtyRectVec_.end()) {
+    if(!dirtyRects_.empty()) {
+      std::vector<SkIRect>::iterator it = dirtyRects_.begin();
+      while( it != dirtyRects_.end()) {
         SkIRect &dirtyRect = *it;
         if((dirtyRect == comDirtyRect) || dirtyRect.contains(comDirtyRect) ) {
           addToDirtyRect=false;// If same or part of existing ignore
           break;
         }
         if(comDirtyRect.contains(dirtyRect)) {
-          it=dirtyRectVec_.erase(it);//Erase existing dirtRect , if it is part of new one
+          it=dirtyRects_.erase(it);//Erase existing dirtRect , if it is part of new one
         } else {
           ++it;
         }
       }
     }
     if(addToDirtyRect){
-      dirtyRectVec_.push_back(comDirtyRect);
+      dirtyRects_.push_back(comDirtyRect);
     }
   }
 }
