@@ -13,6 +13,7 @@
 #include "OnScreenKeyBoard.h"
 #include "OSKConfig.h"
 #include "OSKLayout.h"
+#include "sdkStyleConfig.h"
 
 namespace rns {
 namespace sdk {
@@ -147,7 +148,7 @@ void OnScreenKeyboard::launchOSKWindow() {
 
 // setting up paint objects
   // Paint object for normal text
-  textPaint_.setColor((oskConfig_.theme == OSK_LIGHT_THEME) ? OSK_LIGHT_THEME_FONT_COLOR: OSK_DARK_THEME_FONT_COLOR);
+  textPaint_.setColor((oskConfig_.theme == OSK_LIGHT_THEME) ? SKIA_SDK_LIGHT_THEME_FONT_COLOR: SKIA_SDK_DARK_THEME_FONT_COLOR);
   textPaint_.setAntiAlias(true);
   // Paint object for Highlighted text
   textHLPaint_.setColor(OSK_HIGHLIGHT_FONT_COLOR);
@@ -155,7 +156,7 @@ void OnScreenKeyboard::launchOSKWindow() {
   // Paint object for Place Holder
   placeHolderPaint_.setColor ((oskConfig_.theme == OSK_LIGHT_THEME) ? OSK_LIGHT_THEME_PLACEHOLDER_COLOR: OSK_DARK_THEME_PLACEHOLDER_COLOR);
   // Paint object for OSK BackGround
-  oskBGPaint_.setColor((oskConfig_.theme == OSK_LIGHT_THEME) ? OSK_LIGHT_THEME_BACKGROUND_COLOR: OSK_DARK_THEME_BACKGROUND_COLOR);
+  oskBGPaint_.setColor((oskConfig_.theme == OSK_LIGHT_THEME) ? SKIA_SDK_LIGHT_THEME_BACKGROUND_COLOR: SKIA_SDK_DARK_THEME_BACKGROUND_COLOR);
   // Paint object for inactive text
   inactiveTextPaint_.setColor((oskConfig_.theme == OSK_LIGHT_THEME) ? OSK_LIGHT_THEME_INACTIVE_FONT_COLOR: OSK_DARK_THEME_INACTIVE_FONT_COLOR);
   inactiveTextPaint_.setAntiAlias(true);
@@ -517,7 +518,12 @@ void OnScreenKeyboard ::drawHighLightOnKey(std::vector<SkIRect> &dirtyRect) {
   RNS_PROFILE_END(" Highlight Completion : ",HighlightOSKKey)
 }
 
-void OnScreenKeyboard::onHWkeyHandler(rnsKey keyValue, rnsKeyAction eventKeyAction) {
+void OnScreenKeyboard::onHWkeyHandler(rnsKey keyValue, rnsKeyAction eventKeyAction,RnsShell::Window *window) {
+  if(getWindow() != window) {
+    /*TODO: As a Temp Fix: passing window object to the client to ensure it's correspendent Window
+            Need to handle this in window itself */
+    return;
+  }
   RNS_LOG_DEBUG("rnsKey: "<<RNSKeyMap[keyValue]<<" rnsKeyAction: "<<((eventKeyAction ==0) ? "RNS_KEY_Press ": "RNS_KEY_Release ") );
 
   if(eventKeyAction == RNS_KEY_Release) {
@@ -926,9 +932,10 @@ void OnScreenKeyboard::windowReadyToDrawCB() {
 #endif
     /*Listen for  Key Press event */
     if(subWindowKeyEventId_ == -1) {
-      std::function<void(rnsKey, rnsKeyAction)> handler = std::bind(&OnScreenKeyboard::onHWkeyHandler,this,
-                                                                 std::placeholders::_1,
-                                                                 std::placeholders::_2);
+      std::function<void(rnsKey, rnsKeyAction,RnsShell::Window*)> handler = std::bind(&OnScreenKeyboard::onHWkeyHandler,this,
+                                                                       std::placeholders::_1,
+                                                                       std::placeholders::_2,
+                                                                       std::placeholders::_3);
       subWindowKeyEventId_ = NotificationCenter::subWindowCenter().addListener("onHWKeyEvent", handler);
     }
     onScreenKeyboardEventEmit(std::string("keyboardDidShow"));
