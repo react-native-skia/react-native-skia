@@ -10,6 +10,7 @@
 #include "ReactSkia/MountingManager.h"
 #include "ReactSkia/RSkSurfaceWindow.h"
 #include "ReactSkia/RSkThirdPartyFabricComponentsProvider.h"
+#include "ReactSkia/components/RSkComponentProviderActivityIndicator.h"
 #include "ReactSkia/components/RSkComponentProviderImage.h"
 #include "ReactSkia/components/RSkComponentProviderRootView.h"
 #include "ReactSkia/components/RSkComponentProviderScrollView.h"
@@ -261,6 +262,8 @@ void RNInstance::RegisterComponents() {
       std::make_unique<RSkComponentProviderTextInput>());
   componentViewRegistry_->Register(
       std::make_unique<RSkComponentProviderScrollView>());
+  componentViewRegistry_->Register(
+      std::make_unique<RSkComponentProviderActivityIndicator>());
 
   // Provider request callback which is called when it doesnt find a viewManagerProvider in componentViewRegistry
   componentViewRegistry_->providerRegistry().setComponentDescriptorProviderRequest(
