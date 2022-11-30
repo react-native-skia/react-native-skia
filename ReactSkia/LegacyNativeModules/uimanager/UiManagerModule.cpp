@@ -56,6 +56,12 @@ dynamic Uimanager::getConstantsForViewManager(std::string viewManagerName) {
         BUBBLING_EVENTS_KEY, std::move(bubblingEventTypes))(
         DIRECT_EVENTS_KEY, std::move(directEventTypes));
     return {std::move(registry)};
+  } else if (viewManagerName == "RCTActivityIndicatorView") {
+    auto nativeProps = folly::dynamic::object("color", "UIColor")("animating",true)("hidesWhenStopped",true)("size",true);
+    auto registry = folly::dynamic::object(
+        NATIVE_PROPS_KEY, std::move(nativeProps))(
+        BASE_MODULE_NAME_KEY, "RCTView");
+    return {std::move(registry)};
   } else if (viewManagerName == "RCTImageView") {
      auto nativeProps = folly::dynamic::object("blurRadius", true)(
       "defaultSrc", true)("fadeDuration", true)("headers", true)(
