@@ -84,7 +84,6 @@ rn_cxx_component("bridge") {
     "//react-native/ReactCommon/callinvoker:callinvoker",
     "//react-native/ReactCommon/jsi:jsi",
     "//react-native/ReactCommon/jsinspector:jsinspector",
-    "//react-native/ReactCommon/microprofiler:microprofiler",
     "//react-native/ReactCommon/reactperflogger:reactperflogger",
     "//third_party/glog:glog",
     ":jsbigstring",

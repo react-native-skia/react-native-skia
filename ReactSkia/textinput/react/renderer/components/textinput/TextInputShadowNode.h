@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  * Copyright (C) 1994-2021 OpenTV, Inc. and Nagravision S.A.
  *
  * This source code is licensed under the MIT license found in the
@@ -8,10 +8,11 @@
 
 #pragma once
 
+#include "ReactSkia/textinput/react/renderer/components/textinput/TextInputEventEmitter.h"
+#include "ReactSkia/textinput/react/renderer/components/textinput/TextInputProps.h"
+#include "ReactSkia/textinput/react/renderer/components/textinput/TextInputState.h"
+
 #include <react/renderer/attributedstring/AttributedString.h>
-#include <react/renderer/components/textinput/TextInputEventEmitter.h>
-#include <react/renderer/components/textinput/TextInputProps.h>
-#include <react/renderer/components/textinput/TextInputState.h>
 #include <react/renderer/components/text/BaseTextShadowNode.h>
 #include <react/renderer/components/view/ConcreteViewShadowNode.h>
 #include <react/renderer/textlayoutmanager/TextLayoutManager.h>
@@ -25,12 +26,12 @@ extern const char TextInputComponentName[];
 /*
  * `ShadowNode` for <TextInput> component.
  */
-class TextInputShadowNode : public ConcreteViewShadowNode<
-                                TextInputComponentName,
-                                TextInputProps,
-                                TextInputEventEmitter,
-                                TextInputState>,
-                            public BaseTextShadowNode {
+class TextInputShadowNode final : public ConcreteViewShadowNode<
+                                      TextInputComponentName,
+                                      TextInputProps,
+                                      TextInputEventEmitter,
+                                      TextInputState>,
+                                  public BaseTextShadowNode {
  public:
   using ConcreteViewShadowNode::ConcreteViewShadowNode;
 
@@ -38,6 +39,7 @@ class TextInputShadowNode : public ConcreteViewShadowNode<
     auto traits = ConcreteViewShadowNode::BaseTraits();
     traits.set(ShadowNodeTraits::Trait::TextKind);
     traits.set(ShadowNodeTraits::Trait::LeafYogaNode);
+    traits.set(ShadowNodeTraits::Trait::MeasurableYogaNode);
     return traits;
   }
 
@@ -46,7 +48,8 @@ class TextInputShadowNode : public ConcreteViewShadowNode<
    * `TextInputShadowNode` uses the manager to measure text content
    * and construct `TextInputState` objects.
    */
-  void setTextLayoutManager(SharedTextLayoutManager const &textLayoutManager);
+  void setTextLayoutManager(
+      std::shared_ptr<TextLayoutManager const> textLayoutManager);
 
 #pragma mark - LayoutableShadowNode
 
@@ -75,7 +78,7 @@ class TextInputShadowNode : public ConcreteViewShadowNode<
   AttributedStringBox attributedStringBoxToMeasure(
       LayoutContext const &layoutContext) const;
 
-  SharedTextLayoutManager textLayoutManager_;
+  std::shared_ptr<TextLayoutManager const> textLayoutManager_;
 };
 
 } // namespace react

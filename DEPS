@@ -17,8 +17,8 @@ gclient_gn_args = [
 vars = {
   # Supported `react_native_platform` in ['default', 'tvos']
   'react_native_platform': 'default',
-  'react_native_git_default': 'https://github.com/Kudo/react-native.git',
-  'react_native_revision_default': 'f554659fc3590e908e4710dc926d39221f7b8cdd',
+  'react_native_git_default': 'https://github.com/facebook/react-native.git',
+  'react_native_revision_default': 'ed895c56243ec5343e2a50576a9eefbe99485a96',
   'react_native_git_tvos': 'https://github.com/nagra-opentv/react-native-tvos.git',
   'react_native_revision_tvos': 'tvos-v0.64.2',
 

@@ -4,6 +4,7 @@ rn_cxx_component("componentregistry") {
   sources = [
     "ComponentDescriptorProviderRegistry.cpp",
     "ComponentDescriptorRegistry.cpp",
+    "componentNameByReactViewName.cpp",
   ]
 
   defines = [

@@ -1,0 +1,27 @@
+import("//react-native/common.gni")
+
+config("bridging_config") {
+  include_dirs = [
+    ".",
+  ]
+}
+
+rn_cxx_component("bridging") {
+  sources = [
+    "LongLivedObject.cpp",
+  ]
+
+  deps = [
+    "//react-native/ReactCommon/butter",
+    "//react-native/ReactCommon/callinvoker",
+    "//react-native/ReactCommon/jsi",
+  ]
+
+  defines = [
+  ]
+
+  with_exceptions = true
+  with_rtti = true
+
+  public_configs = [ ":bridging_config" ]
+}

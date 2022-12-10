@@ -5,7 +5,7 @@
 * LICENSE file in the root directory of this source tree.
 */
 #include <curl/curl.h>
-#include <better/map.h>
+#include <butter/map.h>
 #include <semaphore.h>
 
 #include "ReactSkia/modules/RSkNetworkingModuleBase.h"
@@ -52,7 +52,7 @@ class RSkNetworkingModule:  public RSkNetworkingModuleBase {
   void sendProgressEventwrapper(double, double, double, double, NetworkRequest*);
   void headerCallbackWrapper(void*, NetworkRequest*);
   void writeMemoryCallbackWrapper(void*, char*, size_t);
-  better::map <int , NetworkRequest*> connectionList_;
+  butter::map <int , NetworkRequest*> connectionList_;
   void processNetworkRequest(CURLM *cm);
   static size_t writeMemoryCallback(void *contents, size_t size, size_t nmemb, void *userp);
   static size_t progressCallback(void *clientp, double dltotal, double dlnow, double ultotal, double ulnow);

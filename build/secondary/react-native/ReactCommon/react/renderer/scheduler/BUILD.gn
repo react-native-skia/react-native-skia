@@ -5,6 +5,8 @@ rn_cxx_component("scheduler") {
     "AsynchronousEventBeat.cpp",
     "Scheduler.cpp",
     "SchedulerToolbox.cpp",
+    "SurfaceHandler.cpp",
+    "SurfaceManager.cpp",
     "SynchronousEventBeat.cpp",
   ]
 

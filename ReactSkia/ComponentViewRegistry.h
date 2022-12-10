@@ -2,7 +2,7 @@
 
 #include "ReactSkia/components/RSkComponentProvider.h"
 
-#include "better/map.h"
+#include "butter/map.h"
 #include "react/renderer/componentregistry/ComponentDescriptorProviderRegistry.h"
 #include "react/renderer/core/ReactPrimitives.h"
 
@@ -29,7 +29,7 @@ class ComponentViewRegistry {
  private:
   std::unique_ptr<ComponentDescriptorProviderRegistry>
       descriptorProviderRegistry_;
-  better::map<ComponentHandle, std::unique_ptr<RSkComponentProvider>> registry_;
+  butter::map<ComponentHandle, std::unique_ptr<RSkComponentProvider>> registry_;
 };
 
 } // namespace react

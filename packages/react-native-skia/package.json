@@ -1,15 +1,50 @@
 {
   "name": "react-native-skia",
-  "version": "1000.0.0",
+  "version": "0.0.1",
   "description": "React Native renderer based on Skia",
   "main": "index.js",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Kudo/react-native-skia.git",
+    "url": "git+https://github.com/react-native-skia/react-native-skia.git",
     "directory": "packages/react-native-skia"
   },
   "license": "MIT",
   "dependencies": {
-    "react-native": "file:../../react-native"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.12.9",
+    "@babel/preset-env": "^7.14.0",
+    "@babel/runtime": "^7.12.5",
+    "@react-native-community/eslint-config": "^3.0.0",
+    "@tsconfig/react-native": "^2.0.2",
+    "@types/jest": "^29.2.1",
+    "@types/react": "^18.0.24",
+    "@types/react-test-renderer": "^18.0.0",
+    "@typescript-eslint/eslint-plugin": "^5.37.0",
+    "@typescript-eslint/parser": "^5.37.0",
+    "babel-jest": "^29.2.1",
+    "eslint": "^8.19.0",
+    "jest": "^29.2.1",
+    "metro-react-native-babel-preset": "0.73.3",
+    "prettier": "^2.4.1",
+    "react": "18.2.0",
+    "react-native": "file:../../react-native",
+    "react-test-renderer": "18.2.0",
+    "typescript": "4.8.4"
+  },
+  "peerDependencies": {
+    "react": "18.2.0",
+    "react-native": "^0.71.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    },
+    "react-native": {
+      "optional": true
+    }
+  },
+  "jest": {
+    "preset": "react-native"
   }
 }

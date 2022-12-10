@@ -5,7 +5,6 @@ rn_cxx_component("mounting") {
     "Differentiator.cpp",
     "MountingCoordinator.cpp",
     "MountingTransaction.cpp",
-    "MountingTransactionMetadata.cpp",
     "ShadowTree.cpp",
     "ShadowTreeRegistry.cpp",
     "ShadowTreeRevision.cpp",
@@ -13,9 +12,7 @@ rn_cxx_component("mounting") {
     "ShadowViewMutation.cpp",
     "StubView.cpp",
     "StubViewTree.cpp",
-    "SurfaceTelemetry.cpp",
     "TelemetryController.cpp",
-    "TransactionTelemetry.cpp",
     "stubs.cpp",
   ]
 
@@ -25,9 +22,10 @@ rn_cxx_component("mounting") {
 
   deps = [
     "//folly",
-    "//react-native/ReactCommon/better:better",
+    "//react-native/ReactCommon/butter:butter",
     "//react-native/ReactCommon/react/renderer/core:core",
     "//react-native/ReactCommon/react/renderer/debug:debug",
+    "//react-native/ReactCommon/react/renderer/telemetry:telemetry",
     "//react-native/ReactCommon/react/utils:utils",
     "//third_party/glog:glog",
   ]

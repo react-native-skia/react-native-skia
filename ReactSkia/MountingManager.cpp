@@ -51,15 +51,15 @@ void MountingManager::schedulerDidFinishTransaction(
 
 void MountingManager::schedulerDidRequestPreliminaryViewAllocation(
     SurfaceId surfaceId,
-    const ShadowView &shadowView) {
+    const ShadowNode &shadowView) {
   /* TODO : Needs implementation*/
-  RNS_LOG_DEBUG("surfaceId:" << surfaceId << " shadowView tag[" << shadowView.tag <<  "] name["<< shadowView.componentName << "]");
+  RNS_LOG_DEBUG("surfaceId:" << surfaceId << " shadowView tag[" << shadowView.getTag() <<  "] name["<< shadowView.getComponentName() << "]");
 }
 
 void MountingManager::schedulerDidDispatchCommand(
     const ShadowView &shadowView,
     const std::string &commandName,
-    const folly::dynamic args) {
+    const folly::dynamic &args) {
 
   RNS_LOG_DEBUG("dispatch command shadowView tag[" << shadowView.tag <<  "] name["<< shadowView.componentName << "] commandName [" << commandName <<"]");
 
@@ -71,17 +71,18 @@ void MountingManager::schedulerDidDispatchCommand(
   });
 }
 
-void MountingManager::schedulerDidSetJSResponder(
-    SurfaceId surfaceId,
+void MountingManager::schedulerDidSendAccessibilityEvent(
     const ShadowView &shadowView,
-    const ShadowView &initialShadowView,
-    bool blockNativeResponder) {
+    const std::string &eventType) {
   RNS_LOG_NOT_IMPL;
-  RNS_LOG_TODO("surfaceId:" << surfaceId << "shadowView tag[" << shadowView.tag <<  "] name["<< shadowView.componentName << "] blockNativeResponder: " << blockNativeResponder);
 }
 
-void MountingManager::schedulerDidClearJSResponder() {
+void MountingManager::schedulerDidSetIsJSResponder(
+    const ShadowView &shadowView,
+    bool isJSResponder,
+    bool blockNativeResponder) {
   RNS_LOG_NOT_IMPL;
+  RNS_LOG_TODO("shadowView tag[" << shadowView.tag <<  "] name["<< shadowView.componentName << "] isJSResponder=[" << isJSResponder << "] blockNativeResponder: " << blockNativeResponder);
 }
 
 void MountingManager::performTransaction(
@@ -93,13 +94,13 @@ void MountingManager::performTransaction(
 
     auto surfaceId = mountingCoordinator->getSurfaceId();
     mountingCoordinator->getTelemetryController().pullTransaction(
-      [](MountingTransactionMetadata metadata) {
+      [](MountingTransaction const &transaction, SurfaceTelemetry const &surfaceTelemetry) {
           RNS_LOG_DEBUG("[TODO] : TelemetryController PullTransaction WillMount");
       },
-      [&,surfaceId](ShadowViewMutationList const &mutations) {
-          ProcessMutations(mutations,surfaceId);
+      [&,surfaceId](MountingTransaction const &transaction, SurfaceTelemetry const &surfaceTelemetry) {
+          ProcessMutations(transaction.getMutations(), surfaceId);
       },
-      [](MountingTransactionMetadata metadata) {
+      [](MountingTransaction const &transaction, SurfaceTelemetry const &surfaceTelemetry) {
           RNS_LOG_DEBUG("[TODO] : TelemetryController PullTransaction DidMount");
       });
 
@@ -151,6 +152,10 @@ void MountingManager::ProcessMutations(
       }
       case ShadowViewMutation::Update: {
         UpdateMountInstruction(mutation, surfaceId);
+        break;
+      }
+      case ShadowViewMutation::RemoveDeleteTree: {
+        // TODO - not supported yet
         break;
       }
     }

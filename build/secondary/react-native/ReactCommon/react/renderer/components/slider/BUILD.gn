@@ -4,7 +4,6 @@ rn_cxx_component("slider") {
   sources = [
     "SliderShadowNode.cpp",
     "SliderState.cpp",
-    "tests/SliderTest.cpp",
   ]
 
   defines = [

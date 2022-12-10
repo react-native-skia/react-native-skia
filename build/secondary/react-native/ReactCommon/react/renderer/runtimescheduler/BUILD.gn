@@ -1,0 +1,34 @@
+import("//react-native/common.gni")
+
+config("runtimescheduler_config") {
+  include_dirs = [
+    ".",
+  ]
+}
+
+rn_cxx_component("runtimescheduler") {
+  sources = [
+    "RuntimeScheduler.cpp",
+    "RuntimeSchedulerBinding.cpp",
+    "RuntimeSchedulerCallInvoker.cpp",
+    "Task.cpp",
+  ]
+
+  defines = [
+    "LOG_TAG=ReactNative",
+  ]
+
+  deps = [
+    "//folly",
+    "//react-native/ReactCommon/butter:butter",
+    "//react-native/ReactCommon/callinvoker:callinvoker",
+    "//react-native/ReactCommon/react/renderer/debug:debug",
+    "//react-native/ReactCommon/runtimeexecutor:runtimeexecutor",
+  ]
+
+  with_exceptions = true
+  with_rtti = true
+
+  extra_configs = [ "//react-native/ReactCommon:fabric_config" ]
+  public_configs = [ ":runtimescheduler_config" ]
+}

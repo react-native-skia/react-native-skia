@@ -40,37 +40,3 @@ rn_cxx_component("JSIDynamic") {
 
   public_configs = [ ":jsi_config" ]
 }
-
-import("//build/config/linux/pkg_config.gni")
-pkg_config("system_javascriptcore") {
-    packages = [
-     "javascriptcoregtk-4.0",
-    ]
-
-}
-
-rn_cxx_component("JSCRuntime") {
-  sources = [
-    "JSCRuntime.cpp",
-  ]
-
-  public_deps = [
-    ":jsi",
-  ]
-
-  with_exceptions = true
-  with_rtti = true
-
-  public_configs = [ ":jsi_config" ]
-  defines = [
-    "RN_FABRIC_ENABLED",
-  ]
-
-  if(is_linux) {
-    public_configs += [":system_javascriptcore"]
-  } else if (is_mac) {
-    frameworks = [
-      "JavaScriptCore.framework",
-    ]
-  }
-}

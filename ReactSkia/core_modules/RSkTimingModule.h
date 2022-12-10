@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include <better/map.h>
+#include <butter/map.h>
 
 #include "cxxreact/Instance.h"
 #include "ReactCommon/TurboModule.h"
@@ -25,7 +25,7 @@ using namespace rns::sdk;
 
 class RSkJsTimer;
 using SharedJsTimer = std::shared_ptr<RSkJsTimer>;
-typedef better::map <double, SharedJsTimer> JsTimersMap;
+typedef butter::map <double, SharedJsTimer> JsTimersMap;
 
 class RSkJsTimer {
  public:

@@ -125,12 +125,8 @@ The change of DEPS could commit into git for others to have the update.
 
 Here to list my patches for third-party code. The list should be as less as possible.
 
-1. react-native patch for cxx textlayoutmanager build break.
-   https://github.com/Kudo/react-native/commit/b11c10371dec70ae6607286f23581585a401da09
-   (Will send a PR and hope to be fixed by upstream, then we don't have custom patch for react-native anymore)
-
-2. folly to support boringssl
-   https://github.com/Kudo/folly/commit/2b9b7144fdafcc7c78d09465449f1c3a72386ac5
+- folly to support boringssl
+- boost-for-react-native update to boost 1.80.0 and add context libs
 
 ## Credits
 

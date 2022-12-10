@@ -16,6 +16,7 @@ class MessageQueueThreadImpl;
 class MountingManager;
 class RSkSurfaceWindow;
 class Scheduler;
+class SurfaceHandler;
 class UIManager;
 
 class RNInstance {
@@ -41,6 +42,7 @@ class RNInstance {
   std::shared_ptr<MessageQueueThreadImpl> moduleMessageQueue_;
   std::shared_ptr<ModuleRegistry> moduleRegistry_;
   std::shared_ptr<Scheduler> fabricScheduler_;
+  std::unique_ptr<SurfaceHandler> surfaceHandler_;
   std::unique_ptr<MountingManager> mountingManager_;
   std::unique_ptr<ComponentViewRegistry> componentViewRegistry_;
 };

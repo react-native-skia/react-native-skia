@@ -25,7 +25,7 @@ typedef struct decodedimageCacheData {
   double expiryTime;
 }decodedimageCacheData;
 
-typedef better::map <string,decodedimageCacheData> ImageCacheMap;
+typedef butter::map <string,decodedimageCacheData> ImageCacheMap;
 
 class RSkImageCacheManager {
  public:

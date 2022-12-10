@@ -188,9 +188,7 @@ JSITurboModuleManager::JSITurboModuleManager(Instance *bridgeInstance)
 }
 
 TurboModuleProviderFunctionType JSITurboModuleManager::GetProvider() {
-  return [this](
-             const std::string &name,
-             const jsi::Value *schema) -> std::shared_ptr<TurboModule> {
+  return [this](const std::string &name) -> std::shared_ptr<TurboModule> {
     if (modules_.find(name) != modules_.end()) {
       return modules_[name];
     }

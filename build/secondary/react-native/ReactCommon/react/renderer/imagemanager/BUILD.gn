@@ -10,6 +10,7 @@ rn_cxx_component("imagemanager") {
   sources = [
     "ImageResponse.cpp",
     "ImageResponseObserverCoordinator.cpp",
+    "ImageTelemetry.cpp",
     "platform/cxx/react/renderer/imagemanager/ImageRequest.cpp",
     "platform/cxx/react/renderer/imagemanager/ImageManager.cpp",
   ]

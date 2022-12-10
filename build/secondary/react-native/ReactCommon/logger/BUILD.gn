@@ -1,27 +1,29 @@
 import("//react-native/common.gni")
 
-config("better_config") {
+config("logger_config") {
   include_dirs = [
     ".",
-    "//react-native/ReactCommon",
   ]
 }
 
-rn_cxx_component("better") {
+rn_cxx_component("logger") {
   sources = [
+    "react_native_log.cpp",
   ]
 
   defines = [
-    "LOG_TAG=ReactNative",
   ]
 
   deps = [
-    "//folly",
     "//third_party/glog:glog",
   ]
 
   with_exceptions = true
   with_rtti = true
 
-  public_configs = [ ":better_config" ]
+  cflags_cc = [
+    "-Wno-unreachable-code-break",
+  ]
+
+  public_configs = [ ":logger_config" ]
 }
