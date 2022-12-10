@@ -4,13 +4,11 @@
 #include "cxxreact/CxxModule.h"
 
 namespace RnsShell {
-  class RendererDelegate;
-}
+class RendererDelegate;
+} // namespace RnsShell
 
 namespace facebook {
 namespace react {
-
-using namespace RnsShell;
 
 class ComponentViewRegistry;
 class JSITurboModuleManager;
@@ -18,20 +16,22 @@ class MessageQueueThreadImpl;
 class MountingManager;
 class RSkSurfaceWindow;
 class Scheduler;
+class UIManager;
 
 class RNInstance {
  public:
-  RNInstance(RendererDelegate &rendererDelegate);
+  RNInstance(RnsShell::RendererDelegate &rendererDelegate);
   ~RNInstance();
   RNInstance(RNInstance &&) = default;
 
-  void Start(RSkSurfaceWindow *surface, RendererDelegate &rendererDelegate);
+  void Start(RSkSurfaceWindow *surface, RnsShell::RendererDelegate &rendererDelegate);
   void Stop(RSkSurfaceWindow *surface);
   xplat::module::CxxModule* moduleForName(std::string moduleName);
+  UIManager *GetUIManager();
 
  private:
   void InitializeJSCore();
-  void InitializeFabric(RendererDelegate &rendererDelegate);
+  void InitializeFabric(RnsShell::RendererDelegate &rendererDelegate);
   void RegisterComponents();
   void Invalidate();
 

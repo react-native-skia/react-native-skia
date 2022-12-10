@@ -5,9 +5,10 @@
 * found in the LICENSE file.
 */
 
-#include "Window.h"
-#include "LayerTreeHost.h"
+#include "rns_shell/compositor/LayerTreeHost.h"
+
 #include "rns_shell/common/Application.h"
+#include "rns_shell/common/Window.h"
 
 namespace RnsShell {
 
@@ -17,7 +18,7 @@ LayerTreeHost::LayerTreeHost(Application& app)
       compositorClient_(*this),
       displayID_(std::numeric_limits<uint32_t>::max() - app_.identifier()) {
   SkSize viewPort(SkSize::MakeEmpty());
-  compositor_ = Compositor::create(compositorClient_, displayID_, viewPort);
+  compositor_ = Compositor::create(compositorClient_, displayID_, viewPort, PlatformDisplay::sharedDisplayForCompositing().scaleFactor());
 }
 
 LayerTreeHost::~LayerTreeHost() {

@@ -16,13 +16,13 @@
 #include "include/private/SkChecksum.h"
 #include "src/core/SkTDynamicHash.h"
 
-#include "Window.h"
-#include "PlatformDisplay.h"
-#include "platform/graphics/libwpe/PlatformDisplayLibWPE.h"
+#include "rns_shell/common/Window.h"
+#include "rns_shell/platform/graphics/PlatformDisplay.h"
+#include "rns_shell/platform/graphics/libwpe/PlatformDisplayLibWPE.h"
 #ifdef RNS_SHELL_HAS_GPU_SUPPORT
-#include "GLWindowContext.h"
+#include "rns_shell/platform/graphics/gl/GLWindowContext.h"
 #else
-#include "WindowContextFactory.h"
+#include "rns_shell/platform/graphics/WindowContextFactory.h"
 #endif
 
 // FIXME We will need window id only when we have multipple windows and have to choose which window to update,

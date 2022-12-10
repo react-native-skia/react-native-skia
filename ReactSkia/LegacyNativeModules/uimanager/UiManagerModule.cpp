@@ -45,7 +45,11 @@ dynamic Uimanager::getConstantsForViewManager(std::string viewManagerName) {
 #endif //TARGET_OS_TV
       ("overflow", true);
 
-    auto bubblingEventTypes = folly::dynamic::object();
+    auto bubblingEventTypes = folly::dynamic::object
+      ("topTouchStart", folly::dynamic::object("phasedRegistrationNames", folly::dynamic::object("bubbled", "onTouchStart")("captured", "onTouchStartCapture")))
+      ("topTouchMove", folly::dynamic::object("phasedRegistrationNames", folly::dynamic::object("bubbled", "onTouchMove")("captured", "onTouchMoveCapture")))
+      ("topTouchEnd", folly::dynamic::object("phasedRegistrationNames", folly::dynamic::object("bubbled", "onTouchEnd")("captured", "onTouchEndCapture")))
+      ("topTouchCancel", folly::dynamic::object("phasedRegistrationNames", folly::dynamic::object("bubbled", "onTouchCancel")("captured", "onTouchCancelCapture")));
     auto directEventTypes = folly::dynamic::object("topLayout", folly::dynamic::object("registrationName", "onLayout"))(
       "topContentSizeChange", folly::dynamic::object("registrationName", "onContentSizeChange"))(
       "topSelectionChange", folly::dynamic::object("registrationName", "onSelectionChange"))(
@@ -199,6 +203,14 @@ auto UimanagerModule::getMethods() -> std::vector<Method> {
           "updateView",
           [this] (dynamic args) {
             uimanager_->updateView(jsArgAsInt(args, 0), jsArgAsString(args, 1), jsArgAsDynamic(args, 2));
+          }),
+      Method(
+          "setJSResponder",
+          [] (dynamic args) {
+          }),
+      Method(
+          "clearJSResponder",
+          [] (dynamic args) {
           }),
   };
 }

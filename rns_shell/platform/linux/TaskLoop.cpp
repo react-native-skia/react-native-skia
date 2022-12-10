@@ -5,7 +5,7 @@
 * found in the LICENSE file.
 */
 
-#include "TaskLoop.h"
+#include "rns_shell/platform/linux/TaskLoop.h"
 
 namespace RnsShell {
 
@@ -37,7 +37,7 @@ TaskLoop& TaskLoop::main() {
     return *mainTaskRunner_;
 }
 
-void TaskLoop::dispatch(Func fun) {
+void TaskLoop::dispatch(folly::Func fun) {
     if(eventBase_.isRunning())
         eventBase_.runInEventBaseThread(std::move(fun));
 }

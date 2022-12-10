@@ -10,11 +10,17 @@
 
 #include "include/core/SkCanvas.h"
 
-#include "rns_shell/compositor/Compositor.h"
+#include "build/build_config.h"
 #include "rns_shell/common/Window.h"
+#include "rns_shell/compositor/Compositor.h"
 #include "rns_shell/platform/graphics/PlatformDisplay.h"
 #include "rns_shell/platform/graphics/WindowContextFactory.h"
+
+#if BUILDFLAG(IS_MAC)
+#include "rns_shell/platform/mac/TaskLoop.h"
+#elif BUILDFLAG(IS_LINUX)
 #include "rns_shell/platform/linux/TaskLoop.h"
+#endif
 
 namespace rns {
 namespace sdk {
@@ -45,7 +51,7 @@ class WindowDelegator {
     std::unique_ptr<RnsShell::TaskLoop> windowTaskRunner_{nullptr};
     bool ownsTaskrunner_{false};
 /* members to fullfill X11 suggestion of "draw on receiving expose event to avoid data loss" */
-    sem_t semReadyToDraw_;
+    sem_t *semReadyToDraw_;
     std::mutex renderCtrlMutex;
     std::thread workerThread_;
 

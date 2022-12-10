@@ -1,4 +1,5 @@
 # ReactSkia Build.gn
+import("//build/buildflag_header.gni")
 
 declare_args() {
   # Enable API profiling
@@ -12,6 +13,15 @@ declare_args() {
 
   # Enable ScrollBar Feature
   rns_enable_scrollindicator = true
+
+  use_websocket_nopoll = is_linux
+}
+
+buildflag_header("buildflags") {
+  header = "buildflags.h"
+  flags = [
+    "USE_WEBSOCKET_NOPOLL=$use_websocket_nopoll",
+  ]
 }
 
 import("//build/config/gclient_args.gni")
@@ -121,8 +131,6 @@ source_set("ReactSkia") {
     "sdk/FollyTimer.cpp",
     "sdk/NotificationCenter.cpp",
     "sdk/NotificationCenter.h",
-    "sdk/NopollWebsocket.cpp",
-    "sdk/NopollWebsocket.h",
     "sdk/ThreadSafeQueue.h",
     "sdk/ThreadSafeCache.h",
     "sdk/WindowDelegator.cpp",
@@ -180,6 +188,8 @@ source_set("ReactSkia") {
     "modules/RSkWebSocketModuleBase.cpp",
     "modules/RSkNetworkingModuleBase.h",
     "modules/RSkNetworkingModuleBase.cpp",
+    "modules/platform/libcurl/RSkNetworkingModule.cpp",
+    "modules/platform/libcurl/RSkNetworkingModule.h",
     "views/common/RSkDrawUtils.cpp",
     "views/common/RSkDrawUtils.h",
     "views/common/RSkTextUtils.cpp",
@@ -221,14 +231,21 @@ source_set("ReactSkia") {
     "RSkThirdPartyNativeModuleProvider.h",
   ]
 
+  # Platforms
+  sources += [
+    "platform/common/RuntimeEventBeat.h",
+    "platform/common/RuntimeEventBeat.cpp",
+  ]
   if (is_mac) {
     sources += [
-      "platform/macosx/MainRunLoopEventBeat.h",
-      "platform/macosx/MainRunLoopEventBeat.mm",
-      "platform/macosx/RCTUtils.h",
-      "platform/macosx/RCTUtils.mm",
-      "platform/macosx/RuntimeEventBeat.h",
-      "platform/macosx/RuntimeEventBeat.mm",
+      "platform/mac/MainRunLoopEventBeat.h",
+      "platform/mac/MainRunLoopEventBeat.mm",
+      "platform/mac/RCTSurfaceTouchHandler.h",
+      "platform/mac/RCTSurfaceTouchHandler.mm",
+      "platform/mac/RCTUtils.h",
+      "platform/mac/RCTUtils.mm",
+      "platform/mac/RSkSurfaceDelegateMac.h",
+      "platform/mac/RSkSurfaceDelegateMac.mm",
     ]
     defines = ["OS_MACOSX"]
   }
@@ -236,18 +253,29 @@ source_set("ReactSkia") {
     sources += [
       "platform/linux/MainRunLoopEventBeat.h",
       "platform/linux/MainRunLoopEventBeat.cpp",
-      "platform/linux/RuntimeEventBeat.h",
-      "platform/linux/RuntimeEventBeat.cpp",
-      "modules/platform/nopoll/RSkWebSocketModule.cpp",
-      "modules/platform/nopoll/RSkWebSocketModule.h",
-      "modules/platform/libcurl/RSkNetworkingModule.cpp",
-      "modules/platform/libcurl/RSkNetworkingModule.h",
+      "platform/linux/RSkSurfaceDelegateLinux.h",
+      "platform/linux/RSkSurfaceDelegateLinux.cpp",
     ]
     defines = ["OS_LINUX"]
   }
 
+  if (use_websocket_nopoll) {
+    sources += [
+      "modules/platform/nopoll/RSkWebSocketModule.cpp",
+      "modules/platform/nopoll/RSkWebSocketModule.h",
+      "sdk/NopollWebsocket.cpp",
+      "sdk/NopollWebsocket.h",
+    ]
+  } else {
+    sources += [
+      "modules/platform/libcurl/RSkWebSocketModule.cpp",
+      "modules/platform/libcurl/RSkWebSocketModule.h",
+    ]
+  }
+
   public_deps = [
-    "//third_party/glog:glog",
+    "//third_party/glog",
+    "//third_party/libcurl",
     "//third_party/libevent",
     "//folly",
     "//folly:async",
@@ -268,6 +296,7 @@ source_set("ReactSkia") {
     "//react-native/ReactCommon/react/renderer/components/scrollview",
     "//react-native/ReactCommon/react/renderer/components/text",
     "//react-native/ReactCommon/react/renderer/textlayoutmanager",
+    "//react-native/ReactCommon/react/renderer/uimanager:uimanager",
     "//ReactSkia:textinput",
     "//rns_shell",
     "//skia",
@@ -291,11 +320,17 @@ source_set("ReactSkia") {
   ]
 
 
-  if (is_linux) {
-    configs += ["//third_party/nopoll:nopoll_from_pkgconfig"]
-    public_deps += ["//third_party/libcurl:libcurl"]
+  if (is_apple) {
+    configs += [ "//build/config/compiler:enable_arc" ]
   }
 
+  if (is_linux) {
+    configs += ["//third_party/nopoll:nopoll_from_pkgconfig"]
+  }
+
+  deps = [
+    ":buildflags",
+  ]
 }
 
 executable("ReactSkiaApp") {

@@ -5,11 +5,11 @@
 * LICENSE file in the root directory of this source tree.
 */
 
+#include "rns_shell/compositor/layers/ScrollLayer.h"
+
+#include "rns_shell/compositor/Compositor.h"
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkPictureRecorder.h"
-
-#include "compositor/Compositor.h"
-#include "compositor/layers/ScrollLayer.h"
 
 namespace RnsShell {
 

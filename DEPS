@@ -15,14 +15,19 @@ gclient_gn_args = [
 ]
 
 vars = {
-  'react_native_default_revision': 'deb66012fe550d536420931e47f5573e798e048a',
-  'react_native_tvos_revision': 'tvos-v0.64.2',
+  # Supported `react_native_platform` in ['default', 'tvos']
+  'react_native_platform': 'default',
+  'react_native_git_default': 'https://github.com/Kudo/react-native.git',
+  'react_native_revision_default': 'f554659fc3590e908e4710dc926d39221f7b8cdd',
+  'react_native_git_tvos': 'https://github.com/nagra-opentv/react-native-tvos.git',
+  'react_native_revision_tvos': 'tvos-v0.64.2',
+
   'skia_revision': 'chrome/m108',
+  'libcurl_revision': 'curl-7_77_0',
 
   # Note this revision should be updated with
   # third_party/boringssl/roll_boringssl.py, not roll-dep.
   'boringssl_revision': '1ee71185a2322dc354bee5e5a0abfb1810a27dc6',
-  'libcurl_revision': 'curl-7_77_0',
 
   # buildtools
   'gn_version': 'git_revision:b9c6c19be95a3863e02f00f1fe403b2502e345b6',
@@ -31,11 +36,8 @@ vars = {
   'libcxxabi_revision':    '9572e56a12c88c011d504a707ca94952be4664f9',
   'libunwind_revision':    '1111799723f6a003e6f52202b9bf84387c552081',
 
-  'react_native_default_git': 'https://github.com/Kudo/react-native.git',
-  'react_native_tvos_git': 'https://github.com/nagra-opentv/react-native-tvos.git',
   'chromium_git': 'https://chromium.googlesource.com',
   'skia_git': 'https://skia.googlesource.com',
-  'fuchsia_git': 'https://fuchsia.googlesource.com',
 
   'build_with_chromium': False,
   'checkout_android': False,
@@ -49,14 +51,10 @@ vars = {
   'mac_xcode_version': 'default',
   'generate_location_tags': False,
   'llvm_force_head_revision': False,
-
-  'react_native_platform':'tvos',
-  'react_native_platform_git':'react_native_tvos_git',
-  'react_native_platform_revision':'react_native_tvos_revision',
 }
 
 deps = {
-  'src/react-native'                      : Var(Var('react_native_platform_git')) + '@' + Var(Var('react_native_platform_revision')),
+  'src/react-native'                      : Var('react_native_git_' + Var('react_native_platform')) + '@' + Var('react_native_revision_' + Var('react_native_platform')),
 
   'src/folly'                             : 'https://github.com/Kudo/folly.git' + '@' + 'b8f14802ab5c10fad30bfc952b3243fb932ea34a',
 
@@ -64,10 +62,6 @@ deps = {
   'src/third_party/glog'                  : 'https://github.com/google/glog.git' + '@' + 'v0.3.5',
   'src/third_party/double-conversion'     : 'https://github.com/google/double-conversion.git' + '@' + 'v1.1.6',
   'src/third_party/fmt'                   : 'https://github.com/fmtlib/fmt.git' + '@' + '9.1.0',
-
-  # flutter
-  # 'src/flutter'                           : Var('chromium_git') + '/external/github.com/flutter/engine' + '@' + 'd1bc06f032f9d6c148ea6b96b48261d6f545004f',
-  'src/third_party/rapidjson'             : Var('fuchsia_git') + '/third_party/rapidjson' + '@' + 'ef3564c5c8824989393b87df25355baf35ff544b',
 
   # skia
   'src/third_party/skia'                  : Var('skia_git') + '/skia.git' + '@' + Var('skia_revision'),

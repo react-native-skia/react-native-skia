@@ -7,8 +7,8 @@
 
 #import "MainRunLoopEventBeat.h"
 
-#import "RCTUtils.h"
 #import <mutex>
+#import "RCTUtils.h"
 
 namespace facebook {
 namespace react {

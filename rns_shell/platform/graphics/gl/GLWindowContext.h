@@ -16,9 +16,13 @@
 #include <GLES3/gl3.h>
 #endif
 #include <GLES2/gl2ext.h>
+#else // #else USE(OPENGL_ES)
+#if PLATFORM(MAC)
+#include <OpenGL/gl.h>
 #else
 #include <GL/gl.h>
-#endif // USE(OPENGL_ES)
+#endif // PLATFORM(MAC)
+#endif // #endif USE(OPENGL_ES)
 
 #if USE(EGL)
 #define EGL_EGLEXT_PROTOTYPES 1
@@ -29,13 +33,12 @@
 #include <GL/glx.h>
 #endif // USE(EGL)
 
-#include "include/gpu/gl/GrGLInterface.h"
-
 #include "include/core/SkRefCnt.h"
 #include "include/core/SkSurface.h"
+#include "include/gpu/gl/GrGLInterface.h"
 
-#include "PlatformDisplay.h"
-#include "WindowContext.h"
+#include "rns_shell/common/WindowContext.h"
+#include "rns_shell/platform/graphics/PlatformDisplay.h"
 
 namespace RnsShell {
 
@@ -46,10 +49,12 @@ public:
     bool isValid() override { return SkToBool(backendContext_.get()); }
 
     void swapBuffers(std::vector<SkIRect> &damage) override;
+#ifdef RNS_SHELL_HAS_GPU_SUPPORT
+    int32_t bufferAge() override;
+#endif
 #if USE(RNS_SHELL_PARTIAL_UPDATES)
     bool hasSwapBuffersWithDamage() override;
     bool hasBufferCopy() override;
-    int32_t bufferAge() override;
 #endif
 
     void setDisplayParams(const DisplayParams& params) override;
@@ -68,10 +73,10 @@ protected:
     void destroyContext();
     virtual void onDestroyContext() = 0;
     virtual void onSwapBuffers(std::vector<SkIRect> &damage) = 0;
+    virtual int32_t getBufferAge() = 0;
 #if USE(RNS_SHELL_PARTIAL_UPDATES)
     virtual bool onHasSwapBuffersWithDamage() = 0;
     virtual bool onHasBufferCopy() = 0;
-    virtual int32_t getBufferAge() = 0;
 #endif
     sk_sp<const GrGLInterface> backendContext_;
     sk_sp<SkSurface>           surface_;

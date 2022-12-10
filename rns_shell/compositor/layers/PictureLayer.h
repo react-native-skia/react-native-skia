@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include "compositor/layers/Layer.h"
+#include "rns_shell/compositor/layers/Layer.h"
 #include "include/core/SkPicture.h"
 
 namespace RnsShell {

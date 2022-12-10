@@ -86,7 +86,7 @@ class CurlNetworking {
  private:
   static CurlNetworking *sharedCurlNetworking_;
   ThreadSafeCache<std::string, shared_ptr<CurlResponse> >*  networkCache_;
-  sem_t networkRequestSem_; 
+  sem_t *networkRequestSem_;
   CURLM* curlMultihandle_ = nullptr;
   bool exitLoop_ = false;
   std::thread multiNetworkThread_;

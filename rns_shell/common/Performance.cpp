@@ -5,7 +5,7 @@
  * found in the LICENSE file.
  */
 
-#include "Performance.h"
+#include "rns_shell/common/Performance.h"
 
 static unsigned long long localFrameCount = 0;
 double fpsTimeStampA = 0;

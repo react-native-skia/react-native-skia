@@ -8,9 +8,9 @@
 
 #pragma once
 
+#include "rns_shell/common/RasterWindowContext.h"
+
 #include "include/core/SkSurface.h"
-#include "WindowContextFactory.h"
-#include "RasterWindowContext.h"
 
 typedef Window XWindow;
 

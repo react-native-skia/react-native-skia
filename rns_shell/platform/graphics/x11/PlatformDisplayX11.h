@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include "PlatformDisplay.h"
+#include "rns_shell/platform/graphics/PlatformDisplay.h"
 
 #if PLATFORM(X11)
 typedef struct _XDisplay Display;
@@ -28,6 +28,7 @@ private:
 
     Type type() const override { return PlatformDisplay::Type::X11; }
     SkSize screenSize() override;
+    float scaleFactor() override;
 
 #if USE(EGL)
     void initializeEGLDisplay() override;

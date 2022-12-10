@@ -1,5 +1,6 @@
 #include <folly/io/async/ScopedEventBaseThread.h>
 
+#include "build/build_config.h"
 #include "cxxreact/Instance.h"
 #include "jsi/JSIDynamic.h"
 
@@ -9,10 +10,16 @@
 #include "core_modules/RSkImageLoader.h"
 #include "core_modules/RSkTimingModule.h"
 #include "core_modules/RSkKeyboardObserver.h"
-#include "modules/platform/nopoll/RSkWebSocketModule.h"
 #include "modules/platform/libcurl/RSkNetworkingModule.h"
 #include "modules/RSkTVNavigationEventEmitter.h"
 #include "utils/RnsLog.h"
+#include "ReactSkia/buildflags.h"
+
+#if BUILDFLAG(USE_WEBSOCKET_NOPOLL)
+#include "modules/platform/nopoll/RSkWebSocketModule.h"
+#else
+#include "modules/platform/libcurl/RSkWebSocketModule.h"
+#endif
 
 namespace facebook {
 namespace react {

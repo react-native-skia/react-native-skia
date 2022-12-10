@@ -5,11 +5,11 @@
 * found in the LICENSE file.
 */
 
-#include "Window.h"
+#include "rns_shell/common/Window.h"
 
 #include "include/core/SkCanvas.h"
 #include "include/core/SkSurface.h"
-#include "WindowContext.h"
+#include "rns_shell/common/WindowContext.h"
 
 namespace RnsShell {
 

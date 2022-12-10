@@ -6,20 +6,26 @@
 * found in the LICENSE file.
 */
 
+#include "rns_shell/compositor/Compositor.h"
+
 #include "include/core/SkPaint.h"
 #include "include/core/SkSurface.h"
 #include "include/core/SkCanvas.h"
 #include "include/core/SkRegion.h"
 
+#include "build/build_config.h"
 #include "ReactSkia/utils/RnsLog.h"
 
-#include "platform/linux/TaskLoop.h"
-#include "WindowContextFactory.h"
+#include "rns_shell/platform/graphics/WindowContextFactory.h"
 #ifdef RNS_SHELL_HAS_GPU_SUPPORT
-#include "GLWindowContext.h"
+#include "rns_shell/platform/graphics/gl/GLWindowContext.h"
 #endif
 
-#include "Compositor.h"
+#if BUILDFLAG(IS_MAC)
+#include "rns_shell/platform/mac/TaskLoop.h"
+#elif BUILDFLAG(IS_LINUX)
+#include "rns_shell/platform/linux/TaskLoop.h"
+#endif
 
 namespace RnsShell {
 

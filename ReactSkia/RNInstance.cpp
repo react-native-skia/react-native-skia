@@ -1,7 +1,9 @@
-#include <folly/io/async/ScopedEventBaseThread.h>
 
 #include "ReactSkia/RNInstance.h"
 
+#include <folly/io/async/ScopedEventBaseThread.h>
+
+#include "build/build_config.h"
 #include "ReactSkia/ComponentViewRegistry.h"
 #include "ReactSkia/JSITurboModuleManager.h"
 #include "ReactSkia/LegacyNativeModules/LegacyNativeModuleRegistry.h"
@@ -15,14 +17,14 @@
 #include "ReactSkia/components/RSkComponentProviderTextInput.h"
 #include "ReactSkia/components/RSkComponentProviderUnimplementedView.h"
 #include "ReactSkia/components/RSkComponentProviderView.h"
+#include "ReactSkia/platform/common/RuntimeEventBeat.h"
 
-#if defined (OS_MACOSX)
-#include "ReactSkia/platform/macosx/MainRunLoopEventBeat.h"
-#include "ReactSkia/platform/macosx/RuntimeEventBeat.h"
-#elif defined (OS_LINUX)
+#if BUILDFLAG(IS_MAC)
+#include "ReactSkia/platform/mac/MainRunLoopEventBeat.h"
+#elif BUILDFLAG(IS_LINUX)
 #include "ReactSkia/platform/linux/MainRunLoopEventBeat.h"
-#include "ReactSkia/platform/linux/RuntimeEventBeat.h"
 #endif
+
 #include "ReactSkia/utils/RnsLog.h"
 #include "ReactSkia/utils/AppLog.h"
 #include "ReactSkia/views/common/RSkConversion.h"
@@ -108,7 +110,7 @@ static inline LayoutContext RSkGetLayoutContext(SkPoint viewportOffset) {
           .viewportOffset = RCTPointFromSkPoint(viewportOffset)};
 }
 
-RNInstance::RNInstance(RendererDelegate &rendererDelegate) {
+RNInstance::RNInstance(RnsShell::RendererDelegate &rendererDelegate) {
   InitializeJSCore();
   RegisterComponents();
   InitializeFabric(rendererDelegate);
@@ -120,7 +122,7 @@ void RNInstance::Invalidate() {
   RNS_LOG_TODO("De initilize everything and emit RCTWillInvalidateModulesNotification on default notification center");
 }
 
-void RNInstance::Start(RSkSurfaceWindow *surface, RendererDelegate &rendererDelegate) {
+void RNInstance::Start(RSkSurfaceWindow *surface, RnsShell::RendererDelegate &rendererDelegate) {
   mountingManager_->BindSurface(surface);
 
   LayoutContext layoutContext = RSkGetLayoutContext(surface->viewportOffset);
@@ -155,6 +157,10 @@ xplat::module::CxxModule* RNInstance::moduleForName(std::string moduleName) {
   return std::static_pointer_cast<LegacyNativeModuleRegistry>(moduleRegistry_)->moduleForName(moduleName);
 }
 
+UIManager *RNInstance::GetUIManager() {
+  return fabricScheduler_->getUIManager().get();
+}
+
 void RNInstance::InitializeJSCore() {
   instance_ = std::make_shared<Instance>();
   turboModuleManager_ =
@@ -187,7 +193,7 @@ void RNInstance::InitializeJSCore() {
   }
 }
 
-void RNInstance::InitializeFabric(RendererDelegate &rendererDelegate) {
+void RNInstance::InitializeFabric(RnsShell::RendererDelegate &rendererDelegate) {
   facebook::react::ContextContainer::Shared contextContainer =
       std::make_shared<facebook::react::ContextContainer const>();
   std::shared_ptr<const facebook::react::ReactNativeConfig> reactNativeConfig =

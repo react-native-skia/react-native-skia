@@ -7,9 +7,11 @@
 
 #pragma once
 
-#include "compositor/LayerTreeHost.h"
+#include "rns_shell/compositor/LayerTreeHost.h"
 
 namespace RnsShell {
+
+class Window;
 
 class RendererDelegate : public RnsShell::Layer::Client {
 public:
@@ -23,6 +25,8 @@ public:
     void scheduleRenderingUpdate();
     void beginRenderingUpdate();
     void setRootLayer(SharedLayer rootLayer);
+    Window *nativeWindow();
+
     void commit(bool immediate);
     void begin();
 

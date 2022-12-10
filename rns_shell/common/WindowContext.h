@@ -15,7 +15,11 @@
 #ifdef RNS_SHELL_HAS_GPU_SUPPORT
 #include "include/gpu/GrTypes.h"
 #endif
-#include "DisplayParams.h"
+#include "rns_shell/common/DisplayParams.h"
+
+#if USE(EGL)
+#include <EGL/eglplatform.h>
+#endif
 
 #ifdef RNS_SHELL_HAS_GPU_SUPPORT
 class GrDirectContext;
@@ -25,8 +29,9 @@ class SkSurface;
 namespace RnsShell {
 
 #if USE(EGL)
-#include <EGL/egl.h>
 typedef EGLNativeWindowType GLNativeWindowType;
+#elif USE(NSGL)
+typedef uint64_t GLNativeWindowType;
 #else
 typedef uint64_t GLNativeWindowType;
 #endif
@@ -47,12 +52,13 @@ public:
     const DisplayParams& getDisplayParams() { return displayParams_; }
     virtual void setDisplayParams(const DisplayParams& params) = 0;
 
-#if USE(RNS_SHELL_PARTIAL_UPDATES)
-    virtual bool hasSwapBuffersWithDamage() = 0; // Support for swapping/flipping multiple regions of backbuffer to frontbuffer
-    virtual bool hasBufferCopy() = 0; // Support for copying frontbuffer to backbuffer. Required/used only when hasSwapBuffersWithDamage is false
 #ifdef RNS_SHELL_HAS_GPU_SUPPORT
     virtual int32_t bufferAge() = 0; // Age of current backbuffer
 #endif
+
+#if USE(RNS_SHELL_PARTIAL_UPDATES)
+    virtual bool hasSwapBuffersWithDamage() = 0; // Support for swapping/flipping multiple regions of backbuffer to frontbuffer
+    virtual bool hasBufferCopy() = 0; // Support for copying frontbuffer to backbuffer. Required/used only when hasSwapBuffersWithDamage is false
 #endif
 
 #ifdef RNS_SHELL_HAS_GPU_SUPPORT

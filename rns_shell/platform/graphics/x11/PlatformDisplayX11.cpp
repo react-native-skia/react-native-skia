@@ -5,6 +5,8 @@
  * found in the LICENSE file.
  */
 
+#include "rns_shell/platform/graphics/x11/PlatformDisplayX11.h"
+
 #include "ReactSkia/utils/RnsUtils.h"
 
 #if PLATFORM(X11)
@@ -13,13 +15,11 @@
 #if USE(EGL)
 #include <EGL/egl.h>
 #include <EGL/eglext.h>
-#include "egl/GLWindowContextEGL.h"
+#include "rns_shell/platform/graphics/gl/egl/GLWindowContextEGL.h"
 #elif USE(GLX)
 #include <GL/glx.h>
-#include "glx/GLWindowContextGLX.h"
+#include "rns_shell/platform/graphics/gl/glx/GLWindowContextGLX.h"
 #endif
-
-#include "PlatformDisplayX11.h"
 
 namespace RnsShell {
 
@@ -81,6 +81,11 @@ SkSize PlatformDisplayX11::screenSize() {
     size.set(winAttr.width, winAttr.height);
 
     return size;
+}
+
+float PlatformDisplayX11::scaleFactor() {
+    // TODO
+    return 1.f;
 }
 
 } // namespace RnsShell

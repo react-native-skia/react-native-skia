@@ -6,8 +6,9 @@
  * found in the LICENSE file.
  */
 
-#include "RasterWindowContextLibWPE.h"
-#include "Performance.h"
+#include "rns_shell/platform/graphics/libwpe/RasterWindowContextLibWPE.h"
+
+#include "rns_shell/common/Performance.h"
 
 using RnsShell::RasterWindowContext;
 using RnsShell::DisplayParams;

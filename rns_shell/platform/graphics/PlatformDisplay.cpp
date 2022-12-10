@@ -8,16 +8,18 @@
 #include "ReactSkia/utils/RnsUtils.h"
 
 #if USE(EGL)
-#include "egl/GLWindowContextEGL.h"
+#include "rns_shell/platform/graphics/gl/egl/GLWindowContextEGL.h"
 #elif USE(GLX)
-#include "glx/GLWindowContextGLX.h"
+#include "rns_shell/platform/graphics/gl/glx/GLWindowContextGLX.h"
 #endif
 
-#include "PlatformDisplay.h"
+#include "rns_shell/platform/graphics/PlatformDisplay.h"
 #if PLATFORM(X11)
-#include "x11/PlatformDisplayX11.h"
+#include "rns_shell/platform/graphics/x11/PlatformDisplayX11.h"
+#elif PLATFORM(MAC)
+#include "rns_shell/platform/mac/PlatformDisplayMac.h"
 #elif PLATFORM(LIBWPE) || USE(WPE_RENDERER)
-#include "libwpe/PlatformDisplayLibWPE.h"
+#include "rns_shell/platform/graphics/libwpe/PlatformDisplayLibWPE.h"
 #endif
 
 namespace RnsShell {
@@ -123,6 +125,8 @@ std::unique_ptr<PlatformDisplay> PlatformDisplay::createPlatformDisplay() {
 
 #if PLATFORM(WIN)
     return PlatformDisplayWin::create();
+#elif PLATFORM(MAC)
+    return PlatformDisplayMac::create();
 #elif PLATFORM(LIBWPE)
     return PlatformDisplayLibWPE::create();
 #endif
@@ -131,7 +135,7 @@ std::unique_ptr<PlatformDisplay> PlatformDisplay::createPlatformDisplay() {
 }
 
 PlatformDisplay& PlatformDisplay::sharedDisplay() {
-#if PLATFORM(X11) || PLATFORM(LIBWPE)
+#if PLATFORM(X11) || PLATFORM(LIBWPE) || PLATFORM(MAC)
     static std::once_flag onceFlag;
     static std::unique_ptr<PlatformDisplay> display;
     std::call_once(onceFlag, []{

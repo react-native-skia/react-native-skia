@@ -5,6 +5,8 @@
  * found in the LICENSE file.
  */
 
+#include "rns_shell/platform/graphics/libwpe/PlatformDisplayLibWPE.h"
+
 #include "ReactSkia/utils/RnsUtils.h"
 
 #if USE(WPE_RENDERER)
@@ -15,10 +17,8 @@
 #endif
 
 #include <EGL/egl.h>
-#include "egl/GLWindowContextEGL.h"
+#include "rns_shell/platform/graphics/gl/egl/GLWindowContextEGL.h"
 #endif
-
-#include "PlatformDisplayLibWPE.h"
 
 namespace RnsShell {
 
@@ -64,6 +64,11 @@ SkSize PlatformDisplayLibWPE::screenSize() {
         size.set(width, height);
 
     return size;
+}
+
+float PlatformDisplayLibWPE::scaleFactor() {
+    // TODO
+    return 1.f;
 }
 
 } // namespace RnsShell

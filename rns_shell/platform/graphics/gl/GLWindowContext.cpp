@@ -5,6 +5,8 @@
  * found in the LICENSE file.
  */
 
+#include "rns_shell/platform/graphics/gl/GLWindowContext.h"
+
 #include "include/core/SkCanvas.h"
 #include "include/core/SkSurface.h"
 #include "include/gpu/GrBackendSurface.h"
@@ -16,7 +18,6 @@
 #include "src/gpu/gl/GrGLDefines.h"
 #include "src/image/SkImage_Base.h"
 
-#include "GLWindowContext.h"
 
 namespace RnsShell {
 
@@ -85,6 +86,10 @@ void GLWindowContext::swapBuffers(std::vector<SkIRect> &damage) {
     this->onSwapBuffers(damage);
 }
 
+int32_t GLWindowContext::bufferAge() {
+    return this->getBufferAge();
+}
+
 #if USE(RNS_SHELL_PARTIAL_UPDATES)
 bool GLWindowContext::hasSwapBuffersWithDamage() {
     return this->onHasSwapBuffersWithDamage();
@@ -92,10 +97,6 @@ bool GLWindowContext::hasSwapBuffersWithDamage() {
 
 bool GLWindowContext::hasBufferCopy() {
     return this->onHasBufferCopy();
-}
-
-int32_t GLWindowContext::bufferAge() {
-    return this->getBufferAge();
 }
 
 #endif

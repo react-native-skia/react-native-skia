@@ -8,18 +8,22 @@
 
 #include <glog/logging.h>
 
+#include "build/build_config.h"
 #include "react/renderer/scheduler/Scheduler.h"
-
 #include "ReactSkia/MountingManager.h"
 #include "ReactSkia/RSkSurfaceWindow.h"
-
 #include "rns_shell/compositor/RendererDelegate.h"
+
+#if BUILDFLAG(IS_MAC)
+#include "rns_shell/platform/mac/TaskLoop.h"
+#elif BUILDFLAG(IS_LINUX)
 #include "rns_shell/platform/linux/TaskLoop.h"
+#endif
 
 namespace facebook {
 namespace react {
 
-MountingManager::MountingManager(ComponentViewRegistry *componentViewRegistry, RendererDelegate &rendererDelegate)
+MountingManager::MountingManager(ComponentViewRegistry *componentViewRegistry, RnsShell::RendererDelegate &rendererDelegate)
     : nativeRenderDelegate_(rendererDelegate),
       componentViewRegistry_(componentViewRegistry) {}
 
@@ -39,7 +43,7 @@ void MountingManager::schedulerDidFinishTransaction(
 
   /* Set the flag when schedule for transaction processing*/
   transactionInFlight_ = true;
-  TaskLoop::main().dispatch([&,mountingCoordinator]() {
+  RnsShell::TaskLoop::main().dispatch([&,mountingCoordinator]() {
      performTransaction(mountingCoordinator);
   });
 
@@ -59,7 +63,7 @@ void MountingManager::schedulerDidDispatchCommand(
 
   RNS_LOG_DEBUG("dispatch command shadowView tag[" << shadowView.tag <<  "] name["<< shadowView.componentName << "] commandName [" << commandName <<"]");
 
-  TaskLoop::main().dispatch([&,shadowView,commandName,args]() {
+  RnsShell::TaskLoop::main().dispatch([&,shadowView,commandName,args]() {
      auto component = GetComponent(shadowView);
      if( component != NULL ){
        component->handleCommand(commandName,args);

@@ -11,8 +11,8 @@
 #include <EGL/egl.h>
 #include <X11/Xlib.h>
 
-#include "x11/PlatformDisplayX11.h"
-#include "GLWindowContextEGL.h"
+#include "rns_shell/platform/graphics/gl/egl/GLWindowContextEGL.h"
+#include "rns_shell/platform/graphics/x11/PlatformDisplayX11.h"
 
 namespace RnsShell {
 

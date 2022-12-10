@@ -5,6 +5,7 @@
 #include "include/core/SkSurface.h"
 #include "include/effects/SkGradientShader.h"
 
+#include "ReactSkia/RSkSurfaceDelegate.h"
 #include "ReactSkia/views/common/RSkImageCacheManager.h"
 
 using namespace RnsShell;
@@ -19,8 +20,9 @@ namespace react {
 
 facebook::react::RNInstance* ReactSkiaApp::currentBridgeInstance;
 
-ReactSkiaApp::ReactSkiaApp(int argc, char **argv) {
-  surface_ = std::make_unique<facebook::react::RSkSurfaceWindow>();
+ReactSkiaApp::ReactSkiaApp(int argc, char **argv)
+  : surface_(std::make_unique<facebook::react::RSkSurfaceWindow>())
+  , surfaceDelegate_(ReactSkia::RSkSurfaceDelegate::createSurfaceDelegate()) {
   surface_->setSize(viewPort());
 #ifdef RNS_SHELL_HAS_GPU_SUPPORT
   surface_->setDirectContext(graphicsDirectContext());
@@ -28,6 +30,7 @@ ReactSkiaApp::ReactSkiaApp(int argc, char **argv) {
   rnInstance_ = std::make_unique<facebook::react::RNInstance>(*this);
   rnInstance_->Start(surface_.get(), *this);
   setCurrentBridge(rnInstance_.get());
+  surfaceDelegate_->SurfaceDidStart(surface_.get(), rnInstance_->GetUIManager(), this);
 
   RSkImageCacheManager::init();//Needs to be called after Gpu backend created,So calling here
 }

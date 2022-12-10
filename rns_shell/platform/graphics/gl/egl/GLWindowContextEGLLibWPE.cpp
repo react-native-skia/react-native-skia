@@ -12,7 +12,7 @@
 #endif
 #include <wpe/wpe-egl.h>
 
-#include "GLWindowContextEGL.h"
+#include "rns_shell/platform/graphics/gl/egl/GLWindowContextEGL.h"
 
 #if USE(EGL) && USE(WPE_RENDERER)
 

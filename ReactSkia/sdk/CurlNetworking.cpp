@@ -5,6 +5,7 @@
 * LICENSE file in the root directory of this source tree.
 */
 #include <curl/curl.h>
+#include <fcntl.h>
 #include <semaphore.h>
 #include "ReactSkia/utils/RnsLog.h"
 #include "CurlNetworking.h"
@@ -17,14 +18,15 @@ std::mutex CurlNetworking::mutex_;
 CurlNetworking::CurlNetworking() {
   networkCache_ = new ThreadSafeCache<string,shared_ptr<CurlResponse>>();
   curl_global_init(CURL_GLOBAL_ALL);
-  sem_init(&networkRequestSem_, 0, 0);
+  networkRequestSem_ = sem_open(__func__, O_CREAT | O_EXCL, S_IRWXU, 0);
+  sem_unlink(__func__);
   curlMultihandle_ = curl_multi_init();
   /* Limit the amount of simultaneous connections curl should allow: */
   curl_multi_setopt(curlMultihandle_, CURLMOPT_MAX_TOTAL_CONNECTIONS, (long)MAX_PARALLEL_CONNECTION);
   multiNetworkThread_ = std::thread([this]() {
     while(!exitLoop_){
       if(curlMultihandle_) {
-        sem_wait(&networkRequestSem_);
+        sem_wait(networkRequestSem_);
         processNetworkRequest(curlMultihandle_);
       } else {
           std::this_thread::sleep_for(1000ms);
@@ -54,6 +56,10 @@ CurlNetworking::~CurlNetworking() {
   if(curlMultihandle_){
     curl_multi_cleanup(curlMultihandle_);
     curl_global_cleanup();
+  }
+  if (networkRequestSem_ != nullptr) {
+    sem_close(networkRequestSem_);
+    networkRequestSem_ = nullptr;
   }
   std::lock_guard<std::mutex> lock(mutex_);
   if(this == sharedCurlNetworking_)
@@ -320,7 +326,7 @@ bool CurlNetworking::sendRequest(shared_ptr<CurlRequest> curlRequest, folly::dyn
       goto safe_return;
   }
   curl_multi_add_handle(curlMultihandle_, curl);
-  sem_post(&networkRequestSem_);
+  sem_post(networkRequestSem_);
   status = true;
   safe_return :
   return status;

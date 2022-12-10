@@ -19,8 +19,8 @@
 #include "include/private/SkChecksum.h"
 #include "src/core/SkTDynamicHash.h"
 
-#include "Window.h"
-#include "PlatformDisplay.h"
+#include "rns_shell/common/Window.h"
+#include "rns_shell/platform/graphics/PlatformDisplay.h"
 
 #include "ReactSkia/sdk/RNSKeyCodeMapping.h"
 #include "ReactSkia/sdk/NotificationCenter.h"

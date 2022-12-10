@@ -6,8 +6,8 @@
 */
 #pragma once
 
-#include "PlatformDisplay.h"
-#include "Compositor.h"
+#include "rns_shell/compositor/Compositor.h"
+#include "rns_shell/platform/graphics/PlatformDisplay.h"
 
 namespace RnsShell {
 class Application;
@@ -26,6 +26,7 @@ class LayerTreeHost {
 
   PlatformDisplayID displayID() const { return displayID_; }
   Compositor* compositor() { return compositor_.get(); }
+  Window *nativeWindow() { return window_.get(); }
 
  private:
   class CompositorClient : public Compositor::Client {

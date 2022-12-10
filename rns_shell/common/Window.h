@@ -12,8 +12,8 @@
 #include "include/core/SkTypes.h"
 #include "include/private/SkTDArray.h"
 
-#include "Application.h"
-#include "DisplayParams.h"
+#include "rns_shell/common/Application.h"
+#include "rns_shell/common/DisplayParams.h"
 
 class GrDirectContext;
 class SkCanvas;

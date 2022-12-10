@@ -6,15 +6,16 @@
  * found in the LICENSE file.
  */
 
+#include "rns_shell/platform/graphics/gl/glx/GLWindowContextGLX.h"
+
 #include "include/gpu/gl/GrGLInterface.h"
-#include "gl/GLWindowContext.h"
+#include "rns_shell/common/Performance.h"
+#include "rns_shell/platform/graphics/gl/GLWindowContext.h"
 
 #if USE(GLX)
 
 #include <GL/gl.h>
 
-#include "glx/GLWindowContextGLX.h"
-#include "Performance.h"
 
 using RnsShell::DisplayParams;
 using RnsShell::GLWindowContext;

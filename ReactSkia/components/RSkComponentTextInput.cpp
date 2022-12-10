@@ -17,6 +17,7 @@
 #include "ReactSkia/views/common/RSkSdkConversion.h"
 #include "rns_shell/compositor/layers/PictureLayer.h"
 
+#include <fcntl.h>
 #include <string.h>
 #include <iostream>
 #include <queue>
@@ -30,6 +31,7 @@ namespace react {
 
 using namespace rns::sdk;
 using namespace RSkDrawUtils;
+using namespace RnsShell;
 using namespace skia::textlayout;
 
 #define NUMBER_OF_LINES         1
@@ -37,7 +39,7 @@ using namespace skia::textlayout;
 #define CURSOR_WIDTH 2
 
 std::queue<rnsKey> inputQueue;
-sem_t jsUpdateSem;
+sem_t *jsUpdateSem = nullptr;
 std::mutex privateVarProtectorMutex;
 std::mutex inputQueueMutex;
 static bool isKeyRepeateOn;
@@ -55,7 +57,8 @@ RSkComponentTextInput::RSkComponentTextInput(const ShadowView &shadowView)
   cursorPaint_.setAntiAlias(true);
   cursorPaint_.setStyle(SkPaint::kStroke_Style);
   cursorPaint_.setStrokeWidth(CURSOR_WIDTH);
-  sem_init(&jsUpdateSem,0,0);
+  jsUpdateSem = sem_open(__func__, O_CREAT | O_EXCL, S_IRWXU, 0);
+  sem_unlink(__func__);
   isKeyRepeateOn=false;
 }
 
@@ -401,7 +404,7 @@ void RSkComponentTextInput::keyEventProcessingThread(){
       inputQueueMutex.unlock();
       processEventKey(eventKeyType,&stopPropagation,&waitForupdateProps, false);
       if (waitForupdateProps)
-        sem_wait(&jsUpdateSem);
+        sem_wait(jsUpdateSem);
     }
     else{
       RNS_LOG_DEBUG("[keyEventProcessingThread] ThreadAlive ");
@@ -431,7 +434,7 @@ RnsShell::LayerInvalidateMask  RSkComponentTextInput::updateComponentProps(const
     cursor_.end = textString.length();
     privateVarProtectorMutex.unlock();
     if (isTextInputInFocus_)
-      sem_post(&jsUpdateSem);
+      sem_post(jsUpdateSem);
     mask |= LayerPaintInvalidate;
   }
   if ((textInputProps.placeholder.size())
@@ -497,7 +500,7 @@ void RSkComponentTextInput::handleCommand(std::string commandName,folly::dynamic
     privateVarProtectorMutex.unlock();
     drawAndSubmit();
     if(isTextInputInFocus_)
-      sem_post(&jsUpdateSem);
+      sem_post(jsUpdateSem);
   }else if (commandName == "focus") {
     requestForEditingMode();
   }else if (commandName == "blur") {
@@ -589,7 +592,10 @@ void RSkComponentTextInput::resignFromEditingMode(bool isFlushDisplay) {
 }
 
 RSkComponentTextInput::~RSkComponentTextInput(){
-  sem_destroy(&jsUpdateSem);
+  if (jsUpdateSem != nullptr) {
+    sem_close(jsUpdateSem);
+    jsUpdateSem = nullptr;
+  }
 }
  void RSkComponentTextInput::onHandleBlur(){
    RNS_LOG_DEBUG("[onHandle] In TextInput");

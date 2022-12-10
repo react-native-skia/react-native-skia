@@ -37,10 +37,12 @@ public:
         DFB,
         Windows,
         WPE,
+        Mac,
     };
 
     virtual Type type() const = 0;
     virtual SkSize screenSize() = 0;
+    virtual float scaleFactor() = 0;
     SkSize getCurrentScreenSize();
     void setCurrentScreenSize(int,int);
 

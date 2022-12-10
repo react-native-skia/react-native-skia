@@ -1,4 +1,10 @@
 #pragma once
+
+#ifdef __APPLE__
+// Import CoreFundation system library first to avoid ambiguous definitions for Point or Rect
+#import <CoreFoundation/CoreFoundation.h>
+#endif
+
 #include "include/core/SkCanvas.h"
 
 #include "react/renderer/mounting/ShadowView.h"
@@ -14,8 +20,6 @@
 
 namespace facebook {
 namespace react {
-
-using namespace RnsShell;
 
 enum PictureType {
    PictureTypeShadow = 1,

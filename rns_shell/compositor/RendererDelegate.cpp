@@ -5,7 +5,7 @@
 * found in the LICENSE file.
 */
 
-#include "RendererDelegate.h"
+#include "rns_shell/compositor/RendererDelegate.h"
 
 namespace RnsShell {
 
@@ -33,6 +33,10 @@ void RendererDelegate::commit(bool immediate) {
 
 void RendererDelegate::setRootLayer(SharedLayer rootLayer) {
   layerTreeHost_->setRootCompositingLayer(rootLayer);
+}
+
+Window *RendererDelegate::nativeWindow() {
+  return layerTreeHost_->nativeWindow();
 }
 
 void RendererDelegate::scheduleRenderingUpdate() {

@@ -6,20 +6,29 @@
  * found in the LICENSE file.
  */
 
-#include "WindowContextFactory.h"
+#include "rns_shell/platform/graphics/WindowContextFactory.h"
+
 #if PLATFORM(X11) && USE(GLX)
-#include "glx/GLWindowContextGLX.h"
+#include "rns_shell/platform/graphics/gl/glx/GLWindowContextGLX.h"
 #elif USE(EGL)
-#include "egl/GLWindowContextEGL.h"
+#include "rns_shell/platform/graphics/gl/egl/GLWindowContextEGL.h"
 #endif
 
 #ifndef RNS_SHELL_HAS_GPU_SUPPORT
 #if PLATFORM(X11)
-#include "x11/RasterWindowContextX11.h"
+#include "rns_shell/platform/graphics/x11/RasterWindowContextX11.h"
 #elif PLATFORM(LIBWPE)
-#include "libwpe/RasterWindowContextLibWPE.h"
+#include "rns_shell/platform/graphics/libwpe/RasterWindowContextLibWPE.h"
 #endif
 #endif
+
+#if PLATFORM(MAC)
+#ifdef RNS_SHELL_HAS_GPU_SUPPORT
+#include "rns_shell/platform/graphics/gl/nsgl/GLWindowContextNSGL.h"
+#else
+#include "rns_shell/platform/mac/RasterWindowContextMac.h"
+#endif // RNS_SHELL_HAS_GPU_SUPPORT
+#endif // PLATFORM(MAC)
 
 namespace RnsShell {
 
@@ -35,6 +44,9 @@ std::unique_ptr<WindowContext> createContextForWindow(GLNativeWindowType windowH
 #elif USE(EGL)
     if(auto eglContext = GLWindowContextEGL::createContext(windowHandle, display, params))
         return eglContext;
+#elif USE(NSGL)
+    if(auto nsglContext = GLWindowContextNSGL::createContext(windowHandle, display, params))
+        return nsglContext;
 #endif
     return nullptr;
 }
@@ -47,6 +59,9 @@ std::unique_ptr<WindowContext> createContextForWindow(GLNativeWindowType windowH
         return rasterContext;
 #elif PLATFORM(LIBWPE)
     if(auto rasterContext = RasterWindowContextLibWPE::createContext(windowHandle, display, params))
+        return rasterContext;
+#elif PLATFORM(MAC)
+    if(auto rasterContext = RasterWindowContextMac::createContext(windowHandle, display, params))
         return rasterContext;
 #else
     RNS_LOG_NOT_IMPL;

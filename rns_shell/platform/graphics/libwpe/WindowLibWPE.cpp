@@ -6,10 +6,11 @@
 * found in the LICENSE file.
 */
 
+#include "rns_shell/platform/graphics/libwpe/WindowLibWPE.h"
+
 #include "src/utils/SkUTF.h"
-#include "WindowContextFactory.h"
-#include "WindowLibWPE.h"
-#include "platform/linux/TaskLoop.h"
+#include "rns_shell/platform/graphics/WindowContextFactory.h"
+#include "rns_shell/platform/linux/TaskLoop.h"
 
 using namespace std; 
 namespace RnsShell {

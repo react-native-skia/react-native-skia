@@ -7,11 +7,16 @@
 
 #pragma once
 
-#include <folly/io/async/EventBase.h>
+#ifdef None
+// Workaround conflict between folly's `Struct None` and X11's `#define None 0`
+#undef None
+#include "folly/io/async/EventBase.h"
+#define None 0L
+#else
+#include "folly/io/async/EventBase.h"
+#endif
 
 namespace RnsShell {
-
-using namespace folly;
 
 class TaskLoop {
 
@@ -26,10 +31,10 @@ public:
     void stop();
     void waitUntilRunning();
 
-    void dispatch(Func fun);
+    void dispatch(folly::Func fun);
 
 private:
-    EventBase eventBase_;
+    folly::EventBase eventBase_;
 };
 
 } // namespace RnsShell

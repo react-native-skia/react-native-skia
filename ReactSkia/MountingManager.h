@@ -5,13 +5,11 @@
 #include "ReactSkia/ComponentViewRegistry.h"
 
 namespace RnsShell {
-  class RendererDelegate;
-}
+class RendererDelegate;
+} // namespace RnsShell
 
 namespace facebook {
 namespace react {
-
-using namespace RnsShell;
 
 class ComponentViewRegistry;
 class RSkSurfaceWindow;
@@ -19,7 +17,7 @@ class ReactSkiaApp;
 
 class MountingManager : public SchedulerDelegate {
  public:
-  MountingManager(ComponentViewRegistry *componentViewRegistry, RendererDelegate &rendererDelegate);
+  MountingManager(ComponentViewRegistry *componentViewRegistry, RnsShell::RendererDelegate &rendererDelegate);
   MountingManager(MountingManager &&);
 
   void BindSurface(RSkSurfaceWindow *surface);
@@ -93,7 +91,7 @@ class MountingManager : public SchedulerDelegate {
 
 
  private:
-  RendererDelegate& nativeRenderDelegate_;
+  RnsShell::RendererDelegate& nativeRenderDelegate_;
   ComponentViewRegistry *componentViewRegistry_;
   RSkSurfaceWindow *surface_;
   std::atomic <bool> followUpTransactionRequired_{false};
