@@ -61,7 +61,7 @@ $ gn gen out/Debug
 # $ gn gen --args='is_debug=false' out/Release
 
 # For Linux (Ubuntu 18)
-$ gn gen --args='use_sysroot=false enable_vulkan=false icu_use_data_file=false skia_use_system_nopoll=true gl_use_glx=false is_debug=false is_component_build=true' out/Debug
+$ gn gen --args='use_sysroot=false enable_vulkan=false icu_use_data_file=false skia_use_system_nopoll=true gl_use_glx=false is_debug=false is_component_build=true enable_precompiled_headers=true' out/Debug
     Usage of gen args -
     use_sysroot=false : Default is true, set to false to use system sysroot
     enable_vulkan=false  : Default is true , set to false since we are using opengl
@@ -71,6 +71,7 @@ $ gn gen --args='use_sysroot=false enable_vulkan=false icu_use_data_file=false s
     gl_has_gpu=false  : Default is true , set to false to build on NON-GPU platform or to verify software rendering on desktop.
     is_debug=false : Default is true , set to false to build with optimizations
     is_component_build=true : Default is "is_debug" value , set to true to build components as shared libraries
+    enable_precompiled_headers : Default is false on Linux, set to true to fix the react-native build errors
 ```
 
 3. Sync JavaScript packages

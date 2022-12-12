@@ -24,7 +24,7 @@ rn_cxx_component("JSCRuntime") {
   ]
 
   if(is_linux) {
-    public_configs += [":system_javascriptcore"]
+    public_configs = [":system_javascriptcore"]
   } else if (is_mac) {
     frameworks = [
       "JavaScriptCore.framework",
