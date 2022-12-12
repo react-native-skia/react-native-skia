@@ -7,20 +7,23 @@
 #include <curl/curl.h>
 #include <semaphore.h>
 #include "ReactSkia/utils/RnsLog.h"
+#include "ReactSkia/utils/RnsUtils.h"
 #include "CurlNetworking.h"
 
 using namespace std;
 namespace facebook {
 namespace react {
 CurlNetworking* CurlNetworking::sharedCurlNetworking_{nullptr};
-std::mutex CurlNetworking::mutex_;
+std::mutex CurlNetworking::curlInstanceMutex_;
 CurlNetworking::CurlNetworking() {
   networkCache_ = new ThreadSafeCache<string,shared_ptr<CurlResponse>>();
   curl_global_init(CURL_GLOBAL_ALL);
   sem_init(&networkRequestSem_, 0, 0);
   curlMultihandle_ = curl_multi_init();
-  /* Limit the amount of simultaneous connections curl should allow: */
-  curl_multi_setopt(curlMultihandle_, CURLMOPT_MAX_TOTAL_CONNECTIONS, (long)MAX_PARALLEL_CONNECTION);
+  // we are limiting the number of max number of connection to MAX_TOTAL_CONNECTIONS.
+  curl_multi_setopt(curlMultihandle_, CURLMOPT_MAX_TOTAL_CONNECTIONS, (long)MAX_TOTAL_CONNECTIONS);
+  // we are limiting the number of connection per host(sever) to MAX_PARALLEL_CONNECTIONS_PER_HOST.
+  curl_multi_setopt(curlMultihandle_, CURLMOPT_MAX_HOST_CONNECTIONS, (long)MAX_PARALLEL_CONNECTIONS_PER_HOST);
   multiNetworkThread_ = std::thread([this]() {
     while(!exitLoop_){
       if(curlMultihandle_) {
@@ -33,13 +36,15 @@ CurlNetworking::CurlNetworking() {
   });
 
 }
+
 CurlNetworking* CurlNetworking::sharedCurlNetworking() {
-  std::lock_guard<std::mutex> lock(mutex_);
+  std::lock_guard<std::mutex> lock(curlInstanceMutex_);
   if(sharedCurlNetworking_ == nullptr) {
     sharedCurlNetworking_ = new CurlNetworking();
   }
     return sharedCurlNetworking_;
 }
+
 CurlRequest::CurlRequest(CURL *lhandle, std::string lURL, size_t ltimeout, std::string lmethod):
   handle(lhandle),
   URL(lURL),
@@ -55,12 +60,12 @@ CurlNetworking::~CurlNetworking() {
     curl_multi_cleanup(curlMultihandle_);
     curl_global_cleanup();
   }
-  std::lock_guard<std::mutex> lock(mutex_);
+  std::lock_guard<std::mutex> lock(curlInstanceMutex_);
   if(this == sharedCurlNetworking_)
     sharedCurlNetworking_ = nullptr;
 };
 
-inline bool CurlRequest::shouldCacheData() {
+bool CurlRequest::shouldCacheData() {
   curlResponse->cacheExpiryTime = DEFAULT_MAX_CACHE_EXPIRY_TIME;
   double responseMaxAgeTime = DEFAULT_MAX_CACHE_EXPIRY_TIME;
   double requestMaxAgeTime = DEFAULT_MAX_CACHE_EXPIRY_TIME;
@@ -84,7 +89,7 @@ inline bool CurlRequest::shouldCacheData() {
           if(responseMaxAgeTime == 0) {
             return false;
           }
-          curlResponse->cacheExpiryTime = Timer::getCurrentTimeMSecs() + std::min(std::min(responseMaxAgeTime,requestMaxAgeTime),static_cast<double>(DEFAULT_MAX_CACHE_EXPIRY_TIME));
+          curlResponse->cacheExpiryTime = Timer::getCurrentTimeMSecs() + std::min(std::min(RNS_SECONDS_TO_MILLISECONDS(responseMaxAgeTime),requestMaxAgeTime),static_cast<double>(DEFAULT_MAX_CACHE_EXPIRY_TIME));
           return true;
         }
       }
@@ -99,12 +104,18 @@ void CurlNetworking::processNetworkRequest(CURLM *curlMultiHandle) {
   CURLMsg *msg;
   int stillAlive = 0;
   int msgsLeft = 0;
-
+  RNS_LOG_INFO("calling processNetworkRequest");
   do {
-    res = curl_multi_perform(curlMultiHandle, &stillAlive);
+    {
+      std::lock_guard<std::mutex> lock(curlInstanceMutex_);
+      res = curl_multi_perform(curlMultiHandle, &stillAlive);
+    }
     while((msg = curl_multi_info_read(curlMultiHandle, &msgsLeft))) {
       if(msg->msg == CURLMSG_DONE) {
         CURL *curlHandle = msg->easy_handle;
+        if(!curlHandle) {// check valid curl handle or not. if invalid break the loop.
+          break;
+        }
         CurlRequest *curlRequest = nullptr;
         curl_easy_getinfo(curlHandle, CURLINFO_PRIVATE, &curlRequest);
         res == CURLM_OK ?
@@ -127,9 +138,11 @@ void CurlNetworking::processNetworkRequest(CURLM *curlMultiHandle) {
             }
           }
         }
-        if(curlRequest->curldelegator.CURLNetworkingCompletionCallback)
+        if(curlRequest->curldelegator.CURLNetworkingCompletionCallback){
           curlRequest->curldelegator.CURLNetworkingCompletionCallback(curlRequest->curlResponse.get(),curlRequest->curldelegator.delegatorData);
+        }
         curl_easy_cleanup(curlHandle);
+        curlRequest->handle=NULL;
       } else {
         RNS_LOG_ERROR("Unknown critical error: CURLMsg" << msg->msg);
       }
@@ -205,6 +218,7 @@ size_t CurlNetworking::writeCallbackCurlWrapper(void* buffer, size_t size, size_
   }
   return size*nitems;
 }
+
 size_t CurlNetworking::progressCallbackCurlWrapper(void *clientp, double dltotal, double dlnow, double ultotal, double ulnow) {
   CurlRequest *curlRequest = (CurlRequest *)clientp;
   if(curlRequest){
@@ -212,7 +226,8 @@ size_t CurlNetworking::progressCallbackCurlWrapper(void *clientp, double dltotal
     curlRequest->curldelegator.CURLNetworkingProgressCallback(dltotal, dlnow, ultotal, ulnow, curlRequest->curldelegator.delegatorData);
   }
   return 0;
-} 
+}
+
 size_t CurlNetworking::headerCallbackCurlWrapper(char* buffer, size_t size, size_t nitems, void* userData) {
   CurlRequest *curlRequest = (CurlRequest *)userData;
   // Each headerInfo line comes as a seperate callback
@@ -236,7 +251,7 @@ size_t CurlNetworking::headerCallbackCurlWrapper(char* buffer, size_t size, size
     RNS_LOG_DEBUG("Header buffer content size:" << curlRequest->curlResponse->headerBuffer.size());
     for( auto const &header : curlRequest->curlResponse->headerBuffer.items())
        RNS_LOG_DEBUG("KEY[" << header.first << "] Value["<< header.second << "]");
-#endif
+#endif 
     curlRequest->curldelegator.CURLNetworkingHeaderCallback(curlRequest->curlResponse.get(),curlRequest->curldelegator.delegatorData);
   }
   curlRequest->curlResponse->headerBufferSize += (size*nitems);
@@ -260,6 +275,7 @@ bool CurlNetworking::sendRequest(shared_ptr<CurlRequest> curlRequest, folly::dyn
   auto headers = query["headers"];
   auto data = query["data"];
   bool status = false;
+  int semCount = 0XFFFFFFFF;
   CURL *curl = nullptr;
   CURLcode res = CURLE_FAILED_INIT;
 
@@ -319,14 +335,27 @@ bool CurlNetworking::sendRequest(shared_ptr<CurlRequest> curlRequest, folly::dyn
       RNS_LOG_ERROR ("Not supported method\n" << curlRequest->method) ;
       goto safe_return;
   }
-  curl_multi_add_handle(curlMultihandle_, curl);
-  sem_post(&networkRequestSem_);
+  {
+    std::scoped_lock lock(curlInstanceMutex_);
+    curl_multi_add_handle(curlMultihandle_, curl);
+  }
+  sem_getvalue(&networkRequestSem_, &semCount);
+  if(!semCount){ //We don't have to send signal if count is already 1. Using this as binary sem
+    sem_post(&networkRequestSem_);
+  }
+
   status = true;
   safe_return :
   return status;
 } 
+
 bool CurlNetworking::abortRequest(shared_ptr<CurlRequest> curlRequest) {
+  //Fix Me abort is called by main thread, Main thread will block untill abort completes. 
+  //schedule in different thread. 
   if(curlRequest->handle) {
+    std::scoped_lock lock(curlInstanceMutex_);
+    // remove the handle from the multihandle and cleanup the curl handle.
+    curl_multi_remove_handle(curlMultihandle_, curlRequest->handle);
     curl_easy_cleanup(curlRequest->handle);
     curlRequest->handle = NULL;
     return true;
@@ -336,5 +365,3 @@ bool CurlNetworking::abortRequest(shared_ptr<CurlRequest> curlRequest) {
 
 }// namespace react
 }//namespace facebook
-
-

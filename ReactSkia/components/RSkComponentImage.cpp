@@ -20,6 +20,7 @@
 #include "ReactSkia/sdk/CurlNetworking.h"
 #include "ReactSkia/views/common/RSkImageUtils.h"
 #include "ReactSkia/views/common/RSkConversion.h"
+#include "ReactSkia/utils/RnsUtils.h"
 
 namespace facebook {
 namespace react {
@@ -175,6 +176,14 @@ RnsShell::LayerInvalidateMask RSkComponentImage::updateComponentProps(const Shad
       imageProps.tintColor = RSkColorFromSharedColor(newimageProps.tintColor,SK_ColorTRANSPARENT);
     }
     if((forceUpdate) || (oldimageProps.sources[0].uri.compare(newimageProps.sources[0].uri) != 0)) {
+      if( isRequestInProgress_ && remoteCurlRequest_){
+        // if url is changed, image component is get component property update.
+        // cancel the onging request and made new request to network.  
+        CurlNetworking::sharedCurlNetworking()->abortRequest(remoteCurlRequest_);
+        remoteCurlRequest_ = nullptr;
+        //TODO - need to send the onEnd event to APP if it is abort.
+        isRequestInProgress_=false;
+      }
       imageEventEmitter_->onLoadStart();
       hasToTriggerEvent_ = true;
     }
@@ -328,27 +337,10 @@ inline void RSkComponentImage::setPaintFilters (SkPaint &paintObj,const ImagePro
   }
 }
 
-inline bool shouldCacheData(std::string cacheControlData) {
-  if(cacheControlData.find(RNS_NO_CACHE_STR) != std::string::npos) return false;
-  else if(cacheControlData.find(RNS_NO_STORE_STR) != std::string::npos) return false;
-  else if(cacheControlData.find(RNS_MAX_AGE_0_STR) != std::string::npos) return false;
-
-  return true;
-}
-
-inline double getCacheMaxAgeDuration(std::string cacheControlData) {
-  size_t maxAgePos = cacheControlData.find(RNS_MAX_AGE_STR);
-  if(maxAgePos != std::string::npos) {
-    size_t maxAgeEndPos = cacheControlData.find(';',maxAgePos);
-    return std::stoi(cacheControlData.substr(maxAgePos+8,maxAgeEndPos));
-  }
-  return DEFAULT_MAX_CACHE_EXPIRY_TIME;
-}
 
 void RSkComponentImage::requestNetworkImageData(string sourceUri) {
-  auto sharedCurlNetworking = CurlNetworking::sharedCurlNetworking();
-  std::shared_ptr<CurlRequest> remoteCurlRequest = std::make_shared<CurlRequest>(nullptr,sourceUri,0,"GET");
-
+  remoteCurlRequest_ = std::make_shared<CurlRequest>(nullptr,sourceUri,0,"GET");
+  
   folly::dynamic query = folly::dynamic::object();
 
   //Before network request, reset the cache info with default values
@@ -356,7 +348,13 @@ void RSkComponentImage::requestNetworkImageData(string sourceUri) {
   cacheExpiryTime_ = DEFAULT_MAX_CACHE_EXPIRY_TIME;
 
   // headercallback lambda fuction
-  auto headerCallback =  [this, remoteCurlRequest](void* curlresponseData,void *userdata)->bool {
+  auto headerCallback =  [this, weakThis = this->weak_from_this()](void* curlresponseData,void *userdata)->size_t {
+    auto isAlive = weakThis.lock();
+    if(!isAlive) {
+       RNS_LOG_WARN("This object is already destroyed. ignoring the completion callback");
+       return 0;
+     }
+
     CurlResponse *responseData =  (CurlResponse *)curlresponseData;
     CurlRequest *curlRequest = (CurlRequest *) userdata;
 
@@ -365,41 +363,41 @@ void RSkComponentImage::requestNetworkImageData(string sourceUri) {
     auto responseCacheControlData = responseData->headerBuffer.find("Cache-Control");
     if(responseCacheControlData != responseData->headerBuffer.items().end()) {
       std::string responseCacheControlString = responseCacheControlData->second.asString();
-      canCacheData_ = shouldCacheData(responseCacheControlString);
-      if(canCacheData_) responseMaxAgeTime = getCacheMaxAgeDuration(responseCacheControlString);
+      canCacheData_ = remoteCurlRequest_->shouldCacheData();
+      if(canCacheData_) cacheExpiryTime_ = responseData->cacheExpiryTime;
     }
-
-    // TODO : Parse request headers and retrieve caching details
-
-    cacheExpiryTime_ = std::min(responseMaxAgeTime,static_cast<double>(DEFAULT_MAX_CACHE_EXPIRY_TIME));
     RNS_LOG_DEBUG("url [" << responseData->responseurl << "] canCacheData[" << canCacheData_ << "] cacheExpiryTime[" << cacheExpiryTime_ << "]");
     return 0;
   };
 
 
   // completioncallback lambda fuction
-  auto completionCallback =  [this, remoteCurlRequest](void* curlresponseData,void *userdata)->bool {
+  auto completionCallback =  [this, weakThis = this->weak_from_this()](void* curlresponseData,void *userdata)->bool {
+    auto isAlive = weakThis.lock();
+    if(!isAlive) {
+      RNS_LOG_WARN("This object is already destroyed. ignoring the completion callback");
+      return 0;
+    }
     CurlResponse *responseData =  (CurlResponse *)curlresponseData;
     CurlRequest * curlRequest = (CurlRequest *) userdata;
     if((!responseData
         || !processImageData(curlRequest->URL.c_str(),responseData->responseBuffer,responseData->contentSize)) && (hasToTriggerEvent_)) {
       sendErrorEvents();
     }
-    //Reset the lamda callback so that curlRequest shared pointer dereffered from the lamda 
-    // and gets auto destructored after the completion callback.
-    remoteCurlRequest->curldelegator.CURLNetworkingHeaderCallback = nullptr;
-    remoteCurlRequest->curldelegator.CURLNetworkingCompletionCallback = nullptr;
+    isRequestInProgress_=false;
+    remoteCurlRequest_ = nullptr;
     return 0;
   };
 
-  remoteCurlRequest->curldelegator.delegatorData = remoteCurlRequest.get();
-  remoteCurlRequest->curldelegator.CURLNetworkingHeaderCallback = headerCallback;
-  remoteCurlRequest->curldelegator.CURLNetworkingCompletionCallback=completionCallback;
+  remoteCurlRequest_->curldelegator.delegatorData = remoteCurlRequest_.get();
+  remoteCurlRequest_->curldelegator.CURLNetworkingHeaderCallback = headerCallback;
+  remoteCurlRequest_->curldelegator.CURLNetworkingCompletionCallback=completionCallback;
   if(!hasToTriggerEvent_) {
     imageEventEmitter_->onLoadStart();
     hasToTriggerEvent_ = true;
   }
-  sharedCurlNetworking->sendRequest(remoteCurlRequest,query);
+  CurlNetworking::sharedCurlNetworking()->sendRequest(remoteCurlRequest_,query);
+  isRequestInProgress_ = true;
 }
 
 inline void RSkComponentImage::sendErrorEvents() {
@@ -412,6 +410,17 @@ inline void RSkComponentImage::sendSuccessEvents() {
   imageEventEmitter_->onLoad();
   imageEventEmitter_->onLoadEnd();
   hasToTriggerEvent_ = false;
+}
+
+RSkComponentImage::~RSkComponentImage(){
+  // Image component is request send to network by then component is deleted.
+  // still the network component will process the request, by calling abort.
+  // will reduces the load on network and improve the performance.
+  if(isRequestInProgress_ && remoteCurlRequest_){
+    //TODO - need to send the onEnd event to APP if it is abort. 
+    CurlNetworking::sharedCurlNetworking()->abortRequest(remoteCurlRequest_);
+    isRequestInProgress_=false;
+  }
 }
 
 } // namespace react
