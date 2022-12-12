@@ -70,3 +70,4 @@ RNS_USED RSkComponentProvider* RSkComponentProvider##ComponentName##Cls(void) { 
     #define RNS_PROFILE_START(marker)
     #define RNS_PROFILE_END(msg, marker)
 #endif
+#define RNS_SECONDS_TO_MILLISECONDS(time) ((time)*1000)

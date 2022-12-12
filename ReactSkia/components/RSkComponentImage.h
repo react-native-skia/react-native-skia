@@ -6,11 +6,13 @@
 */
 #pragma once
 
+#include <mutex>
 #include "include/core/SkRect.h"
 
 #include "react/renderer/components/image/ImageShadowNode.h"
 
 #include "ReactSkia/components/RSkComponent.h"
+#include "ReactSkia/sdk/CurlNetworking.h"
 #include "ReactSkia/views/common/RSkImageCacheManager.h"
 
 #define DEFAULT_IMAGE_SAMPLING_OPTIONS SkSamplingOptions(SkFilterMode::kLinear) /*Skia's Defualt is SkSamplingOptions(SkFilterMode::kNearest) */
@@ -30,9 +32,12 @@ struct ImgProps{
 class RSkComponentImage final : public RSkComponent {
  public:
   RSkComponentImage(const ShadowView &shadowView);
+  ~RSkComponentImage();
   RnsShell::LayerInvalidateMask updateComponentProps(const ShadowView &newShadowView,bool forceUpdate) override;
  private :
   ImgProps imageProps;
+  std::shared_ptr<CurlRequest> remoteCurlRequest_{nullptr};
+  atomic<bool> isRequestInProgress_{false};
   std::shared_ptr<ImageEventEmitter const> imageEventEmitter_;
   inline void drawContentShadow(SkCanvas *canvas,
                               SkRect frameRect,/*actual image frame*/
