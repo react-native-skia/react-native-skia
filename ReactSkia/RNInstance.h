@@ -29,6 +29,8 @@ class RNInstance {
   void Stop(RSkSurfaceWindow *surface);
   xplat::module::CxxModule* moduleForName(std::string moduleName);
   UIManager *GetUIManager();
+  
+  static jsi::Runtime* RskJsRuntime();
 
  private:
   void InitializeJSCore();
@@ -45,6 +47,8 @@ class RNInstance {
   std::unique_ptr<SurfaceHandler> surfaceHandler_;
   std::unique_ptr<MountingManager> mountingManager_;
   std::unique_ptr<ComponentViewRegistry> componentViewRegistry_;
+
+  static jsi::Runtime *jsRuntime_;
 };
 
 } // namespace react

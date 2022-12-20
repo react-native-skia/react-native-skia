@@ -15,7 +15,7 @@ config("rns_shell_config") {
     "platform/graphics/gl",
   ]
 
-  defines = []
+  defines = ["RNS_ANIMATION_FRAME_RATE=$animation_frame_rate"]
   if (gl_has_gpu) {
     defines += [ "RNS_SHELL_HAS_GPU_SUPPORT" ]
   }
