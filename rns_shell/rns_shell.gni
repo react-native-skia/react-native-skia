@@ -29,6 +29,9 @@ declare_args() {
 
     # If GPU enabled system doesn't support swapbuffer_with_damage or damage_region extensions but supports buffer_age extension, then this can be enabled to improve rendering.
     rns_enable_buffer_age_partial_updates = false
+
+    # Platforms Animation Frame Rate
+    animation_frame_rate = 60
   }
 }
 

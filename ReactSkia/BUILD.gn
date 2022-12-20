@@ -188,6 +188,8 @@ source_set("ReactSkia") {
     "components/RSkComponent.h",
     "components/RSkComponentActivityIndicator.cpp",
     "components/RSkComponentActivityIndicator.h",
+    "components/RSkComponentActivityIndicatorManager.cpp",
+    "components/RSkComponentActivityIndicatorManager.h",
     "components/RSkComponentImage.cpp",
     "components/RSkComponentImage.h",
     "components/RSkComponentProvider.h",
@@ -231,6 +233,8 @@ source_set("ReactSkia") {
     "views/common/RSkImageCacheManager.h",
     "views/common/RSkImageUtils.cpp",
     "views/common/RSkImageUtils.h",
+    "utils/RnsJsRaf.h",
+    "utils/RnsJsRaf.cpp",
   ]
 
   if(rns_enable_onscreen_keyboard) {

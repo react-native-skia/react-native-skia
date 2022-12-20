@@ -14,9 +14,9 @@ config("rns_shell_config") {
     "platform/graphics",
     "platform/graphics/gl",
   ]
-
+  defines = ["RNS_ANIMATION_FRAME_RATE=$animation_frame_rate"]
   if(is_linux) {
-    defines = ["GOOGLE_STRIP_LOG=0"]
+    defines += ["GOOGLE_STRIP_LOG=0"]
     extra_cppflags = getenv("BUILD_CPPFLAGS")
     if(extra_cppflags != "") {
       defines += string_split(extra_cppflags)

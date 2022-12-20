@@ -12,7 +12,8 @@
 namespace facebook {
 namespace react {
 
-class RSkComponentActivityIndicator final : public RSkComponent {
+class RSkComponentActivityIndicatorManager;
+class RSkComponentActivityIndicator final : public RSkComponent{
  public:
   RSkComponentActivityIndicator(const ShadowView &shadowView);
 
@@ -23,6 +24,9 @@ class RSkComponentActivityIndicator final : public RSkComponent {
   RnsShell::LayerInvalidateMask updateComponentProps(const ShadowView &newShadowView,bool forceUpdate) override;
  protected:
   void OnPaint(SkCanvas *canvas) override;
+ private:
+  RSkComponentActivityIndicatorManager* actIndManager_;
+  bool initialPropertiesParsed_{false};
 };
 
 } // namespace react
