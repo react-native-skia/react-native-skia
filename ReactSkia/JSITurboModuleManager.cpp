@@ -1,3 +1,10 @@
+/*
+* Copyright (C) 1994-2022 OpenTV, Inc. and Nagravision S.A.
+* Copyright (C) Kudo Chien
+*
+* This source code is licensed under the MIT license found in the
+* LICENSE file in the root directory of this source tree.
+*/
 #include <folly/io/async/ScopedEventBaseThread.h>
 
 #include "build/build_config.h"
@@ -199,6 +206,7 @@ TurboModuleProviderFunctionType JSITurboModuleManager::GetProvider() {
     if (modules_.find(name) != modules_.end()) {
       return modules_[name];
     }
+    RNS_LOG_WARN("!!!!! Turbo Module " << name << " Not found !!!!!");
     return nullptr;
   };
 }

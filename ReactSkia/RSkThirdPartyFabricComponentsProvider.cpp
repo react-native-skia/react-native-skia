@@ -15,14 +15,16 @@ RSkComponentProviderProtocol RSkThirdPartyFabricComponentsProvider(const char *c
   static std::unordered_map<std::string, RSkComponentProviderProtocol> fabricComponentsClassMap = {
   };
 
-  RNS_LOG_INFO("Look up for component : " << componentName << " in thirdparty provider");
+  RNS_LOG_TRACE("Look up for component : " << componentName << " in thirdparty provider");
 
   auto p = fabricComponentsClassMap.find(componentName);
   if (p != fabricComponentsClassMap.end()) {
+    RNS_LOG_INFO("Found component : " << componentName << " in thirdparty provider");
     auto classFunc = p->second;
     return classFunc;
   }
 
+  RNS_LOG_WARN("Could not find component : " << componentName << " in thirdparty provider");
   return nullptr;
 }
 

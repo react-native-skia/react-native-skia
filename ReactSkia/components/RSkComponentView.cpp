@@ -1,3 +1,11 @@
+/*
+* Copyright (C) 1994-2022 OpenTV, Inc. and Nagravision S.A.
+* Copyright (C) Kudo Chien
+*
+* This source code is licensed under the MIT license found in the
+* LICENSE file in the root directory of this source tree.
+*/
+
 #include <glog/logging.h>
 
 #include "include/core/SkPaint.h"
@@ -13,7 +21,11 @@ namespace react {
 
 RSkComponentView::RSkComponentView(const ShadowView &shadowView)
     : RSkComponent(shadowView) {}
-RnsShell::LayerInvalidateMask  RSkComponentView::updateComponentProps(const ShadowView &newShadowView,bool forceUpdate) {return RnsShell::LayerInvalidateNone;}
+
+RnsShell::LayerInvalidateMask RSkComponentView::updateComponentProps(SharedProps newviewProps,bool forceUpdate) {
+  return RnsShell::LayerInvalidateNone;
+}
+
 void RSkComponentView::OnPaint(SkCanvas *canvas) {
   auto component = getComponentData();
   auto const &viewProps = *std::static_pointer_cast<ViewProps const>(component.props);
@@ -21,18 +33,18 @@ void RSkComponentView::OnPaint(SkCanvas *canvas) {
   auto borderMetrics=viewProps.resolveBorderMetrics(component.layoutMetrics);
   Rect frame = component.layoutMetrics.frame;
 
-/*Draw Order : 1. Shadow 2. BackGround 3 Border*/
-    auto layerRef=layer();
-    if(layerRef->isShadowVisible) {
-        drawShadow(canvas,frame,borderMetrics,
+  /*Draw Order : 1. Shadow 2. BackGround 3 Border*/
+  auto layerRef=layer();
+  if(layerRef->isShadowVisible) {
+    drawShadow(canvas,frame,borderMetrics,
                     viewProps.backgroundColor,
                     layerRef->shadowColor,layerRef->shadowOffset,layerRef->shadowOpacity,
                     layerRef->opacity,
                     layerRef->shadowImageFilter,layerRef->shadowMaskFilter
                    );
-    }
-    drawBackground(canvas,frame,borderMetrics,viewProps.backgroundColor);
-    drawBorder(canvas,frame,borderMetrics,viewProps.backgroundColor);
+  }
+  drawBackground(canvas,frame,borderMetrics,viewProps.backgroundColor);
+  drawBorder(canvas,frame,borderMetrics,viewProps.backgroundColor);
 }
 
 } // namespace react

@@ -25,7 +25,7 @@ LegacyNativeModuleRegistry::LegacyNativeModuleRegistry(ComponentViewRegistry *co
                                                       std::shared_ptr<MessageQueueThread> moduleMessageQueue)
     : ModuleRegistry({},
                     [=](std::string moduleName) -> bool {
-                      RNS_LOG_WARN(this << " !!!!! Native Module " << moduleName.c_str() << " Not found !!!!!");
+                      RNS_LOG_WARN(this << " !!!!! Native Module " << moduleName.c_str() << " not found in internal registry,try to find in thirdparty !!!!!");
                       return ModuleNotFound(moduleName, rnInstance, moduleMessageQueue);
                     }) {
 

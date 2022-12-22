@@ -21,7 +21,7 @@ class RSkComponentActivityIndicator final : public RSkComponent{
   
   void handleCommand(std::string commandName,folly::dynamic args) override {RNS_LOG_NOT_IMPL;};
   
-  RnsShell::LayerInvalidateMask updateComponentProps(const ShadowView &newShadowView,bool forceUpdate) override;
+  RnsShell::LayerInvalidateMask updateComponentProps(SharedProps newViewProps,bool forceUpdate) override;
  protected:
   void OnPaint(SkCanvas *canvas) override;
  private:

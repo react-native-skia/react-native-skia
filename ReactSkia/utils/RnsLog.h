@@ -29,7 +29,8 @@
 #define VRNSLOG_EVERY_N VLOG_EVERY_N
 
 // Helper Logging Macros
-#define RNS_LOG_NOT_IMPL  RNSLOG(WARNING) << "!!!!!!!!!! " << __func__ << " NOT IMPLEMENTED !!!!!!!!!!"
+#define RNS_LOG_NOT_IMPL_MSG(msg)  RNSLOG(WARNING) << "!!!!!!!!!! " << msg << " NOT IMPLEMENTED !!!!!!!!!!"
+#define RNS_LOG_NOT_IMPL  RNS_LOG_NOT_IMPL_MSG(__func__)
 #define RNS_LOG_TODO(msg) RNSLOG(WARNING) << "[TODO] : " <<  msg
 #define RNS_LOG_ASSERT(cond, msg) CHECK(cond) << " => " << msg
 #define RNS_PLOG(msg) PLOG(ERROR) << msg;

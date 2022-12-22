@@ -29,7 +29,7 @@ class RNInstance {
   void Stop(RSkSurfaceWindow *surface);
   xplat::module::CxxModule* moduleForName(std::string moduleName);
   UIManager *GetUIManager();
-  
+
   static jsi::Runtime* RskJsRuntime();
 
  private:

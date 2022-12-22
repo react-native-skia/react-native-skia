@@ -1,5 +1,6 @@
 /*
 * Copyright (C) 1994-2022 OpenTV, Inc. and Nagravision S.A.
+* Copyright (C) Kudo Chien
 *
 * This source code is licensed under the MIT license found in the
 * LICENSE file in the root directory of this source tree.
@@ -33,7 +34,7 @@ class RSkComponentImage final : public RSkComponent {
  public:
   RSkComponentImage(const ShadowView &shadowView);
   ~RSkComponentImage();
-  RnsShell::LayerInvalidateMask updateComponentProps(const ShadowView &newShadowView,bool forceUpdate) override;
+  RnsShell::LayerInvalidateMask updateComponentProps(SharedProps newviewProps,bool forceUpdate) override;
  private :
   ImgProps imageProps;
   std::shared_ptr<CurlRequest> remoteCurlRequest_{nullptr};

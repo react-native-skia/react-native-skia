@@ -62,7 +62,9 @@ uint64_t RnsJsRequestAnimation::nextUniqueId() {
 }
 
 Value RnsJsRequestAnimation::RnsRequestAnimationFrame() {
-  if(!isActive_) return jsi::Value(0);
+  if(!isActive_) {
+    return jsi::Value(0);
+  }
   auto runtime = RNInstance::RskJsRuntime();
   return runtime->global()
     .getPropertyAsFunction(*runtime, "requestAnimationFrame")

@@ -1,3 +1,10 @@
+/*
+* Copyright (C) 1994-2022 OpenTV, Inc. and Nagravision S.A.
+* Copyright (C) Kudo Chien
+*
+* This source code is licensed under the MIT license found in the
+* LICENSE file in the root directory of this source tree.
+*/
 #include "ReactSkia/ComponentViewRegistry.h"
 
 #include <glog/logging.h>
@@ -12,9 +19,10 @@ ComponentViewRegistry::ComponentViewRegistry() {
 
 ComponentDescriptorRegistry::Shared
 ComponentViewRegistry::CreateComponentDescriptorRegistry(
-    ComponentDescriptorParameters const &parameters) const {
-  return descriptorProviderRegistry_->createComponentDescriptorRegistry(
+    ComponentDescriptorParameters const &parameters) {
+  componentDescriptorRegistry_ = descriptorProviderRegistry_->createComponentDescriptorRegistry(
       parameters);
+  return componentDescriptorRegistry_;
 }
 
 void ComponentViewRegistry::Register(
@@ -47,6 +55,24 @@ RSkComponentProvider *ComponentViewRegistry::GetProvider(
     return it->second.get();
   }
   return nullptr;
+}
+
+RSkComponentProvider *ComponentViewRegistry::GetProvider(
+    int tag) {
+  for(const auto &kv : registry_) {
+    if ((strcmp(kv.second->GetDescriptorProvider().name, "RootView")) != 0) {
+      auto component = kv.second->GetComponent(tag);
+      if(component != nullptr) {
+        return kv.second.get();
+      }
+    }
+  }
+  return nullptr;
+}
+
+const ComponentDescriptor* ComponentViewRegistry::getComponentDescriptor(
+    ComponentHandle componentHandle) {
+  return componentDescriptorRegistry_->findComponentDescriptorByHandle_DO_NOT_USE_THIS_IS_BROKEN(componentHandle);
 }
 
 } // namespace react

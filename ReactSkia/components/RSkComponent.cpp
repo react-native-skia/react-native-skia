@@ -1,3 +1,11 @@
+/*
+* Copyright (C) 1994-2022 OpenTV, Inc. and Nagravision S.A.
+* Copyright (C) Kudo Chien
+*
+* This source code is licensed under the MIT license found in the
+* LICENSE file in the root directory of this source tree.
+*/
+
 #include "include/core/SkPaint.h"
 #include "include/core/SkPictureRecorder.h"
 #include "include/core/SkSurface.h"
@@ -104,14 +112,14 @@ void RSkComponent::setNeedFocusUpdate(){
   });
 }
 
-RnsShell::LayerInvalidateMask RSkComponent::updateProps(const ShadowView &newShadowView,bool forceUpdate) {
+RnsShell::LayerInvalidateMask RSkComponent::updateProps(SharedProps newViewProps,bool forceUpdate) {
 
-   auto const &newviewProps = *std::static_pointer_cast<ViewProps const>(newShadowView.props);
+   auto const &newviewProps = *std::static_pointer_cast<ViewProps const>(newViewProps);
    auto const &oldviewProps = *std::static_pointer_cast<ViewProps const>(component_.props);
    RnsShell::LayerInvalidateMask updateMask=RnsShell::LayerInvalidateNone;
    bool createShadowFilter=false;
 
-   updateMask= updateComponentProps(newShadowView,forceUpdate);
+   updateMask= updateComponentProps(newViewProps,forceUpdate);
   //opacity
    if((forceUpdate) || (oldviewProps.opacity != newviewProps.opacity)) {
       layer_->opacity = ((newviewProps.opacity > 1.0)? 1.0:newviewProps.opacity)*MAX_8BIT;
@@ -240,7 +248,7 @@ void RSkComponent::updateComponentData(const ShadowView &newShadowView,const uin
    }
    if(updateMask & ComponentUpdateMaskProps) {
       RNS_LOG_DEBUG("\tUpdate Property");
-      invalidateMask = static_cast<RnsShell::LayerInvalidateMask>(invalidateMask | updateProps(newShadowView,forceUpdate));
+      invalidateMask = static_cast<RnsShell::LayerInvalidateMask>(invalidateMask | updateProps(newShadowView.props,forceUpdate));
       component_.props = newShadowView.props;
 
       //TODO only if TV related proeprties have changed ?
@@ -268,7 +276,10 @@ void RSkComponent::updateComponentData(const ShadowView &newShadowView,const uin
       setNeedFocusUpdate();
    }
 #endif
+   drawAndSubmit(invalidateMask);
+}
 
+void RSkComponent::drawAndSubmit(RnsShell::LayerInvalidateMask invalidateMask) {
    if(layer_ && layer_.get()) {
      layer_->invalidate(invalidateMask);
      if(layer_->type() == RnsShell::LAYER_TYPE_PICTURE) {
@@ -278,6 +289,7 @@ void RSkComponent::updateComponentData(const ShadowView &newShadowView,const uin
        RNS_PROFILE_API_OFF(component_.componentName << " getBorderPicture :", static_cast<RnsShell::ScrollLayer*>(layer_.get())->setBorderPicture(getPicture(PictureTypeBorder)));
      }
    }
+
 }
 
 void RSkComponent::mountChildComponent(

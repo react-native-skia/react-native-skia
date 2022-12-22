@@ -7,7 +7,7 @@
 
 #pragma once
 #include <semaphore.h>
-#include "sdk/ThreadSafeQueue.h"
+#include "ReactSkia/sdk/ThreadSafeQueue.h"
 #include "ReactSkia/core_modules/RSkSpatialNavigator.h"
 
 using namespace rns::sdk;

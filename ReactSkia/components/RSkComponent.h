@@ -1,3 +1,10 @@
+/*
+* Copyright (C) 1994-2022 OpenTV, Inc. and Nagravision S.A.
+* Copyright (C) Kudo Chien
+*
+* This source code is licensed under the MIT license found in the
+* LICENSE file in the root directory of this source tree.
+*/
 #pragma once
 
 #ifdef __APPLE__
@@ -89,7 +96,7 @@ class RSkComponent : public RnsShell::Layer , public SpatialNavigator::Container
 
   virtual void updateComponentData(const ShadowView &newShadowView , const uint32_t updateMask , bool forceUpdate);
 
-  virtual RnsShell::LayerInvalidateMask updateComponentProps(const ShadowView &newShadowView,bool forceUpadate) = 0;
+  virtual RnsShell::LayerInvalidateMask updateComponentProps(SharedProps newProps,bool forceUpadate) = 0;
 
   virtual RnsShell::LayerInvalidateMask updateComponentState(const ShadowView &newShadowView,bool forceUpadate) {
      /* TODO Return default None here when state update is handled with proper mask */
@@ -106,13 +113,14 @@ class RSkComponent : public RnsShell::Layer , public SpatialNavigator::Container
   const SkIRect getScreenFrame();
   RSkComponent *getParent() {return parent_; };
 
+  void drawAndSubmit(RnsShell::LayerInvalidateMask invalidateMask);
   SpatialNavigator::Container *nearestAncestorContainer();
   bool hasAncestor(const SpatialNavigator::Container* ancestor);
   bool isFocusable();
   bool needsShadowPainting();
 
   void requiresLayer(const ShadowView &shadowView, Layer::Client& layerClient);
-  RnsShell::LayerInvalidateMask updateProps(const ShadowView &newShadowView , bool forceUpdate);
+  RnsShell::LayerInvalidateMask updateProps(SharedProps newProps , bool forceUpdate);
   void setNeedFocusUpdate();
  protected:
   virtual void OnPaint(SkCanvas *canvas) = 0;
