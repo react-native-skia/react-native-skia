@@ -1,3 +1,11 @@
+/*
+* Copyright (C) 1994-2022 OpenTV, Inc. and Nagravision S.A.
+* Copyright (C) Kudo Chien
+*
+* This source code is licensed under the MIT license found in the
+* LICENSE file in the root directory of this source tree.
+*/
+
 #pragma once
 
 #include "ReactSkia/components/RSkComponent.h"
@@ -9,7 +17,7 @@ namespace react {
 class RSkComponentText final : public RSkComponent {
  public:
   RSkComponentText(const ShadowView &shadowView);
-  RnsShell::LayerInvalidateMask updateComponentProps(const ShadowView &newShadowView,bool forceUpadte) override;
+  RnsShell::LayerInvalidateMask updateComponentProps(SharedProps newviewProps,bool forceUpadte) override;
  protected:
   void OnPaint(SkCanvas *canvas) override;
 };
@@ -17,7 +25,7 @@ class RSkComponentText final : public RSkComponent {
 class RSkComponentRawText final : public RSkComponent {
  public:
   RSkComponentRawText(const ShadowView &shadowView);
-  RnsShell::LayerInvalidateMask updateComponentProps(const ShadowView &newShadowView,bool forceUpadte) override;
+  RnsShell::LayerInvalidateMask updateComponentProps(SharedProps newviewProps,bool forceUpadte) override;
  protected:
   void OnPaint(SkCanvas *canvas) override;
 };
@@ -28,7 +36,7 @@ class RSkComponentParagraph final : public RSkComponent {
   uint32_t expectedAttachmentCount;
   uint32_t currentAttachmentCount;
   struct RSkSkTextLayout textLayout;
-  RnsShell::LayerInvalidateMask updateComponentProps(const ShadowView &newShadowView,bool forceUpadte) override;
+  RnsShell::LayerInvalidateMask updateComponentProps(SharedProps newviewProps,bool forceUpadte) override;
  protected:
   void OnPaint(SkCanvas *canvas) override;
 

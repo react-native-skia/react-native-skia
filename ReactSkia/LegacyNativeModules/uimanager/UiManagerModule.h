@@ -49,6 +49,7 @@ class UimanagerModule : public module::CxxModule {
 
   std::string getName();
 
+  void updateViewForReactTag(int viewTag, folly::dynamic newViewProps);
  private:
   std::unique_ptr<Uimanager> uimanager_;
 };

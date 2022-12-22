@@ -412,8 +412,8 @@ void RSkComponentTextInput::keyEventProcessingThread(){
   }
 }
 
-RnsShell::LayerInvalidateMask  RSkComponentTextInput::updateComponentProps(const ShadowView &newShadowView,bool forceUpdate){
-  auto const &textInputProps = *std::static_pointer_cast<TextInputProps const>(newShadowView.props);
+RnsShell::LayerInvalidateMask  RSkComponentTextInput::updateComponentProps(SharedProps newviewProps,bool forceUpdate){
+  auto const &textInputProps = *std::static_pointer_cast<TextInputProps const>(newviewProps);
   int mask = RnsShell::LayerInvalidateNone;
   std::string textString{};
   RNS_LOG_DEBUG("[updateComponentProps] event count "<<textInputProps.mostRecentEventCount);

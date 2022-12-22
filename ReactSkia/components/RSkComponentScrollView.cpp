@@ -53,10 +53,10 @@ void RSkComponentScrollView::fadeOutScrollBar() {
 #endif //ENABLE_FEATURE_SCROLL_INDICATOR
 
 RnsShell::LayerInvalidateMask RSkComponentScrollView::updateComponentProps(
-    const ShadowView &newShadowView,
+    SharedProps newviewProps,
     bool forceUpdate) {
 
-  auto const &newScrollViewProps = *std::static_pointer_cast<ScrollViewProps const>(newShadowView.props);
+  auto const &newScrollViewProps = *std::static_pointer_cast<ScrollViewProps const>(newviewProps);
   auto const &oldScrollViewProps = *std::static_pointer_cast<ScrollViewProps const>(getComponentData().props);
   RnsShell::LayerInvalidateMask updateMask=RnsShell::LayerInvalidateNone;
 

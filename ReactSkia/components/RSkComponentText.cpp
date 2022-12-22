@@ -1,4 +1,10 @@
-#include "ReactSkia/components/RSkComponentText.h"
+/*
+* Copyright (C) 1994-2022 OpenTV, Inc. and Nagravision S.A.
+* Copyright (C) Kudo Chien
+*
+* This source code is licensed under the MIT license found in the
+* LICENSE file in the root directory of this source tree.
+*/
 
 #include "include/core/SkFont.h"
 #include "include/core/SkPaint.h"
@@ -7,6 +13,7 @@
 #include "react/renderer/components/text/TextShadowNode.h"
 #include "ReactSkia/views/common/RSkTextUtils.h"
 
+#include "ReactSkia/components/RSkComponentText.h"
 #include "ReactSkia/utils/RnsLog.h"
 
 using namespace skia::textlayout;
@@ -18,13 +25,19 @@ namespace react {
 RSkComponentText::RSkComponentText(const ShadowView &shadowView)
     : RSkComponent(shadowView) {}
 
-RnsShell::LayerInvalidateMask RSkComponentText::updateComponentProps(const ShadowView &newShadowView,bool forceUpadte) {return RnsShell::LayerInvalidateNone;}
+RnsShell::LayerInvalidateMask RSkComponentText::updateComponentProps(SharedProps newviewProps,bool forceUpadte) {
+  return RnsShell::LayerInvalidateNone;
+}
+
 void RSkComponentText::OnPaint(SkCanvas *canvas) {}
 
 RSkComponentRawText::RSkComponentRawText(const ShadowView &shadowView)
     : RSkComponent(shadowView) {}
 
-RnsShell::LayerInvalidateMask RSkComponentRawText::updateComponentProps(const ShadowView &newShadowView,bool forceUpadte) {return RnsShell::LayerInvalidateNone;}
+RnsShell::LayerInvalidateMask RSkComponentRawText::updateComponentProps(SharedProps newviewProps,bool forceUpadte) {
+  return RnsShell::LayerInvalidateNone;
+}
+
 void RSkComponentRawText::OnPaint(SkCanvas *canvas) {}
 
 RSkComponentParagraph::RSkComponentParagraph(const ShadowView &shadowView)
@@ -32,9 +45,9 @@ RSkComponentParagraph::RSkComponentParagraph(const ShadowView &shadowView)
     , expectedAttachmentCount(0)
     , currentAttachmentCount(0){}
 
-RnsShell::LayerInvalidateMask RSkComponentParagraph::updateComponentProps(const ShadowView &newShadowView,bool forceUpadte) {
+RnsShell::LayerInvalidateMask RSkComponentParagraph::updateComponentProps(SharedProps newviewProps,bool forceUpadte) {
 
-  auto const &paragraphProps = *std::static_pointer_cast<ParagraphProps const>(newShadowView.props);
+  auto const &paragraphProps = *std::static_pointer_cast<ParagraphProps const>(newviewProps);
   paragraphAttributes_ = paragraphProps.paragraphAttributes;
   return RnsShell::LayerInvalidateAll;
 }

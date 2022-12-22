@@ -19,7 +19,10 @@ namespace react {
 RSkComponentUnimplementedView::RSkComponentUnimplementedView(const ShadowView &shadowView)
     : RSkComponent(shadowView) {}
 
-RnsShell::LayerInvalidateMask RSkComponentUnimplementedView::updateComponentProps(const ShadowView &newShadowView,bool forceUpdate) { RNS_LOG_NOT_IMPL; return RnsShell::LayerInvalidateNone;}
+RnsShell::LayerInvalidateMask RSkComponentUnimplementedView::updateComponentProps(SharedProps newviewProps,bool forceUpdate) {
+  RNS_LOG_NOT_IMPL;
+  return RnsShell::LayerInvalidateNone;
+}
 
 void RSkComponentUnimplementedView::handleCommand(std::string commandName,folly::dynamic args){
   RNS_LOG_WARN("[RSkComponentUnimplementedView][handleCommand] commandName : "<< commandName);

@@ -178,8 +178,28 @@ dynamic Uimanager::getConstantsForViewManager(std::string viewManagerName) {
 }
 
 void Uimanager::updateView(int Tag, std::string viewManagerName, dynamic props) {
-  (void)componentViewRegistry_;
-  RNS_LOG_NOT_IMPL;
+  RSkComponentProvider* provider = viewManagerName.empty() ?
+                                      componentViewRegistry_->GetProvider(Tag) :
+                                      componentViewRegistry_->GetProvider(viewManagerName.c_str());
+
+  if(provider == nullptr) {
+    RNS_LOG_ERROR("Unable to updateView,invalid provider for tag (" << Tag << ") name (" << viewManagerName << ") !!");
+    return;
+  }
+  const ComponentDescriptor* componentDescriptor = componentViewRegistry_->getComponentDescriptor(provider->GetDescriptorProvider().handle);
+  auto component = provider->GetComponent(Tag);
+
+  if((componentDescriptor != nullptr) && (component != nullptr)) {
+
+    SharedProps oldProps = component->getComponentData().props;
+    SharedProps newProps = componentDescriptor->cloneProps(oldProps,RawProps(props));
+
+    component->layer()->client().notifyFlushBegin();
+    RnsShell::LayerInvalidateMask invalidateMask = component->updateProps(newProps,false);
+    component->drawAndSubmit(invalidateMask);
+    component->layer()->client().notifyFlushRequired();
+  }
+
 }
 
 UimanagerModule::UimanagerModule(std::unique_ptr<Uimanager> uimanager)
@@ -207,6 +227,10 @@ auto UimanagerModule::getMethods() -> std::vector<Method> {
             uimanager_->updateView(jsArgAsInt(args, 0), jsArgAsString(args, 1), jsArgAsDynamic(args, 2));
           }),
   };
+}
+
+void UimanagerModule::updateViewForReactTag(int viewTag, folly::dynamic newProps) {
+  uimanager_->updateView(viewTag,std::string(),newProps);
 }
 
 std::unique_ptr<xplat::module::CxxModule> UimanagerModule::createModule(ComponentViewRegistry *componentViewRegistry) {

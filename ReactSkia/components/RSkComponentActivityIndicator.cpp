@@ -27,10 +27,10 @@ RSkComponentActivityIndicator::RSkComponentActivityIndicator(const ShadowView &s
   actIndManager_ = RSkComponentActivityIndicatorManager::getActivityIndicatorManager();
 }
 
-RnsShell::LayerInvalidateMask  RSkComponentActivityIndicator::updateComponentProps(const ShadowView &newShadowView,bool forceUpdate) {
+RnsShell::LayerInvalidateMask  RSkComponentActivityIndicator::updateComponentProps(SharedProps newViewProps,bool forceUpdate) {
   auto component = getComponentData();
   auto const &activityIndicatorOldProps = *std::static_pointer_cast<ActivityIndicatorProps const>(component.props);
-  auto const &activityIndicatorNewProps = *std::static_pointer_cast<ActivityIndicatorProps const>(newShadowView.props);
+  auto const &activityIndicatorNewProps = *std::static_pointer_cast<ActivityIndicatorProps const>(newViewProps);
 
   if((initialPropertiesParsed_ == false) || (activityIndicatorOldProps.animating != activityIndicatorNewProps.animating)){
     initialPropertiesParsed_ = true;

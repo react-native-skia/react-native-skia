@@ -1,3 +1,11 @@
+/*
+* Copyright (C) 1994-2022 OpenTV, Inc. and Nagravision S.A.
+* Copyright (C) Kudo Chien
+*
+* This source code is licensed under the MIT license found in the
+* LICENSE file in the root directory of this source tree.
+*/
+
 #include "ReactSkia/components/RSkComponentRootView.h"
 
 #include "include/core/SkPaint.h"
@@ -9,7 +17,10 @@ namespace react {
 RSkComponentRootView::RSkComponentRootView(const ShadowView &shadowView)
     : RSkComponent(shadowView) {}
 
-RnsShell::LayerInvalidateMask RSkComponentRootView::updateComponentProps(const ShadowView &newShadowView,bool forceUpdate) {return RnsShell::LayerInvalidateNone;}
+RnsShell::LayerInvalidateMask RSkComponentRootView::updateComponentProps(SharedProps newviewProps,bool forceUpdate) {
+  return RnsShell::LayerInvalidateNone;
+}
+
 void RSkComponentRootView::OnPaint(
     SkCanvas *canvas) {
   canvas->clear(SK_ColorWHITE);
