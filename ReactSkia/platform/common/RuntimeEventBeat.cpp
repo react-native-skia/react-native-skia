@@ -41,13 +41,11 @@ void RuntimeEventBeat::beat(){
            std::chrono::steady_clock::now() + std::chrono::milliseconds(BEAT_INTERVAL));
 }
 
-void RuntimeEventBeat::stopObserving() const noexcept
-{
+void RuntimeEventBeat::stopObserving() const noexcept {
   this->disable();
 }
 
-bool RuntimeEventBeat::isOnRunLoopThread() const noexcept
-{
+bool RuntimeEventBeat::isOnRunLoopThread() const noexcept {
   return (beatThread_.getThreadId() == std::thread::id());
 }
 
