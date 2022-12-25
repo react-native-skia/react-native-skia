@@ -166,6 +166,8 @@ source_set("ReactSkia") {
     "sdk/ThreadSafeCache.h",
     "sdk/WindowDelegator.cpp",
     "sdk/WindowDelegator.h",
+    "core_modules/RSkAppStateModule.cpp",
+    "core_modules/RSkAppStateModule.h",
     "core_modules/RSkDeviceInfo.cpp",
     "core_modules/RSkDeviceInfo.h",
     "core_modules/RSkEventEmitter.cpp",
@@ -277,6 +279,15 @@ source_set("ReactSkia") {
     "RSkThirdPartyNativeModuleProvider.h",
   ]
 
+  # Platform plugin factory
+  sources += [
+    "pluginfactory/Export.h",
+    "pluginfactory/Version.h",
+    "pluginfactory/RnsPlugin.h",
+    "pluginfactory/RnsPluginFactory.cpp",
+    "pluginfactory/RnsPluginFactory.h",
+  ]
+
   if (is_mac) {
     sources += [
       "platform/macosx/MainRunLoopEventBeat.h",
@@ -326,6 +337,7 @@ source_set("ReactSkia") {
     "//react-native/ReactCommon/react/renderer/textlayoutmanager",
     "//ReactSkia:activityindicator",
     "//ReactSkia:textinput",
+    "//ReactSkia/pluginfactory/plugins",
     "//rns_shell",
     "//skia",
   ]
@@ -352,7 +364,6 @@ source_set("ReactSkia") {
     configs += ["//third_party/nopoll:nopoll_from_pkgconfig"]
     public_deps += ["//third_party/libcurl:libcurl"]
   }
-
 }
 
 executable("ReactSkiaApp") {

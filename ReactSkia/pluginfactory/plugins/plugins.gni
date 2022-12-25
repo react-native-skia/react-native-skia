@@ -1,0 +1,6 @@
+# Plugins configuration
+
+declare_args() {
+  # Choose plugin platform. This name should match the directory name in plugins directory
+  plugin_platform_backend = "ubuntu"
+}

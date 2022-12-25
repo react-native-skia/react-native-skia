@@ -12,6 +12,7 @@
 
 #include "JSITurboModuleManager.h"
 #include "version.h"
+#include "core_modules/RSkAppStateModule.h"
 #include "core_modules/RSkDeviceInfo.h"
 #include "core_modules/RSkImageLoader.h"
 #include "core_modules/RSkTimingModule.h"
@@ -97,30 +98,6 @@ class ExceptionsManagerModule : public TurboModule {
   }
 };
 
-class AppStateModule : public TurboModule {
- public:
-  AppStateModule(
-      const std::string &name,
-      std::shared_ptr<CallInvoker> jsInvoker)
-      : TurboModule(name, jsInvoker) {
-    methodMap_["getConstants"] = MethodMetadata{0, GetConstants};
-
-    methodMap_["getCurrentAppState"] = MethodMetadata{2, NoOp};
-    methodMap_["addListener"] = MethodMetadata{1, NoOp};
-    methodMap_["removeListener"] = MethodMetadata{1, NoOp};
-  }
-
- private:
-  static jsi::Value GetConstants(
-      jsi::Runtime &rt,
-      TurboModule &turboModule,
-      const jsi::Value *args,
-      size_t count) {
-    return jsi::valueFromDynamic(
-        rt, folly::dynamic::array("initialAppState", "active"));
-  }
-};
-
 class UnimplementedTurboModule : public TurboModule {
  public:
   UnimplementedTurboModule(
@@ -164,7 +141,7 @@ JSITurboModuleManager::JSITurboModuleManager(Instance *bridgeInstance)
   modules_["Timing"] =
       std::make_shared<RSkTimingModule>("Timing", jsInvoker, bridgeInstance);
   modules_["AppState"] =
-      std::make_shared<AppStateModule>("AppState", jsInvoker);
+      std::make_shared<RSkAppStateModule>("AppState", jsInvoker, bridgeInstance);
   modules_["Networking"] =
       std::make_shared<RSkNetworkingModule>("Networking", jsInvoker, bridgeInstance );
   modules_["WebSocketModule"] =
