@@ -1,6 +1,6 @@
 //
 // Copyright (c) 2014 Sean Farrell
-// Copyright (C) 1994-2021 OpenTV, Inc. and Nagravision S.A.
+// Copyright (C) 1994-2022 OpenTV, Inc. and Nagravision S.A.
 //  
 // Permission is hereby granted, free of charge, to any person obtaining a copy 
 // of this software and associated documentation files (the "Software"), to deal
@@ -21,13 +21,17 @@
 // SOFTWARE.
 //
 
-#include <iostream>
+
+#include <algorithm>
 #include <functional>
+#include <list>
 #include <map>
 #include <memory>
 #include <mutex>
-#include <list>
-#include <algorithm>
+
+#include <folly/io/async/ScopedEventBaseThread.h>
+
+#include "ReactSkia/utils/RnsLog.h"
 
 #pragma once
 
@@ -53,18 +57,20 @@ class NotificationCenter {
             Listener(unsigned int i, std::function<void (Args...)> c)
             : ListenerBase(i), cb(c) {}
 
-            std::function<void (Args...)> cb;
+            std::function<void (Args...)> cb{nullptr};
         };
 
         std::mutex mutex;
-        unsigned int last_listener;
-        std::multimap<std::string, std::shared_ptr<ListenerBase>> listeners;
+        unsigned int last_listener{0};
+        std::map<std::string, std::vector<std::shared_ptr<ListenerBase>>> listenersList;
 
         NotificationCenter(const NotificationCenter&) = delete;  
         const NotificationCenter& operator = (const NotificationCenter&) = delete;
+        folly::ScopedEventBaseThread eventNotifierThread_;
     public:
-        NotificationCenter() {
-            NotificationCenter::last_listener = 0;
+        NotificationCenter()
+        : eventNotifierThread_("NotificationCenterThread") {
+          eventNotifierThread_.getEventBase()->waitUntilRunning();
         }
 
         ~NotificationCenter() {}
@@ -79,12 +85,9 @@ class NotificationCenter {
         template <typename... Args>
         unsigned int addListener(std::string eventName, std::function<void (Args...)> cb);
 
-        //unsigned int addListener(std::string eventName, std::function<void ()> cb);
-
         template <typename... Args>
         unsigned int on(std::string eventName, std::function<void (Args...)> cb);
-        
-        //unsigned int on(std::string eventName, std::function<void ()> cb);
+
         void removeListener(unsigned int listener_id);
 
         template <typename... Args>
@@ -97,15 +100,26 @@ unsigned int NotificationCenter::addListener(std::string eventName, std::functio
     if (!cb) {
         // throw does not work as exception is disbaled with -fno-exceptions 
         //throw std::invalid_argument("NotificationCenter::addListener: No callbak provided.");
-
-        std::cout << "NotificationCenter::addListener: No callback provided.";
+        RNS_LOG_INFO("NotificationCenter::addListener: No callback provided.");
+        return 0;
     }
     std::lock_guard<std::mutex> lock(mutex);
-
     unsigned int listener_id = ++last_listener;
-    listeners.insert(std::make_pair(eventName, std::make_shared<Listener<Args...>>(listener_id, cb)));
+    auto addlistenerHandler = [=](){
+      std::lock_guard<std::mutex> lock(mutex);
 
-    return listener_id;        
+      auto itr = listenersList.find(eventName);
+
+      if( itr!=listenersList.end() ) {
+          (itr->second).push_back(std::make_shared<Listener<Args...>>(listener_id, cb));
+      } else {
+          std::vector<std::shared_ptr<ListenerBase>> vHandle;
+          vHandle.push_back(std::make_shared<Listener<Args...>>(listener_id, cb));
+          listenersList.insert({eventName,vHandle});
+      }
+    };
+    eventNotifierThread_.getEventBase()->runInEventBaseThread(std::move(addlistenerHandler));
+   return listener_id;
 }
 
 template <typename... Args>
@@ -115,20 +129,24 @@ unsigned int NotificationCenter::on(std::string eventName, std::function<void (A
 
 template <typename... Args>
 void NotificationCenter::emit(std::string eventName, Args... args) {
-    std::list<std::shared_ptr<Listener<Args...>>> handlers;
-    
-    {
-        std::lock_guard<std::mutex> lock(mutex);
-        auto range = listeners.equal_range(eventName);
-        handlers.resize(std::distance(range.first, range.second));
-        std::transform(range.first, range.second, handlers.begin(), [] (std::pair<const std::string, std::shared_ptr<ListenerBase>> p) {
-            auto l = std::dynamic_pointer_cast<Listener<Args...>>(p.second);
-            
-            return l;
-        });
-    }
+    //Creating dispatch Handler to dispatch the event in the event base folly thread.
+    auto dispatchHandler = [=](){
+        std::unique_lock<std::mutex> lock(mutex);
+        auto itr =listenersList.find(eventName);
+        if(itr == listenersList.end()){
+            return; // No Listners for this Event
+        }
+        auto handle = itr->second;
 
-    for (auto& h : handlers) {
-        h->cb(args...);
-    }        
+        mutex.unlock();
+
+        for (auto& iter : handle) {
+            auto l =  std::dynamic_pointer_cast<Listener<Args...>>(iter);
+            if(l->cb != nullptr) {
+                l->cb(args...); // Fire callback to all the Listeners
+            }
+        }
+    };//End of dispacthHandler
+    eventNotifierThread_.getEventBase()->runInEventBaseThread(std::move(dispatchHandler));
 }
+
