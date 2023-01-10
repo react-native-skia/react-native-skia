@@ -6,6 +6,7 @@
  */
 #pragma once
 
+#include <better/map.h>
 #include "include/core/SkImage.h"
 #include "include/core/SkGraphics.h"
 #include "include/gpu/GrDirectContext.h"
@@ -34,6 +35,8 @@ class RSkImageCacheManager {
   static void init();
   sk_sp<SkImage> findImageDataInCache(const char* path);
   bool imageDataInsertInCache(const char* path,decodedimageCacheData imageCacheData);
+  bool clearMemory();
+  bool clearDisk();
  private:
   static std::mutex mutex_;
   static RSkImageCacheManager *imageCacheManagerInstance_;
