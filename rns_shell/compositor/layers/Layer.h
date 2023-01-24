@@ -30,7 +30,8 @@ namespace RnsShell {
 class Layer;
 
 enum LayerType {
-    LAYER_TYPE_DEFAULT = 0, // Default layer type which which will use component specific APIs to paint.
+    LAYER_TYPE_DEFAULT = 0, // Default layer type will need to register a paint functions using registerOnPaint.
+    LAYER_TYPE_VIRTUAL, // Layer without any paint function. Used to maintain frame and properties..
     LAYER_TYPE_PICTURE, // SkPiture based layer.
     LAYER_TYPE_SCROLL, // Scrolling functionality based layer.
     LAYER_TYPE_TEXTURED, // SkTexture based layer.
@@ -47,6 +48,7 @@ enum LayerInvalidateMask {
 typedef std::vector<std::shared_ptr<Layer> > LayerList;
 using SharedLayer = std::shared_ptr<Layer>;
 using FrameDamages = std::vector<SkIRect>;
+using LayerOnPainFunc = std::function<void(SkCanvas*)>;
 
 struct PaintContext {
     SkCanvas* canvas;
@@ -93,7 +95,7 @@ public:
     virtual ~Layer() {};
 
     Client& client() const { return *client_; }
-    void setClient(Client& client) { client_ = &client; } // Used for Default Layer Type TODO: Need to remove this once we introduce Paintclient for default Layer.
+    void registerOnPaint(LayerOnPainFunc paintFunc);// Used for Default Layer Type
 
     Layer* rootLayer();
     Layer* parent() { return parent_; }
@@ -118,7 +120,6 @@ public:
     virtual void paintChildren(PaintContext& context);
     virtual void prePaint(PaintContext& context, bool forceChildrenLayout = false);
     virtual void paint(PaintContext& context);
-    virtual void onPaint(SkCanvas*) {}
 
     SkIRect& absoluteFrame() { return absFrame_; }
     const SkIRect& getFrame() const { return frame_; }
@@ -151,6 +152,7 @@ private:
     void setSkipParentMatrix(bool skipParentMatrix) {skipParentMatrix_ = skipParentMatrix;}
     void applyLayerOpacity(PaintContext& context);
     void applyLayerTransformMatrix(PaintContext& context);
+    LayerOnPainFunc onPaint_{nullptr}; // Used for LAYER_TYPE_DEFAULT only
 
     SkIRect getFrameBoundsWithShadow();
 

@@ -78,9 +78,9 @@ struct Component {
 
 class RSkComponent;
 
-class RSkComponent : public RnsShell::Layer , public SpatialNavigator::Container, public std::enable_shared_from_this<RSkComponent>  {
+class RSkComponent : public SpatialNavigator::Container, public std::enable_shared_from_this<RSkComponent>  {
  public:
-  RSkComponent(const ShadowView &shadowView);
+  RSkComponent(const ShadowView &shadowView, RnsShell::LayerType layerType = LAYER_TYPE_PICTURE);
   RSkComponent(RSkComponent &&) = default;
   RSkComponent &operator=(RSkComponent &&) = default;
 
@@ -129,14 +129,13 @@ class RSkComponent : public RnsShell::Layer , public SpatialNavigator::Container
   sk_sp<SkPicture> getPicture(PictureType type=PictureTypeAll);
  private:
   // RnsShell::Layer implementations
-  void onPaint(SkCanvas*) override;
+  void onPaint(SkCanvas*);
 
  private:
   RSkComponent *parent_;
   std::shared_ptr<RnsShell::Layer> layer_;
+  RnsShell::LayerType layerType_{LAYER_TYPE_PICTURE};
   Component component_;
-
-  typedef Layer INHERITED;
 };
 
 } // namespace react
