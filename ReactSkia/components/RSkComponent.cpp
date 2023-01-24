@@ -23,9 +23,9 @@ namespace react {
 
 using namespace RnsShell;
 
-RSkComponent::RSkComponent(const ShadowView &shadowView)
-    : INHERITED(Layer::EmptyClient::singleton(), LAYER_TYPE_DEFAULT)
-    , parent_(nullptr)
+RSkComponent::RSkComponent(const ShadowView &shadowView, RnsShell::LayerType layerType)
+    : parent_(nullptr)
+    , layerType_(layerType)
     , component_(shadowView) {}
 
 RSkComponent::~RSkComponent() {}
@@ -91,14 +91,10 @@ sk_sp<SkPicture> RSkComponent::getPicture(PictureType type) {
 
 void RSkComponent::requiresLayer(const ShadowView &shadowView, Layer::Client& layerClient) {
     // Need to come up with rules to decide wheather we need to create picture layer, texture layer etc"
-    // Text components paragraph builder is not compatabile with Picture layer,so use default layer
-    if(strcmp(component_.componentName,"Paragraph") == 0) {
-        layer_ = this->shared_from_this();
-        layer_->setClient(layerClient); // Need to set client for Default layer type.
-    } else if (strcmp(component_.componentName,"ScrollView") == 0)
-        layer_ = Layer::Create(layerClient, LAYER_TYPE_SCROLL);
-    else
-        layer_ = Layer::Create(layerClient, LAYER_TYPE_PICTURE);
+    layer_ = Layer::Create(layerClient, layerType_);
+    if(layerType_ == LAYER_TYPE_DEFAULT) {
+        layer_->registerOnPaint(std::bind(&RSkComponent::onPaint, this, std::placeholders::_1));
+    }
 }
 
 void RSkComponent::setNeedFocusUpdate(){
@@ -282,14 +278,13 @@ void RSkComponent::updateComponentData(const ShadowView &newShadowView,const uin
 void RSkComponent::drawAndSubmit(RnsShell::LayerInvalidateMask invalidateMask) {
    if(layer_ && layer_.get()) {
      layer_->invalidate(invalidateMask);
-     if(layer_->type() == RnsShell::LAYER_TYPE_PICTURE) {
+     if(layerType_ == RnsShell::LAYER_TYPE_PICTURE) {
        RNS_PROFILE_API_OFF(component_.componentName << " getPicture :", static_cast<RnsShell::PictureLayer*>(layer_.get())->setPicture(getPicture()));
-     } else if(layer_->type() == RnsShell::LAYER_TYPE_SCROLL) {
+     } else if(layerType_ == RnsShell::LAYER_TYPE_SCROLL) {
        RNS_PROFILE_API_OFF(component_.componentName << " getShadowPicture :", static_cast<RnsShell::ScrollLayer*>(layer_.get())->setShadowPicture(getPicture(PictureTypeShadow)));
        RNS_PROFILE_API_OFF(component_.componentName << " getBorderPicture :", static_cast<RnsShell::ScrollLayer*>(layer_.get())->setBorderPicture(getPicture(PictureTypeBorder)));
      }
    }
-
 }
 
 void RSkComponent::mountChildComponent(

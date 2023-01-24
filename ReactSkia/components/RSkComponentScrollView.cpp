@@ -18,7 +18,7 @@ namespace facebook {
 namespace react {
 
 RSkComponentScrollView::RSkComponentScrollView(const ShadowView &shadowView)
-    : RSkComponent(shadowView) {
+    : RSkComponent(shadowView, LAYER_TYPE_SCROLL) {
 }
 
 RSkComponentScrollView::~RSkComponentScrollView() {

@@ -23,7 +23,7 @@ namespace facebook {
 namespace react {
 
 RSkComponentText::RSkComponentText(const ShadowView &shadowView)
-    : RSkComponent(shadowView) {}
+    : RSkComponent(shadowView, LAYER_TYPE_DEFAULT) {}
 
 RnsShell::LayerInvalidateMask RSkComponentText::updateComponentProps(SharedProps newviewProps,bool forceUpadte) {
   return RnsShell::LayerInvalidateNone;
@@ -32,7 +32,7 @@ RnsShell::LayerInvalidateMask RSkComponentText::updateComponentProps(SharedProps
 void RSkComponentText::OnPaint(SkCanvas *canvas) {}
 
 RSkComponentRawText::RSkComponentRawText(const ShadowView &shadowView)
-    : RSkComponent(shadowView) {}
+    : RSkComponent(shadowView, LAYER_TYPE_DEFAULT) {}
 
 RnsShell::LayerInvalidateMask RSkComponentRawText::updateComponentProps(SharedProps newviewProps,bool forceUpadte) {
   return RnsShell::LayerInvalidateNone;
@@ -41,7 +41,7 @@ RnsShell::LayerInvalidateMask RSkComponentRawText::updateComponentProps(SharedPr
 void RSkComponentRawText::OnPaint(SkCanvas *canvas) {}
 
 RSkComponentParagraph::RSkComponentParagraph(const ShadowView &shadowView)
-    : RSkComponent(shadowView)
+    : RSkComponent(shadowView, LAYER_TYPE_DEFAULT)
     , expectedAttachmentCount(0)
     , currentAttachmentCount(0){}
 
