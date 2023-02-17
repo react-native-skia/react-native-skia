@@ -175,12 +175,23 @@ void RSkComponentTextInput::OnPaint(SkCanvas *canvas) {
 * @return      True if key is handled else false
 */
 
-void RSkComponentTextInput::onHandleKey(rnsKey eventKeyType, bool keyRepeat, bool *stopPropagation) {
+void RSkComponentTextInput::onHandleKey(rnsKey eventKeyType, bool keyRepeat, rnsKeyAction keyAction,bool *stopPropagation) {
   RNS_LOG_DEBUG("[onHandleKey] ENTRY");
   *stopPropagation = false;
   if (!editable_) {
     return;
   }
+  if(keyAction == RNS_KEY_Release){
+    // Textinput doesn't handle release key event, but it has to return stopPropagation true in following two case.
+    // 1. textinput is in not editing mode and key is enter/select key.
+    // 2. textinput is in editing mode and key is a non-displayable key.
+    if(((!isInEditingMode_) && (eventKeyType == RNS_KEY_Select)) ||
+      ((isInEditingMode_)&& (eventKeyType<=RNS_KEY_Back) &&(eventKeyType>RNS_KEY_Select))){
+      *stopPropagation = true;
+    }
+    return;
+  }
+
   bool waitForupdateProps = false;
   privateVarProtectorMutex.lock();
   std::string textString = displayString_;
