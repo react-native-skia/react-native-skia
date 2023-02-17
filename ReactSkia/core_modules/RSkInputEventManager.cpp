@@ -1,5 +1,5 @@
 /*
-* Copyright (C) 1994-2021 OpenTV, Inc. and Nagravision S.A.
+* Copyright (C) 1994-2023 OpenTV, Inc. and Nagravision S.A.
 *
 * Use of this source code is governed by a BSD-style license that can be
 * found in the LICENSE file.
@@ -18,7 +18,7 @@ static unsigned int subWindowEventId_;
 RSkInputEventManager* RSkInputEventManager::sharedInputEventManager_{nullptr};
 RSkInputEventManager::RSkInputEventManager(){
 #if ENABLE(FEATURE_KEY_THROTTLING)
-  keyQueue_ =  std::make_unique<ThreadSafeQueue<RskKeyInput>>();
+  keyQueue_ =  std::make_unique<ThreadSafeQueue<RSkKeyInput>>();
 #endif
   std::function<void(rnsKey, rnsKeyAction)> handler = std::bind(&RSkInputEventManager::keyHandler, this,
                                                               std::placeholders::_1, // rnsKey
@@ -60,7 +60,7 @@ RSkInputEventManager::~RSkInputEventManager(){
 
 #if ENABLE(FEATURE_KEY_THROTTLING)
 void RSkInputEventManager::inputWorkerThreadFunction() {
-  RskKeyInput keyInput;
+  RSkKeyInput keyInput;
   while(true) {
     while(activeInputClients_ > 0) // If there are clients who are still processing previous key then wait..
       sem_wait(&keyEventPost_);
@@ -96,38 +96,45 @@ void RSkInputEventManager::keyHandler(rnsKey eventKeyType, rnsKeyAction eventKey
       if(!keyQueue_->isEmpty())
         keyQueue_->clear(); // flush the queue
 #endif
-    } else{
-      return;// ignore key release 
     }
-  } else {
-    RskKeyInput keyInput(eventKeyType, eventKeyAction, keyRepeat);
-    previousKeyType = eventKeyType;
+  } 
+  RSkKeyInput keyInput(eventKeyType, eventKeyAction, keyRepeat);
+  previousKeyType = eventKeyType;
 #if ENABLE(FEATURE_KEY_THROTTLING)
     keyQueue_->push(keyInput);
 #else
     processKey(keyInput);
 #endif
-  }
 }
 
-void RSkInputEventManager::processKey(RskKeyInput &keyInput) {
+void RSkInputEventManager::processKey(RSkKeyInput &keyInput) {
   bool stopPropagate = false;
-
   RNS_LOG_DEBUG("[Process Key] Key Repeat " << keyInput.repeat_ << " eventKeyType  " << keyInput.key_ << " previousKeyType " << previousKeyType);
+  
   auto currentFocused = spatialNavigator_->getCurrentFocusElement();
   if(currentFocused){ // send key to Focused component.
-    currentFocused->onHandleKey(keyInput.key_, keyInput.repeat_, &stopPropagate);
+    currentFocused->onHandleKey(keyInput.key_, keyInput.repeat_,keyInput.action_, &stopPropagate);
     if(stopPropagate){
       return;//don't propagate key further
     }
   }
+  if(keyInput.action_ == RNS_KEY_Press) {
 #if defined(TARGET_OS_TV) && TARGET_OS_TV
-  sendNotificationWithEventType(
-      RNSKeyMap[keyInput.key_],
-      currentFocused ? currentFocused->getComponentData().tag : -1,
-      keyInput.action_, nullptr);
+    sendNotificationWithEventType(
+        RNSKeyMap[keyInput.key_],
+        currentFocused ? currentFocused->getComponentData().tag : -1,
+        keyInput.action_, nullptr);
 #endif //TARGET_OS_TV
-  spatialNavigator_->handleKeyEvent(keyInput.key_, keyInput.action_);
+    spatialNavigator_->handleKeyEvent(keyInput.key_, keyInput.action_);
+  }
+  /*Sending Events to the registered callback*/
+  eventCallbackMutex_.lock();
+  for (auto pair : eventCallbackMap_){
+    RNS_LOG_DEBUG("calling clients");
+    auto clientCallback = pair.second;
+    clientCallback(keyInput);
+  }
+  eventCallbackMutex_.unlock();
 }
 
 RSkInputEventManager* RSkInputEventManager::getInputKeyEventManager(){
@@ -150,6 +157,21 @@ void RSkInputEventManager::sendNotificationWithEventType(std::string eventType, 
       ), completeCallback);
 }
 #endif //TARGET_OS_TV
+
+int RSkInputEventManager::addKeyEventCallback(inputEventClientCallback clientCallback){
+  RNS_LOG_DEBUG("[addKeyEventCallback] ");
+  std::scoped_lock lock(eventCallbackMutex_);
+  callbackId_++;
+  eventCallbackMap_.insert({callbackId_,clientCallback});
+  return callbackId_;
+}
+
+void RSkInputEventManager::removeKeyEventCallback(int callbackId){
+  RNS_LOG_DEBUG("[removeListener]");
+  std::scoped_lock lock(eventCallbackMutex_);
+  eventCallbackMap_.erase(callbackId);
+}
+
 
 }//react
 }//facebook
