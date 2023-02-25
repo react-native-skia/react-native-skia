@@ -132,7 +132,7 @@ public:
     const SkPoint& anchorPosition() const { return anchorPosition_; }
     void setAnchorPosition(const SkPoint& anchorPosition) { anchorPosition_ = anchorPosition; }
 
-    const bool masksToBounds() const { return masksToBounds_; }
+    bool masksToBounds() const { return masksToBounds_; }
     void setMasksTotBounds(bool masksToBounds) { masksToBounds_ = masksToBounds; }
 #if USE(RNS_SHELL_PARTIAL_UPDATES)
     static void addDamageRect(FrameDamages& damageRectList, SkIRect dirtyAbsFrameRect);

@@ -26,6 +26,20 @@ RNS_USED xplat::module::CxxModule* ModuleName##Cls(void) { \
   return new ModuleName();\
 }\
 
+#define RNS_SETUP_COMPOMNENT_PROVIDER(Component) \
+class RSkComponentProvider##Component : public RSkComponentProvider { \
+ public: \
+  RSkComponentProvider##Component(){} \
+  ComponentDescriptorProvider GetDescriptorProvider() override { \
+    return concreteComponentDescriptorProvider<Component##ComponentDescriptor>(); \
+  }\
+  std::shared_ptr<RSkComponent> CreateComponent( \
+    const ShadowView &shadowView) override { \
+    return std::static_pointer_cast<RSkComponent>( \
+      std::make_shared<RSkComponent##Component>(shadowView)); \
+  } \
+};\
+
 #define RNS_EXPORT_COMPONENT_PROVIDER(ComponentName) \
 RNS_USED RSkComponentProvider* RSkComponentProvider##ComponentName##Cls(void) { \
   return new RSkComponentProvider##ComponentName();\
