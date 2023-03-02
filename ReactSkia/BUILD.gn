@@ -176,6 +176,8 @@ source_set("ReactSkia") {
     "core_modules/RSkImageLoader.h",
     "core_modules/RSkKeyboardObserver.cpp",
     "core_modules/RSkKeyboardObserver.h",
+    "core_modules/RSkPlatform.cpp",
+    "core_modules/RSkPlatform.h",
     "core_modules/RSkSpatialNavigator.cpp",
     "core_modules/RSkSpatialNavigator.h",
     "core_modules/RSkSpatialNavigatorContainer.cpp",
@@ -380,6 +382,7 @@ executable("ReactSkiaApp") {
   # External/Thirdparty package inclusions
   deps += [
     "//ReactSkia/external",
+    "//ReactSkia/external/react-native-device-info/skia:RNDeviceInfo",
   ]
 
   configs -= [ "//build/config/compiler:chromium_code" ]
