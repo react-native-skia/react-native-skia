@@ -36,7 +36,6 @@ jsi::Value RSkPlatformModule::getConstants(
 
   if (count != 0) {
     return jsi::Value::undefined();
-
   }
   auto &self = static_cast<RSkPlatformModule &>(turboModule);
   return jsi::valueFromDynamic(rt, self.getConstants());

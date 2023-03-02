@@ -382,7 +382,6 @@ executable("ReactSkiaApp") {
   # External/Thirdparty package inclusions
   deps += [
     "//ReactSkia/external",
-    "//ReactSkia/external/react-native-device-info/skia:RNDeviceInfo",
   ]
 
   configs -= [ "//build/config/compiler:chromium_code" ]

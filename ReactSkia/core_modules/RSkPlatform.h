@@ -1,5 +1,5 @@
 /*
-* Copyright (C) 1994-2021 OpenTV, Inc. and Nagravision S.A.
+* Copyright (C) 1994-2023 OpenTV, Inc. and Nagravision S.A.
 *
 * This source code is licensed under the MIT license found in the
 * LICENSE file in the root directory of this source tree.
@@ -18,12 +18,12 @@ namespace react {
 class RSkPlatformModule : public TurboModule {
  public:
   RSkPlatformModule(
-        const std::string &name,
-        std::shared_ptr<CallInvoker> jsInvoker,
-        Instance *bridgeInstance);
+      const std::string &name,
+      std::shared_ptr<CallInvoker> jsInvoker,
+      Instance *bridgeInstance);
   ~RSkPlatformModule();
 
- private:
+  private:
     static jsi::Value getConstants(
         jsi::Runtime &rt,
         TurboModule &turboModule,
@@ -31,7 +31,7 @@ class RSkPlatformModule : public TurboModule {
         size_t count);
     Instance *bridgeInstance_;
 
-  folly::dynamic getConstants();
+    folly::dynamic getConstants();
 
     void startObserving() {};
     void stopObserving() {};
