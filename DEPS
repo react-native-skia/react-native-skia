@@ -30,7 +30,8 @@ vars = {
   'boringssl_revision': '1ee71185a2322dc354bee5e5a0abfb1810a27dc6',
 
   # buildtools
-  'gn_version': 'git_revision:b9c6c19be95a3863e02f00f1fe403b2502e345b6',
+  'gn_version':            'git_revision:b9c6c19be95a3863e02f00f1fe403b2502e345b6',
+  'ninja_version':         'version:2@1.8.2.chromium.3',
   'clang_format_revision': '8b525d2747f2584fc35d8c7e612e66f377858df7',
   'libcxx_revision':       '64d36e572d3f9719c5d75011a718f33f11126851',
   'libcxxabi_revision':    '9572e56a12c88c011d504a707ca94952be4664f9',
@@ -105,6 +106,15 @@ deps = {
     ],
     'dep_type': 'cipd',
     'condition': 'host_os == "mac"',
+  },
+  'src/third_party/ninja': {
+    'packages': [
+      {
+        'package': 'infra/3pp/tools/ninja/${{platform}}',
+        'version': Var('ninja_version'),
+      }
+    ],
+    'dep_type': 'cipd',
   },
   'src/buildtools/third_party/libc++/trunk':
     Var('chromium_git') +
