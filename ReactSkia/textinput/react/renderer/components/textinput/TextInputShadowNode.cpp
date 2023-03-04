@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  * Copyright (C) 1994-2021 OpenTV, Inc. and Nagravision S.A.
  *
  * This source code is licensed under the MIT license found in the
@@ -8,14 +8,14 @@
 
 #include "TextInputShadowNode.h"
 
+#include <react/debug/react_native_assert.h>
 #include <react/renderer/attributedstring/AttributedStringBox.h>
 #include <react/renderer/attributedstring/TextAttributes.h>
 #include <react/renderer/core/LayoutConstraints.h>
 #include <react/renderer/core/LayoutContext.h>
 #include <react/renderer/core/conversions.h>
 
-namespace facebook {
-namespace react {
+namespace facebook::react {
 
 extern char const TextInputComponentName[] = "TextInput";
 
@@ -71,9 +71,9 @@ AttributedString TextInputShadowNode::getAttributedString(
 }
 
 void TextInputShadowNode::setTextLayoutManager(
-    SharedTextLayoutManager const &textLayoutManager) {
+    std::shared_ptr<TextLayoutManager const> textLayoutManager) {
   ensureUnsealed();
-  textLayoutManager_ = textLayoutManager;
+  textLayoutManager_ = std::move(textLayoutManager);
 }
 
 void TextInputShadowNode::updateStateIfNeeded(
@@ -83,8 +83,8 @@ void TextInputShadowNode::updateStateIfNeeded(
   auto reactTreeAttributedString = getAttributedString(layoutContext);
   auto const &state = getStateData();
 
-  assert(textLayoutManager_);
-  assert(
+  react_native_assert(textLayoutManager_);
+  react_native_assert(
       (!state.layoutManager || state.layoutManager == textLayoutManager_) &&
       "`StateData` refers to a different `TextLayoutManager`");
 
@@ -120,5 +120,4 @@ void TextInputShadowNode::layout(LayoutContext layoutContext) {
   ConcreteViewShadowNode::layout(layoutContext);
 }
 
-} // namespace react
-} // namespace facebook
+} // namespace facebook::react

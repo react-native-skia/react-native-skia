@@ -29,20 +29,21 @@ class MountingManager : public SchedulerDelegate {
 
   void schedulerDidRequestPreliminaryViewAllocation(
       SurfaceId surfaceId,
-      const ShadowView &shadowView) override;
+      const ShadowNode &shadowView) override;
 
   void schedulerDidDispatchCommand(
       const ShadowView &shadowView,
       const std::string &commandName,
-      const folly::dynamic args) override;
+      const folly::dynamic &args) override;
 
-  void schedulerDidSetJSResponder(
-      SurfaceId surfaceId,
+  void schedulerDidSendAccessibilityEvent(
       const ShadowView &shadowView,
-      const ShadowView &initialShadowView,
-      bool blockNativeResponder) override;
+      const std::string &eventType) override;
 
-  void schedulerDidClearJSResponder() override;
+  void schedulerDidSetIsJSResponder(
+      const ShadowView &shadowView,
+      bool isJSResponder,
+      bool blockNativeResponder) override;
 
  private:
   void performTransaction(

@@ -1,0 +1,30 @@
+import("//react-native/common.gni")
+
+config("leakchecker_config") {
+  include_dirs = [
+    ".",
+  ]
+}
+
+rn_cxx_component("leakchecker") {
+  sources = [
+    "LeakChecker.cpp",
+    "WeakFamilyRegistry.cpp",
+  ]
+
+  defines = [
+    "LOG_TAG=ReactNative",
+  ]
+
+  deps = [
+    "//folly",
+    "//react-native/ReactCommon/react/renderer/core:core",
+    "//react-native/ReactCommon/runtimeexecutor:runtimeexecutor",
+  ]
+
+  with_exceptions = true
+  with_rtti = true
+
+  extra_configs = [ "//react-native/ReactCommon:fabric_config" ]
+  public_configs = [ ":leakchecker_config" ]
+}

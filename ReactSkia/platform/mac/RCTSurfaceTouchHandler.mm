@@ -96,7 +96,7 @@ static void UpdateActiveTouch(
     facebook::react::RSkSurfaceWindow *surface,
     facebook::react::UIManager *uiManager,
     NSView *rootComponentView,
-    SharedShadowNode targetShadowNode)
+    ShadowNode::Shared targetShadowNode)
 {
   CGPoint location = touchEvent.locationInWindow;
   if (!CGRectContainsPoint(rootComponentView.window.contentLayoutRect, location)) {

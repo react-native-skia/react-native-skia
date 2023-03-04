@@ -1,0 +1,26 @@
+import("//react-native/common.gni")
+
+config("debug_config") {
+  include_dirs = [
+    ".",
+  ]
+}
+
+rn_cxx_component("debug") {
+  sources = [
+    "react_native_assert.cpp",
+  ]
+
+  public_deps = [
+    "//third_party/glog:glog",
+  ]
+
+  defines = [
+    "LOG_TAG=ReactNative",
+  ]
+
+  with_exceptions = true
+  with_rtti = true
+
+  public_configs = [ ":debug_config" ]
+}

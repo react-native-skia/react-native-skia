@@ -8,7 +8,6 @@ rn_cxx_component("core") {
   output_name = "react_nativemodule_core"
 
   sources = [
-    "ReactCommon/LongLivedObject.cpp",
     "ReactCommon/TurboCxxModule.cpp",
     "ReactCommon/TurboModule.cpp",
     "ReactCommon/TurboModuleBinding.cpp",
@@ -26,8 +25,14 @@ rn_cxx_component("core") {
     "//react-native/ReactCommon/cxxreact:bridge",
     "//react-native/ReactCommon/cxxreact:module",
     "//react-native/ReactCommon/jsi:JSIDynamic",
+    "//react-native/ReactCommon/react/debug",
     "//react-native/ReactCommon/reactperflogger:reactperflogger",
     "//third_party/glog:glog",
+  ]
+
+  public_deps = [
+    "//react-native/ReactCommon/jsi:jsi",
+    "//react-native/ReactCommon/react/bridging",
   ]
 
   with_exceptions = true

@@ -5,7 +5,7 @@
 * LICENSE file in the root directory of this source tree.
 */
 
-#include <better/map.h>
+#include <butter/map.h>
 #include "ReactCommon/TurboCxxModule.h"
 #include "ReactSkia/sdk/CurlNetworking.h"
 
@@ -24,7 +24,7 @@ class RSkImageLoaderModule : public CxxModule {
   virtual std::string getName();
 
  private:
-  typedef better::map <std::string, std::shared_ptr<CurlRequest>> ImageSizeMap;
+  typedef butter::map <std::string, std::shared_ptr<CurlRequest>> ImageSizeMap;
   ImageSizeMap imageRequestList_;
   void getImageSize(std::string uri, CxxModule::Callback resolveBlock, CxxModule::Callback rejectBlock);
   void getImageSizeWithHeaders(std::string uri, folly::dynamic headers, CxxModule::Callback resolveBlock, CxxModule::Callback rejectBlock);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  * Copyright (C) 1994-2021 OpenTV, Inc. and Nagravision S.A.
  *
  * This source code is licensed under the MIT license found in the
@@ -8,7 +8,8 @@
 
 #pragma once
 
-#include <react/renderer/components/textinput/TextInputShadowNode.h>
+#include "ReactSkia/textinput/react/renderer/components/textinput/TextInputShadowNode.h"
+
 #include <react/renderer/core/ConcreteComponentDescriptor.h>
 
 namespace facebook {
@@ -27,20 +28,17 @@ class TextInputComponentDescriptor final
   }
 
  protected:
-  void adopt(UnsharedShadowNode shadowNode) const override {
+  void adopt(ShadowNode::Unshared const &shadowNode) const override {
     ConcreteComponentDescriptor::adopt(shadowNode);
 
-    assert(std::dynamic_pointer_cast<TextInputShadowNode>(shadowNode));
     auto concreteShadowNode =
         std::static_pointer_cast<TextInputShadowNode>(shadowNode);
 
     concreteShadowNode->setTextLayoutManager(textLayoutManager_);
-    concreteShadowNode->dirtyLayout();
-    concreteShadowNode->enableMeasurement();
   }
 
  private:
-  SharedTextLayoutManager textLayoutManager_;
+  std::shared_ptr<TextLayoutManager const> textLayoutManager_;
 };
 
 } // namespace react

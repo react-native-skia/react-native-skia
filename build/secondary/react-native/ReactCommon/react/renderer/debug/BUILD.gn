@@ -19,7 +19,11 @@ rn_cxx_component("debug") {
 
   deps = [
     "//folly",
-    "//react-native/ReactCommon/better:better",
+    "//react-native/ReactCommon/butter:butter",
+  ]
+
+  public_deps = [
+    "//third_party/glog:glog",
   ]
 
   with_exceptions = true

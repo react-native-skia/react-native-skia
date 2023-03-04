@@ -41,7 +41,7 @@ class RSkComponentProvider {
   }
 
  private:
-  better::map<Tag, std::shared_ptr<RSkComponent>> registry_;
+  butter::map<Tag, std::shared_ptr<RSkComponent>> registry_;
 
 };
 using RSkComponentProviderProtocol = RSkComponentProvider *(*)();

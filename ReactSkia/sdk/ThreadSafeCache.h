@@ -5,8 +5,8 @@
 * LICENSE file in the root directory of this source tree.
 */
 #include <mutex>
-#include <better/map.h>
-#include <better/optional.h>
+#include <optional>
+#include <butter/map.h>
 #include "ReactSkia/utils/RnsLog.h"
 #include "ReactSkia/sdk/FollyTimer.h"
 #define THREADSAFE_DEFAULT_MAX_CACHE_LIMIT 20*1024*1024 //20,971,520 bytes
@@ -28,7 +28,7 @@ class ThreadSafeCache {
   double overallCurrentSize_ = 0;
   std::mutex cacheLock_;
   KeyT key_;
-  better::map <KeyT,std::unique_ptr<cacheData>> cacheMap_;
+  butter::map <KeyT,std::unique_ptr<cacheData>> cacheMap_;
   Timer * timer_{nullptr};
   double scheduleTimeExpiry_;
  public:
@@ -39,7 +39,7 @@ class ThreadSafeCache {
     return false;
   }
 
-  better::optional<ValueT> getCacheData(const KeyT &key) {
+  std::optional<ValueT> getCacheData(const KeyT &key) {
     std::scoped_lock lock(cacheLock_);
     auto it = cacheMap_.find(key);
     if(it == cacheMap_.end()) {

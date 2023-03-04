@@ -52,7 +52,7 @@ class RSkWebSocketModule:  public RSkWebSocketModuleBase {
             int) override;
 
     std::thread wsMessageThread_;
-    better::map <int , WebsocketRequest*> connectionList_;
+    butter::map <int , WebsocketRequest*> connectionList_;
     std::vector<std::string> events_ = {"websocketOpen","websocketClosed",
                                     "websocketMessage","websocketFailed"};
   private:

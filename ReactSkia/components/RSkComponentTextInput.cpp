@@ -135,7 +135,7 @@ void RSkComponentTextInput::drawCursor(SkCanvas *canvas, LayoutMetrics layout){
 void RSkComponentTextInput::OnPaint(SkCanvas *canvas) {
   auto component = getComponentData();
   auto const &textInputProps = *std::static_pointer_cast<TextInputProps const>(component.props);
-  auto state = std::static_pointer_cast<TextInputShadowNode::ConcreteStateT const>(component.state);
+  auto state = std::static_pointer_cast<TextInputShadowNode::ConcreteState const>(component.state);
   auto data = state->getData();
   auto borderMetrics = textInputProps.resolveBorderMetrics(component.layoutMetrics);
   Rect frame = component.layoutMetrics.frame;

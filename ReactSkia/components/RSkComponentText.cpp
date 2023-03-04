@@ -5,6 +5,7 @@
 #include "react/renderer/components/text/ParagraphShadowNode.h"
 #include "react/renderer/components/text/RawTextShadowNode.h"
 #include "react/renderer/components/text/TextShadowNode.h"
+#include "ReactSkia/textlayoutmanager/react/renderer/textlayoutmanager/TextLayoutManager.h"
 #include "ReactSkia/views/common/RSkDrawUtils.h"
 #include "ReactSkia/views/common/RSkTextUtils.h"
 
@@ -44,9 +45,14 @@ RnsShell::LayerInvalidateMask RSkComponentParagraph::updateComponentProps(const 
 void RSkComponentParagraph::OnPaint(SkCanvas *canvas) {
     SkAutoCanvasRestore(canvas, true);
     auto component = getComponentData();
-    auto state = std::static_pointer_cast<ParagraphShadowNode::ConcreteStateT const>(component.state);
+    auto state = std::static_pointer_cast<ParagraphShadowNode::ConcreteState const>(component.state);
     auto const &props = *std::static_pointer_cast<ParagraphProps const>(component.props);
     auto data = state->getData();
+    auto textLayoutManager = data.layoutManager.lock();
+    assert(textLayoutManager);
+    if (!textLayoutManager) {
+      return;
+    }
     auto borderMetrics = props.resolveBorderMetrics(component.layoutMetrics);
     Rect borderFrame = component.layoutMetrics.frame;
     bool isParent = false;
@@ -71,11 +77,11 @@ void RSkComponentParagraph::OnPaint(SkCanvas *canvas) {
         if (parent->textLayout.builder) {
             isParent = true;
             textLayout.builder = parent->textLayout.builder;
-            parent->expectedAttachmentCount += data.layoutManager->buildParagraph(textLayout,
-                                                                                    props.backgroundColor,
-                                                                                    data.attributedString,
-                                                                                    paragraphAttributes_,
-                                                                                    true);
+            parent->expectedAttachmentCount += textLayoutManager->buildParagraph(textLayout,
+                                                                                 props.backgroundColor,
+                                                                                 data.attributedString,
+                                                                                 paragraphAttributes_,
+                                                                                 true);
             textLayout.paragraph = parent->textLayout.builder->Build();
             parent->currentAttachmentCount++;
             borderFrame = parentComponent.layoutMetrics.frame;
@@ -109,16 +115,16 @@ void RSkComponentParagraph::OnPaint(SkCanvas *canvas) {
         if(nullptr != textLayout.builder) {
             textLayout.builder.reset();
         }
-        textLayout.builder = std::static_pointer_cast<ParagraphBuilder>(std::make_shared<ParagraphBuilderImpl>(textLayout.paraStyle,data.layoutManager->collection_));
+        textLayout.builder = std::static_pointer_cast<ParagraphBuilder>(std::make_shared<ParagraphBuilderImpl>(textLayout.paraStyle,textLayoutManager->collection_));
         if(layer()->shadowOpacity && layer()->shadowFilter) {
             textLayout.shadow={layer()->shadowColor,SkPoint::Make(layer()->shadowOffset.width(),layer()->shadowOffset.height()),layer()->shadowRadius};
         }
 
-        expectedAttachmentCount = data.layoutManager->buildParagraph(textLayout,
-                                                                        props.backgroundColor,
-                                                                        data.attributedString,
-                                                                        paragraphAttributes_,
-                                                                        true);
+        expectedAttachmentCount = textLayoutManager->buildParagraph(textLayout,
+                                                                    props.backgroundColor,
+                                                                    data.attributedString,
+                                                                    paragraphAttributes_,
+                                                                    true);
         currentAttachmentCount = 0;
         textLayout.paragraph = textLayout.builder->Build();
 

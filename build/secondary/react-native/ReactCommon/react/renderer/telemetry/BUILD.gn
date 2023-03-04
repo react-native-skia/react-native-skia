@@ -1,0 +1,30 @@
+import("//react-native/common.gni")
+
+config("telemetry_config") {
+  include_dirs = [
+    ".",
+  ]
+}
+
+rn_cxx_component("telemetry") {
+  sources = [
+    "SurfaceTelemetry.cpp",
+    "TransactionTelemetry.cpp",
+  ]
+
+  defines = [
+    "LOG_TAG=ReactNative",
+  ]
+
+  deps = [
+    "//folly",
+    "//react-native/ReactCommon/react/renderer/core:core",
+    "//react-native/ReactCommon/runtimeexecutor:runtimeexecutor",
+  ]
+
+  with_exceptions = true
+  with_rtti = true
+
+  extra_configs = [ "//react-native/ReactCommon:fabric_config" ]
+  public_configs = [ ":telemetry_config" ]
+}

@@ -3,14 +3,17 @@ import("//react-native/common.gni")
 rn_cxx_component("view") {
   sources = [
     "AccessibilityProps.cpp",
+    "AccessibilityPropsMapBuffer.cpp",
     "Touch.cpp",
     "TouchEvent.cpp",
     "TouchEventEmitter.cpp",
     "ViewEventEmitter.cpp",
     "ViewProps.cpp",
+    "ViewPropsMapBuffer.cpp",
     "ViewShadowNode.cpp",
     "YogaLayoutableShadowNode.cpp",
     "YogaStylableProps.cpp",
+    "YogaStylablePropsMapBuffer.cpp",
   ]
   if( react_native_platform == "tvos") {
     sources += [
@@ -23,6 +26,7 @@ rn_cxx_component("view") {
 
   deps = [
     "//folly",
+    "//react-native/ReactCommon/logger:logger",
     "//react-native/ReactCommon/react/renderer/core:core",
     "//react-native/ReactCommon/react/renderer/debug:debug",
     "//third_party/glog:glog",

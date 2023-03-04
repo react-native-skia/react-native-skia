@@ -30,6 +30,9 @@ template("rn_cxx_component") {
 
     configs += [ "//react-native/ReactCommon:react_native_config"]
 
+    # add PCH to fix componentNameByReactViewName.cpp build error where it doesn't include <algorithm>
+    configs += [ "//build/config:precompiled_headers" ]
+
     forward_variables_from(invoker,
                            "*",
                            [

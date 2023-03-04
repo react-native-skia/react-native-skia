@@ -33,7 +33,7 @@
 #include "cxxreact/JSBigString.h"
 #include "cxxreact/MessageQueueThread.h"
 #include "cxxreact/ModuleRegistry.h"
-#include "jsi/JSCRuntime.h"
+#include "react-native/ReactCommon/jsc/JSCRuntime.h"
 #include "jsireact/JSIExecutor.h"
 #include "react/config/ReactNativeConfig.h"
 #include "react/renderer/componentregistry/ComponentDescriptorProviderRegistry.h"
@@ -42,6 +42,7 @@
 #include "react/renderer/scheduler/SchedulerToolbox.h"
 #include <react/renderer/scheduler/AsynchronousEventBeat.h>
 #include "react/utils/ContextContainer.h"
+#include "react-native/ReactCommon/react/renderer/scheduler/SurfaceHandler.h"
 
 #include "rns_shell/compositor/RendererDelegate.h"
 
@@ -66,7 +67,7 @@ class JSCExecutorFactory : public JSExecutorFactory {
     react::bindNativePerformanceNow(runtime, rnsPerformanceNowBinder);
 
     TurboModuleBinding::install(
-          runtime, std::move(jsiTurboModuleManager->GetProvider()));
+          runtime, std::move(jsiTurboModuleManager->GetProvider()), TurboModuleBindingMode::HostObject, nullptr);
     };
     return std::make_unique<JSIExecutor>(
         facebook::jsc::makeJSCRuntime(),
@@ -120,6 +121,7 @@ RNInstance::~RNInstance() { Invalidate(); }
 
 void RNInstance::Invalidate() {
   RNS_LOG_TODO("De initilize everything and emit RCTWillInvalidateModulesNotification on default notification center");
+  fabricScheduler_->unregisterSurface(*surfaceHandler_);
 }
 
 void RNInstance::Start(RSkSurfaceWindow *surface, RnsShell::RendererDelegate &rendererDelegate) {
@@ -128,14 +130,11 @@ void RNInstance::Start(RSkSurfaceWindow *surface, RnsShell::RendererDelegate &re
   LayoutContext layoutContext = RSkGetLayoutContext(surface->viewportOffset);
   LayoutConstraints layoutConstraints = RSkGetLayoutConstraintsForSize(surface->minimumSize, surface->maximumSize);
 
-  fabricScheduler_->startSurface(
-      surface->surfaceId,
-      surface->moduleName,
-      surface->properties,
-      layoutConstraints,
-      layoutContext,
-      {} // mountingOverrideDelegate
-  );
+  surfaceHandler_ = std::make_unique<SurfaceHandler>(surface->moduleName, surface->surfaceId);
+  surfaceHandler_->setProps(surface->properties);
+  surfaceHandler_->constraintLayout(layoutConstraints, layoutContext);
+  fabricScheduler_->registerSurface(*surfaceHandler_);
+  surfaceHandler_->start();
   fabricScheduler_->renderTemplateToSurface(surface->surfaceId, {});
 
   // NOTE(kudo): Does adding RootView here make sense !?
@@ -148,7 +147,9 @@ void RNInstance::Start(RSkSurfaceWindow *surface, RnsShell::RendererDelegate &re
 }
 
 void RNInstance::Stop(RSkSurfaceWindow *surface) {
-  fabricScheduler_->stopSurface(surface->surfaceId);
+  if (surfaceHandler_ && surfaceHandler_->getStatus() == SurfaceHandler::Status::Running) {
+    surfaceHandler_->stop();
+  }
 }
 
 xplat::module::CxxModule* RNInstance::moduleForName(std::string moduleName) {

@@ -3,6 +3,7 @@ import("//react-native/common.gni")
 rn_cxx_component("mapbuffer") {
   sources = [
     "MapBuffer.cpp",
+    "MapBufferBuilder.cpp",
   ]
 
   defines = [

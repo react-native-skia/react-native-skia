@@ -1,8 +1,7 @@
 import("//react-native/common.gni")
 
-rn_cxx_component("utils") {
+rn_cxx_component("test_utils") {
   sources = [
-    "RunLoopObserver.cpp",
   ]
 
   defines = [
@@ -10,8 +9,9 @@ rn_cxx_component("utils") {
   ]
 
   deps = [
-    "//folly",
+    "//react-native/ReactCommon/butter:butter",
     "//react-native/ReactCommon/jsi:jsi",
+    "//react-native/ReactCommon/react/debug:debug",
   ]
 
   with_exceptions = true
