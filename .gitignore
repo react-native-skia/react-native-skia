@@ -20,6 +20,7 @@
 /third_party/libcurl/
 /third_party/expat/src/
 /third_party/fmt/
+/third_party/ninja/
 
 # Build output
 /out*/
