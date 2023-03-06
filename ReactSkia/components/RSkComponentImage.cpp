@@ -50,7 +50,7 @@ void RSkComponentImage::OnPaint(SkCanvas *canvas) {
 
     if (imageProps.sources[0].type == ImageSource::Type::Local) {
       imageData = getLocalImageData(imageProps.sources[0].uri);
-    } else if(imageProps.sources[0].type == ImageSource::Type::Remote) {
+    } else if(!isRequestInProgress_ && imageProps.sources[0].type == ImageSource::Type::Remote) {
       requestNetworkImageData(imageProps.sources[0].uri);
     }
   } while(0);
@@ -104,7 +104,6 @@ void RSkComponentImage::OnPaint(SkCanvas *canvas) {
     if(needClipAndRestore) {
       canvas->restore();
     }
-    networkImageData_ = nullptr;
     drawBorder(canvas,frame,imageBorderMetrics,imageProps.backgroundColor);
     // Emitting Load completed Event
     if(hasToTriggerEvent_) sendSuccessEvents();
@@ -185,6 +184,7 @@ RnsShell::LayerInvalidateMask RSkComponentImage::updateComponentProps(SharedProp
         //TODO - need to send the onEnd event to APP if it is abort.
         isRequestInProgress_=false;
       }
+      networkImageData_.reset();
       imageEventEmitter_->onLoadStart();
       hasToTriggerEvent_ = true;
     }

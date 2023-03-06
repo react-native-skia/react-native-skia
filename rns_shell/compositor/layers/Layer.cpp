@@ -268,7 +268,9 @@ void Layer::paint(PaintContext& context) {
 
     if(masksToBounds_) { // Need to clip children.
         SkRect intRect = SkRect::Make(frame_);
-        if(!context.dirtyClipBound.isEmpty() && intRect.intersect(context.dirtyClipBound) == false) {
+        SkRect currentClipBound;
+        context.canvas->getLocalClipBounds(&currentClipBound);
+        if(!currentClipBound.isEmpty() && intRect.intersect(currentClipBound) == false) {
             RNS_LOG_WARN("We should not call paint if it doesnt intersect with non empty dirtyClipBound...");
         }
         context.canvas->clipRect(intRect,SkClipOp::kIntersect);
