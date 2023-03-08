@@ -8,17 +8,42 @@
 #include "ReactSkia/sdk/WindowDelegator.h"
 
 #include <fcntl.h>
+#include <vector>
 
 #include "NotificationCenter.h"
 
 namespace rns {
 namespace sdk {
+/*
+ *> Window & Canvas created for Client and maintained with in window delegator
+ *> Supports Partial Update with dirty Rect
+ *> Maintains last updated picture command + dirty Rect for each components
 
-void WindowDelegator::createWindow(SkSize windowSize,std::function<void ()> windowReadyCB,std::function<void ()>forceFullScreenDraw,bool runOnTaskRunner) {
+    Window Dlegator Fuctional Logic :
+    ================================
+ *> Recorded canvas commands  to be sent by clients and window delegator renders it on real canvas.
+ *> Works on expectation,client knows its screen's component and screen layout is fixed.
+ *> Supports Partial Update, So Expects client would do component by component rendering all the time.
+ *> As part of recorded commands, expects dirty regions associted with this draw and the updating component name
+ *> Recent recorded command maintained for all the components.This will be used to redraw the screen, when current draw buffer misses old frames.
+
+   Rendering Logic followed by Window Delegator:
+   =============================================
+ *> When a rendered component updated, Dirty Rect would be "Dirty Rect of last update for that Component" &
+   "Dirty Rect of the current update received from client".
+ (If buffer Age supported in Backend).
+ *> If Buffer Age is "1", Write buffer is up to date and just needs to render received commands from the client.
+ *>When Buffer Age is "0".Write buffer to be consider as empty and needs to redraw all the components in received order
+    to fill the missed frames
+ *> When "Buffer Age is anything other than "0" & "1", it means it is not empty but it misses few frames.
+    In this case, update the components which are set as inavlidate by client.
+    This is to reduce/ avoid rending of static component in the screen. So client is expected to set
+    "invalidate flag as false" for static/root components such as BACKGROUND and true for dynamic or components whose content will change.
+*/
+void WindowDelegator::createWindow(SkSize windowSize,std::function<void ()> windowReadyCB,bool runOnTaskRunner) {
 
   windowSize_=windowSize;
   windowReadyTodrawCB_=windowReadyCB;
-  forceFullScreenDraw_=forceFullScreenDraw;
 
   if(runOnTaskRunner) {
     ownsTaskrunner_ = runOnTaskRunner;
@@ -53,7 +78,11 @@ void  WindowDelegator::createNativeWindow() {
     if(windowContext_) {
       windowContext_->makeContextCurrent();
       backBuffer_ = windowContext_->getBackbufferSurface();
-      windowDelegatorCanvas = backBuffer_->getCanvas();
+      windowDelegatorCanvas_ = backBuffer_->getCanvas();
+#if USE(RNS_SHELL_PARTIAL_UPDATES)
+      supportsPartialUpdate_=windowContext_->supportsPartialUpdate();
+      fullScreenDirtyRects_.push_back(SkIRect::MakeXYWH (0,0,windowContext_->width(),windowContext_->height()));
+#endif/*RNS_SHELL_PARTIAL_UPDATES*/
       windowActive = true;
       if(displayPlatForm_ == RnsShell::PlatformDisplay::Type::X11) {
         sem_post(semReadyToDraw_);
@@ -65,16 +94,32 @@ void  WindowDelegator::createNativeWindow() {
 }
 
 void WindowDelegator::closeWindow() {
-  RNS_LOG_TODO("Sync between rendering & Exit to be handled ");
   windowActive = false;
-  std::scoped_lock lock(renderCtrlMutex);
 
   if(ownsTaskrunner_) {
-    windowTaskRunner_->stop();
+    if(windowTaskRunner_->running()) {
+      windowTaskRunner_->dispatch([&](){
+        closeNativeWindow();
+        sem_post(semReadyToDraw_);
+        windowTaskRunner_->stop();
+      });
+    } else {
+      RNS_LOG_ERROR("WindowTaskRunner is not running,unable to close native Window");
+    }
+  } else {
+    closeNativeWindow();
   }
+
   if (workerThread_.joinable() ) {
     workerThread_.join();
   }
+  sem_close(semReadyToDraw_);
+  semReadyToDraw_ = nullptr;
+}
+
+void WindowDelegator::closeNativeWindow() {
+  std::scoped_lock lock(renderCtrlMutex_);
+
   if(exposeEventID_ != -1) {
     NotificationCenter::defaultCenter().removeListener(exposeEventID_);
     exposeEventID_=-1;
@@ -86,43 +131,158 @@ void WindowDelegator::closeWindow() {
     windowContext_ = nullptr;
     backBuffer_ = nullptr;
   }
-  sem_close(semReadyToDraw_);
-  semReadyToDraw_ = nullptr;
-  windowDelegatorCanvas=nullptr;
+  windowDelegatorCanvas_=nullptr;
   windowReadyTodrawCB_=nullptr;
+  recentComponentCommands_.clear();
 }
 
-void WindowDelegator::commitDrawCall() {
-  if(!windowActive) return;
-
-  if( ownsTaskrunner_ )  {
+void WindowDelegator::commitDrawCall(std::string pictureCommandKey,PictureObject pictureObj,bool batchCommit) {
+  if(!windowActive) { return; }
+  if( ownsTaskrunner_ ) {
     if( windowTaskRunner_->running() )
-      windowTaskRunner_->dispatch([&](){ renderToDisplay(); });
+      windowTaskRunner_->dispatch([=](){ renderToDisplay(pictureCommandKey,pictureObj,batchCommit); });
   } else {
-    renderToDisplay();
+    renderToDisplay(pictureCommandKey,pictureObj,batchCommit);
   }
 }
 
-inline void WindowDelegator::renderToDisplay() {
-  if(!windowActive) return;
+inline void WindowDelegator::renderToDisplay(std::string pictureCommandKey,PictureObject pictureObj,bool batchCommit) {
+  if(!windowActive) { return;}
 
-  std::scoped_lock lock(renderCtrlMutex);
+#ifdef SHOW_RENDER_COMMAND_INFO
+   RNS_LOG_INFO("Rendering component  : " << pictureCommandKey);
+   RNS_LOG_INFO("Count of Dirt Rect   : " <<  pictureObj.dirtyRect.size());
+   RNS_LOG_INFO("Invalidate Flag      : " <<  pictureObj.invalidate);
+   RNS_LOG_INFO("Draw Command Count   : "<< pictureObj.pictureCommand.get()->approximateOpCount());
+   RNS_LOG_INFO("Operations and size : " << pictureObj.pictureCommand.get()->approximateBytesUsed());
+   RNS_LOG_INFO("Batching Request    : "<<batchCommit);
+#endif
+
+  std::scoped_lock lock(renderCtrlMutex_);
 
 #ifdef RNS_SHELL_HAS_GPU_SUPPORT
   int bufferAge=windowContext_->bufferAge();
-  if((bufferAge != 1) && (forceFullScreenDraw_)) {
-// Forcing full screen redraw as damage region handling is not done
-    forceFullScreenDraw_();
-  }
-#endif/*RNS_SHELL_HAS_GPU_SUPPORT*/
 
-  if(backBuffer_)  backBuffer_->flushAndSubmit();
-  if(windowContext_) {
-    std::vector<SkIRect> emptyRect;// No partialUpdate handled , so passing emptyRect instead of dirtyRect
-    windowContext_->swapBuffers(emptyRect);
+  if((bufferAge !=1) && batchCommit) {
+    //To avoid reduntant painting   & dirt Rect calculation. Just store the command.
+    //Rest will be handled , when Render Requested by client.
+    updateRecentCommand(pictureCommandKey,pictureObj);
+    return;
+  }
+
+  updateRecentCommand(pictureCommandKey,pictureObj,bufferAge,true);
+
+  if(bufferAge != 1) {
+// use Stored commands to fill missed frames in the write buffer in the order it received.
+
+    PictureCommandPairs::iterator it = recentComponentCommands_.begin();
+    bool fullScreenAddedAsDirtyRect{false};
+
+    for( ;it != recentComponentCommands_.end() ;it++ ) {
+      if(it->second.pictureCommand.get() ) {
+        RNS_LOG_DEBUG("playback PictureCommand for component : "<<it->first);
+        it->second.pictureCommand->playback(windowDelegatorCanvas_);
+
+          if(supportsPartialUpdate_ && !fullScreenAddedAsDirtyRect) {
+            if(bufferAge ==0 ) {
+                //Update complete Screen if Buffer Age is "0"
+                RNS_LOG_DEBUG("Buffer Age is 0, Doing Full Screen Update : ");
+                generateDirtyRect(fullScreenDirtyRects_);
+                fullScreenAddedAsDirtyRect=true;
+            } else if(it->second.invalidate) {
+              RNS_LOG_DEBUG("Updating dirty Rect for component : "<<it->first);
+              generateDirtyRect((it->second).dirtyRect);
+            }
+          }
+      }
+    }
+  } else
+#endif/*RNS_SHELL_HAS_GPU_SUPPORT*/
+  {
+    if(pictureObj.pictureCommand.get()) {
+      pictureObj.pictureCommand->playback(windowDelegatorCanvas_);
+#if USE(RNS_SHELL_PARTIAL_UPDATES)
+      if(supportsPartialUpdate_) {
+        generateDirtyRect(pictureObj.dirtyRect);
+      }
+#endif/*RNS_SHELL_PARTIAL_UPDATES*/
+    }
+  }
+
+#ifdef SHOW_DIRTY_RECT
+  SkPaint paint;
+  paint.setColor(SK_ColorGREEN);
+  paint.setStrokeWidth(2);
+  paint.setStyle(SkPaint::kStroke_Style);
+  RNS_LOG_INFO(" Count of Dirty Rect :: "<<dirtyRects_.size());
+  for(SkIRect rectIt:dirtyRects_) {
+    windowDelegatorCanvas_->drawIRect(rectIt,paint);
+  }
+#endif/*SHOW_DIRTY_RECT*/
+  if(!batchCommit) {
+// Render paint only if not  to be batched.
+    if(backBuffer_) {
+      backBuffer_->flushAndSubmit();
+    }
+    if(windowContext_) {
+      windowContext_->swapBuffers(dirtyRects_);
+      std::vector<SkIRect> emptyVect;
+      dirtyRects_.swap(emptyVect);
+    }
   }
 }
 
+void WindowDelegator::updateRecentCommand(std::string pictureCommandKey,PictureObject &pictureObj,
+                                                  int bufferAge,bool isUpdateDirtyRect) {
+
+  PictureCommandPair commandPair=std::make_pair(pictureCommandKey,pictureObj);
+
+  auto it = std::find_if(recentComponentCommands_.begin(), recentComponentCommands_.end(),
+                            [&] (PictureCommandPair cmdPair) {
+              if(cmdPair.first == pictureCommandKey) {
+                return true;
+              }
+              return false;
+            });
+
+  if(it != recentComponentCommands_.end()) {
+#if USE(RNS_SHELL_PARTIAL_UPDATES)
+    //Update component's current dirtyRect on screen
+    if(isUpdateDirtyRect && supportsPartialUpdate_ && (bufferAge!=0)) {
+      generateDirtyRect(it->second.dirtyRect);
+    }
+#endif//RNS_SHELL_PARTIAL_UPDATES
+    *it=commandPair;
+  } else {
+    recentComponentCommands_.push_back(commandPair);
+  }
+}
+
+#if USE(RNS_SHELL_PARTIAL_UPDATES)
+inline void WindowDelegator:: generateDirtyRect(std::vector<SkIRect> &componentDirtRects){
+  for(SkIRect& comDirtyRect:componentDirtRects) {
+    bool addToDirtyRect{true};
+    if(!dirtyRects_.empty()) {
+      std::vector<SkIRect>::iterator it = dirtyRects_.begin();
+      while( it != dirtyRects_.end()) {
+        SkIRect &dirtyRect = *it;
+        if((dirtyRect == comDirtyRect) || dirtyRect.contains(comDirtyRect) ) {
+          addToDirtyRect=false;// If same or part of existing ignore
+          break;
+        }
+        if(comDirtyRect.contains(dirtyRect)) {
+          it=dirtyRects_.erase(it);//Erase existing dirtRect , if it is part of new one
+        } else {
+          ++it;
+        }
+      }
+    }
+    if(addToDirtyRect){
+      dirtyRects_.push_back(comDirtyRect);
+    }
+  }
+}
+#endif /*RNS_SHELL_PARTIAL_UPDATES*/
 void WindowDelegator::setWindowTittle(const char* titleString) {
   if(window_) window_->setTitle(titleString);
 }
@@ -131,7 +291,9 @@ void WindowDelegator::onExposeHandler(RnsShell::Window* window) {
 
   if(window  == window_) {
     sem_wait(semReadyToDraw_);
-    window_->show();
+    if(window_) {
+      window_->show();
+    }
     if(exposeEventID_ != -1) {
       NotificationCenter::defaultCenter().removeListener(exposeEventID_);
       exposeEventID_=-1;

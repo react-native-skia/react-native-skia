@@ -21,6 +21,7 @@
 #include "include/core/SkCanvas.h"
 #include "include/core/SkSurface.h"
 #include "include/core/SkImageFilter.h"
+#include "include/core/SkMaskFilter.h"
 #include "ReactSkia/utils/RnsLog.h"
 #include "ReactSkia/utils/RnsUtils.h"
 
@@ -29,7 +30,8 @@ namespace RnsShell {
 class Layer;
 
 enum LayerType {
-    LAYER_TYPE_DEFAULT = 0, // Default layer type which which will use component specific APIs to paint.
+    LAYER_TYPE_DEFAULT = 0, // Default layer type will need to register a paint functions using registerOnPaint.
+    LAYER_TYPE_VIRTUAL, // Layer without any paint function. Used to maintain frame and properties..
     LAYER_TYPE_PICTURE, // SkPiture based layer.
     LAYER_TYPE_SCROLL, // Scrolling functionality based layer.
     LAYER_TYPE_TEXTURED, // SkTexture based layer.
@@ -45,6 +47,8 @@ enum LayerInvalidateMask {
 
 typedef std::vector<std::shared_ptr<Layer> > LayerList;
 using SharedLayer = std::shared_ptr<Layer>;
+using FrameDamages = std::vector<SkIRect>;
+using LayerOnPainFunc = std::function<void(SkCanvas*)>;
 
 struct PaintContext {
     SkCanvas* canvas;
@@ -75,20 +79,23 @@ public:
     SkColor backgroundColor;
     int  backfaceVisibility;
     float opacity{255.9999};
+    SkMatrix transformMatrix;
 
+    //Shadow filters & Properties
     float shadowOpacity{0};
     float shadowRadius{3};
     SkColor shadowColor=SK_ColorBLACK;
     SkSize shadowOffset{0,-3};
-    sk_sp<SkImageFilter> shadowFilter;
-    SkMatrix transformMatrix;
+    sk_sp<SkImageFilter> shadowImageFilter{nullptr};
+    sk_sp<SkMaskFilter> shadowMaskFilter{nullptr};
+    bool  isShadowVisible{false};
 
     static SharedLayer Create(Client& layerClient, LayerType type = LAYER_TYPE_DEFAULT);
     Layer(Client&, LayerType);
     virtual ~Layer() {};
 
     Client& client() const { return *client_; }
-    void setClient(Client& client) { client_ = &client; } // Used for Default Layer Type TODO: Need to remove this once we introduce Paintclient for default Layer.
+    void registerOnPaint(LayerOnPainFunc paintFunc);// Used for Default Layer Type
 
     Layer* rootLayer();
     Layer* parent() { return parent_; }
@@ -113,7 +120,6 @@ public:
     virtual void paintChildren(PaintContext& context);
     virtual void prePaint(PaintContext& context, bool forceChildrenLayout = false);
     virtual void paint(PaintContext& context);
-    virtual void onPaint(SkCanvas*) {}
 
     SkIRect& absoluteFrame() { return absFrame_; }
     const SkIRect& getFrame() const { return frame_; }
@@ -126,23 +132,29 @@ public:
     const SkPoint& anchorPosition() const { return anchorPosition_; }
     void setAnchorPosition(const SkPoint& anchorPosition) { anchorPosition_ = anchorPosition; }
 
-    const bool masksToBounds() const { return masksToBounds_; }
+    bool masksToBounds() const { return masksToBounds_; }
     void setMasksTotBounds(bool masksToBounds) { masksToBounds_ = masksToBounds; }
-
+#if USE(RNS_SHELL_PARTIAL_UPDATES)
+    static void addDamageRect(FrameDamages& damageRectList, SkIRect dirtyAbsFrameRect);
+#endif
 public:
     friend class PictureLayer;
     friend class ScrollLayer;
 
 protected:
+#if USE(RNS_SHELL_PARTIAL_UPDATES)
     static void addDamageRect(PaintContext& context, SkIRect dirtyAbsFrameRect);
-
+#endif
 private:
     static uint64_t nextUniqueId();
 
     void setParent(Layer* layer);
     void setSkipParentMatrix(bool skipParentMatrix) {skipParentMatrix_ = skipParentMatrix;}
-    void setLayerOpacity(PaintContext& context);
-    void setLayerTransformMatrix(PaintContext& context);
+    void applyLayerOpacity(PaintContext& context);
+    void applyLayerTransformMatrix(PaintContext& context);
+    LayerOnPainFunc onPaint_{nullptr}; // Used for LAYER_TYPE_DEFAULT only
+
+    SkIRect getFrameBoundsWithShadow();
 
     void calculateTransformMatrix();
 

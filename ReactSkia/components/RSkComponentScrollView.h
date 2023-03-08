@@ -34,7 +34,7 @@ class RSkComponentScrollView final : public RSkComponent {
 
   //RSkComponent override functions
   RnsShell::LayerInvalidateMask updateComponentProps(
-    const ShadowView &newShadowView,
+    Props::Shared newviewProps,
     bool forceUpadate) override;
 
   RnsShell::LayerInvalidateMask updateComponentState(
@@ -56,6 +56,9 @@ class RSkComponentScrollView final : public RSkComponent {
   ScrollStatus scrollInDirection(
     RSkComponent* candidate,
     rnsKey direction) override;
+
+  ScrollStatus scrollTo(
+    RSkComponent* candidate) override;
 
  protected:
   void OnPaint(SkCanvas *canvas) override;

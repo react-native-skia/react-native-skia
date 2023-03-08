@@ -12,7 +12,6 @@
 #include "ReactSkia/components/RSkComponent.h"
 #include "ReactSkia/core_modules/RSkSpatialNavigator.h"
 #include "ReactSkia/sdk/RNSKeyCodeMapping.h"
-#include "ReactSkia/views/common/RSkDrawUtils.h"
 #include "ReactSkia/views/common/RSkConversion.h"
 #include "ReactSkia/views/common/RSkSdkConversion.h"
 #include "rns_shell/compositor/layers/PictureLayer.h"
@@ -115,7 +114,7 @@ void RSkComponentTextInput::drawCursor(SkCanvas *canvas, LayoutMetrics layout){
   SkRect cursorRect;
   float yOffset;
   std::vector<TextBox> rects;
-  if ( ( isInEditingMode_ || hasToSetFocus_ ) && !caretHidden_ ) {
+  if ( isInEditingMode_ && !caretHidden_ ) {
     int position = cursor_.end - cursor_.locationFromEnd;
     if (cursor_.locationFromEnd == cursor_.end) {
       rects = paragraph_->getRectsForRange(0, position+1, RectHeightStyle::kTight, RectWidthStyle::kTight);
@@ -155,12 +154,16 @@ void RSkComponentTextInput::OnPaint(SkCanvas *canvas) {
       data.layoutManager->buildText(textLayout, textInputProps.backgroundColor, textInputProps.paragraphAttributes, textAttributes, displayString_, true);
     }
   }
-  drawShadow(canvas, frame, borderMetrics, textInputProps.backgroundColor, layer()->shadowOpacity, layer()->shadowFilter);
-  drawTextInput(canvas, component.layoutMetrics, textInputProps, textLayout);
-  if(hasToSetFocus_){
-    requestForEditingMode(false);
-    hasToSetFocus_ = false;
+  auto layerRef=layer();
+  if(layerRef->isShadowVisible) {
+    drawShadow(canvas, frame, borderMetrics,
+                textInputProps.backgroundColor,
+                layerRef->shadowColor,layerRef->shadowOffset,layerRef->shadowOpacity,
+                layerRef->opacity,
+                layerRef->shadowImageFilter,layerRef->shadowMaskFilter
+              );
   }
+  drawTextInput(canvas, component.layoutMetrics, textInputProps, textLayout);
   if (textInputProps.underlineColorAndroid.has_value()){
     drawUnderline(canvas,frame,textInputProps.underlineColorAndroid.value());
   }
@@ -176,12 +179,23 @@ void RSkComponentTextInput::OnPaint(SkCanvas *canvas) {
 * @return      True if key is handled else false
 */
 
-void RSkComponentTextInput::onHandleKey(rnsKey eventKeyType, bool keyRepeat, bool *stopPropagation) {
+void RSkComponentTextInput::onHandleKey(rnsKey eventKeyType, bool keyRepeat, rnsKeyAction keyAction,bool *stopPropagation) {
   RNS_LOG_DEBUG("[onHandleKey] ENTRY");
   *stopPropagation = false;
   if (!editable_) {
     return;
   }
+  if(keyAction == RNS_KEY_Release){
+    // Textinput doesn't handle release key event, but it has to return stopPropagation true in following two case.
+    // 1. textinput is in not editing mode and key is enter/select key.
+    // 2. textinput is in editing mode and key is a non-displayable key.
+    if(((!isInEditingMode_) && (eventKeyType == RNS_KEY_Select)) ||
+      ((isInEditingMode_)&& (eventKeyType<=RNS_KEY_Back) &&(eventKeyType>RNS_KEY_Select))){
+      *stopPropagation = true;
+    }
+    return;
+  }
+
   bool waitForupdateProps = false;
   privateVarProtectorMutex.lock();
   std::string textString = displayString_;
@@ -413,8 +427,8 @@ void RSkComponentTextInput::keyEventProcessingThread(){
   }
 }
 
-RnsShell::LayerInvalidateMask  RSkComponentTextInput::updateComponentProps(const ShadowView &newShadowView,bool forceUpdate){
-  auto const &textInputProps = *std::static_pointer_cast<TextInputProps const>(newShadowView.props);
+RnsShell::LayerInvalidateMask  RSkComponentTextInput::updateComponentProps(Props::Shared newviewProps,bool forceUpdate){
+  auto const &textInputProps = *std::static_pointer_cast<TextInputProps const>(newviewProps);
   int mask = RnsShell::LayerInvalidateNone;
   std::string textString{};
   RNS_LOG_DEBUG("[updateComponentProps] event count "<<textInputProps.mostRecentEventCount);
@@ -474,7 +488,9 @@ RnsShell::LayerInvalidateMask  RSkComponentTextInput::updateComponentProps(const
   } else {
     caretHidden_ = true;
   }
-  hasToSetFocus_ = forceUpdate && textInputProps.autoFocus ? true :false;
+  if(forceUpdate && textInputProps.autoFocus) {
+    setNeedFocusUpdate();
+  }
 
 #if ENABLE(FEATURE_ONSCREEN_KEYBOARD)
 /* Fetch OnSCreenKeyBoard Props*/
@@ -597,9 +613,16 @@ RSkComponentTextInput::~RSkComponentTextInput(){
     jsUpdateSem = nullptr;
   }
 }
- void RSkComponentTextInput::onHandleBlur(){
-   RNS_LOG_DEBUG("[onHandle] In TextInput");
-   resignFromEditingMode(false);
- }
+
+void RSkComponentTextInput::onHandleBlur(){
+  RNS_LOG_DEBUG("[onHandleBlur] In TextInput");
+  resignFromEditingMode();
+}
+
+void RSkComponentTextInput::onHandleFocus(){
+  RNS_LOG_DEBUG("[onHandleFocus] In TextInput");
+  requestForEditingMode();
+}
+
 } // namespace react
 } // namespace facebook

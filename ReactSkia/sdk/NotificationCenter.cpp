@@ -30,18 +30,19 @@ static std::unique_ptr<NotificationCenter> subWindowCenter_;//SubWindow Notifica
 
 void NotificationCenter::removeListener(unsigned int listener_id) {
     std::lock_guard<std::mutex> lock(mutex);
-
-    auto i = std::find_if(listeners.begin(), listeners.end(), [&] (std::pair<const std::string, std::shared_ptr<ListenerBase>> p) {
-        return p.second->id == listener_id;
-    });
-    if (i != listeners.end()) {
-        listeners.erase(i);
-    }
-    else {
-        // throw does not work as exception is disbaled with -fno-exceptions 
-        //throw std::invalid_argument("NotificationCenter::removeListener: Invalid listener id.");
-
-        std::cout << "NotificationCenter::removeListener: Invalid listener id.";
+    unsigned int index;
+    for(auto mapIt = listenersList.begin(); mapIt != listenersList.end(); mapIt++) {
+        index=0;
+        for(auto vecIt = mapIt->second.begin(); vecIt !=  mapIt->second.end(); vecIt++) {
+            if((*vecIt)->id == listener_id) {
+                mapIt->second.erase(mapIt->second.begin() + index);
+                if(mapIt->second.empty() ) {
+                    listenersList.erase(mapIt->first);// dropping map Entry with No Listners
+                }
+                return;// Listener removed,Exiting..
+            }
+            index++;
+        }
     }
 }
 

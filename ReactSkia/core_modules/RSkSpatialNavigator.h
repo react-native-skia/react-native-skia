@@ -87,7 +87,7 @@ private:
 public:
     static RSkSpatialNavigator* sharedSpatialNavigator();
     ~RSkSpatialNavigator();
-    void updateFocusCandidate(RSkComponent *focusCandidate);
+    void updateFocusCandidate(RSkComponent *focusCandidate, bool needScroll=false);
     void updateSpatialNavigatorState(NavigatorStateOperation operation, RSkComponent *candidate);
 
     void handleKeyEvent(rnsKey  eventType, rnsKeyAction eventKeyAction);

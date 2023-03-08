@@ -15,12 +15,15 @@ config("rns_shell_config") {
     "platform/graphics/gl",
   ]
 
-  defines = []
+  defines = ["RNS_ANIMATION_FRAME_RATE=$animation_frame_rate"]
   if (gl_has_gpu) {
     defines += [ "RNS_SHELL_HAS_GPU_SUPPORT" ]
   }
   if (rns_enable_partial_updates) {
     defines += ["USE_RNS_SHELL_PARTIAL_UPDATES"]
+    if (gl_has_gpu && rns_enable_buffer_age_partial_updates) {
+      defines += ["ENABLE_RNS_SHELL_BUFFER_AGE"]
+    }
   }
   if (rns_enable_scroll_layer_bitmap) {
     defines += ["USE_SCROLL_LAYER_BITMAP"]

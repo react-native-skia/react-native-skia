@@ -60,6 +60,12 @@ dynamic Uimanager::getConstantsForViewManager(std::string viewManagerName) {
         BUBBLING_EVENTS_KEY, std::move(bubblingEventTypes))(
         DIRECT_EVENTS_KEY, std::move(directEventTypes));
     return {std::move(registry)};
+  } else if (viewManagerName == "RCTActivityIndicatorView") {
+    auto nativeProps = folly::dynamic::object("color", "UIColor")("animating",true)("hidesWhenStopped",true)("size",true);
+    auto registry = folly::dynamic::object(
+        NATIVE_PROPS_KEY, std::move(nativeProps))(
+        BASE_MODULE_NAME_KEY, "RCTView");
+    return {std::move(registry)};
   } else if (viewManagerName == "RCTImageView") {
      auto nativeProps = folly::dynamic::object("blurRadius", true)(
       "defaultSrc", true)("fadeDuration", true)("headers", true)(
@@ -176,8 +182,30 @@ dynamic Uimanager::getConstantsForViewManager(std::string viewManagerName) {
 }
 
 void Uimanager::updateView(int Tag, std::string viewManagerName, dynamic props) {
-  (void)componentViewRegistry_;
-  RNS_LOG_NOT_IMPL;
+  RSkComponentProvider* provider = viewManagerName.empty() ?
+                                      componentViewRegistry_->GetProvider(Tag) :
+                                      componentViewRegistry_->GetProvider(viewManagerName.c_str());
+
+  if(provider == nullptr) {
+    RNS_LOG_ERROR("Unable to updateView,invalid provider for tag (" << Tag << ") name (" << viewManagerName << ") !!");
+    return;
+  }
+  const ComponentDescriptor* componentDescriptor = componentViewRegistry_->getComponentDescriptor(provider->GetDescriptorProvider().handle);
+  auto component = provider->GetComponent(Tag);
+
+  if((componentDescriptor != nullptr) && (component != nullptr)) {
+
+    auto surfaceId = component->getComponentData().surfaceId;
+    PropsParserContext parserContext{surfaceId, *componentDescriptor->getContextContainer()};
+    Props::Shared oldProps = component->getComponentData().props;
+    Props::Shared newProps = componentDescriptor->cloneProps(parserContext, oldProps,RawProps(props));
+
+    component->layer()->client().notifyFlushBegin();
+    RnsShell::LayerInvalidateMask invalidateMask = component->updateProps(newProps,false);
+    component->drawAndSubmit(invalidateMask);
+    component->layer()->client().notifyFlushRequired();
+  }
+
 }
 
 UimanagerModule::UimanagerModule(std::unique_ptr<Uimanager> uimanager)
@@ -213,6 +241,10 @@ auto UimanagerModule::getMethods() -> std::vector<Method> {
           [] (dynamic args) {
           }),
   };
+}
+
+void UimanagerModule::updateViewForReactTag(int viewTag, folly::dynamic newProps) {
+  uimanager_->updateView(viewTag,std::string(),newProps);
 }
 
 std::unique_ptr<xplat::module::CxxModule> UimanagerModule::createModule(ComponentViewRegistry *componentViewRegistry) {

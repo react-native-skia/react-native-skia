@@ -1,3 +1,10 @@
+/*
+* Copyright (C) 1994-2022 OpenTV, Inc. and Nagravision S.A.
+* Copyright (C) Kudo Chien
+*
+* This source code is licensed under the MIT license found in the
+* LICENSE file in the root directory of this source tree.
+*/
 #include <folly/io/async/ScopedEventBaseThread.h>
 
 #include "build/build_config.h"
@@ -6,6 +13,7 @@
 
 #include "JSITurboModuleManager.h"
 #include "version.h"
+#include "core_modules/RSkAppStateModule.h"
 #include "core_modules/RSkDeviceInfo.h"
 #include "core_modules/RSkImageLoader.h"
 #include "core_modules/RSkTimingModule.h"
@@ -20,6 +28,10 @@
 #else
 #include "modules/platform/libcurl/RSkWebSocketModule.h"
 #endif
+
+#if ENABLE(FEATURE_ALERT)
+#include "core_modules/RSkAlertManager.h"
+#endif//FEATURE_ALERT
 
 namespace facebook {
 namespace react {
@@ -93,30 +105,6 @@ class ExceptionsManagerModule : public TurboModule {
   }
 };
 
-class AppStateModule : public TurboModule {
- public:
-  AppStateModule(
-      const std::string &name,
-      std::shared_ptr<CallInvoker> jsInvoker)
-      : TurboModule(name, jsInvoker) {
-    methodMap_["getConstants"] = MethodMetadata{0, GetConstants};
-
-    methodMap_["getCurrentAppState"] = MethodMetadata{2, NoOp};
-    methodMap_["addListener"] = MethodMetadata{1, NoOp};
-    methodMap_["removeListener"] = MethodMetadata{1, NoOp};
-  }
-
- private:
-  static jsi::Value GetConstants(
-      jsi::Runtime &rt,
-      TurboModule &turboModule,
-      const jsi::Value *args,
-      size_t count) {
-    return jsi::valueFromDynamic(
-        rt, folly::dynamic::array("initialAppState", "active"));
-  }
-};
-
 class UnimplementedTurboModule : public TurboModule {
  public:
   UnimplementedTurboModule(
@@ -160,7 +148,7 @@ JSITurboModuleManager::JSITurboModuleManager(Instance *bridgeInstance)
   modules_["Timing"] =
       std::make_shared<RSkTimingModule>("Timing", jsInvoker, bridgeInstance);
   modules_["AppState"] =
-      std::make_shared<AppStateModule>("AppState", jsInvoker);
+      std::make_shared<RSkAppStateModule>("AppState", jsInvoker, bridgeInstance);
   modules_["Networking"] =
       std::make_shared<RSkNetworkingModule>("Networking", jsInvoker, bridgeInstance );
   modules_["WebSocketModule"] =
@@ -171,7 +159,10 @@ JSITurboModuleManager::JSITurboModuleManager(Instance *bridgeInstance)
       std::make_shared<RSkDeviceInfoModule>("DeviceInfo", jsInvoker, bridgeInstance);
   modules_["ImageLoader"] =
       std::make_shared<RSkImageLoader>("ImageLoader", jsInvoker);
-
+#if ENABLE(FEATURE_ALERT)
+  modules_["AlertManager"] =
+      std::make_shared<RSkAlertManager>("AlertManager", jsInvoker, bridgeInstance);
+#endif//FEATURE_ALERT
 #if defined(TARGET_OS_TV) && TARGET_OS_TV
   modules_["TVNavigationEventEmitter"] =
       std::make_shared<RSkTVNavigationEventEmitter>("TVNavigationEventEmitter",jsInvoker, bridgeInstance);
@@ -192,6 +183,7 @@ TurboModuleProviderFunctionType JSITurboModuleManager::GetProvider() {
     if (modules_.find(name) != modules_.end()) {
       return modules_[name];
     }
+    RNS_LOG_WARN("!!!!! Turbo Module " << name << " Not found !!!!!");
     return nullptr;
   };
 }

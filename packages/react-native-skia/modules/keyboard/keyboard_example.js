@@ -13,7 +13,7 @@ export default class SimpleViewApp extends Component{
   }
 
   showCallback = (x) => {
-    console.log("------------showCallback:", x)
+    console.log("------------showCallback:", x);
   }
 
 

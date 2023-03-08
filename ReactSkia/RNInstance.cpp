@@ -1,3 +1,10 @@
+/*
+* Copyright (C) 1994-2022 OpenTV, Inc. and Nagravision S.A.
+* Copyright (C) Kudo Chien
+*
+* This source code is licensed under the MIT license found in the
+* LICENSE file in the root directory of this source tree.
+*/
 
 #include "ReactSkia/RNInstance.h"
 
@@ -10,6 +17,7 @@
 #include "ReactSkia/MountingManager.h"
 #include "ReactSkia/RSkSurfaceWindow.h"
 #include "ReactSkia/RSkThirdPartyFabricComponentsProvider.h"
+#include "ReactSkia/components/RSkComponentProviderActivityIndicator.h"
 #include "ReactSkia/components/RSkComponentProviderImage.h"
 #include "ReactSkia/components/RSkComponentProviderRootView.h"
 #include "ReactSkia/components/RSkComponentProviderScrollView.h"
@@ -111,7 +119,12 @@ static inline LayoutContext RSkGetLayoutContext(SkPoint viewportOffset) {
           .viewportOffset = RCTPointFromSkPoint(viewportOffset)};
 }
 
-RNInstance::RNInstance(RnsShell::RendererDelegate &rendererDelegate) {
+jsi::Runtime *RNInstance::jsRuntime_ = nullptr;
+
+RNInstance::RNInstance(RnsShell::RendererDelegate &rendererDelegate)
+  : instance_(std::make_shared<Instance>())
+  , moduleMessageQueue_(std::make_shared<MessageQueueThreadImpl>())
+  , componentViewRegistry_(std::make_unique<ComponentViewRegistry>()) {
   InitializeJSCore();
   RegisterComponents();
   InitializeFabric(rendererDelegate);
@@ -163,20 +176,18 @@ UIManager *RNInstance::GetUIManager() {
 }
 
 void RNInstance::InitializeJSCore() {
-  instance_ = std::make_shared<Instance>();
   turboModuleManager_ =
       std::make_unique<JSITurboModuleManager>(instance_.get());
   auto cb = std::make_unique<InstanceCallback>();
   auto factory =
       std::make_shared<JSCExecutorFactory>(turboModuleManager_.get());
-  moduleMessageQueue_ =
-      std::make_shared<MessageQueueThreadImpl>();
   moduleRegistry_ = std::make_shared<LegacyNativeModuleRegistry>(componentViewRegistry_.get(), instance_, moduleMessageQueue_);
   instance_->initializeBridge(
       std::make_unique<InstanceCallback>(),
       std::make_shared<JSCExecutorFactory>(turboModuleManager_.get()),
       std::make_shared<MessageQueueThreadImpl>(),
       moduleRegistry_);
+  jsRuntime_ = reinterpret_cast<jsi::Runtime*>(instance_->getJavaScriptContext());
 
   // NOTE(kudo): Workaround for TurboModules being fully initialized
   std::this_thread::sleep_for(std::chrono::milliseconds(500));
@@ -239,12 +250,15 @@ void RNInstance::InitializeFabric(RnsShell::RendererDelegate &rendererDelegate) 
       std::make_shared<Scheduler>(toolbox, nullptr, mountingManager_.get());
 }
 
+jsi::Runtime* RNInstance::RskJsRuntime() {
+  return jsRuntime_;
+}
+
 static RSkComponentProviderProtocol RSKComponentViewClassWithName(ComponentName componentName) {
   return RSkThirdPartyFabricComponentsProvider(componentName);
 }
 
 void RNInstance::RegisterComponents() {
-  componentViewRegistry_ = std::make_unique<ComponentViewRegistry>();
   componentViewRegistry_->Register(
       std::make_unique<RSkComponentProviderRootView>());
   componentViewRegistry_->Register(
@@ -261,11 +275,13 @@ void RNInstance::RegisterComponents() {
       std::make_unique<RSkComponentProviderTextInput>());
   componentViewRegistry_->Register(
       std::make_unique<RSkComponentProviderScrollView>());
+  componentViewRegistry_->Register(
+      std::make_unique<RSkComponentProviderActivityIndicator>());
 
   // Provider request callback which is called when it doesnt find a viewManagerProvider in componentViewRegistry
   componentViewRegistry_->providerRegistry().setComponentDescriptorProviderRequest(
     [this](ComponentName requestedComponentName) {
-      RNS_LOG_WARN("!!!!!!!!!! Requested View Component " << requestedComponentName << ", try to find in thirdparty, else use unimplemented view");
+      RNS_LOG_WARN("!!!!!!!!!! Requested View Component " << requestedComponentName << " not found in internal registry, try to find in thirdparty");
 
       // Fallback 1 : Try to find thirdparty registry.
       auto providerProtocol = RSKComponentViewClassWithName(requestedComponentName);
@@ -274,6 +290,7 @@ void RNInstance::RegisterComponents() {
         componentViewRegistry_->Register(std::move(provider));
         return;
       }
+      RNS_LOG_WARN("!!!!!!!!!! Requested View Component " << requestedComponentName << " not found in thirdparty, use unimplemented view");
 
       // Fallback 2 : Create UnimplementedView object with given requested name as flavour& handle. Refer RCTComponentViewFactory.mm
       auto flavor = std::make_shared<std::string const>(requestedComponentName);

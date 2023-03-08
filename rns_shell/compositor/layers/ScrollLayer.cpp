@@ -541,8 +541,11 @@ void ScrollLayer::paint(PaintContext& context) {
     RNS_LOG_TRACE("Scroll Layer (" << layerId() << ") has " << children().size() << " childrens");
     SkAutoCanvasRestore save(context.canvas, true); // Save current clip and matrix state
 
-    setLayerTransformMatrix(context);
-    setLayerOpacity(context);
+    applyLayerTransformMatrix(context);
+
+    if(opacity <= 0.0) return; //if transparent,paint self & children not required
+
+    applyLayerOpacity(context);
 
 #if USE(SCROLL_LAYER_BITMAP)
     paintChildrenAndSelf(context);

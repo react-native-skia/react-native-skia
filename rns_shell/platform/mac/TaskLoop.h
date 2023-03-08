@@ -30,6 +30,9 @@ class TaskLoop {
   using Func = std::function<void()>;
   virtual void dispatch(Func func);
 
+  // schedule a task with timeout(in milliseconds)
+  virtual void scheduleDispatch(Func func, long long timeoutMs);
+
  protected:
   TaskLoop(bool isMain);
 
@@ -51,6 +54,7 @@ class MainTaskLoop : public TaskLoop {
   void stop() override;
   void waitUntilRunning() override;
   void dispatch(Func func) override;
+  void scheduleDispatch(Func func, long long timeoutMs) override;
 };
 
 } // namespace RnsShell

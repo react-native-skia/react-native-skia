@@ -7,6 +7,8 @@
 
 #include "rns_shell/platform/linux/TaskLoop.h"
 
+using namespace folly;
+
 namespace RnsShell {
 
 static std::unique_ptr<TaskLoop> mainTaskRunner_;
@@ -40,6 +42,11 @@ TaskLoop& TaskLoop::main() {
 void TaskLoop::dispatch(folly::Func fun) {
     if(eventBase_.isRunning())
         eventBase_.runInEventBaseThread(std::move(fun));
+}
+
+void TaskLoop::scheduleDispatch(Func fun, long long timeoutMs) {
+    eventBase_.scheduleAt(std::move(fun),
+                          std::chrono::steady_clock::now() + std::chrono::milliseconds(timeoutMs));
 }
 
 void TaskLoop::initializeMain() {

@@ -8,6 +8,9 @@
 
 #pragma once
 
+//To avoid the None conflict with X11,Placing NotificationCenter.h file before x11's file inclusion
+#include "ReactSkia/sdk/NotificationCenter.h"
+// Macros's defined in RnsUtils.h are needed in window's file. so placing in before in order.
 #include "ReactSkia/utils/RnsUtils.h"
 
 #include <X11/Xlib.h>
@@ -23,7 +26,7 @@
 #include "rns_shell/platform/graphics/PlatformDisplay.h"
 
 #include "ReactSkia/sdk/RNSKeyCodeMapping.h"
-#include "ReactSkia/sdk/NotificationCenter.h"
+
 typedef Window XWindow;
 
 namespace RnsShell {

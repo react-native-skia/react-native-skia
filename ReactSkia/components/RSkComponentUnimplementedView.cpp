@@ -12,17 +12,20 @@
 #include "include/core/SkPaint.h"
 #include "include/core/SkPathEffect.h"
 #include "react/renderer/components/unimplementedview/UnimplementedViewShadowNode.h"
-#include "ReactSkia/views/common/RSkDrawUtils.h"
+
+using namespace RSkDrawUtils;
 
 namespace facebook {
 namespace react {
 
-using namespace RSkDrawUtils;
 
 RSkComponentUnimplementedView::RSkComponentUnimplementedView(const ShadowView &shadowView)
     : RSkComponent(shadowView) {}
 
-RnsShell::LayerInvalidateMask RSkComponentUnimplementedView::updateComponentProps(const ShadowView &newShadowView,bool forceUpdate) { RNS_LOG_NOT_IMPL; return RnsShell::LayerInvalidateNone;}
+RnsShell::LayerInvalidateMask RSkComponentUnimplementedView::updateComponentProps(Props::Shared newviewProps,bool forceUpdate) {
+  RNS_LOG_NOT_IMPL;
+  return RnsShell::LayerInvalidateNone;
+}
 
 void RSkComponentUnimplementedView::handleCommand(std::string commandName,folly::dynamic args){
   RNS_LOG_WARN("[RSkComponentUnimplementedView][handleCommand] commandName : "<< commandName);
@@ -40,8 +43,14 @@ void RSkComponentUnimplementedView::OnPaint(
   RNS_LOG_WARN("Painting an unimplemented view : " << component.componentName);
 
   // Draw Order : 1. Shadow 2. BackGround 3 Border
-  if(layer()->shadowOpacity && layer()->shadowFilter){
-    drawShadow(canvas,frame,borderMetrics,viewProps.backgroundColor,layer()->shadowOpacity,layer()->shadowFilter);
+  auto layerRef=layer();
+  if(layerRef->isShadowVisible) {
+    drawShadow(canvas,frame,borderMetrics,
+                viewProps.backgroundColor,
+                layerRef->shadowColor,layerRef->shadowOffset,layerRef->shadowOpacity,
+                layerRef->opacity,
+                layerRef->shadowImageFilter,layerRef->shadowMaskFilter
+              );
   }
   drawBackground(canvas,frame,borderMetrics,SK_ColorWHITE);
   drawBorder(canvas,frame,borderMetrics,viewProps.backgroundColor);

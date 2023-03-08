@@ -6,8 +6,10 @@
 * found in the LICENSE file.
 */
 
-#include "rns_shell/compositor/layers/Layer.h"
+#include "third_party/skia/include/effects/SkImageFilters.h"
+#include "third_party/skia/src/core/SkMaskFilterBase.h"
 
+#include "rns_shell/compositor/layers/Layer.h"
 #include "rns_shell/compositor/layers/PictureLayer.h"
 #include "rns_shell/compositor/layers/ScrollLayer.h"
 
@@ -15,9 +17,11 @@ namespace RnsShell {
 
 #if USE(RNS_SHELL_PARTIAL_UPDATES)
 void Layer::addDamageRect(PaintContext& context, SkIRect dirtyAbsFrameRect) {
-    std::vector<SkIRect>& damageRectList = context.damageRect;
-    bool checkIfAlreadyCovered = true;
+    addDamageRect(context.damageRect, dirtyAbsFrameRect);
+}
 
+void Layer::addDamageRect(FrameDamages& damageRectList, SkIRect dirtyAbsFrameRect) {
+    bool checkIfAlreadyCovered = true;
     for (auto it = damageRectList.begin(); it != damageRectList.end(); it++) {
         // Check 1 : If new dirty rect fully covers any of existing dirtyRect in the list then remove them from vector
         SkIRect &dirtRect = *it;
@@ -39,6 +43,30 @@ void Layer::addDamageRect(PaintContext& context, SkIRect dirtyAbsFrameRect) {
 }
 #endif
 
+inline SkIRect Layer::getFrameBoundsWithShadow(){
+    // Calculate Frame bound with its shadow.
+    // Preference given to mask filter, as it is more performant w.r.t timing.
+    if(shadowMaskFilter){
+        // using Mask Filter
+        SkRect storage;
+        SkRect shadowRect=SkRect::MakeXYWH(frame_.x()+shadowOffset.width(), frame_.y()+shadowOffset.height(), frame_.width(), frame_.height());
+        as_MFB(shadowMaskFilter)->computeFastBounds(shadowRect, &storage);
+        storage.join(SkRect::Make(frame_));
+        return  SkIRect::MakeXYWH(storage.x(), storage.y(), storage.width(), storage.height());
+    } else if(shadowImageFilter) {
+        // using Image Filter
+        SkMatrix identityMatrix;
+        SkIRect shadowBounds= shadowImageFilter->filterBounds(
+                                    frame_,
+                                    identityMatrix,
+                                    SkImageFilter::kForward_MapDirection,
+                                    nullptr);
+        shadowBounds.join(frame_);
+        return shadowBounds;
+    }
+    return frame_;
+}
+
 SharedLayer Layer::Create(Client& layerClient, LayerType type) {
     switch(type) {
         case LAYER_TYPE_PICTURE:
@@ -46,8 +74,10 @@ SharedLayer Layer::Create(Client& layerClient, LayerType type) {
         case LAYER_TYPE_SCROLL:
             return std::make_shared<ScrollLayer>(layerClient);
         case LAYER_TYPE_DEFAULT:
+        case LAYER_TYPE_VIRTUAL:
+            return std::make_shared<Layer>(layerClient, type);
         default:
-            RNS_LOG_ASSERT(false, "Default layers can be created only from RSkComponent constructor");
+            RNS_LOG_ASSERT(false, "Unknown Layer type to create");
             return nullptr;
     }
 }
@@ -140,14 +170,8 @@ void Layer::preRoll(PaintContext& context, bool forceLayout) {
         absFrame_ = SkIRect::MakeXYWH(mapRect.x(), mapRect.y(), mapRect.width(), mapRect.height());
         SkIRect newBounds = absFrame_;
         frameBounds_ = frame_;
-        if(shadowFilter) {
-            SkMatrix identityMatrix;
-            frameBounds_ = shadowFilter->filterBounds(
-                                               frame_,
-                                               identityMatrix,
-                                               SkImageFilter::kForward_MapDirection,
-                                               nullptr);
-
+        if(isShadowVisible) {
+            frameBounds_=getFrameBoundsWithShadow();
             //Calculate absolute frame bounds
             SkRect mapRect=SkRect::Make(frameBounds_);
             absoluteTransformMatrix_.mapRect(&mapRect);
@@ -210,7 +234,8 @@ void Layer::paintSelf(PaintContext& context) {
     RNS_GET_TIME_STAMP_US(start);
 #endif
 
-    this->onPaint(context.canvas);
+    if(onPaint_)
+      onPaint_(context.canvas);
 
 #if !defined(GOOGLE_STRIP_LOG) || (GOOGLE_STRIP_LOG <= INFO)
     RNS_GET_TIME_STAMP_US(end);
@@ -234,19 +259,32 @@ void Layer::paint(PaintContext& context) {
 
     SkAutoCanvasRestore save(context.canvas, true); // Save current clip and matrix state.
 
-    setLayerTransformMatrix(context);
-    setLayerOpacity(context);
+    applyLayerTransformMatrix(context);
+
+    if(opacity <= 0.0) return; //if transparent,paint self & children not required
+
+    applyLayerOpacity(context);
     paintSelf(context); // First paint self and then children if any
 
     if(masksToBounds_) { // Need to clip children.
         SkRect intRect = SkRect::Make(frame_);
-        if(!context.dirtyClipBound.isEmpty() && intRect.intersect(context.dirtyClipBound) == false) {
+        SkRect currentClipBound;
+        context.canvas->getLocalClipBounds(&currentClipBound);
+        if(!currentClipBound.isEmpty() && intRect.intersect(currentClipBound) == false) {
             RNS_LOG_WARN("We should not call paint if it doesnt intersect with non empty dirtyClipBound...");
         }
         context.canvas->clipRect(intRect,SkClipOp::kIntersect);
     }
 
     paintChildren(context);
+}
+
+void Layer::registerOnPaint(LayerOnPainFunc paintFunc) {
+  if(type_ == LAYER_TYPE_DEFAULT) {
+    onPaint_ = paintFunc;
+  } else {
+    RNS_LOG_WARN("registerOnPaint is used only for DEFAULT layer type");
+  }
 }
 
 bool Layer::hasAncestor(const Layer* ancestor) const {
@@ -331,15 +369,14 @@ bool Layer::requireInvalidate(bool skipChildren) {
     return false;
 }
 
-void Layer::setLayerOpacity(PaintContext& context) {
-    if(opacity <= 0.0) return; //if transparent,paint self & children not required
-    if(opacity < 0xFF) {
+void Layer::applyLayerOpacity(PaintContext& context) {
+    if((opacity >= 0) && (opacity < 0xFF)) {
       SkRect layerBounds = SkRect::Make(frameBounds_);
       context.canvas->saveLayerAlpha(&layerBounds,opacity);
     }
 }
 
-void Layer::setLayerTransformMatrix(PaintContext& context) {
+void Layer::applyLayerTransformMatrix(PaintContext& context) {
     SkMatrix screenMatrix;
     //If scrolling offset is available,concat the offset to transform matrix
     if(!context.offset.isZero()) {

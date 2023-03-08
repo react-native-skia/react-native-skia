@@ -50,6 +50,11 @@ void TaskLoop::dispatch(Func func)
   }
 }
 
+void TaskLoop::scheduleDispatch(Func fun, long long timeoutMs) {
+  eventBase_->scheduleAt(std::move(fun),
+                         std::chrono::steady_clock::now() + std::chrono::milliseconds(timeoutMs));
+}
+
 MainTaskLoop::MainTaskLoop() : TaskLoop(true) {}
 
 bool MainTaskLoop::running()
@@ -75,6 +80,12 @@ void MainTaskLoop::stop()
 void MainTaskLoop::dispatch(Func func)
 {
   dispatch_async(dispatch_get_main_queue(), ^{
+    func();
+  });
+}
+
+void MainTaskLoop::scheduleDispatch(Func func, long long timeoutMs) {
+  dispatch_after(dispatch_time(DISPATCH_TIME_NOW, timeoutMs * NSEC_PER_MSEC), dispatch_get_main_queue(), ^{
     func();
   });
 }

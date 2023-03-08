@@ -1,0 +1,67 @@
+# Plugin Library
+
+import("//ReactSkia/pluginfactory/plugins/plugins.gni")
+
+config("ReactSkiaPlugin_config") {
+  cflags_cc = [ "-std=c++17" ]
+  include_dirs = [ "."]
+  defines = []
+  defines += [
+    "ENABLE_RNSP_APP_MANAGER=1",
+  ]
+
+  if (is_mac) {
+    # TODO(kudo): Add macos support
+    defines += [
+      "RNSP_APP_MANAGER_PLUGIN=\"\""
+    ]
+  }
+  if (is_linux) {
+    defines += [
+      "RNSP_APP_MANAGER_PLUGIN=\"libReactSkiaPluginLibrary.so\""
+    ]
+  }
+}
+
+component("ReactSkiaPluginLibrary") {
+  sources = [
+    "../interfaces/RNSApplicationManagerInterface.h",
+    "../interfaces/RNSApplicationManagerInterface.cpp",
+  ]
+
+  sources += [
+    plugin_platform_backend+"/ApplicationManager.cpp",
+    plugin_platform_backend+"/ApplicationManager.h",
+  ]
+
+  # PLatform specific plugin helpers
+  if(plugin_platform_backend == "ubuntu") {
+    sources += [
+      plugin_platform_backend+"/ApplicationManagerCgroupMemory.cpp",
+    ]
+  }
+
+  configs -= [ "//build/config/compiler:chromium_code" ]
+  configs += [ "//build/config/compiler:no_chromium_code" ]
+  configs -= [ "//build/config/compiler:no_exceptions" ]
+  configs += [ "//build/config/compiler:exceptions" ]
+  configs -= [ "//build/config/compiler:no_rtti" ]
+  configs += [ "//build/config/compiler:rtti" ]
+
+  if (is_clang) {
+    configs -= [ "//build/config/clang:find_bad_constructs" ]
+  }
+
+  public_configs = [ ":ReactSkiaPlugin_config" ]
+  public_configs += [ "//build/secondary/folly:folly_config" ]
+
+  deps = [
+    "//folly:async",
+    "//folly:synchronization",
+  ]
+}
+
+source_set("plugins") {
+  sources = []
+  public_configs = [ ":ReactSkiaPlugin_config" ]
+}

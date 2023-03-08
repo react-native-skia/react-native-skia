@@ -8,6 +8,9 @@ declare_args() {
   # Enable OnScreenKeyBoard Feature
   rns_enable_onscreen_keyboard = true
 
+  # Enable Alert Feature
+  rns_enable_alert = true
+
   # Enable key throttling
   rns_enable_key_throttling = false
 
@@ -40,6 +43,10 @@ config("ReactSkia_config") {
      defines += ["ENABLE_FEATURE_ONSCREEN_KEYBOARD"]
   }
 
+  if(rns_enable_alert) {
+     defines += ["ENABLE_FEATURE_ALERT"]
+  }
+
   # Enable key throttling
   if(rns_enable_key_throttling) {
     defines += ["ENABLE_FEATURE_KEY_THROTTLING"]
@@ -61,6 +68,11 @@ config("textlayoutmanager_config") {
 config("textinput_config") {
   include_dirs = [
     "//ReactSkia/textinput",
+  ]
+}
+config("activityindicator_config") {
+  include_dirs = [
+    "//ReactSkia/activityindicator",
   ]
 }
 
@@ -114,6 +126,33 @@ rn_cxx_component("textinput") {
   public_configs = [":textinput_config"]
 }
 
+rn_cxx_component("activityindicator") {
+  sources = [
+    "activityindicator/react/renderer/components/activityindicator/ActivityIndicatorComponentDescriptor.h",
+    "activityindicator/react/renderer/components/activityindicator/ActivityIndicatorProps.cpp",
+    "activityindicator/react/renderer/components/activityindicator/ActivityIndicatorProps.h",
+    "activityindicator/react/renderer/components/activityindicator/ActivityIndicatorShadowNode.cpp",
+    "activityindicator/react/renderer/components/activityindicator/ActivityIndicatorShadowNode.h",
+  ]
+
+  deps = [
+    "//folly",
+    "//react-native/ReactCommon/react/renderer/componentregistry:componentregistry",
+    "//react-native/ReactCommon/react/renderer/components/view:view",
+    "//react-native/ReactCommon/react/renderer/core:core",
+    "//react-native/ReactCommon/react/renderer/debug:debug",
+    "//react-native/ReactCommon/react/renderer/graphics:graphics",
+    "//react-native/ReactCommon/react/renderer/uimanager:uimanager",
+    "//react-native/ReactCommon/react/utils:utils",
+    "//react-native/ReactCommon/yoga:yoga",
+    "//third_party/glog:glog",
+
+  ]
+
+  with_exceptions = true
+  with_rtti = true
+  public_configs = [":activityindicator_config"]
+}
 
 source_set("ReactSkia") {
   sources = [
@@ -125,16 +164,18 @@ source_set("ReactSkia") {
     "MountingManager.h",
     "RNInstance.cpp",
     "RNInstance.h",
-    "sdk/CurlNetworking.h",
     "sdk/CurlNetworking.cpp",
-    "sdk/FollyTimer.h",
+    "sdk/CurlNetworking.h",
     "sdk/FollyTimer.cpp",
+    "sdk/FollyTimer.h",
     "sdk/NotificationCenter.cpp",
     "sdk/NotificationCenter.h",
     "sdk/ThreadSafeQueue.h",
     "sdk/ThreadSafeCache.h",
     "sdk/WindowDelegator.cpp",
     "sdk/WindowDelegator.h",
+    "core_modules/RSkAppStateModule.cpp",
+    "core_modules/RSkAppStateModule.h",
     "core_modules/RSkDeviceInfo.cpp",
     "core_modules/RSkDeviceInfo.h",
     "core_modules/RSkEventEmitter.cpp",
@@ -155,9 +196,15 @@ source_set("ReactSkia") {
     "RSkSurfaceWindow.h",
     "components/RSkComponent.cpp",
     "components/RSkComponent.h",
+    "components/RSkComponentActivityIndicator.cpp",
+    "components/RSkComponentActivityIndicator.h",
+    "components/RSkComponentActivityIndicatorManager.cpp",
+    "components/RSkComponentActivityIndicatorManager.h",
     "components/RSkComponentImage.cpp",
     "components/RSkComponentImage.h",
     "components/RSkComponentProvider.h",
+    "components/RSkComponentProviderActivityIndicator.cpp",
+    "components/RSkComponentProviderActivityIndicator.h",
     "components/RSkComponentProviderImage.cpp",
     "components/RSkComponentProviderImage.h",
     "components/RSkComponentProviderRootView.cpp",
@@ -198,12 +245,23 @@ source_set("ReactSkia") {
     "views/common/RSkImageCacheManager.h",
     "views/common/RSkImageUtils.cpp",
     "views/common/RSkImageUtils.h",
+    "utils/RnsJsRaf.h",
+    "utils/RnsJsRaf.cpp",
   ]
 
   if(rns_enable_onscreen_keyboard) {
     sources += [
       "sdk/OnScreenKeyBoard.cpp",
       "sdk/OnScreenKeyBoard.h",
+    ]
+  }
+
+  if(rns_enable_alert) {
+    sources += [
+      "core_modules/RSkAlertManager.cpp",
+      "core_modules/RSkAlertManager.h",
+      "sdk/Alert.cpp",
+      "sdk/Alert.h",
     ]
   }
 
@@ -236,6 +294,16 @@ source_set("ReactSkia") {
     "platform/common/RuntimeEventBeat.h",
     "platform/common/RuntimeEventBeat.cpp",
   ]
+
+  # Platform plugin factory
+  sources += [
+    "pluginfactory/Export.h",
+    "pluginfactory/Version.h",
+    "pluginfactory/RnsPlugin.h",
+    "pluginfactory/RnsPluginFactory.cpp",
+    "pluginfactory/RnsPluginFactory.h",
+  ]
+
   if (is_mac) {
     sources += [
       "platform/mac/MainRunLoopEventBeat.h",
@@ -297,7 +365,9 @@ source_set("ReactSkia") {
     "//react-native/ReactCommon/react/renderer/components/text",
     "//react-native/ReactCommon/react/renderer/textlayoutmanager",
     "//react-native/ReactCommon/react/renderer/uimanager:uimanager",
+    "//ReactSkia:activityindicator",
     "//ReactSkia:textinput",
+    "//ReactSkia/pluginfactory/plugins",
     "//rns_shell",
     "//skia",
   ]
@@ -342,6 +412,11 @@ executable("ReactSkiaApp") {
   deps = [
     ":ReactSkia",
     "//react-native/ReactCommon/react/renderer/components/unimplementedview",
+  ]
+
+  # External/Thirdparty package inclusions
+  deps += [
+    "//ReactSkia/external",
   ]
 
   configs -= [ "//build/config/compiler:chromium_code" ]

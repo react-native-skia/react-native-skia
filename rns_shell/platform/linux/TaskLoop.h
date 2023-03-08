@@ -32,6 +32,7 @@ public:
     void waitUntilRunning();
 
     void dispatch(folly::Func fun);
+    void scheduleDispatch(folly::Func fun, long long timeoutMs); // schedule a task with timeout(in milliseconds)
 
 private:
     folly::EventBase eventBase_;

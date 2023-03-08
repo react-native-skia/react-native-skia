@@ -7,13 +7,16 @@
 */
 #pragma once
 
-#include "include/core/SkRect.h"
+#include <list>
+
+#include "third_party/skia/include/core/SkRect.h"
 
 #include "rns_shell/common/WindowContext.h"
 #include "rns_shell/compositor/layers/Layer.h"
 #include "rns_shell/platform/graphics/PlatformDisplay.h"
 
 #define RNS_TARGET_FPS_US 16666.7 // In Microseconds
+#define RNS_SHELL_MAX_FRAME_DAMAGE_HISTORY 5
 
 namespace RnsShell {
 
@@ -54,9 +57,10 @@ private:
 
     void createWindowContext();
     void renderLayerTree();
-
+#if USE(RNS_SHELL_PARTIAL_UPDATES) && ENABLE(RNS_SHELL_BUFFER_AGE)
+    SkRect beginClip();
+#endif
     std::mutex isMutating; // Lock the renderLayer tree while updating and rendering
-
     Client& client_;
     SharedLayer rootLayer_;
     std::unique_ptr<WindowContext> windowContext_;
@@ -67,7 +71,9 @@ private:
     bool supportPartialUpdate_;
 #endif
     std::vector<SkIRect> surfaceDamage_;
-
+#if USE(RNS_SHELL_PARTIAL_UPDATES) && ENABLE(RNS_SHELL_BUFFER_AGE)
+    std::list<FrameDamages> frameDamageHistory_;
+#endif
     struct {
         //Lock lock;
         SkSize viewportSize;
@@ -75,6 +81,18 @@ private:
         bool needsResize { false };
         bool rendersNextFrame { false };
     } attributes_;
+
+    enum class UpdateState {
+        Idle, //Idle state , no rendering update is ongoing/scheduled
+        Scheduled, // Scheduled state , a rendering update has been scheduled
+        InProgress, // InProgress state , a scheduled rendering update in on-going. Not used in current implementation
+    };
+
+    struct {
+        std::mutex lock; // Lock for updating the states. Not used in current implementation.
+        UpdateState update { UpdateState::Idle }; // compositor rendering state - idle/scheduled/inprogress
+        bool pendingUpdate { false }; // compositor pending updates for rendering if in progress.Not used in current implementation
+    } renderState_;
 };
 
 }   // namespace RnsShell

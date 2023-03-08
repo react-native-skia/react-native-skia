@@ -171,5 +171,39 @@ bool RSkImageCacheManager::imageDataInsertInCache(const char* path,decodedimageC
   }
 }
 
+bool RSkImageCacheManager::clearMemory() {
+  std::scoped_lock lock(imageCacheLock);
+  size_t usageArr[2]={0,0};
+  ImageCacheMap::iterator it=imageCache_.begin();
+  while( it != imageCache_.end()) {
+    if((it->second.imageData)->unique()) {
+      it=imageCache_.erase(it);
+    } else {
+      ++it;
+    }
+  }
+#ifdef RNS_SHELL_HAS_GPU_SUPPORT
+  RnsShell::WindowContext::grTransactionBegin();
+  GrDirectContext* gpuContext = RSkSurfaceWindow::getDirectContext();
+  if(gpuContext) {
+    gpuContext->purgeUnlockedResources(false);
+  }
+  RnsShell::WindowContext::grTransactionEnd();
+#endif
+#ifdef RNS_IMAGE_CACHE_USAGE_DEBUG
+    printCacheUsage(); // for print memory size for CPU and GPU cache
+#endif //RNS_IMAGECACHING_DEBUG
+  SkGraphics::PurgeResourceCache(); // purge for CPU memory cache
+  if(imageCache_.empty()) {
+    timer_->abort();
+  }
+  return true;
+}
+
+bool RSkImageCacheManager::clearDisk() {
+  RNS_LOG_NOT_IMPL;
+  return true;
+}
+
 } // namespace react
 } // namespace facebook

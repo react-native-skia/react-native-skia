@@ -27,13 +27,14 @@ class RSkComponentTextInput final : public RSkComponent {
  public:
   RSkComponentTextInput(const ShadowView &shadowView);
   ~RSkComponentTextInput();
-  void onHandleKey(rnsKey eventKeyType, bool keyRepeat, bool *stopPropagation)override;
-  RnsShell::LayerInvalidateMask updateComponentProps(const ShadowView &newShadowView,bool forceUpdate) override;
+  void onHandleKey(rnsKey eventKeyType, bool keyRepeat, rnsKeyAction keyAction,bool *stopPropagation)override;
+  RnsShell::LayerInvalidateMask updateComponentProps(Props::Shared newviewProps,bool forceUpdate) override;
   /*
     TODO  Need to Add command function to Handle Command.
   */
   void handleCommand(std::string commandName,folly::dynamic args)override;
   void onHandleBlur()override;
+  void onHandleFocus()override;
  protected:
   void OnPaint(SkCanvas *canvas) override;
  private:
@@ -42,7 +43,6 @@ class RSkComponentTextInput final : public RSkComponent {
   bool caretHidden_ = false;
   bool isTextInputInFocus_=false;
   bool secureTextEntry_=false;
-  bool hasToSetFocus_=false;
   int eventCount_;
   int maxLength_;
   std::string displayString_{}; // Text to be displayed on screen

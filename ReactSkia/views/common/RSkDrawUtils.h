@@ -6,11 +6,8 @@
  */
 #pragma once
 
-#include "include/core/SkPaint.h"
 #include "include/core/SkCanvas.h"
-#include "include/effects/SkDashPathEffect.h"
 #include <react/renderer/components/view/ViewProps.h>
-
 
 namespace facebook {
 namespace react {
@@ -30,9 +27,20 @@ namespace RSkDrawUtils{
                                Rect frame,
                                BorderMetrics borderMetrics,
                                SharedColor bgColor,
-                               Float shadowOpacity,
-                               sk_sp<SkImageFilter> shadowFilter);
+                               SkColor shadowColor,
+                               SkSize shadowOffset,
+                               float shadowOpacity,
+                               float frameOpacity,
+                               sk_sp<SkImageFilter> shadowImageFilter,
+                               sk_sp<SkMaskFilter> shadowMaskFilter
+                  );
+
   void drawUnderline(SkCanvas *canvas,Rect frame,SharedColor underlineColor);
+
+
+  SkIRect getShadowBounds(const SkIRect shadowFrame,
+                        sk_sp<SkMaskFilter> shadowMaskFilter,
+                        sk_sp<SkImageFilter> shadowImageFilter=nullptr);
 
 }//namespace RSkDrawUtils
 } // namespace react
