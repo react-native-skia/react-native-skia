@@ -427,7 +427,7 @@ void RSkComponentTextInput::keyEventProcessingThread(){
   }
 }
 
-RnsShell::LayerInvalidateMask  RSkComponentTextInput::updateComponentProps(SharedProps newviewProps,bool forceUpdate){
+RnsShell::LayerInvalidateMask  RSkComponentTextInput::updateComponentProps(Props::Shared newviewProps,bool forceUpdate){
   auto const &textInputProps = *std::static_pointer_cast<TextInputProps const>(newviewProps);
   int mask = RnsShell::LayerInvalidateNone;
   std::string textString{};

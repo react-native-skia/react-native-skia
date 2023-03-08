@@ -13,6 +13,8 @@
 #include "include/core/SkPathEffect.h"
 #include "react/renderer/components/unimplementedview/UnimplementedViewShadowNode.h"
 
+using namespace RSkDrawUtils;
+
 namespace facebook {
 namespace react {
 
@@ -20,7 +22,7 @@ namespace react {
 RSkComponentUnimplementedView::RSkComponentUnimplementedView(const ShadowView &shadowView)
     : RSkComponent(shadowView) {}
 
-RnsShell::LayerInvalidateMask RSkComponentUnimplementedView::updateComponentProps(SharedProps newviewProps,bool forceUpdate) {
+RnsShell::LayerInvalidateMask RSkComponentUnimplementedView::updateComponentProps(Props::Shared newviewProps,bool forceUpdate) {
   RNS_LOG_NOT_IMPL;
   return RnsShell::LayerInvalidateNone;
 }

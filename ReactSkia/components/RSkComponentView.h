@@ -16,7 +16,7 @@ namespace react {
 class RSkComponentView final : public RSkComponent {
  public:
   RSkComponentView(const ShadowView &shadowView);
-  RnsShell::LayerInvalidateMask updateComponentProps(SharedProps newviewProps,bool forceUpdate) override;
+  RnsShell::LayerInvalidateMask updateComponentProps(Props::Shared newviewProps,bool forceUpdate) override;
  protected:
   void OnPaint(SkCanvas *canvas) override;
 };

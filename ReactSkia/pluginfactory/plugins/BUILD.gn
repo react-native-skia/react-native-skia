@@ -8,8 +8,19 @@ config("ReactSkiaPlugin_config") {
   defines = []
   defines += [
     "ENABLE_RNSP_APP_MANAGER=1",
-    "RNSP_APP_MANAGER_PLUGIN=\"libReactSkiaPluginLibrary.so\""
   ]
+
+  if (is_mac) {
+    # TODO(kudo): Add macos support
+    defines += [
+      "RNSP_APP_MANAGER_PLUGIN=\"\""
+    ]
+  }
+  if (is_linux) {
+    defines += [
+      "RNSP_APP_MANAGER_PLUGIN=\"libReactSkiaPluginLibrary.so\""
+    ]
+  }
 }
 
 component("ReactSkiaPluginLibrary") {

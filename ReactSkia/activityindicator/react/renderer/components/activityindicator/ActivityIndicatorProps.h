@@ -13,7 +13,7 @@ namespace react {
 class ActivityIndicatorProps final : public ViewProps {
  public:
   ActivityIndicatorProps() = default;
-  ActivityIndicatorProps(const ActivityIndicatorProps &sourceProps, const RawProps &rawProps);
+  ActivityIndicatorProps(const PropsParserContext &context, const ActivityIndicatorProps &sourceProps, const RawProps &rawProps);
 
 #pragma mark - Props
   bool animating{true};

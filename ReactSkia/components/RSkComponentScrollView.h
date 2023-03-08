@@ -34,7 +34,7 @@ class RSkComponentScrollView final : public RSkComponent {
 
   //RSkComponent override functions
   RnsShell::LayerInvalidateMask updateComponentProps(
-    SharedProps newviewProps,
+    Props::Shared newviewProps,
     bool forceUpadate) override;
 
   RnsShell::LayerInvalidateMask updateComponentState(

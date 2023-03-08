@@ -34,7 +34,7 @@ class RSkComponentImage final : public RSkComponent {
  public:
   RSkComponentImage(const ShadowView &shadowView);
   ~RSkComponentImage();
-  RnsShell::LayerInvalidateMask updateComponentProps(SharedProps newviewProps,bool forceUpdate) override;
+  RnsShell::LayerInvalidateMask updateComponentProps(Props::Shared newviewProps,bool forceUpdate) override;
  private :
   ImgProps imageProps;
   std::shared_ptr<CurlRequest> remoteCurlRequest_{nullptr};

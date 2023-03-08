@@ -121,11 +121,10 @@ static inline LayoutContext RSkGetLayoutContext(SkPoint viewportOffset) {
 
 jsi::Runtime *RNInstance::jsRuntime_ = nullptr;
 
-RNInstance::RNInstance(RnsShell::RendererDelegate &rendererDelegate) {
+RNInstance::RNInstance(RnsShell::RendererDelegate &rendererDelegate)
   : instance_(std::make_shared<Instance>())
   , moduleMessageQueue_(std::make_shared<MessageQueueThreadImpl>())
   , componentViewRegistry_(std::make_unique<ComponentViewRegistry>()) {
-
   InitializeJSCore();
   RegisterComponents();
   InitializeFabric(rendererDelegate);

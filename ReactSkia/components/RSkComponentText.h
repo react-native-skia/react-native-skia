@@ -17,7 +17,7 @@ namespace react {
 class RSkComponentText final : public RSkComponent {
  public:
   RSkComponentText(const ShadowView &shadowView);
-  RnsShell::LayerInvalidateMask updateComponentProps(SharedProps newviewProps,bool forceUpadte) override;
+  RnsShell::LayerInvalidateMask updateComponentProps(Props::Shared newviewProps,bool forceUpadte) override;
  protected:
   void OnPaint(SkCanvas *canvas) override;
 };
@@ -25,7 +25,7 @@ class RSkComponentText final : public RSkComponent {
 class RSkComponentRawText final : public RSkComponent {
  public:
   RSkComponentRawText(const ShadowView &shadowView);
-  RnsShell::LayerInvalidateMask updateComponentProps(SharedProps newviewProps,bool forceUpadte) override;
+  RnsShell::LayerInvalidateMask updateComponentProps(Props::Shared newviewProps,bool forceUpadte) override;
  protected:
   void OnPaint(SkCanvas *canvas) override;
 };
@@ -36,7 +36,7 @@ class RSkComponentParagraph final : public RSkComponent {
   uint32_t expectedAttachmentCount;
   uint32_t currentAttachmentCount;
   struct RSkSkTextLayout textLayout;
-  RnsShell::LayerInvalidateMask updateComponentProps(SharedProps newviewProps,bool forceUpadte) override;
+  RnsShell::LayerInvalidateMask updateComponentProps(Props::Shared newviewProps,bool forceUpadte) override;
  protected:
   void OnPaint(SkCanvas *canvas) override;
 

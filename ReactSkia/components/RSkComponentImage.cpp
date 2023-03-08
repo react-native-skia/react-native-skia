@@ -23,10 +23,11 @@
 #include "ReactSkia/views/common/RSkConversion.h"
 #include "ReactSkia/utils/RnsUtils.h"
 
+using namespace RSkDrawUtils;
+using namespace RSkImageUtils;
+
 namespace facebook {
 namespace react {
-
-using namespace RSkImageUtils;
 
 RSkComponentImage::RSkComponentImage(const ShadowView &shadowView)
     : RSkComponent(shadowView) {
@@ -98,9 +99,8 @@ void RSkComponentImage::OnPaint(SkCanvas *canvas) {
         canvas->clipRect(frameRect,SkClipOp::kIntersect);
     }
     /* TODO: Handle filter quality based of configuration. Setting Low Filter Quality as default for now*/
-    paint.setFilterQuality(DEFAULT_IMAGE_FILTER_QUALITY);
     setPaintFilters(paint,imageProps,imageTargetRect,frameRect,false,imageData->isOpaque());
-    canvas->drawImageRect(imageData,targetRect,DEFAULT_IMAGE_SAMPLING_OPTIONS,&paint);
+    canvas->drawImageRect(imageData,imageTargetRect,DEFAULT_IMAGE_SAMPLING_OPTIONS,&paint);
     if(needClipAndRestore) {
       canvas->restore();
     }
@@ -160,7 +160,7 @@ inline string RSkComponentImage::generateUriPath(string path) {
   return path;
 }
 
-RnsShell::LayerInvalidateMask RSkComponentImage::updateComponentProps(SharedProps newviewProps,bool forceUpdate) {
+RnsShell::LayerInvalidateMask RSkComponentImage::updateComponentProps(Props::Shared newviewProps,bool forceUpdate) {
 
     auto const &newimageProps = *std::static_pointer_cast<ImageProps const>(newviewProps);
     auto component = getComponentData();
@@ -281,7 +281,7 @@ inline void RSkComponentImage::drawContentShadow( SkCanvas *canvas,
 
   if(!imageData->isOpaque() ) {
 //Apply Shadow for transparent image
-    canvas->drawImageRect(imageData, imageTargetRect, &shadowPaint);
+    canvas->drawImageRect(imageData, imageTargetRect, SkSamplingOptions(), &shadowPaint);
   } else {
 //Apply Shadow for opaque image
     if(!saveLayerDone) {

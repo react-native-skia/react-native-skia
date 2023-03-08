@@ -19,6 +19,8 @@
 
 using namespace skia::textlayout;
 using namespace facebook::react::RSkTextUtils;
+using namespace RSkDrawUtils;
+using namespace RnsShell;
 
 namespace facebook {
 namespace react {
@@ -26,7 +28,7 @@ namespace react {
 RSkComponentText::RSkComponentText(const ShadowView &shadowView)
     : RSkComponent(shadowView, LAYER_TYPE_DEFAULT) {}
 
-RnsShell::LayerInvalidateMask RSkComponentText::updateComponentProps(SharedProps newviewProps,bool forceUpadte) {
+RnsShell::LayerInvalidateMask RSkComponentText::updateComponentProps(Props::Shared newviewProps,bool forceUpadte) {
   return RnsShell::LayerInvalidateNone;
 }
 
@@ -35,7 +37,7 @@ void RSkComponentText::OnPaint(SkCanvas *canvas) {}
 RSkComponentRawText::RSkComponentRawText(const ShadowView &shadowView)
     : RSkComponent(shadowView, LAYER_TYPE_DEFAULT) {}
 
-RnsShell::LayerInvalidateMask RSkComponentRawText::updateComponentProps(SharedProps newviewProps,bool forceUpadte) {
+RnsShell::LayerInvalidateMask RSkComponentRawText::updateComponentProps(Props::Shared newviewProps,bool forceUpadte) {
   return RnsShell::LayerInvalidateNone;
 }
 
@@ -46,7 +48,7 @@ RSkComponentParagraph::RSkComponentParagraph(const ShadowView &shadowView)
     , expectedAttachmentCount(0)
     , currentAttachmentCount(0){}
 
-RnsShell::LayerInvalidateMask RSkComponentParagraph::updateComponentProps(SharedProps newviewProps,bool forceUpadte) {
+RnsShell::LayerInvalidateMask RSkComponentParagraph::updateComponentProps(Props::Shared newviewProps,bool forceUpadte) {
 
   auto const &paragraphProps = *std::static_pointer_cast<ParagraphProps const>(newviewProps);
   paragraphAttributes_ = paragraphProps.paragraphAttributes;

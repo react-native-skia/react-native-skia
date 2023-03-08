@@ -15,6 +15,8 @@
 #include "ReactSkia/components/RSkComponentImage.h"
 #include "ReactSkia/components/RSkComponentView.h"
 
+using namespace RSkDrawUtils;
+
 namespace facebook {
 namespace react {
 
@@ -22,7 +24,7 @@ namespace react {
 RSkComponentView::RSkComponentView(const ShadowView &shadowView)
     : RSkComponent(shadowView) {}
 
-RnsShell::LayerInvalidateMask RSkComponentView::updateComponentProps(SharedProps newviewProps,bool forceUpdate) {
+RnsShell::LayerInvalidateMask RSkComponentView::updateComponentProps(Props::Shared newviewProps,bool forceUpdate) {
   return RnsShell::LayerInvalidateNone;
 }
 

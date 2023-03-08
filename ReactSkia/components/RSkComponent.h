@@ -60,6 +60,7 @@ struct CommonProps{
 struct Component {
   Component( const ShadowView &shadowView)
     : tag(shadowView.tag)
+    , surfaceId(shadowView.surfaceId)
     , componentName(shadowView.componentName ? shadowView.componentName : "Rootview")
     , props(shadowView.props)
     , eventEmitter(shadowView.eventEmitter)
@@ -68,6 +69,7 @@ struct Component {
   {}
 
   Tag tag;
+  SurfaceId surfaceId{};
   ComponentName componentName;
   Props::Shared props{};
   EventEmitter::Shared eventEmitter{};
@@ -80,7 +82,7 @@ class RSkComponent;
 
 class RSkComponent : public SpatialNavigator::Container, public std::enable_shared_from_this<RSkComponent>  {
  public:
-  RSkComponent(const ShadowView &shadowView, RnsShell::LayerType layerType = LAYER_TYPE_PICTURE);
+  RSkComponent(const ShadowView &shadowView, RnsShell::LayerType layerType = RnsShell::LAYER_TYPE_PICTURE);
   RSkComponent(RSkComponent &&) = default;
   RSkComponent &operator=(RSkComponent &&) = default;
 
@@ -96,7 +98,7 @@ class RSkComponent : public SpatialNavigator::Container, public std::enable_shar
 
   virtual void updateComponentData(const ShadowView &newShadowView , const uint32_t updateMask , bool forceUpdate);
 
-  virtual RnsShell::LayerInvalidateMask updateComponentProps(SharedProps newProps,bool forceUpadate) = 0;
+  virtual RnsShell::LayerInvalidateMask updateComponentProps(Props::Shared newProps,bool forceUpadate) = 0;
 
   virtual RnsShell::LayerInvalidateMask updateComponentState(const ShadowView &newShadowView,bool forceUpadate) {
      /* TODO Return default None here when state update is handled with proper mask */
@@ -119,8 +121,8 @@ class RSkComponent : public SpatialNavigator::Container, public std::enable_shar
   bool isFocusable();
   bool needsShadowPainting();
 
-  void requiresLayer(const ShadowView &shadowView, Layer::Client& layerClient);
-  RnsShell::LayerInvalidateMask updateProps(SharedProps newProps , bool forceUpdate);
+  void requiresLayer(const ShadowView &shadowView, RnsShell::Layer::Client& layerClient);
+  RnsShell::LayerInvalidateMask updateProps(Props::Shared newProps , bool forceUpdate);
   void setNeedFocusUpdate();
  protected:
   virtual void OnPaint(SkCanvas *canvas) = 0;
@@ -134,7 +136,7 @@ class RSkComponent : public SpatialNavigator::Container, public std::enable_shar
  private:
   RSkComponent *parent_;
   std::shared_ptr<RnsShell::Layer> layer_;
-  RnsShell::LayerType layerType_{LAYER_TYPE_PICTURE};
+  RnsShell::LayerType layerType_{RnsShell::LAYER_TYPE_PICTURE};
   Component component_;
 };
 

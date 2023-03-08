@@ -28,7 +28,7 @@ class RSkComponentTextInput final : public RSkComponent {
   RSkComponentTextInput(const ShadowView &shadowView);
   ~RSkComponentTextInput();
   void onHandleKey(rnsKey eventKeyType, bool keyRepeat, rnsKeyAction keyAction,bool *stopPropagation)override;
-  RnsShell::LayerInvalidateMask updateComponentProps(SharedProps newviewProps,bool forceUpdate) override;
+  RnsShell::LayerInvalidateMask updateComponentProps(Props::Shared newviewProps,bool forceUpdate) override;
   /*
     TODO  Need to Add command function to Handle Command.
   */

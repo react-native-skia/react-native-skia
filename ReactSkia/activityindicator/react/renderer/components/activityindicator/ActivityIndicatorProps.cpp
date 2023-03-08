@@ -11,24 +11,28 @@
 namespace facebook {
 namespace react {
 
-ActivityIndicatorProps::ActivityIndicatorProps(const ActivityIndicatorProps &sourceProps, const RawProps &rawProps)
-    : ViewProps(sourceProps, rawProps),
+ActivityIndicatorProps::ActivityIndicatorProps(const PropsParserContext &context, const ActivityIndicatorProps &sourceProps, const RawProps &rawProps)
+    : ViewProps(context, sourceProps, rawProps),
         animating(convertRawProp(
+          context,
           rawProps,
           "animating",
           sourceProps.animating,
           {})),
         color(convertRawProp(
+          context,
           rawProps,
           "color",
           sourceProps.color,
           {})),
         hidesWhenStopped(convertRawProp(
+          context,
           rawProps,
           "hidesWhenStopped",
           sourceProps.hidesWhenStopped,
           {})),
         size(convertRawProp(
+          context,
           rawProps,
           "size",
           sourceProps.size,

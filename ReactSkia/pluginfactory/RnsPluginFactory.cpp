@@ -8,6 +8,8 @@
 #include "RnsPlugin.h"
 #include "RnsPluginFactory.h"
 
+#include "build/build_config.h"
+
 namespace facebook {
 namespace react {
 namespace rnsplugin {
@@ -15,6 +17,9 @@ namespace rnsplugin {
 RnsPluginFactory::RnsPluginFactory(){
 
 #if ENABLE(RNSP_APP_MANAGER)
+// TODO(kudo): add macos support
+
+#if BUILDFLAG(IS_LINUX)
   RNS_LOG_INFO("========== Loading Application Manager Plugin : " << RNSP_APP_MANAGER_PLUGIN << " for RNS ==========");
   try {
     appMgrPluginHandler_ = dlopen(RNSP_APP_MANAGER_PLUGIN, RTLD_NOW);
@@ -30,6 +35,7 @@ RnsPluginFactory::RnsPluginFactory(){
   } catch (const std::exception& ex){
     RNS_LOG_ERROR(" Platform Application Manager Plugin Loading Error :  " << ex.what());
   }
+#endif // BUILDFLAG(IS_LINUX)
 #endif // RNSP_APP_MANAGER
 }
 

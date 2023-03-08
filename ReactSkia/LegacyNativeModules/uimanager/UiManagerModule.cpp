@@ -195,8 +195,10 @@ void Uimanager::updateView(int Tag, std::string viewManagerName, dynamic props) 
 
   if((componentDescriptor != nullptr) && (component != nullptr)) {
 
-    SharedProps oldProps = component->getComponentData().props;
-    SharedProps newProps = componentDescriptor->cloneProps(oldProps,RawProps(props));
+    auto surfaceId = component->getComponentData().surfaceId;
+    PropsParserContext parserContext{surfaceId, *componentDescriptor->getContextContainer()};
+    Props::Shared oldProps = component->getComponentData().props;
+    Props::Shared newProps = componentDescriptor->cloneProps(parserContext, oldProps,RawProps(props));
 
     component->layer()->client().notifyFlushBegin();
     RnsShell::LayerInvalidateMask invalidateMask = component->updateProps(newProps,false);

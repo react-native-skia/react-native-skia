@@ -17,7 +17,7 @@ namespace react {
 RSkComponentRootView::RSkComponentRootView(const ShadowView &shadowView)
     : RSkComponent(shadowView) {}
 
-RnsShell::LayerInvalidateMask RSkComponentRootView::updateComponentProps(SharedProps newviewProps,bool forceUpdate) {
+RnsShell::LayerInvalidateMask RSkComponentRootView::updateComponentProps(Props::Shared newviewProps,bool forceUpdate) {
   return RnsShell::LayerInvalidateNone;
 }
 

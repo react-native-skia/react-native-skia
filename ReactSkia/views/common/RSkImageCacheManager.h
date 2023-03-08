@@ -6,7 +6,7 @@
  */
 #pragma once
 
-#include <better/map.h>
+#include <butter/map.h>
 #include "include/core/SkImage.h"
 #include "include/core/SkGraphics.h"
 #include "include/gpu/GrDirectContext.h"

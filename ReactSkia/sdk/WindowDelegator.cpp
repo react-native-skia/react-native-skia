@@ -100,7 +100,7 @@ void WindowDelegator::closeWindow() {
     if(windowTaskRunner_->running()) {
       windowTaskRunner_->dispatch([&](){
         closeNativeWindow();
-        sem_post(&semReadyToDraw_);
+        sem_post(semReadyToDraw_);
         windowTaskRunner_->stop();
       });
     } else {

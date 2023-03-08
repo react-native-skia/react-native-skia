@@ -7,6 +7,8 @@
 #include <curl/curl.h>
 #include <fcntl.h>
 #include <semaphore.h>
+
+#include "build/build_config.h"
 #include "ReactSkia/utils/RnsLog.h"
 #include "ReactSkia/utils/RnsUtils.h"
 #include "CurlNetworking.h"
@@ -345,10 +347,14 @@ bool CurlNetworking::sendRequest(shared_ptr<CurlRequest> curlRequest, folly::dyn
     std::scoped_lock lock(curlInstanceMutex_);
     curl_multi_add_handle(curlMultihandle_, curl);
   }
+#if BUILDFLAG(IS_MAC)
+  // TODO(kudo): Find a way to do the same with the `sem_getvalue`
+#else
   sem_getvalue(networkRequestSem_, &semCount);
   if(!semCount){ //We don't have to send signal if count is already 1. Using this as binary sem
     sem_post(networkRequestSem_);
   }
+#endif
 
   status = true;
   safe_return :

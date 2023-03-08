@@ -16,7 +16,7 @@ namespace react {
 class RSkComponentRootView final : public RSkComponent {
  public:
   RSkComponentRootView(const ShadowView &shadowView);
-  RnsShell::LayerInvalidateMask updateComponentProps(SharedProps newviewProps,bool forceUpdate) override;
+  RnsShell::LayerInvalidateMask updateComponentProps(Props::Shared newviewProps,bool forceUpdate) override;
 
   virtual bool isContainer() const override { return true; }
   virtual bool isVisible(RSkComponent* candidate) override;

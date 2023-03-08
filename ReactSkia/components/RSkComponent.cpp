@@ -11,17 +11,25 @@
 #include "include/core/SkSurface.h"
 #include "include/effects/SkImageFilters.h"
 
+#include "build/build_config.h"
 #include "ReactSkia/components/RSkComponent.h"
 #include "ReactSkia/views/common/RSkConversion.h"
 
 #include "rns_shell/compositor/layers/PictureLayer.h"
 #include "rns_shell/compositor/layers/ScrollLayer.h"
+
+#if BUILDFLAG(IS_MAC)
+#include "rns_shell/platform/mac/TaskLoop.h"
+#elif BUILDFLAG(IS_LINUX)
 #include "rns_shell/platform/linux/TaskLoop.h"
+#endif
+
+using namespace RnsShell;
+using namespace RSkDrawUtils;
 
 namespace facebook {
 namespace react {
 
-using namespace RnsShell;
 
 RSkComponent::RSkComponent(const ShadowView &shadowView, RnsShell::LayerType layerType)
     : parent_(nullptr)
@@ -108,7 +116,7 @@ void RSkComponent::setNeedFocusUpdate(){
   });
 }
 
-RnsShell::LayerInvalidateMask RSkComponent::updateProps(SharedProps newViewProps,bool forceUpdate) {
+RnsShell::LayerInvalidateMask RSkComponent::updateProps(Props::Shared newViewProps,bool forceUpdate) {
 
    auto const &newviewProps = *std::static_pointer_cast<ViewProps const>(newViewProps);
    auto const &oldviewProps = *std::static_pointer_cast<ViewProps const>(component_.props);
