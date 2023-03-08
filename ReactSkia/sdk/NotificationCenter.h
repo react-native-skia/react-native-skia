@@ -29,7 +29,14 @@
 #include <memory>
 #include <mutex>
 
-#include <folly/io/async/ScopedEventBaseThread.h>
+#ifdef None
+// Workaround conflict between folly's `Struct None` and X11's `#define None 0`
+#undef None
+#include "folly/io/async/ScopedEventBaseThread.h"
+#define None 0L
+#else
+#include "folly/io/async/ScopedEventBaseThread.h"
+#endif
 
 #include "ReactSkia/utils/RnsLog.h"
 

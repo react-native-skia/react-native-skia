@@ -7,6 +7,8 @@
 
 #include "rns_shell/platform/linux/TaskLoop.h"
 
+using namespace folly;
+
 namespace RnsShell {
 
 static std::unique_ptr<TaskLoop> mainTaskRunner_;
