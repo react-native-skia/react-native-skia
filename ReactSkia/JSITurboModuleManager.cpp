@@ -1,5 +1,5 @@
 /*
-* Copyright (C) 1994-2022 OpenTV, Inc. and Nagravision S.A.
+* Copyright (C) 1994-2023 OpenTV, Inc. and Nagravision S.A.
 * Copyright (C) Kudo Chien
 *
 * This source code is licensed under the MIT license found in the
@@ -15,9 +15,9 @@
 #include "core_modules/RSkAppStateModule.h"
 #include "core_modules/RSkDeviceInfo.h"
 #include "core_modules/RSkImageLoader.h"
+#include "core_modules/RSkKeyboardObserver.h"
 #include "core_modules/RSkPlatform.h"
 #include "core_modules/RSkTimingModule.h"
-#include "core_modules/RSkKeyboardObserver.h"
 #include "modules/platform/nopoll/RSkWebSocketModule.h"
 #include "modules/platform/libcurl/RSkNetworkingModule.h"
 #include "modules/RSkTVNavigationEventEmitter.h"

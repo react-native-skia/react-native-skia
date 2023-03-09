@@ -8,7 +8,40 @@ config("ReactSkiaPlugin_config") {
   defines = []
   defines += [
     "ENABLE_RNSP_APP_MANAGER=1",
-    "RNSP_APP_MANAGER_PLUGIN=\"libReactSkiaPluginLibrary.so\""
+    "ENABLE_RNSP_PLATFORM_MANAGER=1",
+    "RNSP_APP_MANAGER_PLUGIN=\"libReactSkiaPluginLibrary.so\"",
+   "RNSP_PLATFORM_MANAGER_PLUGIN=\"libRnsPlatformPlugin.so\""
+  ]
+}
+
+component("RnsPlatformPlugin") {
+  sources = [
+    "../interfaces/RNSPlatformManagerInterface.h",
+    "../interfaces/RNSPlatformManagerInterface.cpp",
+  ]
+
+  sources += [
+    plugin_platform_backend+"/PlatformManager.cpp",
+    plugin_platform_backend+"/PlatformManager.h",
+  ]
+
+  configs -= [ "//build/config/compiler:chromium_code" ]
+  configs += [ "//build/config/compiler:no_chromium_code" ]
+  configs -= [ "//build/config/compiler:no_exceptions" ]
+  configs += [ "//build/config/compiler:exceptions" ]
+  configs -= [ "//build/config/compiler:no_rtti" ]
+  configs += [ "//build/config/compiler:rtti" ]
+
+  if (is_clang) {
+    configs -= [ "//build/config/clang:find_bad_constructs" ]
+  }
+
+  public_configs = [ ":ReactSkiaPlugin_config" ]
+  public_configs += [ "//build/secondary/folly:folly_config" ]
+
+  deps = [
+    "//folly:async",
+    "//folly:synchronization",
   ]
 }
 

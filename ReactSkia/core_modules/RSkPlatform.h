@@ -5,15 +5,15 @@
 * LICENSE file in the root directory of this source tree.
 */
 
-#include "cxxreact/Instance.h"
-#include "ReactCommon/TurboModule.h"
+#include "jsi/JSIDynamic.h"
 #include "core_modules/RSkEventEmitter.h"
-#include "sdk/NotificationCenter.h"
-
-#include "rns_shell/common/Window.h"
+#include "pluginfactory/RnsPlugin.h"
+#include "pluginfactory/RnsPluginFactory.h"
 
 namespace facebook {
 namespace react {
+
+using namespace rnsplugin;
 
 class RSkPlatformModule : public TurboModule {
  public:
@@ -24,17 +24,34 @@ class RSkPlatformModule : public TurboModule {
   ~RSkPlatformModule();
 
   private:
-    static jsi::Value getConstants(
+   static jsi::Value getConstants(
         jsi::Runtime &rt,
         TurboModule &turboModule,
         const jsi::Value *args,
         size_t count);
-    Instance *bridgeInstance_;
+   Instance *bridgeInstance_;
+  // RNS Plugin Factgory and interfaces
+  RnsPluginFactory *pluginFactory_; // TODO make shared singleton object
+  std::unique_ptr<RNSPlatformManagerInterface> platformManagerHandle_;
 
-    folly::dynamic getConstants();
+  void lazyInit();
+  folly::dynamic getConstants();
 
-    void startObserving() {};
-    void stopObserving() {};
+   void startObserving() {};
+   void stopObserving() {};
+
+  //CallBackClient for Events
+  class PlatformCallBackClient : public RNSPlatformManagerInterface::CallbackClient {
+   public:
+    PlatformCallBackClient(RSkPlatformModule& platformModule);
+    ~PlatformCallBackClient(){}
+
+    void onStubEvent() override;
+
+   private:
+    RSkPlatformModule& platformModule_;
+  };
+  PlatformCallBackClient platformCallBackClient_;
 };
 
 }//namespace react

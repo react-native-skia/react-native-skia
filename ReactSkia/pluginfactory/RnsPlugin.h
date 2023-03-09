@@ -26,5 +26,8 @@
 #include "ReactSkia/pluginfactory/interfaces/RNSApplicationManagerInterface.h"
 #endif
 
-#undef __RNS_PLUGIN_H_INSIDE__
+#if ENABLE(RNSP_PLATFORM_MANAGER)
+#include "ReactSkia/pluginfactory/interfaces/RNSPlatformManagerInterface.h"
+#endif
 
+#undef __RNS_PLUGIN_H_INSIDE__
