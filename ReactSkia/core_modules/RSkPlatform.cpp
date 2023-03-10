@@ -5,23 +5,31 @@
 * LICENSE file in the root directory of this source tree.
 */
 
-#include "jsi/JSIDynamic.h"
 
 #include "ReactCommon/TurboModule.h"
 
-#include "ReactSkia/JSITurboModuleManager.h"
-#include "RSkPlatform.h"
+
+#include "ReactSkia/core_modules/RSkPlatform.h"
+#include "ReactSkia/utils/RnsLog.h"
+#include "ReactSkia/utils/RnsUtils.h"
 
 #include "version.h"
 
 namespace facebook {
 namespace react {
 
+
+RNSP_EXPORT RSkPlatformModule::PlatformCallBackClient::PlatformCallBackClient(RSkPlatformModule& platformModule)
+  : platformModule_(platformModule){}
+
 RSkPlatformModule::RSkPlatformModule(
   const std::string &name,
   std::shared_ptr<CallInvoker> jsInvoker,
   Instance *bridgeInstance)
-    : TurboModule(name, jsInvoker), bridgeInstance_(bridgeInstance) {
+    : TurboModule(name, jsInvoker),
+      bridgeInstance_(bridgeInstance),
+      pluginFactory_(new RnsPluginFactory),
+			platformCallBackClient_(*this) {
   RNS_UNUSED(bridgeInstance_);
   methodMap_["getConstants"] = MethodMetadata{0, getConstants};
 }
@@ -41,18 +49,37 @@ jsi::Value RSkPlatformModule::getConstants(
   return jsi::valueFromDynamic(rt, self.getConstants());
 }
 
+void RSkPlatformModule::lazyInit() {
+  if(platformManagerHandle_ == nullptr) {
+    RNS_LOG_INFO("Creating platform handle from Plugin Factory");
+    platformManagerHandle_ = pluginFactory_->createPlatformManagerHandle(platformCallBackClient_);
+    if(platformManagerHandle_ == nullptr) {
+      RNS_LOG_ERROR("Could not get Platform handle from RNS platform Plugin");
+    } else {
+      RNS_LOG_DEBUG(this << " : RNS Platform Plugin Loaded with Platform interface : " << platformManagerHandle_.get() << " : Thread : " << std::this_thread::get_id());
+    }
+  }
+}
+
 folly::dynamic RSkPlatformModule::getConstants() {
+  lazyInit();
+
+  shared_ptr<RNSPlatformManagerInterface::PlatformDevice>  device = platformManagerHandle_->currentDevice();
+
   auto rnVersion = folly::dynamic::object("major", RN_MAJOR_VERSION)("minor", RN_MINOR_VERSION)("patch", RN_PATCH_VERSION)("prerelease", RN_PRERELEASE_VERSION);  
-  auto platformConstants = folly::dynamic::object("forceTouchAvailable", false)
-    ("reactNativeVersion", std::move(rnVersion)) ("osVersion", STRINGIFY(RNS_OS_VERSION)) ("systemName", STRINGIFY(Ubuntu/Linux))
-#if defined(TARGET_OS_TV) && TARGET_OS_TV
-    ("interfaceIdiom", STRINGIFY(tv))
-#else
-    ("interfaceIdiom", STRINGIFY(unknown))
-#endif //TARGET_OS_TV
-    ("isTesting", true);
+  auto platformConstants = folly::dynamic::object("forceTouchAvailable", device->forceTouchAvailable)
+    ("reactNativeVersion", std::move(rnVersion))
+    ("osVersion", device->systemVersion)
+    ("systemName", device->systemName)
+    ("interfaceIdiom", device->interfaceIdiom)
+    ("isTesting", device->isTesting());
 
   return platformConstants;
+}
+
+void RSkPlatformModule::PlatformCallBackClient::onStubEvent() {
+  RNS_LOG_INFO("onStubEventReceived");
+  RNS_UNUSED(platformModule_);
 }
 
 }// namespace react
