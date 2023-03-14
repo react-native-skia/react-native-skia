@@ -14,71 +14,80 @@ namespace rnsplugin {
 
 RnsPluginFactory::RnsPluginFactory(){
 
-#if ENABLE(RNSP_APP_MANAGER)
-  RNS_LOG_INFO("========== Loading Application Manager Plugin : " << RNSP_APP_MANAGER_PLUGIN << " for RNS ==========");
+#if ENABLE(RNSPLUGIN_APP_MANAGER)
+  RNS_LOG_DEBUG("========== Loading Application Manager Plugin : " << RNSPLUGIN_APP_MANAGER_PLUGIN << " for RNS ==========");
   try {
-    appMgrPluginHandler_ = dlopen(RNSP_APP_MANAGER_PLUGIN, RTLD_NOW);
+    appMgrPluginHandler_ = dlopen(RNSPLUGIN_APP_MANAGER_PLUGIN, RTLD_NOW);
     if (nullptr == appMgrPluginHandler_) {
-      RNS_LOG_ERROR("Could not Load Application Manager Plugin : " << RNSP_APP_MANAGER_PLUGIN);
+      RNS_LOG_ERROR("Could not Load Application Manager Plugin : " << RNSPLUGIN_APP_MANAGER_PLUGIN);
+      Check_dlerror();
+    } else{
+      appManagerCreator_ = reinterpret_cast<RNSApplicationManagerInterface_t>(dlsym(appMgrPluginHandler_, "RnsPluginAppManagerCreate"));
+      if (nullptr == appManagerCreator_) {
+        RNS_LOG_ERROR("Could not find symbol RnsPluginAppManagerCreate in plugin");
+      }
       Check_dlerror();
     }
-    appManagerCreator_ = reinterpret_cast<RNSApplicationManagerInterface_t>(dlsym(appMgrPluginHandler_, "RnsPluginAppManagerCreate"));
-    if (nullptr == appManagerCreator_) {
-      RNS_LOG_ERROR("Could not find symbol RnsPluginAppManagerCreate in plugin");
-    }
-    Check_dlerror();
+
   } catch (const std::exception& ex){
     RNS_LOG_ERROR(" Platform Application Manager Plugin Loading Error :  " << ex.what());
   }
-#endif // RNSP_APP_MANAGER
+#endif // RNSPLUGIN_APP_MANAGER
 
-#if ENABLE(RNSP_PLATFORM_MANAGER)
-  RNS_LOG_INFO("========== Loading Platform Manager Plugin : " << RNSP_PLATFORM_MANAGER_PLUGIN << " for RNS ==========");
+#if ENABLE(RNSPLUGIN_PLATFORM_MANAGER)
+  RNS_LOG_DEBUG("========== Loading Platform Manager Plugin : " << RNSPLUGIN_PLATFORM_MANAGER_PLUGIN << " for RNS ==========");
   try {
-    platformPluginHandler_ = dlopen(RNSP_PLATFORM_MANAGER_PLUGIN, RTLD_NOW);
+    platformPluginHandler_ = dlopen(RNSPLUGIN_PLATFORM_MANAGER_PLUGIN, RTLD_NOW);
     if (nullptr == platformPluginHandler_) {
-      RNS_LOG_ERROR("Could not Load Platform Manager Plugin : " << RNSP_PLATFORM_MANAGER_PLUGIN);
+      RNS_LOG_ERROR("Could not Load Platform Manager Plugin : " << RNSPLUGIN_PLATFORM_MANAGER_PLUGIN);
+      Check_dlerror();
+    } else{
+      platformManagerCreator_ = reinterpret_cast<RNSPlatformManagerInterface_t>(dlsym(platformPluginHandler_, "RnsPluginPlatformCreate"));
+      if (nullptr == platformManagerCreator_) {
+        RNS_LOG_ERROR("Could not find symbol RnsPluginPlatformCreate in plugin");
+      }
       Check_dlerror();
     }
-    platformManagerCreator_ = reinterpret_cast<RNSPlatformManagerInterface_t>(dlsym(platformPluginHandler_, "RnsPluginPlatformCreate"));
-    if (nullptr == platformManagerCreator_) {
-      RNS_LOG_ERROR("Could not find symbol RnsPluginPlatformCreate in plugin");
-    }
-    Check_dlerror();
   } catch (const std::exception& ex){
     RNS_LOG_ERROR(" Platform Platform Manager Plugin Loading Error :  " << ex.what());
   }
-#endif // RNSP_PLATFORM_MANAGER
+#endif // RNSPLUGIN_PLATFORM_MANAGER
 }
 
-#if ENABLE(RNSP_APP_MANAGER)
 std::unique_ptr<RNSApplicationManagerInterface> RnsPluginFactory::createAppManagerHandle(AppCallbackClient &client) const {
-  if(appManagerCreator_ == nullptr)
+#if ENABLE(RNSPLUGIN_APP_MANAGER)
+  if(appManagerCreator_ == nullptr){
     return nullptr;
+  }
   return std::unique_ptr<RNSApplicationManagerInterface>(appManagerCreator_(client));
+#else 
+  return nullptr;
+#endif // RNSPLUGIN_APP_MANAGER
 }
-#endif // RNSP_APP_MANAGER
 
-#if ENABLE(RNSP_PLATFORM_MANAGER)
 std::unique_ptr<RNSPlatformManagerInterface> RnsPluginFactory::createPlatformManagerHandle(PlatformCallbackClient &client) const {
-  if(platformManagerCreator_ == nullptr)
+#if ENABLE(RNSPLUGIN_PLATFORM_MANAGER)  
+  if(platformManagerCreator_ == nullptr) {
     return nullptr;
+  }
   return std::unique_ptr<RNSPlatformManagerInterface>(platformManagerCreator_(client));
+#else
+  return nullptr;
+#endif // RNSPLUGIN_PLATFORM_MANAGER
 }
-#endif // RNSP_PLATFORM_MANAGER
 
 RnsPluginFactory::~RnsPluginFactory() {
-#if ENABLE(RNSP_APP_MANAGER)
+#if ENABLE(RNSPLUGIN_APP_MANAGER)
   if (appMgrPluginHandler_) {
     dlclose(appMgrPluginHandler_);
   }
-#endif // RNSP_APP_MANAGER
+#endif // RNSPLUGIN_APP_MANAGER
 
-#if ENABLE(RNSP_PLATFORM_MANAGER)
+#if ENABLE(RNSPLUGIN_PLATFORM_MANAGER)
   if (platformPluginHandler_) {
     dlclose(platformPluginHandler_);
   }
-#endif // RNSP_PLATFORM_MANAGER
+#endif // RNSPLUGIN_PLATFORM_MANAGER
 }
 
 } // namespace rnsplugin

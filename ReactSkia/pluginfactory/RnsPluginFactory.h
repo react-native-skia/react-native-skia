@@ -29,21 +29,17 @@ class RnsPluginFactory {
     return RSK_INTERFACE_MICRO_VERSION;
   }
 
-#if ENABLE(RNSP_APP_MANAGER)
   RNSP_EXPORT std::unique_ptr<RNSApplicationManagerInterface> createAppManagerHandle(AppCallbackClient &client) const;
-#endif
-
-#if ENABLE(RNSP_PLATFORM_MANAGER)
   RNSP_EXPORT std::unique_ptr<RNSPlatformManagerInterface> createPlatformManagerHandle(PlatformCallbackClient &client) const;
-#endif
 
 private:
-  void * appMgrPluginHandler_ = nullptr;
-  void * platformPluginHandler_ = nullptr;
-#if ENABLE(RNSP_APP_MANAGER)
+ void * appMgrPluginHandler_ = nullptr;
+ void * platformPluginHandler_ = nullptr;
+#if ENABLE(RNSPLUGIN_APP_MANAGER)
   RNSApplicationManagerInterface_t appManagerCreator_ = nullptr;
 #endif
-#if ENABLE(RNSP_PLATFORM_MANAGER)
+
+#if ENABLE(RNSPLUGIN_PLATFORM_MANAGER)
   RNSPlatformManagerInterface_t platformManagerCreator_ = nullptr;
 #endif
 

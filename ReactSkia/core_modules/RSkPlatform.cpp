@@ -51,7 +51,7 @@ jsi::Value RSkPlatformModule::getConstants(
 
 void RSkPlatformModule::lazyInit() {
   if(platformManagerHandle_ == nullptr) {
-    RNS_LOG_INFO("Creating platform handle from Plugin Factory");
+    RNS_LOG_DEBUG("Creating platform handle from Plugin Factory");
     platformManagerHandle_ = pluginFactory_->createPlatformManagerHandle(platformCallBackClient_);
     if(platformManagerHandle_ == nullptr) {
       RNS_LOG_ERROR("Could not get Platform handle from RNS platform Plugin");
@@ -63,7 +63,9 @@ void RSkPlatformModule::lazyInit() {
 
 folly::dynamic RSkPlatformModule::getConstants() {
   lazyInit();
-
+  if(platformManagerHandle_== nullptr){
+    return folly::dynamic::object();
+  }
   shared_ptr<RNSPlatformManagerInterface::PlatformDevice>  device = platformManagerHandle_->currentDevice();
 
   auto rnVersion = folly::dynamic::object("major", RN_MAJOR_VERSION)("minor", RN_MINOR_VERSION)("patch", RN_PATCH_VERSION)("prerelease", RN_PRERELEASE_VERSION);  
@@ -78,7 +80,7 @@ folly::dynamic RSkPlatformModule::getConstants() {
 }
 
 void RSkPlatformModule::PlatformCallBackClient::onStubEvent() {
-  RNS_LOG_INFO("onStubEventReceived");
+  RNS_LOG_DEBUG("onStubEventReceived");
   RNS_UNUSED(platformModule_);
 }
 

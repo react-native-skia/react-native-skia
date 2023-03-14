@@ -7,10 +7,10 @@ config("ReactSkiaPlugin_config") {
   include_dirs = [ "."]
   defines = []
   defines += [
-    "ENABLE_RNSP_APP_MANAGER=1",
-    "ENABLE_RNSP_PLATFORM_MANAGER=1",
-    "RNSP_APP_MANAGER_PLUGIN=\"libReactSkiaPluginLibrary.so\"",
-   "RNSP_PLATFORM_MANAGER_PLUGIN=\"libRnsPlatformPlugin.so\""
+    "ENABLE_RNSPLUGIN_APP_MANAGER=1",
+    "ENABLE_RNSPLUGIN_PLATFORM_MANAGER=1",
+    "RNSPLUGIN_APP_MANAGER_PLUGIN=\"libReactSkiaPluginLibrary.so\"",
+   "RNSPLUGIN_PLATFORM_MANAGER_PLUGIN=\"libRnsPlatformPlugin.so\""
   ]
 }
 

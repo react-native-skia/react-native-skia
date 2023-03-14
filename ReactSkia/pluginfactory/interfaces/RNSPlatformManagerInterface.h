@@ -22,7 +22,6 @@ using folly::format;
 using std::string;
 using std::vector;
 
-class PlatformDevice;
 
 class RNSPlatformManagerInterface {
  public:
@@ -36,7 +35,7 @@ class RNSPlatformManagerInterface {
   class PlatformDevice {
    public:
     PlatformDevice() = default;
-   virtual ~PlatformDevice() {};
+    virtual ~PlatformDevice() {};
 
     string systemName {"Linux"};
     string systemVersion {"Ubuntu-20.0"};
