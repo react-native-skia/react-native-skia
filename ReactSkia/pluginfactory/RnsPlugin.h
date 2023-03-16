@@ -22,9 +22,12 @@
 #define ENABLE(RNS_FEATURE) (defined ENABLE_##RNS_FEATURE && ENABLE_##RNS_FEATURE)
 #endif
 
-#if ENABLE(RNSP_APP_MANAGER)
+#if ENABLE(RNSPLUGIN_APP_MANAGER)
 #include "ReactSkia/pluginfactory/interfaces/RNSApplicationManagerInterface.h"
 #endif
 
-#undef __RNS_PLUGIN_H_INSIDE__
+#if ENABLE(RNSPLUGIN_PLATFORM_MANAGER)
+#include "ReactSkia/pluginfactory/interfaces/RNSPlatformManagerInterface.h"
+#endif
 
+#undef __RNS_PLUGIN_H_INSIDE__

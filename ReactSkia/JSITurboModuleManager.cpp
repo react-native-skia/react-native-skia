@@ -1,5 +1,5 @@
 /*
-* Copyright (C) 1994-2022 OpenTV, Inc. and Nagravision S.A.
+* Copyright (C) 1994-2023 OpenTV, Inc. and Nagravision S.A.
 * Copyright (C) Kudo Chien
 *
 * This source code is licensed under the MIT license found in the
@@ -15,8 +15,9 @@
 #include "core_modules/RSkAppStateModule.h"
 #include "core_modules/RSkDeviceInfo.h"
 #include "core_modules/RSkImageLoader.h"
-#include "core_modules/RSkTimingModule.h"
 #include "core_modules/RSkKeyboardObserver.h"
+#include "core_modules/RSkPlatform.h"
+#include "core_modules/RSkTimingModule.h"
 #include "modules/platform/nopoll/RSkWebSocketModule.h"
 #include "modules/platform/libcurl/RSkNetworkingModule.h"
 #include "modules/RSkTVNavigationEventEmitter.h"
@@ -122,22 +123,10 @@ JSITurboModuleManager::JSITurboModuleManager(Instance *bridgeInstance)
   staticModule->SetConstants(folly::dynamic::object("scriptURL", "foo"));
   modules_["SourceCode"] = std::move(staticModule);
 
-  staticModule =
-      std::make_shared<StaticTurboModule>("PlatformConstants", jsInvoker);
-  auto rnVersion = folly::dynamic::object("major", RN_MAJOR_VERSION)("minor", RN_MINOR_VERSION)("patch", RN_PATCH_VERSION);
-  staticModule->SetConstants(folly::dynamic::object("isTesting", true)(
-      "reactNativeVersion", std::move(rnVersion)) ("osVersion",STRINGIFY(RNS_OS_VERSION))
-#if defined(TARGET_OS_TV) && TARGET_OS_TV
-      ("interfaceIdiom", STRINGIFY(tv))
-#else
-      ("interfaceIdiom", STRINGIFY(unknown))
-#endif //TARGET_OS_TV
-    );
-  modules_["PlatformConstants"] = std::move(staticModule);
-
+  modules_["PlatformConstants"]=
+      std::make_shared<RSkPlatformModule>("PlatformConstants", jsInvoker, bridgeInstance);
   modules_["ExceptionsManager"] =
       std::make_shared<ExceptionsManagerModule>("ExceptionsManager", jsInvoker);
-
   modules_["Timing"] =
       std::make_shared<RSkTimingModule>("Timing", jsInvoker, bridgeInstance);
   modules_["AppState"] =
