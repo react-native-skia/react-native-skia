@@ -184,6 +184,10 @@ bool CurlNetworking::preparePostRequest(shared_ptr<CurlRequest> curlRequest, fol
   /* get verbose debug output please */
   curl_easy_setopt(curlRequest->handle, CURLOPT_POSTFIELDSIZE, (long)dataSize);
   curl_easy_setopt(curlRequest->handle, CURLOPT_COPYPOSTFIELDS, dataPtr);
+    // ResponseWrite callback and user data
+  curl_easy_setopt(curlRequest->handle, CURLOPT_WRITEDATA, curlRequest.get());
+  curl_easy_setopt(curlRequest->handle, CURLOPT_WRITEFUNCTION, writeCallbackCurlWrapper);
+
   status = true;
   return status;
 }
