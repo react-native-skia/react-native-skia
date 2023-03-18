@@ -302,8 +302,12 @@ void RSkComponent::mountChildComponent(
     if(newChildComponent) {
         newChildComponent->parent_ = this;
         RNS_LOG_ASSERT((this->layer_ && newChildComponent->layer_), "Layer Object cannot be null");
-        if(this->layer_)
+        if(this->layer_) {
             this->layer_->insertChild(newChildComponent->layer_, index);
+        }
+        if (newChildComponent->layer_) {
+            newChildComponent->layer_->removeInvalidate(RnsShell::LayerRemoveInvalidate);
+        }
 
         SpatialNavigator::Container *containerToAdd = nullptr;
         if(isContainer() == true || ((containerToAdd = nearestAncestorContainer()) == nullptr))
