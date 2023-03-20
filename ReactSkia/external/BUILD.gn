@@ -1,10 +1,9 @@
 # External ThirdParty/Custom package builder
-
 source_set("ReactSkiaExternal") {
   deps = [
+    "//ReactSkia/external/device-information/skia:RSDeviceInformation",
   ]
 }
-
 source_set("external") {
   deps = [
     ":ReactSkiaExternal",

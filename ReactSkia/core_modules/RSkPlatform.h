@@ -31,7 +31,7 @@ class RSkPlatformModule : public TurboModule {
         size_t count);
    Instance *bridgeInstance_;
   // RNS Plugin Factgory and interfaces
-  RnsPluginFactory *pluginFactory_; // TODO make shared singleton object
+  RnsPluginFactory *pluginFactory_;     // TODO make shared singleton object
   std::unique_ptr<RNSPlatformManagerInterface> platformManagerHandle_;
 
   void lazyInit();

@@ -37,12 +37,55 @@ class RNSPlatformManagerInterface {
     PlatformDevice() = default;
     virtual ~PlatformDevice() {};
 
-    string systemName {"Linux"};
-    string systemVersion {"Ubuntu-20.0"};
+    struct DeviceProcessUintInfo{
+      DeviceProcessUintInfo() = delete;
+      DeviceProcessUintInfo(string lname, string lcores, string ltechnology, string lfrequency);
+
+      string name;
+      string cores;
+      string technology;
+      string frequency;
+    };
+
+    struct DeviceOsInfo{
+      DeviceOsInfo() = delete;
+      DeviceOsInfo(string provider, string name, string version);
+
+      string provider;
+      string name;
+      string version;
+    };
+
+    struct DeviceHardwareInfo{
+      DeviceHardwareInfo() = delete;
+      DeviceHardwareInfo(string hwManufacturer, string hwModel, string hwType);
+
+      string manufacturer;
+      string model;
+      string type;
+    };
+
+    struct DeviceScreenInfo{
+      DeviceScreenInfo() = delete;
+      DeviceScreenInfo(string screenDepth,  int screenWidth,int screenHeight, string screenRefresh);
+
+      string depth;
+      int width;
+      int height;
+      string refresh;
+    };
+
+    using DeviceCPUInfo = DeviceProcessUintInfo;
+    using DeviceGPUInfo = DeviceProcessUintInfo;
+
     string interfaceIdiom {"tv"};
-    bool forceTouchAvailable{true};
+    bool forceTouchAvailable{false};
     virtual bool isTesting() = 0;
-   private:
+    virtual shared_ptr<DeviceCPUInfo> getCPUInfo()=0;
+    virtual shared_ptr<DeviceGPUInfo> getGPUInfo()=0;
+    virtual shared_ptr<DeviceOsInfo> getOsInfo()=0;
+    virtual shared_ptr<DeviceHardwareInfo> getHardwareInfo()=0;
+    virtual shared_ptr<DeviceScreenInfo> getScreenInfo()=0;
   };
 
   RNSPlatformManagerInterface(CallbackClient &client);

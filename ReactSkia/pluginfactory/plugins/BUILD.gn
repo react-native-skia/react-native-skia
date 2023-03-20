@@ -10,7 +10,7 @@ config("ReactSkiaPlugin_config") {
     "ENABLE_RNSPLUGIN_APP_MANAGER=1",
     "ENABLE_RNSPLUGIN_PLATFORM_MANAGER=1",
     "RNSPLUGIN_APP_MANAGER_PLUGIN=\"libReactSkiaPluginLibrary.so\"",
-   "RNSPLUGIN_PLATFORM_MANAGER_PLUGIN=\"libRnsPlatformPlugin.so\""
+    "RNSPLUGIN_PLATFORM_MANAGER_PLUGIN=\"libRnsPlatformPlugin.so\""
   ]
 }
 

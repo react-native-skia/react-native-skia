@@ -14,6 +14,11 @@ namespace rnsplugin {
 
 using namespace std;
 
+using DeviceCPUInfo = RNSPlatformManagerInterface::PlatformDevice::DeviceProcessUintInfo;
+using DeviceGPUInfo = RNSPlatformManagerInterface::PlatformDevice::DeviceProcessUintInfo;
+using DeviceOsInfo = RNSPlatformManagerInterface::PlatformDevice::DeviceOsInfo;
+using DeviceHardwareInfo = RNSPlatformManagerInterface::PlatformDevice::DeviceHardwareInfo;
+using DeviceScreenInfo = RNSPlatformManagerInterface::PlatformDevice::DeviceScreenInfo;
 
 class RNSPlatformManagerInterfaceImpl : public RNSPlatformManagerInterface {
  public:
@@ -27,6 +32,17 @@ class RNSPlatformManagerInterfaceImpl : public RNSPlatformManagerInterface {
     PlatformDeviceImpl() = default;
     ~PlatformDeviceImpl() {};
     bool isTesting() override;
+    shared_ptr<DeviceCPUInfo> getCPUInfo() override;
+    shared_ptr<DeviceGPUInfo> getGPUInfo() override;
+    shared_ptr<DeviceOsInfo> getOsInfo() override;
+    shared_ptr<DeviceHardwareInfo> getHardwareInfo() override;
+    shared_ptr<DeviceScreenInfo> getScreenInfo() override;
+   private:
+    shared_ptr<DeviceCPUInfo> cpuInfo_ = nullptr;
+    shared_ptr<DeviceGPUInfo> gpuInfo_ = nullptr;
+    shared_ptr<DeviceOsInfo> osInfo_ = nullptr;
+    shared_ptr<DeviceHardwareInfo> hardwareInfo_ = nullptr;
+    shared_ptr<DeviceScreenInfo> screenInfo_ = nullptr;
   };
  
   shared_ptr<RNSPlatformManagerInterface::PlatformDevice> currentDevice_ {nullptr};
