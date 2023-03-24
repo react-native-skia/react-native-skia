@@ -128,6 +128,8 @@ void Layer::insertChild(SharedLayer child, size_t index) {
 
     child->removeFromParent();
     child->setParent(this);
+    // Reset the remove invalidate flag when the child layer is reused
+    child->invalidateMask_ = static_cast<RnsShell::LayerInvalidateMask>(child->invalidateMask_ & ~LayerRemoveInvalidate);
 
     index = std::min(index, children_.size());
     RNS_LOG_DEBUG("Insert Child(" << child.get()->layerId() << ") at index : " << index << " and with parent : " << layerId_);
