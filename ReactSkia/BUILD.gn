@@ -269,6 +269,10 @@ source_set("ReactSkia") {
     "LegacyNativeModules/LegacyNativeModuleRegistry.cpp",
     "LegacyNativeModules/LegacyNativeModuleRegistry.h",
     "LegacyNativeModules/LegacyNativeModule.h",
+    "LegacyNativeModules/NativeEventEmitter.cpp",
+    "LegacyNativeModules/NativeEventEmitter.h",
+    "LegacyNativeModules/RSkBaseEventEmitter.cpp",
+    "LegacyNativeModules/RSkBaseEventEmitter.h",
     "LegacyNativeModules/uimanager/UiManagerModule.cpp",
     "LegacyNativeModules/uimanager/UiManagerModule.h",
   ]
