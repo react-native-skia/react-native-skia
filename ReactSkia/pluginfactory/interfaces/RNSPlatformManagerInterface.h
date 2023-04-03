@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1994-2022 OpenTV, Inc. and Nagravision S.A.
+ * Copyright (C) 1994-2023 OpenTV, Inc. and Nagravision S.A.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -37,12 +37,55 @@ class RNSPlatformManagerInterface {
     PlatformDevice() = default;
     virtual ~PlatformDevice() {};
 
-    string systemName {"Linux"};
-    string systemVersion {"Ubuntu-20.0"};
+    struct DeviceProcessUnitInfo{
+      DeviceProcessUnitInfo() = delete;
+      DeviceProcessUnitInfo(string lname, string lcores, string ltechnology, string lfrequency);
+
+      string name;
+      string cores;
+      string technology;
+      string frequency;
+    };
+
+    struct DeviceOsInfo{
+      DeviceOsInfo() = delete;
+      DeviceOsInfo(string provider, string name, string version);
+
+      string provider;
+      string name;
+      string version;
+    };
+
+    struct DeviceHardwareInfo{
+      DeviceHardwareInfo() = delete;
+      DeviceHardwareInfo(string hwManufacturer, string hwModel, string hwType);
+
+      string manufacturer;
+      string model;
+      string type;
+    };
+
+    struct DeviceScreenInfo{
+      DeviceScreenInfo() = delete;
+      DeviceScreenInfo(string screenDepth,  int screenWidth,int screenHeight, string screenRefreshRate);
+
+      string depth;
+      int width;
+      int height;
+      string refreshRate;
+    };
+
+    using DeviceCPUInfo = DeviceProcessUnitInfo;
+    using DeviceGPUInfo = DeviceProcessUnitInfo;
+
     string interfaceIdiom {"tv"};
-    bool forceTouchAvailable{true};
+    bool forceTouchAvailable{false};
     virtual bool isTesting() = 0;
-   private:
+    virtual shared_ptr<DeviceCPUInfo> getCPUInfo()=0;
+    virtual shared_ptr<DeviceGPUInfo> getGPUInfo()=0;
+    virtual shared_ptr<DeviceOsInfo> getOsInfo()=0;
+    virtual shared_ptr<DeviceHardwareInfo> getHardwareInfo()=0;
+    virtual shared_ptr<DeviceScreenInfo> getScreenInfo()=0;
   };
 
   RNSPlatformManagerInterface(CallbackClient &client);

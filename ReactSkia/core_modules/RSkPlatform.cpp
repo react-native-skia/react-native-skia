@@ -67,12 +67,13 @@ folly::dynamic RSkPlatformModule::getConstants() {
     return folly::dynamic::object();
   }
   shared_ptr<RNSPlatformManagerInterface::PlatformDevice>  device = platformManagerHandle_->currentDevice();
+  shared_ptr<RNSPlatformManagerInterface::PlatformDevice::DeviceOsInfo> osInfo = device->getOsInfo();
 
   auto rnVersion = folly::dynamic::object("major", RN_MAJOR_VERSION)("minor", RN_MINOR_VERSION)("patch", RN_PATCH_VERSION)("prerelease", RN_PRERELEASE_VERSION);  
   auto platformConstants = folly::dynamic::object("forceTouchAvailable", device->forceTouchAvailable)
     ("reactNativeVersion", std::move(rnVersion))
-    ("osVersion", device->systemVersion)
-    ("systemName", device->systemName)
+    ("osVersion", osInfo->version)
+    ("systemName", osInfo->name)
     ("interfaceIdiom", device->interfaceIdiom)
     ("isTesting", device->isTesting());
 

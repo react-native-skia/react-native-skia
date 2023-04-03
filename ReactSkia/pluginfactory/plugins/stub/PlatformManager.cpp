@@ -30,6 +30,41 @@ bool RNSPlatformManagerInterfaceImpl::PlatformDeviceImpl::isTesting() {
   return true;
 }
 
+shared_ptr<DeviceCPUInfo> RNSPlatformManagerInterfaceImpl::PlatformDeviceImpl::getCPUInfo() {
+  if(cpuInfo_ == nullptr) {
+    cpuInfo_ = make_shared<DeviceCPUInfo>("Intel","4","5nm","5GHz");
+  }
+  return cpuInfo_;
+}
+
+shared_ptr<DeviceGPUInfo> RNSPlatformManagerInterfaceImpl::PlatformDeviceImpl::getGPUInfo() {
+  if(gpuInfo_ == nullptr) {
+    gpuInfo_ = make_shared<DeviceGPUInfo>("Nvidia","8","6nm","2.4GHz");
+  }
+  return gpuInfo_;
+}
+
+shared_ptr<DeviceOsInfo> RNSPlatformManagerInterfaceImpl::PlatformDeviceImpl::getOsInfo() {
+  if(osInfo_ == nullptr) {
+    osInfo_ = make_shared<DeviceOsInfo>("UbuntuDev","GNU/Linux","20.2");
+  }
+  return osInfo_;
+}
+
+shared_ptr<DeviceHardwareInfo> RNSPlatformManagerInterfaceImpl::PlatformDeviceImpl::getHardwareInfo() {
+  if(hardwareInfo_ == nullptr) {
+    hardwareInfo_ = make_shared<DeviceHardwareInfo>("SAGEM","7252S","ARM");
+  }
+  return hardwareInfo_;
+}
+
+shared_ptr<DeviceScreenInfo> RNSPlatformManagerInterfaceImpl::PlatformDeviceImpl::getScreenInfo() {
+  if(screenInfo_ == nullptr) {
+    screenInfo_ = make_shared<DeviceScreenInfo>("420dpi", 1920, 1080, "60Hz");
+  }
+  return screenInfo_;
+}
+
 // Platform Plugin Object Creator
 extern "C" {
 RNSP_EXPORT RNSPlatformManagerInterface* RnsPluginPlatformCreate(PlatformCallbackClient &client) {
