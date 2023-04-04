@@ -1,0 +1,22 @@
+{
+	"name": "SimpleViewApp",
+	"version": "1.2.3",
+	"private": true,
+	"rnpm": {
+		"assets": [
+			"./fonts/"
+		]
+	},
+	"scripts": {
+		"clean": "react-native-clean-project",
+		"android": "react-native run-android",
+		"ios": "react-native run-ios",
+		"skia": "react-native run-skia",
+		"start": "react-native start",
+		"doc": "node --experimental-json-modules scripts/doc/index.mjs"
+	},
+	"dependencies": {
+	},
+	"devDependencies": {
+	}
+}

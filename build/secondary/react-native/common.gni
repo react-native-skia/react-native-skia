@@ -39,3 +39,11 @@ template("rn_cxx_component") {
                            ])
   }
 }
+
+# Wrapper for third party components
+template("rns_cxx_tp_component") {
+  target("rn_cxx_component", target_name) {
+    extra_configs = [ "//out/Debug/gen/ReactSkia/external:ReactSkiaExternal_config"]
+    forward_variables_from(invoker, "*")
+  }
+}

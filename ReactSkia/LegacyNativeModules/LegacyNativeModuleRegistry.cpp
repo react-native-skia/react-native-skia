@@ -9,7 +9,7 @@
 #include <memory>
 #include <folly/dynamic.h>
 
-#include "ReactSkia/RSkThirdPartyNativeModuleProvider.h"
+#include "ReactSkia/RSkThirdPartyNativeModulesProvider.h"
 #include "ReactSkia/LegacyNativeModules/uimanager/UiManagerModule.h"
 #include "ReactSkia/utils/RnsLog.h"
 

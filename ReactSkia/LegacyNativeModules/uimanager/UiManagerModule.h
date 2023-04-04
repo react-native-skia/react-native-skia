@@ -32,7 +32,7 @@ class Uimanager {
   folly::dynamic getConstantsForViewManager(std::string viewManagerName);
   void updateView(int tag, std::string viewManagerName, folly::dynamic props);
 
-  // To be Generated using codeGen ??
+  // This Function will be generated using codeGen
   folly::dynamic getConstantsForThirdpartyViewManager(std::string viewManagerName);
 
  private:

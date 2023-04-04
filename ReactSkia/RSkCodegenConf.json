@@ -1,0 +1,9 @@
+{
+  "application" : {
+    "name" : "SimpleViewApp",
+    "path" : "packages/react-native-skia/SimpleViewApp"
+  },
+  "nodeModules" : {
+    "path" : "packages/react-native-skia/SimpleViewApp/node_modules"
+  }
+}

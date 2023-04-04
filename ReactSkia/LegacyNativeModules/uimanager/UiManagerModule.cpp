@@ -20,21 +20,6 @@ namespace facebook {
 namespace xplat {
 namespace uimanager {
 
-// This function To be Generated using codeGen ??
-dynamic Uimanager::getConstantsForThirdpartyViewManager(std::string viewManagerName) {
-
-  RNS_LOG_WARN("getConstantsForViewManager viewManagerName : " << viewManagerName << " not found");
-  auto nativeProps = folly::dynamic::object();
-  auto bubblingEventTypes = folly::dynamic::object();
-  auto directEventTypes = folly::dynamic::object();
-  auto registry = folly::dynamic::object(
-      NATIVE_PROPS_KEY, std::move(nativeProps))(
-      BASE_MODULE_NAME_KEY, "RCTView")(
-      BUBBLING_EVENTS_KEY, std::move(bubblingEventTypes))(
-      DIRECT_EVENTS_KEY, std::move(directEventTypes));
-  return {std::move(registry)};
-}
-
 dynamic Uimanager::getConstantsForViewManager(std::string viewManagerName) {
   if(viewManagerName == "RCTView") {
     auto nativeProps = folly::dynamic::object("onLayout", true)("pointerEvents", true)

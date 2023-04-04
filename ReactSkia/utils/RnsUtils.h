@@ -22,8 +22,8 @@
         ClassName& operator=(const ClassName&) = delete; \
 
 #define RNS_EXPORT_MODULE(ModuleName) \
-RNS_USED xplat::module::CxxModule* ModuleName##Cls(void) { \
-  return new ModuleName();\
+RNS_USED xplat::module::CxxModule* ModuleName##ModuleCls(void) { \
+  return new ModuleName##Module();\
 }\
 
 #define RNS_SETUP_COMPOMNENT_PROVIDER(Component) \
@@ -41,7 +41,7 @@ class RSkComponentProvider##Component : public RSkComponentProvider { \
 };\
 
 #define RNS_EXPORT_COMPONENT_PROVIDER(ComponentName) \
-RNS_USED RSkComponentProvider* RSkComponentProvider##ComponentName##Cls(void) { \
+RNS_USED RSkComponentProvider* ComponentName##Cls(void) { \
   return new RSkComponentProvider##ComponentName();\
 }\
 
