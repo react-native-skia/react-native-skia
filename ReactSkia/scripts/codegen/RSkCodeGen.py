@@ -43,15 +43,15 @@ def parseRskProjectFile(packageName, rskProjPath, packageMapTable):
   global ComponentLookupFuncTemplateH
 
   if not os.path.exists(rskProjPath):
-		print ("Warning :" + rskProjPath + ' notfound')
-		return
+    #print ("Warning :" + rskProjPath + ' notfound')
+    return
 
   rskProjFileHandle = open(rskProjPath)
   codegenData = json.load(rskProjFileHandle)
 
   if 'codegenConfig' not in codegenData:
-		rskProjFileHandle.close()
-		return
+    rskProjFileHandle.close()
+    return
 
   codegenConfig = codegenData['codegenConfig']
   packageversion = codegenConfig['version'] if 'version' in codegenConfig else 'UnknownPkgVersion'
@@ -71,8 +71,12 @@ def parseRskProjectFile(packageName, rskProjPath, packageMapTable):
       return
 
     for module in moduleNames:
-      ModuleLookupMapTemplateCpp += '    {std::string(\"' + module + '\"' +'), ' + module + 'ModuleCls' + '}, // ' + libName + '\n'
-      ModuleLookupFuncTemplateH += 'xplat::module::CxxModule* ' + module + 'ModuleCls(void) ' + 'RNS_USED;  // ' + libName + '\n'
+      nameSuffix ="Module"
+      if module.endswith('Module'): #Module name already has Module suffix 'Module' so ignore appending here
+        nameSuffix =""
+
+      ModuleLookupMapTemplateCpp += '    {std::string(\"' + module + '\"' +'), ' + module + nameSuffix +'Cls' + '}, // ' + libName + '\n'
+      ModuleLookupFuncTemplateH += 'xplat::module::CxxModule* ' + module + nameSuffix + 'Cls(void) ' + 'RNS_USED;  // ' + libName + '\n'
 
     for idx, component in enumerate(classNames):
       ComponentLookupMapTemplateCpp += '    {std::string(\"' + component + '\"' +'), ' + component + 'Cls' + '}, // ' + libName + '\n'
@@ -136,7 +140,7 @@ def preparePkgInfo(modulesPath, applicationPath):
       parseRskProjectFile(pkg, rskProjPath, packageMap)
 
       subPath = modulesPath + '/' + pkg
-      preparePkgInfo(modulesPath, str(subPath)) # Recursively find its package dependencies
+     # preparePkgInfo(modulesPath, str(subPath)) # Recursively find its package dependencies
     #end of ('codegenConfig' in jsonData) else
   #end of for pkg in jsonData
 

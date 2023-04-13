@@ -27,7 +27,7 @@ buildTargets = ''
 # Function to parse Rsk.project file and create a package info object
 def parseRskProjectFile(packageName, rskProjPath, packageMapTable):
   if not os.path.exists(rskProjPath):
-    print ("Warning :" + rskProjPath + ' notfound')
+    #print ("Warning :" + rskProjPath + ' notfound')
     return
 
   rskProjFileHandle = open(rskProjPath)
@@ -74,7 +74,7 @@ def preparePkgInfo(modulesPath, applicationPath):
       parseRskProjectFile(pkg, rskProjPath, packageMap)
 
       subPath = modulesPath + '/' + pkg
-      preparePkgInfo(modulesPath, str(subPath)) # Recursively find its package dependencies
+     # preparePkgInfo(modulesPath, str(subPath)) # Recursively find its package dependencies
     #end of ('codegenConfig' in jsonData) else
   #end of for pkg in jsonData
 
@@ -82,7 +82,8 @@ def preparePkgInfo(modulesPath, applicationPath):
   if os.path.exists(applicationPath + '/skia'):
     for dirName in os.listdir(applicationPath + '/skia'):
       if os.path.isdir(applicationPath + '/skia/' + dirName):
-        parseRskProjectFile(dirName, applicationPath + '/skia/' + dirName +'/Rsk.project', packageMapCustom)
+        if os.path.exists(applicationPath + '/skia/' + dirName + '/Rsk.project'):
+          parseRskProjectFile(dirName, applicationPath + '/skia/' + dirName + '/Rsk.project', packageMapCustom)
 
   #print('---------- Package List ----------')
   for item in packageMap:

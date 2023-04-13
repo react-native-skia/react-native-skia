@@ -1,5 +1,5 @@
 /*
-* Copyright (C) 1994-2021 OpenTV, Inc. and Nagravision S.A.
+* Copyright (C) 1994-2023 OpenTV, Inc. and Nagravision S.A.
 *
 * Use of this source code is governed by a BSD-style license that can be
 * found in the LICENSE file.
@@ -16,13 +16,30 @@ namespace SpatialNavigator {
 void Container::addComponent(RSkComponent *newCandidate) {
   navComponentList_.push_back(newCandidate);
   RSkSpatialNavigator::sharedSpatialNavigator()->updateSpatialNavigatorState(ComponentAdded, newCandidate);
-  RNS_LOG_INFO("Added " << newCandidate->getComponentData().componentName << "[" << newCandidate->getComponentData().tag << "]"
-                << " To container : " << this );
+#if  (!defined(GOOGLE_STRIP_LOG) || (GOOGLE_STRIP_LOG <= INFO))
+  auto containerCandidate = static_cast<RSkComponent*>(this);
+  RNS_LOG_INFO("Added " << newCandidate->getComponentData().componentName << "[" << newCandidate->getComponentData().tag << "]" <<
+                " To container : " << containerCandidate->getComponentData().componentName  << "[" << containerCandidate->getComponentData().tag << "]");
+#endif
 }
 
 void Container::mergeComponent(CandidateList candidates) {
   navComponentList_.insert(navComponentList_.end(), candidates.begin(), candidates.end());
-  RNS_LOG_INFO("Merging " << candidates.size() << " candidates to container : " << this << ", New Size : " << navComponentList_.size());
+
+#if  (!defined(GOOGLE_STRIP_LOG) || (GOOGLE_STRIP_LOG <= INFO))
+  auto containerCandidate = static_cast<RSkComponent*>(this);
+  RNS_LOG_INFO("Merging " << candidates.size() << " candidate(s) to container : " << containerCandidate->getComponentData().componentName  <<
+                "[" << containerCandidate->getComponentData().tag << "], New Size : " << navComponentList_.size());
+
+  RSkComponent *newCandidate = nullptr;
+  CandidateList &navCompList = candidates;
+
+  for (std::vector<RSkComponent*>::reverse_iterator i = navCompList.rbegin(); i != navCompList.rend(); ++i ) {
+    newCandidate = *i;
+    RNS_LOG_DEBUG("\tMerging " << newCandidate->getComponentData().componentName << "[" << newCandidate->getComponentData().tag << "]");
+  }
+#endif
+
   candidates.clear();
 }
 

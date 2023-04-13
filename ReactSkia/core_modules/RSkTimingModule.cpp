@@ -172,7 +172,7 @@ jsi::Value RSkTimingModule::deleteTimer(double timerId) {
   jsTimerList_.lock();
   jsTimers_.erase(timerId);
   jsTimerList_.unlock();
-  if(jsTimers_.empty()) {
+  if(jsTimers_.empty() && timer_) {
      timer_->abort();
      delete timer_;
      timer_ = nullptr;

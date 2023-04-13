@@ -4,6 +4,11 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
+
+#include <include/core/SkSize.h>
+#include <include/core/SkMatrix.h>
+#include <include/core/SkColor.h>
+
 #define MAX_8BIT 255.99
 inline SkSize RSkSkSizeFromSize(const facebook::react::Size &size) {
 

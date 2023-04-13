@@ -26,6 +26,11 @@ RNS_USED xplat::module::CxxModule* ModuleName##ModuleCls(void) { \
   return new ModuleName##Module();\
 }\
 
+#define RNS_EXPORT_MODULE_WITHOUT_SUFFIX(ModuleName) \
+RNS_USED xplat::module::CxxModule* ModuleName##Cls(void) { \
+  return new ModuleName();\
+}\
+
 #define RNS_SETUP_COMPOMNENT_PROVIDER(Component) \
 class RSkComponentProvider##Component : public RSkComponentProvider { \
  public: \

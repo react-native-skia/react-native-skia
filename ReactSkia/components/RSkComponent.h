@@ -104,7 +104,7 @@ class RSkComponent : public SpatialNavigator::Container, public std::enable_shar
   virtual bool isContainer() const { return false; }
   virtual void onHandleBlur() {RNS_LOG_DEBUG("[onHandleBlur] componentName "<<component_.componentName);};
   virtual void onHandleFocus() {RNS_LOG_DEBUG("[onHandleFocus]componentName "<<component_.componentName);};
-  Component getComponentData() { return component_;}
+  Component getComponentData() const { return component_;}
   std::shared_ptr<RnsShell::Layer> layer() { return layer_; }
   const SkIRect& getLayerAbsoluteFrame(){ return(layer_->absoluteFrame());}
   const SkIRect getScreenFrame();
