@@ -224,6 +224,20 @@ RnsShell::LayerInvalidateMask RSkComponent::updateProps(SharedProps newViewProps
    return RnsShell::LayerInvalidateAll;
 }
 
+void RSkComponent::setNativeProps_DEPRECATED(SharedProps updatedViewProps) {
+  RnsShell::LayerInvalidateMask invalidateMask = RnsShell::LayerInvalidateNone;
+
+  invalidateMask = static_cast<RnsShell::LayerInvalidateMask>(invalidateMask | updateProps(updatedViewProps, false));
+  component_.props = updatedViewProps;
+
+  //TODO only if TV related proeprties have changed ?
+  SpatialNavigator::Container *containerInUpdate = nearestAncestorContainer();
+  if(containerInUpdate)
+    containerInUpdate->updateComponent(this);
+
+  drawAndSubmit(invalidateMask);
+}
+
 void RSkComponent::updateComponentData(const ShadowView &newShadowView,const uint32_t updateMask,bool forceUpdate) {
 
    RNS_LOG_ASSERT((layer_ && layer_.get()), "Layer Object cannot be null");

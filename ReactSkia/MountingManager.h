@@ -38,6 +38,10 @@ class MountingManager : public SchedulerDelegate {
       const std::string &commandName,
       const folly::dynamic args) override;
 
+  void setNativeProps_DEPRECATED(
+      const ShadowView &shadowView,
+      Props::Shared props) override;
+
   void schedulerDidSetJSResponder(
       SurfaceId surfaceId,
       const ShadowView &shadowView,

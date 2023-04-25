@@ -67,6 +67,21 @@ void MountingManager::schedulerDidDispatchCommand(
   });
 }
 
+void MountingManager::setNativeProps_DEPRECATED(
+    const ShadowView &shadowView,
+    Props::Shared props) {
+  RNS_LOG_INFO("setNativeProps shadowView tag[" << shadowView.tag <<  "] name["<< shadowView.componentName << "] props [" << props <<"]");
+
+  TaskLoop::main().dispatch([&,shadowView, props]() {
+    auto component = GetComponent(shadowView);
+    if( component != NULL ){
+      nativeRenderDelegate_.begin();
+      component->setNativeProps_DEPRECATED(props);
+      nativeRenderDelegate_.commit(true);
+    }
+  });
+}
+
 void MountingManager::schedulerDidSetJSResponder(
     SurfaceId surfaceId,
     const ShadowView &shadowView,
