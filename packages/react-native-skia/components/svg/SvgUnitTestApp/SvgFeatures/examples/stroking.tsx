@@ -1,6 +1,17 @@
 import React, {Component} from 'react';
-import {Svg, Circle, G,Text, Line, Rect, Ellipse,Use,Path,LinearGradient,TSpan,Stop,Defs,Polygon,Polyline} from 'react-native-svg';
-import { AppRegistry,View} from 'react-native';
+import {
+  Svg,
+  Circle,
+  G,
+  Text,
+  Path,
+  Polyline,
+  Rect,
+  Defs,
+  RadialGradient,
+  Stop,
+  ClipPath,
+} from 'react-native-svg';
 
 class StrokeExample extends Component {
   static title =
@@ -10,8 +21,8 @@ class StrokeExample extends Component {
       <Svg height="80" width="225">
         <G strokeWidth="1">
           <Path stroke="red" d="M5 20 l215 0" />
-          <Path stroke="black" d="M5 40 l215 0" />
-          <Path stroke="blue" d="M5 60 l215 0" />
+          <Path stroke="blue" d="M5 40 l215 0" />
+          <Path stroke="green" d="M5 60 l215 0" />
         </G>
       </Svg>
     );
@@ -39,7 +50,7 @@ class StrokeDasharray extends Component {
   render() {
     return (
       <Svg height="80" width="225">
-        <G fill="none" stroke="black" strokeWidth="4">
+        <G fill="none" stroke="blue" strokeWidth="4">
           <Path strokeDasharray="5,5" d="M5 20 l215 0" />
           <Path strokeDasharray="10,10" d="M5 40 l215 0" />
           <Path strokeDasharray="20,10,5,5,5,10" d="M5 60 l215 0" />
@@ -71,6 +82,7 @@ class StrokeDashoffset extends Component {
           fill="none"
           fontSize="20"
           fontWeight="bold"
+          fontFamily='MonoSpace'
           x="100"
           y="40"
           textAnchor="middle"
@@ -83,19 +95,10 @@ class StrokeDashoffset extends Component {
   }
 }
 
-
-const icon = (
-  <Svg
-    height="30"
-    width="30"
-    viewBox="0 0 20 20"
-    fill="none"
-    stroke="black"
-    strokeWidth="2">
-    <Path strokeDasharray="2,2" d="M0 4 h20" />
-    <Path strokeDasharray="4,4" d="M0 10 h20" />
-    <Path strokeDasharray="4,2,1,1,1,6" d="M0 19 h20" />
-  </Svg>
-);
-
-AppRegistry.registerComponent('SimpleViewApp', () => StrokeExample  );
+const samples = [
+  StrokeExample,
+  StrokeLinecap,
+  StrokeDasharray,
+  StrokeDashoffset,
+];
+export {samples};
