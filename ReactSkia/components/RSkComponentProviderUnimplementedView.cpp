@@ -23,13 +23,8 @@ RSkComponentProviderUnimplementedView::GetDescriptorProvider() {
 
 std::shared_ptr<RSkComponent> RSkComponentProviderUnimplementedView::CreateComponent(
     const ShadowView &shadowView) {
-  component_ = std::static_pointer_cast<RSkComponent>(
+  return std::static_pointer_cast<RSkComponent>(
       std::make_shared<RSkComponentUnimplementedView>(shadowView));
-  return component_;
-}
-
-std::shared_ptr<RSkComponent> RSkComponentProviderUnimplementedView::GetComponent(Tag tag) {
-  return component_;
 }
 
 } // namespace react

@@ -184,7 +184,16 @@ void Uimanager::updateView(int Tag, std::string viewManagerName, dynamic props) 
     component->drawAndSubmit(invalidateMask);
     component->layer()->client().notifyFlushRequired();
   }
+}
 
+std::shared_ptr<RSkComponent> Uimanager::getComponent(int Tag) {
+  RSkComponentProvider* provider = componentViewRegistry_->GetProvider(Tag);
+
+  if(provider == nullptr) {
+    RNS_LOG_ERROR("Unable to get provider for tag (" << Tag << ") !!");
+    return nullptr;
+  }
+  return(provider->GetComponent(Tag));
 }
 
 UimanagerModule::UimanagerModule(std::unique_ptr<Uimanager> uimanager)
@@ -216,6 +225,10 @@ auto UimanagerModule::getMethods() -> std::vector<Method> {
 
 void UimanagerModule::updateViewForReactTag(int viewTag, folly::dynamic newProps) {
   uimanager_->updateView(viewTag,std::string(),newProps);
+}
+
+std::shared_ptr<RSkComponent> UimanagerModule::getComponentForReactTag(int viewTag) {
+  return uimanager_->getComponent(viewTag);
 }
 
 std::unique_ptr<xplat::module::CxxModule> UimanagerModule::createModule(ComponentViewRegistry *componentViewRegistry) {

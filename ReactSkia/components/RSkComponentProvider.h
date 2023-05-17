@@ -20,7 +20,7 @@ class RSkComponentProvider {
   virtual std::shared_ptr<RSkComponent> GetComponent(Tag tag) {
       auto it = registry_.find(tag);
       if (it != registry_.end()) {
-           return it->second;
+          return it->second;
       }
       return nullptr;
   }

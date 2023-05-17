@@ -11,6 +11,8 @@
 #include "ReactSkia/components/RSkComponent.h"
 
 #include "ReactSkia/core_modules/RSkInputEventManager.h"
+#include <ReactSkia/LegacyNativeModules/uimanager/UiManagerModule.h>
+#include "ReactSkia/ReactSkiaApp.h"
 
 namespace facebook{
 namespace react {
@@ -410,10 +412,61 @@ bool RSkSpatialNavigator::advanceFocusInDirection(Container *container, rnsKey k
     if(advanceFocusInDirection(focusCandidate, keyEvent))
       return true;
   }
+
+#if defined(TARGET_OS_TV) && TARGET_OS_TV
+  if(hasNextFocusProperty(keyEvent))
+    return true;
+#endif //TARGET_OS_TV
+
   // Focus the candidate and update the spatial navigator states
   updateFocusCandidate(focusCandidate);
   return true;
 }
+
+#if defined(TARGET_OS_TV) && TARGET_OS_TV
+bool RSkSpatialNavigator::hasNextFocusProperty(rnsKey keyEvent){
+  xplat::uimanager::UimanagerModule* uiManagerModule = static_cast<xplat::uimanager::UimanagerModule*>(ReactSkiaApp::currentBridge()->moduleForName("UIManager"));
+  if(currentFocus_ && uiManagerModule) {
+    Component candidateData = currentFocus_->getComponentData();
+    if(strcmp(candidateData.componentName, "Rootview")) {
+      auto const &componentProps = *std::static_pointer_cast<ViewProps const>(candidateData.props);
+      int nextFocusTag = -1;
+
+      RNS_LOG_DEBUG(candidateData.componentName << "] componentProps[Up,Down,Left,Right] : " <<
+        componentProps.nextFocusUp << "," <<
+        componentProps.nextFocusDown << "," <<
+        componentProps.nextFocusLeft << "," <<
+        componentProps.nextFocusRight);
+
+      switch(keyEvent) {
+        case RNS_KEY_Up:
+          if(componentProps.nextFocusUp > 0) nextFocusTag = componentProps.nextFocusUp;
+          break;
+        case RNS_KEY_Down:
+          if(componentProps.nextFocusDown > 0) nextFocusTag = componentProps.nextFocusDown;
+          break;
+        case RNS_KEY_Left:
+          if(componentProps.nextFocusLeft > 0) nextFocusTag = componentProps.nextFocusLeft;
+          break;
+        case RNS_KEY_Right:
+          if(componentProps.nextFocusRight > 0) nextFocusTag = componentProps.nextFocusRight;
+          break;
+        default:
+          return false;
+      }
+      if(nextFocusTag > 0) {
+        std::shared_ptr<RSkComponent> nextFocus = uiManagerModule->getComponentForReactTag(nextFocusTag);
+        RNS_LOG_DEBUG("nextFocus Tag[" << nextFocusTag << "] == [" << (nextFocus ? nextFocus->getComponentData().tag: -1) << "]");
+        if(nextFocus) {
+          updateFocusCandidate(nextFocus.get());
+          return true;
+        }
+      }
+    }
+  }
+  return false;
+}
+#endif //TARGET_OS_TV
 
 void RSkSpatialNavigator::updateFocusCandidate(RSkComponent* focusCandidate, bool needScroll){
 #if defined(TARGET_OS_TV) && TARGET_OS_TV
@@ -429,7 +482,7 @@ void RSkSpatialNavigator::updateFocusCandidate(RSkComponent* focusCandidate, boo
   currentFocus_ = focusCandidate;
   currentContainer_ = currentFocus_->isContainer() ? currentFocus_ : currentFocus_->nearestAncestorContainer();
 
-  if(needScroll) {
+  if(needScroll && currentContainer_) {
     currentContainer_->scrollTo(focusCandidate);
     focusCandidate->onHandleFocus();
   }

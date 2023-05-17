@@ -75,6 +75,9 @@ private:
 
     void navigateInDirection(rnsKey keyEvent);
     bool advanceFocusInDirection(Container *container, rnsKey keyEvent);
+#if defined(TARGET_OS_TV) && TARGET_OS_TV
+    bool hasNextFocusProperty(rnsKey keyEvent);
+#endif
     RSkComponent* findFocusCandidateInContainer(Container *container, rnsKey keyEvent, bool visibleOnly);
     RSkComponent* pickCandidateInDirection(rnsKey keyEvent, SortedCandidateList<RSkComponent>& overLapping, SortedCandidateList<RSkComponent>& nonOverLapping);
     RSkComponent* findDefaultFocusInContainer(Container *container);
