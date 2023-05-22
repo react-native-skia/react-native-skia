@@ -1,5 +1,5 @@
 /*
-* Copyright (C) 1994-2022 OpenTV, Inc. and Nagravision S.A.
+* Copyright (C) 1994-2023 OpenTV, Inc. and Nagravision S.A.
 * Copyright (C) Kudo Chien
 *
 * This source code is licensed under the MIT license found in the
@@ -19,6 +19,7 @@
 
 #include "ReactSkia/components/RSkComponentImage.h"
 #include "ReactSkia/sdk/CurlNetworking.h"
+#include "ReactSkia/sdk/RNSAssetManager.h"
 #include "ReactSkia/views/common/RSkImageUtils.h"
 #include "ReactSkia/views/common/RSkConversion.h"
 #include "ReactSkia/utils/RnsUtils.h"
@@ -51,7 +52,14 @@ void RSkComponentImage::OnPaint(SkCanvas *canvas) {
     if (imageProps.sources[0].type == ImageSource::Type::Local) {
       imageData = getLocalImageData(imageProps.sources[0].uri);
     } else if(!isRequestInProgress_ && imageProps.sources[0].type == ImageSource::Type::Remote) {
-      requestNetworkImageData(imageProps.sources[0].uri);
+      if( RNS_UTILS_IS_HTTP_URL(imageProps.sources[0].uri) ){
+        requestNetworkImageData(imageProps.sources[0].uri);
+        break;
+      }
+      //If application,specify only name of the image ( without path and extension) in uri , 
+      //then framework treat it as a remote URI. But we need to fetch it from local asset
+      // directory with help of asset manager.
+      imageData = getLocalImageData(imageProps.sources[0].uri);
     }
   } while(0);
 
@@ -104,6 +112,7 @@ void RSkComponentImage::OnPaint(SkCanvas *canvas) {
     if(needClipAndRestore) {
       canvas->restore();
     }
+    
     drawBorder(canvas,frame,imageBorderMetrics,imageProps.backgroundColor);
     // Emitting Load completed Event
     if(hasToTriggerEvent_) sendSuccessEvents();
@@ -115,7 +124,9 @@ void RSkComponentImage::OnPaint(SkCanvas *canvas) {
         imageEventEmitter_->onLoadStart();
         hasToTriggerEvent_ = true;
       }
-      if(hasToTriggerEvent_) sendErrorEvents();
+      if(hasToTriggerEvent_){ 
+        sendErrorEvents();
+      }
       RNS_LOG_ERROR("Image not loaded :"<<imageProps.sources[0].uri.c_str());
     }
   }
@@ -155,8 +166,15 @@ sk_sp<SkImage> RSkComponentImage::getLocalImageData(string sourceUri) {
 }
 
 inline string RSkComponentImage::generateUriPath(string path) {
-  if(path.substr(0, 14) == "file://assets/")
+  if(path.substr(0, 14) == "file://assets/"){
     path = "./" + path.substr(7);
+  } else if( path.substr(0,5) == "data:" ){
+    RNS_LOG_NOT_IMPL;
+  }else {
+    std::string ImagePath = RNSAssetManager::instance()->getAssetPath(path);
+    path = ImagePath;
+    RNS_LOG_DEBUG("Image path from the AssetManager: "<<path);
+  }
   return path;
 }
 
@@ -341,7 +359,6 @@ inline void RSkComponentImage::setPaintFilters (SkPaint &paintObj,const ImagePro
 
 void RSkComponentImage::requestNetworkImageData(string sourceUri) {
   remoteCurlRequest_ = std::make_shared<CurlRequest>(nullptr,sourceUri,0,"GET");
-  
   folly::dynamic query = folly::dynamic::object();
 
   //Before network request, reset the cache info with default values
@@ -352,10 +369,9 @@ void RSkComponentImage::requestNetworkImageData(string sourceUri) {
   auto headerCallback =  [this, weakThis = this->weak_from_this()](void* curlresponseData,void *userdata)->size_t {
     auto isAlive = weakThis.lock();
     if(!isAlive) {
-       RNS_LOG_WARN("This object is already destroyed. ignoring the completion callback");
-       return 0;
-     }
-
+      RNS_LOG_WARN("This object is already destroyed. ignoring the completion callback");
+      return 0;
+    }
     CurlResponse *responseData =  (CurlResponse *)curlresponseData;
     CurlRequest *curlRequest = (CurlRequest *) userdata;
 
@@ -370,7 +386,6 @@ void RSkComponentImage::requestNetworkImageData(string sourceUri) {
     RNS_LOG_DEBUG("url [" << responseData->responseurl << "] canCacheData[" << canCacheData_ << "] cacheExpiryTime[" << cacheExpiryTime_ << "]");
     return 0;
   };
-
 
   // completioncallback lambda fuction
   auto completionCallback =  [this, weakThis = this->weak_from_this()](void* curlresponseData,void *userdata)->bool {

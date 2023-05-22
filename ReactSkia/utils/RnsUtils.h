@@ -90,3 +90,4 @@ RNS_USED RSkComponentProvider* ComponentName##Cls(void) { \
     #define RNS_PROFILE_END(msg, marker)
 #endif
 #define RNS_SECONDS_TO_MILLISECONDS(time) ((time)*1000)
+#define RNS_UTILS_IS_HTTP_URL(URI) ((URI.substr(0,7) == "http://") || (URI.substr(0,8) == "https://"))

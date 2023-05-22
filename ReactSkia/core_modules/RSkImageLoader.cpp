@@ -1,5 +1,5 @@
 /*
-* Copyright (C) 1994-2022 OpenTV, Inc. and Nagravision S.A.
+* Copyright (C) 1994-2023 OpenTV, Inc. and Nagravision S.A.
 *
 * This source code is licensed under the MIT license found in the
 * LICENSE file in the root directory of this source tree.
@@ -7,9 +7,11 @@
 #include "include/core/SkImage.h"
 
 #include <cxxreact/JsArgumentHelpers.h>
+#include <filesystem>
 
 #include "ReactSkia/components/RSkComponentImage.h"
 #include "ReactSkia/sdk/CurlNetworking.h"
+#include "ReactSkia/sdk/RNSAssetManager.h"
 #include "ReactSkia/utils/RnsLog.h"
 #include "RSkImageLoader.h"
 
@@ -65,17 +67,12 @@ std::string RSkImageLoaderModule::getName() {
 
 void RSkImageLoaderModule::getImageSize(std::string uri, CxxModule::Callback resolveBlock, CxxModule::Callback rejectBlock) {
   //TODO :currently supporting only http and https, in future if we want to support more schema, implement as inline function.
+  std::string path;
   sk_sp<SkImage> imageData{nullptr};
-  if(uri.substr(0,4) != "http") {
-    RNS_LOG_ERROR("Not supported URL to getSize :"<<uri.c_str());
-    handleRejectBlock(rejectBlock);
-    return;
-  }
-  imageData = RSkImageCacheManager::getImageCacheManagerInstance()->findImageDataInCache(uri.c_str());
-  if(imageData) {
-    handleResolveBlock(resolveBlock,imageData);
-    return;
-  } else { /*getting image data from network */
+  sk_sp<SkData> data;
+  decodedimageCacheData imageCacheData;
+
+  if(RNS_UTILS_IS_HTTP_URL(uri)){
     auto sharedCurlNetworking = CurlNetworking::sharedCurlNetworking();
     std::shared_ptr<CurlRequest> remoteCurlRequest = std::make_shared<CurlRequest>(nullptr,uri,0,"GET");
 
@@ -110,13 +107,38 @@ void RSkImageLoaderModule::getImageSize(std::string uri, CxxModule::Callback res
       // and gets auto destructored after the completion callback.
       remoteCurlRequest->curldelegator.CURLNetworkingCompletionCallback = nullptr;
       return 0;
-    };
+    };//end of completionCallback
 
     remoteCurlRequest->curldelegator.delegatorData = remoteCurlRequest.get();
-    remoteCurlRequest->curldelegator.CURLNetworkingCompletionCallback=completionCallback;
+    remoteCurlRequest->curldelegator.CURLNetworkingCompletionCallback = completionCallback;
     RNS_LOG_DEBUG("Send Request to network");
     sharedCurlNetworking->sendRequest(remoteCurlRequest,folly::dynamic::object());
     imageRequestList_.insert(std::pair<std::string, std::shared_ptr<CurlRequest> >(uri,remoteCurlRequest));
+  } else if( uri.substr(0,5) == "data:" ){
+    RNS_LOG_NOT_IMPL;
+    handleRejectBlock(rejectBlock);
+    return;
+  } else {
+    if(uri.substr(0,7) != "file://") {
+      // Generate application specific path to fetch the Image data.
+      std::string imagePath = RNSAssetManager::instance()->getAssetPath(uri);
+      RNS_LOG_DEBUG(" Get Imagepath from assetManager"<< imagePath);
+      path = imagePath;
+    }
+    data = SkData::MakeFromFileName(path.c_str());
+    if (!data) {
+      RNS_LOG_ERROR("Unable to make SkData for path : " << path.c_str());
+      handleRejectBlock(rejectBlock);
+      return;
+    }
+    imageData = SkImage::MakeFromEncoded(data);
+    if(imageData) {
+      imageCacheData.imageData = imageData;
+      imageCacheData.expiryTime = (SkTime::GetMSecs() + DEFAULT_MAX_CACHE_EXPIRY_TIME);//convert min to millisecond 30 min *60 sec *1000
+      RSkImageCacheManager::getImageCacheManagerInstance()->imageDataInsertInCache(uri.c_str(), imageCacheData);
+      handleResolveBlock(resolveBlock,imageData);
+      return;
+    }
   }
 }
 
