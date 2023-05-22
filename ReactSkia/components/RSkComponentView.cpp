@@ -12,7 +12,6 @@
 
 #include "react/renderer/components/view/ViewShadowNode.h"
 
-#include "ReactSkia/components/RSkComponentImage.h"
 #include "ReactSkia/components/RSkComponentView.h"
 
 namespace facebook {

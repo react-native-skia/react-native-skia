@@ -269,7 +269,7 @@ void RSkComponent::updateComponentData(const ShadowView &newShadowView,const uin
    }
    if(updateMask & ComponentUpdateMaskState){
       RNS_LOG_DEBUG("\tUpdate State");
-      invalidateMask =static_cast<RnsShell::LayerInvalidateMask>(invalidateMask | updateComponentState(newShadowView,forceUpdate));
+      invalidateMask =static_cast<RnsShell::LayerInvalidateMask>(invalidateMask | updateComponentState(newShadowView.state,forceUpdate));
       component_.state = newShadowView.state;
    }
    if(updateMask & ComponentUpdateMaskEventEmitter){

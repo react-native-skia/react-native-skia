@@ -13,7 +13,6 @@ namespace rnsplugin {
 
 RNSPlatformManagerInterfaceImpl::RNSPlatformManagerInterfaceImpl(PlatformCallbackClient& client)
     : INHERITED(client) {
-  dispatchOnStubEvent();
 }
 
 RNSPlatformManagerInterfaceImpl::~RNSPlatformManagerInterfaceImpl(){}

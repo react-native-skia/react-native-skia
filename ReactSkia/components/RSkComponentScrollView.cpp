@@ -117,10 +117,10 @@ RnsShell::LayerInvalidateMask RSkComponentScrollView::updateComponentProps(
 }
 
 RnsShell::LayerInvalidateMask RSkComponentScrollView::updateComponentState(
-    const ShadowView &newShadowView,
+    const State::Shared &newState,
     bool forceUpdate) {
 
-  auto state = std::static_pointer_cast<ScrollViewShadowNode::ConcreteStateT const>(newShadowView.state);
+  auto state = std::dynamic_pointer_cast<ScrollViewShadowNode::ConcreteStateT const>(newState);
   SkISize contentSize = RSkSkSizeFromSize(state->getData().getContentSize()).toRound();
   RnsShell::ScrollLayer* scrollLayer= SCROLL_LAYER_HANDLE;
 

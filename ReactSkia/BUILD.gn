@@ -20,7 +20,7 @@ declare_args() {
 import("//build/config/gclient_args.gni")
 config("ReactSkia_config") {
   include_dirs = [
-     "//ReactSkia/core_modules"
+    "//ReactSkia/core_modules"
   ]
   defines = []
   if(rns_enable_api_profiling) {

@@ -95,7 +95,7 @@ class RSkComponent : public SpatialNavigator::Container, public std::enable_shar
 
   virtual RnsShell::LayerInvalidateMask updateComponentProps(SharedProps newProps,bool forceUpadate) = 0;
 
-  virtual RnsShell::LayerInvalidateMask updateComponentState(const ShadowView &newShadowView,bool forceUpadate) {
+  virtual RnsShell::LayerInvalidateMask updateComponentState(const State::Shared &newState, bool forceUpadate) {
      /* TODO Return default None here when state update is handled with proper mask */
      return RnsShell::LayerInvalidateAll;
   };

@@ -38,7 +38,7 @@ class RSkComponentScrollView final : public RSkComponent {
     bool forceUpadate) override;
 
   RnsShell::LayerInvalidateMask updateComponentState(
-    const ShadowView &newShadowView,
+    const State::Shared &newState,
     bool forceUpadate) override;
 
   void handleCommand(
