@@ -15,8 +15,9 @@
 #include "include/private/SkChecksum.h"
 #include "src/core/SkTDynamicHash.h"
 
-#include "rns_shell/platform/graphics/PlatformDisplay.h"
 #include "rns_shell/common/Window.h"
+#include "rns_shell/input/InputEventDelegate.h"
+#include "rns_shell/platform/graphics/PlatformDisplay.h"
 #include "ReactSkia/sdk/NotificationCenter.h"
 #include "ReactSkia/sdk/RNSKeyCodeMapping.h"
 #include "ReactSkia/utils/RnsUtils.h"
@@ -46,11 +47,19 @@ class WindowMac : public Window {
 
   NSView *rootView();
 
+  void BindInputEventDelegate(InputEventDelegate *delegate) override {
+    inputEventDelegate_ = delegate;
+  }
+  InputEventDelegate *GetInputEventDelegate() {
+    return inputEventDelegate_;
+  }
+
  private:
   static std::map<NSInteger, WindowMac *> windowMap_;
 
   NSWindow *window_;
   PlatformDisplay *display_;
+  InputEventDelegate *inputEventDelegate_;
 };
 
 } // namespace RnsShell

@@ -22,6 +22,8 @@ class SkSurfaceProps;
 class SkString;
 
 namespace RnsShell {
+
+class InputEventDelegate;
 enum WindowType{
     MainWindow,
     SubWindow,
@@ -61,6 +63,8 @@ public:
 
     virtual const DisplayParams& getRequestedDisplayParams() { return requestedDisplayParams_; }
     virtual void setRequestedDisplayParams(const DisplayParams&, bool allowReattach = true);
+
+    virtual void BindInputEventDelegate(InputEventDelegate *delegate) {}
 
     // Actual parameters in effect, obtained from the native window.
     int sampleCount() const;

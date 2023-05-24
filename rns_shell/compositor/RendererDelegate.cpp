@@ -47,5 +47,4 @@ void RendererDelegate::beginRenderingUpdate() {
   begin();
 }
 
-
 }   // namespace RnsShell

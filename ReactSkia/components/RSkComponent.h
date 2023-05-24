@@ -121,7 +121,7 @@ class RSkComponent : public SpatialNavigator::Container, public std::enable_shar
   bool isFocusable();
   bool needsShadowPainting();
 
-  void requiresLayer(const ShadowView &shadowView, RnsShell::Layer::Client& layerClient);
+  virtual void requiresLayer(const ShadowView &shadowView, RnsShell::Layer::Client& layerClient);
   RnsShell::LayerInvalidateMask updateProps(Props::Shared newProps , bool forceUpdate);
   void setNeedFocusUpdate();
  protected:

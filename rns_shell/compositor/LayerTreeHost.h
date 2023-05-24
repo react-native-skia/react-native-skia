@@ -7,13 +7,16 @@
 #pragma once
 
 #include "rns_shell/compositor/Compositor.h"
+#include "rns_shell/input/InputEventDelegate.h"
 #include "rns_shell/platform/graphics/PlatformDisplay.h"
 
 namespace RnsShell {
+
 class Application;
+struct MouseWheelEvent;
 class Window;
 
-class LayerTreeHost {
+class LayerTreeHost : public InputEventDelegate {
  public:
 
   LayerTreeHost(Application& client);
@@ -43,9 +46,16 @@ class LayerTreeHost {
     LayerTreeHost& layerTreeHost_;
   };
 
+private:
   uint64_t nativeSurfaceHandle();
   void didRenderFrame();
 
+  // InputEventDelegate implementations
+  void DispatchInputEvent(MouseWheelEvent &&event);
+
+  Layer* HitTest(int eventX, int eventY);
+
+private:
   Application& app_;
   std::unique_ptr<Window> window_;
   CompositorClient compositorClient_;

@@ -9,6 +9,8 @@
 
 #include "rns_shell/compositor/layers/Layer.h"
 
+#include <functional>
+
 #include "include/core/SkPicture.h"
 
 namespace RnsShell {
@@ -76,14 +78,27 @@ public:
     bool setContentSize(SkISize contentSize) ;
     SkISize getContentSize() { return contentSize_;};
 
-    void setScrollPosition(SkPoint scrollPos) ;
+    bool scrollTo(const SkPoint &scrollPos, bool isFlushDisplay = true);
     SkPoint getScrollPosition() { return SkPoint::Make(scrollOffsetX_,scrollOffsetY_);};
+
+    class ScrollingClient {
+     public:
+      virtual ~ScrollingClient() = default;
+
+     public:
+      virtual void layerWillScroll() = 0;
+      virtual void layerDidScroll(const SkPoint &scrollPos) = 0;
+    };
+    void RegisterScrollingClient(ScrollingClient *scrollingClient) {
+      scrollingClient_ = scrollingClient;
+    }
 
 #if ENABLE(FEATURE_SCROLL_INDICATOR)
     ScrollBar& getScrollBar() { return scrollbar_;}
 #endif
 
 private:
+    void setScrollPosition(const SkPoint &scrollPos);
 
 #if USE(SCROLL_LAYER_BITMAP)
     void bitmapConfigure();
@@ -110,6 +125,7 @@ private:
 #if ENABLE(FEATURE_SCROLL_INDICATOR)
     ScrollBar scrollbar_;   // scroll indicator bar
 #endif
+    ScrollingClient *scrollingClient_;
 
     typedef Layer INHERITED;
 };

@@ -250,7 +250,37 @@ bool ScrollLayer::setContentSize(SkISize contentSize) {
     return false;
 }
 
-void ScrollLayer::setScrollPosition(SkPoint scrollPos) {
+
+bool ScrollLayer::scrollTo(const SkPoint &scrollPos, bool isFlushDisplay) {
+  SkPoint normalizedScrollPos({
+    std::min(std::max(static_cast<int>(scrollPos.x()), 0), contentSize_.width() - frame_.width()),
+    std::min(std::max(static_cast<int>(scrollPos.y()), 0), contentSize_.height() - frame_.height()),
+  });
+
+  if (normalizedScrollPos == getScrollPosition()) {
+    return false;
+  }
+
+  if (scrollingClient_) {
+    scrollingClient_->layerWillScroll();
+  }
+  if (isFlushDisplay) {
+    client().notifyFlushBegin();
+  }
+
+  setScrollPosition(normalizedScrollPos);
+  invalidate(LayerPaintInvalidate);
+  if (isFlushDisplay) {
+    client().notifyFlushRequired();
+  }
+
+  if (scrollingClient_) {
+    scrollingClient_->layerDidScroll(normalizedScrollPos);
+  }
+  return true;
+}
+
+void ScrollLayer::setScrollPosition(const SkPoint &scrollPos) {
     scrollOffsetX_ = scrollPos.x();
     scrollOffsetY_ = scrollPos.y();
     RNS_LOG_DEBUG("Scroll Layer (" << layerId_ << ") Set ScrollOffset :" << scrollOffsetX_ << "," << scrollOffsetY_);

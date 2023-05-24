@@ -12,6 +12,7 @@
 #include "ReactSkia/components/RSkComponent.h"
 #include "ReactSkia/RSkSurfaceWindow.h"
 #include "ReactSkia/sdk/FollyTimer.h"
+#include "rns_shell/compositor/layers/ScrollLayer.h"
 
 using namespace rns::sdk;
 namespace facebook {
@@ -27,7 +28,7 @@ enum ScrollDirectionType {
    ScrollDirectionBackward
 };
 
-class RSkComponentScrollView final : public RSkComponent {
+class RSkComponentScrollView final : public RSkComponent, public RnsShell::ScrollLayer::ScrollingClient {
  public:
   RSkComponentScrollView(const ShadowView &shadowView);
   ~RSkComponentScrollView();
@@ -46,6 +47,8 @@ class RSkComponentScrollView final : public RSkComponent {
     folly::dynamic args) override;
 
   bool isContainer() const override { return true; }
+
+  void requiresLayer(const ShadowView &shadowView, RnsShell::Layer::Client& layerClient) override;
 
   //RSkSpatialNavigatorContainer override functions
   bool canScrollInDirection(rnsKey direction) override;
@@ -95,7 +98,11 @@ class RSkComponentScrollView final : public RSkComponent {
   ScrollStatus handleScroll(int x,int y, bool isFlushDisplay=true);
   ScrollStatus handleScroll(SkPoint scrollPos, bool isFlushDisplay=true);
 
-  void dispatchOnScrollEvent(SkPoint scrollPos);
+  void dispatchOnScrollEvent(const SkPoint &scrollPos);
+
+  // RnsShell::ScrollLayer::ScrollingClient implementations
+  void layerWillScroll() override;
+  void layerDidScroll(const SkPoint &scrollPos) override;
 };
 
 } // namespace react

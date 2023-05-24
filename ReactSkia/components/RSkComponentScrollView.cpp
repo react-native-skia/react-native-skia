@@ -226,6 +226,13 @@ void RSkComponentScrollView::handleCommand(std::string commandName,folly::dynami
 }
 
 
+void RSkComponentScrollView::requiresLayer(const ShadowView &shadowView, RnsShell::Layer::Client& layerClient) {
+  RSkComponent::requiresLayer(shadowView, layerClient);
+
+  RnsShell::ScrollLayer* scrollLayer = SCROLL_LAYER_HANDLE;
+  scrollLayer->RegisterScrollingClient(this);
+}
+
 // RSkSpatialNavigatorContainer functions
 
 bool RSkComponentScrollView::canScrollInDirection(rnsKey direction){
@@ -508,28 +515,14 @@ ScrollStatus RSkComponentScrollView::handleScroll(int x, int y, bool isFlushDisp
 ScrollStatus RSkComponentScrollView::handleScroll(SkPoint scrollPos, bool isFlushDisplay) {
 
   RnsShell::ScrollLayer* scrollLayer= SCROLL_LAYER_HANDLE;
-  if(scrollPos == scrollLayer->getScrollPosition()) return noScroll;
 
-  if(isFlushDisplay) scrollLayer->client().notifyFlushBegin();
+  bool result = scrollLayer->scrollTo(scrollPos, isFlushDisplay);
+  return result ? scrollOnly : noScroll;
 
-  scrollLayer->setScrollPosition(scrollPos);
-
-#if ENABLE(FEATURE_SCROLL_INDICATOR)
-  if(drawScrollIndicator_) scrollLayer->getScrollBar().showScrollBar(true);
-#endif
-
-  scrollLayer->invalidate(LayerPaintInvalidate);
-  if(isFlushDisplay) scrollLayer->client().notifyFlushRequired();
-
-  dispatchOnScrollEvent(scrollPos);
-
-#if ENABLE(FEATURE_SCROLL_INDICATOR)
-  if(drawScrollIndicator_ && (!persistentScrollIndicator_)) fadeOutScrollBar();
-#endif
   return scrollOnly;
 }
 
-void RSkComponentScrollView::dispatchOnScrollEvent(SkPoint scrollPos) {
+void RSkComponentScrollView::dispatchOnScrollEvent(const SkPoint &scrollPos) {
 
   RnsShell::ScrollLayer* scrollLayer= SCROLL_LAYER_HANDLE;
 
@@ -543,6 +536,30 @@ void RSkComponentScrollView::dispatchOnScrollEvent(SkPoint scrollPos) {
   //scrollMetrics.contentInset = contentInset_;
 
   std::static_pointer_cast<ScrollViewEventEmitter const>(getComponentData().eventEmitter)->onScroll(scrollMetrics);
+}
+
+// RnsShell::ScrollLayer::ScrollingClient implementations
+
+void RSkComponentScrollView::layerWillScroll() {
+#if ENABLE(FEATURE_SCROLL_INDICATOR)
+  // TODO: moving scrollbar control into ScrollLayer
+  if (drawScrollIndicator_) {
+    RnsShell::ScrollLayer* scrollLayer= SCROLL_LAYER_HANDLE;
+    scrollLayer->getScrollBar().showScrollBar(true);
+  }
+#endif
+}
+
+void RSkComponentScrollView::layerDidScroll(const SkPoint &scrollPos) {
+  dispatchOnScrollEvent(scrollPos);
+
+#if ENABLE(FEATURE_SCROLL_INDICATOR)
+  // TODO: moving scrollbar control into ScrollLayer
+  // This needs a refactor to move Timer into some common dir or rns_shell dir
+  if (drawScrollIndicator_ && !persistentScrollIndicator_) {
+    fadeOutScrollBar();
+  }
+#endif
 }
 
 } // namespace react
