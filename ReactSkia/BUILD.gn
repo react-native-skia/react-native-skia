@@ -154,6 +154,8 @@ source_set("ReactSkia") {
     "MountingManager.h",
     "RNInstance.cpp",
     "RNInstance.h",
+    "sdk/RNSAssetManager.cpp",
+    "sdk/RNSAssetManager.h",
     "sdk/CurlNetworking.cpp",
     "sdk/CurlNetworking.h",
     "sdk/FollyTimer.cpp",

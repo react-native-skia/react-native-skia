@@ -32,7 +32,7 @@ def main():
 
   currentWorkingDir = os.getcwd()
   os.chdir(sys.argv[1])
-  for root, dirs, files in os.walk("./assets", topdown=true):
+  for root, dirs, files in os.walk("./assets", topdown=True):
     for name in files:
       # Images
       if name.endswith(ImageExt):
