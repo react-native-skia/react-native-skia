@@ -9,6 +9,7 @@
 
 #include "rns_shell/platform/mac/RootView.h"
 
+#include "rns_shell/input/MouseWheelEvent.h"
 #include "rns_shell/platform/mac/WindowMac.h"
 
 @implementation RootView {
@@ -113,14 +114,18 @@
   //                  skui::InputState::kMove, modifiers);
 }
 
+#endif
+
 - (void)scrollWheel:(NSEvent *)event {
   [super scrollWheel:event];
   // skui::ModifierKey modifiers = [self updateModifierKeys:event];
 
-  LOG(INFO) << "mouseWheel scrollingDeltaY=" << [event scrollingDeltaY];
+  RnsShell::InputEventDelegate *delegate = window_->GetInputEventDelegate();
+  if (delegate != nullptr) {
+    RnsShell::MouseWheelEvent mouseWheelEvent({event.locationInWindow.x, event.locationInWindow.y, -event.scrollingDeltaX, -event.scrollingDeltaY});
+    delegate->DispatchInputEvent(std::move(mouseWheelEvent));
+  }
   // TODO: support hasPreciseScrollingDeltas?
-  // fWindow->onMouseWheel([event scrollingDeltaY], modifiers);
 }
-#endif
 
 @end
