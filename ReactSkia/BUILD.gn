@@ -60,12 +60,6 @@ config("textinput_config") {
     "//ReactSkia/textinput",
   ]
 }
-config("activityindicator_config") {
-  include_dirs = [
-    "//ReactSkia/activityindicator",
-  ]
-}
-
 
 import("//react-native/common.gni")
 rn_cxx_component("textlayoutmanager") {
@@ -114,34 +108,6 @@ rn_cxx_component("textinput") {
   with_exceptions = true
   with_rtti = true
   public_configs = [":textinput_config"]
-}
-
-rn_cxx_component("activityindicator") {
-  sources = [
-    "activityindicator/react/renderer/components/activityindicator/ActivityIndicatorComponentDescriptor.h",
-    "activityindicator/react/renderer/components/activityindicator/ActivityIndicatorProps.cpp",
-    "activityindicator/react/renderer/components/activityindicator/ActivityIndicatorProps.h",
-    "activityindicator/react/renderer/components/activityindicator/ActivityIndicatorShadowNode.cpp",
-    "activityindicator/react/renderer/components/activityindicator/ActivityIndicatorShadowNode.h",
-  ]
-
-  deps = [
-    "//folly",
-    "//react-native/ReactCommon/react/renderer/componentregistry:componentregistry",
-    "//react-native/ReactCommon/react/renderer/components/view:view",
-    "//react-native/ReactCommon/react/renderer/core:core",
-    "//react-native/ReactCommon/react/renderer/debug:debug",
-    "//react-native/ReactCommon/react/renderer/graphics:graphics",
-    "//react-native/ReactCommon/react/renderer/uimanager:uimanager",
-    "//react-native/ReactCommon/react/utils:utils",
-    "//react-native/ReactCommon/yoga:yoga",
-    "//third_party/glog:glog",
-
-  ]
-
-  with_exceptions = true
-  with_rtti = true
-  public_configs = [":activityindicator_config"]
 }
 
 source_set("ReactSkia") {
@@ -348,11 +314,19 @@ source_set("ReactSkia") {
     "//react-native/ReactCommon/react/renderer/components/scrollview",
     "//react-native/ReactCommon/react/renderer/components/text",
     "//react-native/ReactCommon/react/renderer/textlayoutmanager",
-    "//ReactSkia:activityindicator",
     "//ReactSkia:textinput",
     "//ReactSkia/pluginfactory/plugins",
     "//rns_shell",
     "//skia",
+  ]
+
+  # core components which will be generated with codegen with new react native version. : NOTE: with current version have to use pre generated code.
+  # Activity indicator, SafeAreaView, Switch ...
+  public_deps += [
+    "//ReactSkia/xplat/js/react-native-github:generated_components-rncore"
+  ]
+  include_dirs = [
+    "//ReactSkia/xplat/js/react-native-github",
   ]
 
   configs -= [ "//build/config/compiler:chromium_code" ]

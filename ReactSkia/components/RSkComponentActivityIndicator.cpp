@@ -8,7 +8,8 @@
 #include "include/core/SkPaint.h"
 #include "include/core/SkPath.h"
 
-#include <ReactSkia/activityindicator/react/renderer/components/activityindicator/ActivityIndicatorProps.h>
+#include "react/renderer/components/rncore/Props.h"
+
 #include "ReactSkia/components/RSkComponentActivityIndicator.h"
 #include "ReactSkia/components/RSkComponentActivityIndicatorManager.h"
 
@@ -29,8 +30,8 @@ RSkComponentActivityIndicator::RSkComponentActivityIndicator(const ShadowView &s
 
 RnsShell::LayerInvalidateMask  RSkComponentActivityIndicator::updateComponentProps(SharedProps newViewProps,bool forceUpdate) {
   auto component = getComponentData();
-  auto const &activityIndicatorOldProps = *std::static_pointer_cast<ActivityIndicatorProps const>(component.props);
-  auto const &activityIndicatorNewProps = *std::static_pointer_cast<ActivityIndicatorProps const>(newViewProps);
+  auto const &activityIndicatorOldProps = *std::static_pointer_cast<ActivityIndicatorViewProps const>(component.props);
+  auto const &activityIndicatorNewProps = *std::static_pointer_cast<ActivityIndicatorViewProps const>(newViewProps);
 
   if((initialPropertiesParsed_ == false) || (activityIndicatorOldProps.animating != activityIndicatorNewProps.animating)){
     initialPropertiesParsed_ = true;
@@ -46,7 +47,7 @@ RnsShell::LayerInvalidateMask  RSkComponentActivityIndicator::updateComponentPro
 
 void RSkComponentActivityIndicator::OnPaint(SkCanvas *canvas) {
   auto component = getComponentData();
-  auto const &activityIndicatorProps = *std::static_pointer_cast<ActivityIndicatorProps const>(component.props);
+  auto const &activityIndicatorProps = *std::static_pointer_cast<ActivityIndicatorViewProps const>(component.props);
   auto borderMetrics=activityIndicatorProps.resolveBorderMetrics(component.layoutMetrics);
   Rect frame = component.layoutMetrics.frame;
   SkColor color = RSkColorFromSharedColor(activityIndicatorProps.color, ACTIVITY_INDICATOR_DEFAULT_ARC_COLOR);

@@ -5,7 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "ReactSkia/activityindicator/react/renderer/components/activityindicator/ActivityIndicatorComponentDescriptor.h"
+#include "react/renderer/components/rncore/ComponentDescriptors.h"
+
 #include "ReactSkia/components/RSkComponentActivityIndicator.h"
 #include "ReactSkia/components/RSkComponentProviderActivityIndicator.h"
 
@@ -15,7 +16,7 @@ namespace react {
 RSkComponentProviderActivityIndicator::RSkComponentProviderActivityIndicator() {}
 
 ComponentDescriptorProvider RSkComponentProviderActivityIndicator::GetDescriptorProvider() {
-  return concreteComponentDescriptorProvider<ActivityIndicatorComponentDescriptor>();
+  return concreteComponentDescriptorProvider<ActivityIndicatorViewComponentDescriptor>();
 }
 
 std::shared_ptr<RSkComponent> RSkComponentProviderActivityIndicator::CreateComponent(

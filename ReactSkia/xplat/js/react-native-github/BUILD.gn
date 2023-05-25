@@ -1,0 +1,38 @@
+import("//react-native/common.gni")
+
+config("generated_components-rncore_config") {
+  cflags_cc = [
+    "-Wno-sign-compare",
+  ]
+}
+
+rn_cxx_component("generated_components-rncore") {
+  include_dirs = [
+    "//react-native/ReactCommon",
+    "//react-native/ReactCommon/jsi",
+    "//react-native/ReactCommon/react/renderer/graphics/platform/cxx/",
+    "//ReactSkia/xplat/js/react-native-github",
+  ]
+  sources = [
+    "react/renderer/components/rncore/EventEmitters.cpp",
+    "react/renderer/components/rncore/EventEmitters.h",
+    "react/renderer/components/rncore/Props.cpp",
+    "react/renderer/components/rncore/Props.h",
+    "react/renderer/components/rncore/ShadowNodes.cpp",
+    "react/renderer/components/rncore/ShadowNodes.h",
+  ]
+
+  defines = [
+    "LOG_TAG=ReactNative",
+  ]
+
+  deps = [
+    "//folly",
+    "//react-native/ReactCommon/yoga:yoga",
+  ]
+
+  public_configs = [ ":generated_components-rncore_config" ]
+
+  with_exceptions = true
+  with_rtti = true
+}
