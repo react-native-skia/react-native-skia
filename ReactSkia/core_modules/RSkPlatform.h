@@ -46,7 +46,7 @@ class RSkPlatformModule : public TurboModule {
     PlatformCallBackClient(RSkPlatformModule& platformModule);
     ~PlatformCallBackClient(){}
 
-    void onStubEvent() override;
+    void onSafeAreaInsetsDidChange() override;
 
    private:
     RSkPlatformModule& platformModule_;

@@ -10,6 +10,8 @@
 #include <folly/io/async/ScopedEventBaseThread.h>
 #include <folly/Format.h>
 
+#include "include/core/SkRect.h"
+
 #include "ReactSkia/pluginfactory/RnsPlugin.h"
 
 namespace facebook {
@@ -29,7 +31,7 @@ class RNSPlatformManagerInterface {
    public:
     virtual ~CallbackClient() {}
     // Events
-    virtual void onStubEvent() = 0;
+    virtual void onSafeAreaInsetsDidChange() = 0;
   };
 
   class PlatformDevice {
@@ -81,6 +83,7 @@ class RNSPlatformManagerInterface {
     string interfaceIdiom {"tv"};
     bool forceTouchAvailable{false};
     virtual bool isTesting() = 0;
+    virtual SkRect getSafeAreaInsets() = 0;
     virtual shared_ptr<DeviceCPUInfo> getCPUInfo()=0;
     virtual shared_ptr<DeviceGPUInfo> getGPUInfo()=0;
     virtual shared_ptr<DeviceOsInfo> getOsInfo()=0;
@@ -101,7 +104,7 @@ class RNSPlatformManagerInterface {
   CallbackClient &client_;
 
  protected:
-  void dispatchOnStubEvent();
+  void dispatchOnSafeAreaInsetsDidChange();
 };
 
 using PlatformCallbackClient = RNSPlatformManagerInterface::CallbackClient;

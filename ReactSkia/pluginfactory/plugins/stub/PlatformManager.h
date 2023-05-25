@@ -32,6 +32,7 @@ class RNSPlatformManagerInterfaceImpl : public RNSPlatformManagerInterface {
     PlatformDeviceImpl() = default;
     ~PlatformDeviceImpl() {};
     bool isTesting() override;
+    SkRect getSafeAreaInsets() override;
     shared_ptr<DeviceCPUInfo> getCPUInfo() override;
     shared_ptr<DeviceGPUInfo> getGPUInfo() override;
     shared_ptr<DeviceOsInfo> getOsInfo() override;

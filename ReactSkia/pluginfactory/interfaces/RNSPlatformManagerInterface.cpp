@@ -53,9 +53,9 @@ uint64_t RNSPlatformManagerInterface::nextUniqueId() {
   return id;
 }
 
-void RNSPlatformManagerInterface::dispatchOnStubEvent() {
+void RNSPlatformManagerInterface::dispatchOnSafeAreaInsetsDidChange() {
   platformThread_.getEventBase()->runInEventBaseThread([&] {
-    client_.onStubEvent();
+    client_.onSafeAreaInsetsDidChange();
   });
 }
 

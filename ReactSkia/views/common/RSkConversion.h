@@ -60,3 +60,7 @@ inline facebook::react::Size RCTSizeFromSkSize(const SkSize &size) {
 inline bool isOpaque(float opacity) {
   return (opacity >= MAX_8BIT) ? true:false;
 }
+
+inline facebook::react::EdgeInsets RCTEdgeInsetsFromSkRect(const SkRect &edgeInsets){
+  return {edgeInsets.left(), edgeInsets.top(), edgeInsets.right(), edgeInsets.bottom()};
+}

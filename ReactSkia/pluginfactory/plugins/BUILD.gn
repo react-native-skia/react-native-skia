@@ -42,6 +42,7 @@ component("RnsPlatformPlugin") {
   deps = [
     "//folly:async",
     "//folly:synchronization",
+    "//skia",
   ]
 }
 

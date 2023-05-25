@@ -29,6 +29,14 @@ bool RNSPlatformManagerInterfaceImpl::PlatformDeviceImpl::isTesting() {
   return true;
 }
 
+SkRect RNSPlatformManagerInterfaceImpl::PlatformDeviceImpl::getSafeAreaInsets() {
+#if 0 // For testing only
+  SkRect insets = SkRect::MakeLTRB(0,0,0,500);
+    return insets;
+#endif
+  return SkRect::MakeEmpty();
+}
+
 shared_ptr<DeviceCPUInfo> RNSPlatformManagerInterfaceImpl::PlatformDeviceImpl::getCPUInfo() {
   if(cpuInfo_ == nullptr) {
     cpuInfo_ = make_shared<DeviceCPUInfo>("Intel","4","5nm","5GHz");
