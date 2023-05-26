@@ -154,6 +154,13 @@ dynamic Uimanager::getConstantsForViewManager(std::string viewManagerName) {
         BUBBLING_EVENTS_KEY, std::move(bubblingEventTypes))(
         DIRECT_EVENTS_KEY, std::move(directEventTypes));
     return {std::move(registry)};
+  } else if (viewManagerName == "RCTSafeAreaView") {
+    auto registry = folly::dynamic::object(
+        NATIVE_PROPS_KEY, folly::dynamic::object())(
+        BASE_MODULE_NAME_KEY, "RCTView")(
+        BUBBLING_EVENTS_KEY, folly::dynamic::object())(
+        DIRECT_EVENTS_KEY, folly::dynamic::object());
+    return {std::move(registry)};
   } else {
     RNS_LOG_WARN("viewManager : " << viewManagerName << " not available in default list, check in thirdparty list");
   }

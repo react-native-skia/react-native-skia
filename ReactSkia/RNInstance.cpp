@@ -18,6 +18,7 @@
 #include "ReactSkia/components/RSkComponentProviderActivityIndicator.h"
 #include "ReactSkia/components/RSkComponentProviderImage.h"
 #include "ReactSkia/components/RSkComponentProviderRootView.h"
+#include "ReactSkia/components/RSkComponentProviderSafeAreaView.h"
 #include "ReactSkia/components/RSkComponentProviderScrollView.h"
 #include "ReactSkia/components/RSkComponentProviderText.h"
 #include "ReactSkia/components/RSkComponentProviderTextInput.h"
@@ -269,6 +270,8 @@ void RNInstance::RegisterComponents() {
       std::make_unique<RSkComponentProviderTextInput>());
   componentViewRegistry_->Register(
       std::make_unique<RSkComponentProviderScrollView>());
+  componentViewRegistry_->Register(
+      std::make_unique<RSkComponentProviderSafeAreaView>());
   componentViewRegistry_->Register(
       std::make_unique<RSkComponentProviderActivityIndicator>());
 
