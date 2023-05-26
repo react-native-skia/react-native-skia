@@ -16,16 +16,13 @@ const SimpleViewApp = () => {
 const [Imagewidth, setWidth] = React.useState(0);
 const [Imageheight, setHeight] = React.useState(0);
 const [Imageuri, setUri] = React.useState("");
+const [ImageError,setError] = React.useState("");
 
 return(
 <View style={styles.MainContainer}>
-  <ImageBackground
-        source={{ uri: "1" }}
-        resizeMode="cover"
-        style={styles.image}
-      >
   <View style={styles.innerContainer}>
     <View style={styles.itemContainer}>
+      <Text>Please navigate here to  getSize testing </Text>
       <TouchableOpacity style={styles.button}
         onFocus={(ne) => {
             Image.getSize("1", (width, height) => {
@@ -76,7 +73,7 @@ return(
           }
         }
       >
-          <Text>getSize Remote</Text>
+          <Text style={styles.text} >getSize Remote</Text>
       </TouchableOpacity>
       <TouchableOpacity
         style={styles.button}
@@ -101,7 +98,7 @@ return(
             }
         }
       >
-        <Text>getSize uriFile type</Text>
+        <Text style={styles.text}>getSize uri - File type</Text>
       </TouchableOpacity>
       <TouchableOpacity
         style={styles.button}
@@ -126,7 +123,7 @@ return(
             }
         }
       >
-        <Text>getSize File with extention</Text>
+        <Text style={styles.text} >getSize File with extention</Text>
       </TouchableOpacity>
       <TouchableOpacity
         style={styles.button}
@@ -151,15 +148,15 @@ return(
             }
         }
       >
-        <Text>getSize  with relativePath</Text>
+        <Text style={styles.text} >getSize  with relativePath</Text>
       </TouchableOpacity>
         <Text style={styles.resultText}> Result </Text>
         <Text > uri={Imageuri} </Text>
-        <Text style={styles.resultText}> width={Imagewidth} height={Imageheight} </Text>
+        <Text style={styles.resultText}>  width={Imagewidth} height={Imageheight} </Text>
     </View>
   </View>
-  </ImageBackground>
   <View style={styles.innerContainer}>
+     <Text> Image Uri testing </Text>
      <Image
         style={styles.tinyLogo}
         source={{ uri: "https:\/\/reactnative.dev\/img\/tiny_logo.png" }}
@@ -197,6 +194,7 @@ return(
       </Text>
   </View>
   <View style={styles.innerContainer}>
+     <Text> Fast Image Uri testing </Text>
      <FastImage
         style={styles.tinyLogo}
         source={{ uri: "https:\/\/reactnative.dev\/img\/tiny_logo.png" }}
@@ -233,6 +231,57 @@ return(
         FastImage file type -- file://
       </Text>
   </View>
+  <View style={styles.innerContainer}>
+    <Text> ImageBG Uri testing </Text>
+      <ImageBackground
+          source={{ uri: "https:\/\/reactnative.dev\/img\/tiny_logo.png" }}
+          resizeMode="cover"
+          style={styles.image}
+      >
+        <Text style={styles.bgImageText}> 
+          ImageBg with uri 
+        </Text>
+      </ImageBackground>
+
+      <ImageBackground
+          source={{ uri: "1" }}
+          resizeMode="cover"
+          style={styles.image}
+      >
+        <Text style={styles.bgImageText}> 
+          ImageBg without path and extention 
+        </Text>
+      </ImageBackground>
+      <ImageBackground
+          source={{ uri: "1.png" }}
+          resizeMode="cover"
+          style={styles.image}
+      >
+        <Text style={styles.bgImageText}> 
+          ImageBg with extention 
+        </Text>
+      </ImageBackground>
+      <ImageBackground
+          source={require("./components/image/1.png")}
+          resizeMode="cover"
+          style={styles.image}
+      >
+        <Text style={styles.bgImageText}> 
+          ImageBg with require path and extention 
+        </Text>
+      </ImageBackground>
+      <ImageBackground
+          source={{uri:"file:://./components/image/1.png"}}
+          resizeMode="cover"
+          style={styles.image}
+      >
+        <Text style={styles.bgImageText}> 
+          FastImage file type -- file:// 
+        </Text>
+      </ImageBackground>
+
+
+  </View>
 </View>
     );
 };
@@ -242,8 +291,8 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     padding: 20,
     margin: 20,
-    height:800,
-    width:1500,
+    height:720,
+    width:1280,
     borderColor: "red",
     borderWidth: 1,
   },
@@ -251,13 +300,15 @@ const styles = StyleSheet.create({
     borderColor: "green",
     justifyContent: "space-between",
     height:500,
-    width:400, 
+    width:300, 
     padding: 20, 
     margin: 20 
   },
   itemContainer: {
     borderColor: "blue",
     borderWidth: 1,
+    height:500,
+    width:300,
     flex: 1,
     flexDirectoin: "row",
   },
@@ -266,18 +317,19 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     flex: 1,
     height:200,
-    width:400,
+    width:300,
     flexDirection: "row",
   },
-  
   button: {
     alignItems: "center",
     backgroundColor: "white",
     padding: 10,
-    width: 300,
+    width: 200,
     height:100,
     margin: 10,
     flex: 1,
+    borderWidth:2,
+    borderColor:"blue",
   },
   resultText:{
     color:"green",
@@ -285,12 +337,23 @@ const styles = StyleSheet.create({
     fontWeight: 'bold'
   },
   text:{
-    color:"black",
+    color:"blue",
+  },
+  bgImageText:{
+    color:"green",
+    fontSize: 18,
   },
   image: { 
-    justifyContent: "center" 
+    justifyContent: "center",
+    width: 200, 
+    height:50 
   },
-  tinyLogo: { width: 50, height: 50 },
+  tinyLogo: { 
+    width: 50, 
+    height: 50,
+    borderWidth:2,
+    borderColor:"blue", 
+  },
 });
 
 export default SimpleViewApp;
