@@ -53,6 +53,13 @@ CurlRequest::CurlRequest(CURL *lhandle, std::string lURL, size_t ltimeout, std::
   curlResponse(make_shared<CurlResponse>())
   {}
 
+CurlRequest::~CurlRequest() {
+  if(uploadDataPtr!=NULL) {
+    free(uploadDataPtr);
+    uploadDataPtr = NULL;
+  }
+}
+
 CurlNetworking::~CurlNetworking() {
   exitLoop_ = true;
   multiNetworkThread_.join();
@@ -155,38 +162,82 @@ void CurlNetworking::processNetworkRequest(CURLM *curlMultiHandle) {
 
 }
 
-bool CurlNetworking::preparePostRequest(shared_ptr<CurlRequest> curlRequest, folly::dynamic data ) {
-  const char *dataPtr = NULL;
+size_t CurlNetworking::readCallback(void* ptr, size_t size, size_t nitems, void* userdata) {
+  CurlRequest *curlRequest = static_cast<CurlRequest *>(userdata);
+  if(!curlRequest) {
+    return 0;
+  }
+  size_t readSize = size * nitems;
+  // Calculate the remaining data size to send
+  size_t remainingSize = curlRequest->uploadDataLength - curlRequest->uploadBufferOffset;
+  if(remainingSize == 0) { // no more data left to copy,stop the current transfer
+    return remainingSize;
+  }
+  // Determine the size to be copied
+  size_t copySize = (remainingSize < readSize) ? remainingSize : readSize;
+  // Copy the data into the buffer
+  memcpy(ptr, curlRequest->uploadDataPtr + curlRequest->uploadBufferOffset, copySize);
+  // Update the position for the next read
+  curlRequest->uploadBufferOffset += copySize;
+  return copySize;
+}
+
+
+bool CurlNetworking::prepareRequest(shared_ptr<CurlRequest> curlRequest, folly::dynamic data, string methodName ) {
   size_t dataSize = 0;
   bool status = false;
 
-  if(data["string"].c_str()) {
-    dataPtr = data["string"].c_str();
-    dataSize = data["string"].getString().length();
-  } else if(data["formData"].c_str()) {
-    RNS_LOG_NOT_IMPL;
-    return status;
-  } else if(data["blob"].c_str()) {
-    RNS_LOG_NOT_IMPL;
-    return status;
-  } else if(data["uri"].c_str()) {
-    RNS_LOG_NOT_IMPL;
-    return status;
-  } else if(data["base64"].c_str()) {
-    RNS_LOG_NOT_IMPL;
-    return status;
-  } else {
-    RNS_LOG_ERROR ("Unknown Data for Post Request\n") ;
-    return status;
+  if(methodName.compare("DELETE")) {
+    if(!data["string"].empty()) {
+      dataSize = data["string"].getString().length();
+      curlRequest->uploadDataPtr =(char *) malloc(dataSize);
+      strcpy(curlRequest->uploadDataPtr,data["string"].c_str());
+    } else if(!data["formData"].empty()) {
+      RNS_LOG_NOT_IMPL_MSG("formData");
+      return status;
+    } else if(!data["blob"].empty()) {
+      RNS_LOG_NOT_IMPL_MSG("blob");
+      return status;
+    } else if(!data["uri"].empty()) {
+      RNS_LOG_NOT_IMPL_MSG("uri");
+      return status;
+    } else if(!data["base64"].empty()) {
+      RNS_LOG_NOT_IMPL_MSG("base64");
+      return status;
+    } else {
+      RNS_LOG_ERROR("Unknown Data for Post Request");
+      return status;
+    }
   }
-  
-  curl_easy_setopt(curlRequest->handle, CURLOPT_POST, 1L);
-  /* get verbose debug output please */
-  curl_easy_setopt(curlRequest->handle, CURLOPT_POSTFIELDSIZE, (long)dataSize);
-  curl_easy_setopt(curlRequest->handle, CURLOPT_COPYPOSTFIELDS, dataPtr);
-    // ResponseWrite callback and user data
-  curl_easy_setopt(curlRequest->handle, CURLOPT_WRITEDATA, curlRequest.get());
-  curl_easy_setopt(curlRequest->handle, CURLOPT_WRITEFUNCTION, writeCallbackCurlWrapper);
+  if(!(methodName.compare("POST"))) {
+    curl_easy_setopt(curlRequest->handle, CURLOPT_POST, 1L);
+    /* get verbose debug output please */
+    curl_easy_setopt(curlRequest->handle, CURLOPT_POSTFIELDSIZE, (long)dataSize);
+    curl_easy_setopt(curlRequest->handle, CURLOPT_COPYPOSTFIELDS, curlRequest->uploadDataPtr);
+      // ResponseWrite callback and user data
+    curl_easy_setopt(curlRequest->handle, CURLOPT_WRITEDATA, curlRequest.get());
+    curl_easy_setopt(curlRequest->handle, CURLOPT_WRITEFUNCTION, writeCallbackCurlWrapper);
+  } else if(!(methodName.compare("PUT"))) {
+    curlRequest->uploadBufferOffset = 0;
+    curlRequest->uploadDataLength = dataSize;
+    curl_easy_setopt(curlRequest->handle, CURLOPT_READFUNCTION,readCallback);
+    curl_easy_setopt(curlRequest->handle, CURLOPT_PUT, 1L);
+    curl_easy_setopt(curlRequest->handle, CURLOPT_URL, curlRequest->URL.c_str());
+    curl_easy_setopt(curlRequest->handle, CURLOPT_READDATA, curlRequest.get());
+    curl_easy_setopt(curlRequest->handle, CURLOPT_INFILESIZE_LARGE, (curl_off_t)dataSize);
+
+  } else if(!(methodName.compare("PATCH"))) {
+    curl_easy_setopt(curlRequest->handle, CURLOPT_URL, curlRequest->URL.c_str());
+    curl_easy_setopt(curlRequest->handle, CURLOPT_CUSTOMREQUEST, "PATCH");
+      // set the request body data
+    curl_easy_setopt(curlRequest->handle, CURLOPT_POSTFIELDS, curlRequest->uploadDataPtr);
+    curl_easy_setopt(curlRequest->handle, CURLOPT_WRITEDATA, curlRequest.get());
+    curl_easy_setopt(curlRequest->handle, CURLOPT_WRITEFUNCTION, writeCallbackCurlWrapper);
+
+  } else if (!(methodName.compare("DELETE"))) {
+    curl_easy_setopt(curlRequest->handle, CURLOPT_CUSTOMREQUEST, "DELETE");
+    curl_easy_setopt(curlRequest->handle, CURLOPT_URL,curlRequest->URL.c_str());
+  }
 
   status = true;
   return status;
@@ -282,7 +333,7 @@ bool CurlNetworking::sendRequest(shared_ptr<CurlRequest> curlRequest, folly::dyn
   int semCount = 0XFFFFFFFF;
   CURL *curl = nullptr;
   CURLcode res = CURLE_FAILED_INIT;
-
+  string methodName= curlRequest->method.c_str();
   auto cacheData = networkCache_->getCacheData(curlRequest->URL);
   if(cacheData.has_value()) {
     curlRequest->curlResponse = cacheData.value();
@@ -328,8 +379,12 @@ bool CurlNetworking::sendRequest(shared_ptr<CurlRequest> curlRequest, folly::dyn
   if(headers != nullptr) {
     setHeaders(curlRequest, headers);
   }
-  if(!(strcmp(curlRequest->method.c_str(), "POST"))) {
-    if((data != nullptr) && (preparePostRequest(curlRequest, data) == false))
+  if((!(strcmp(methodName.c_str(), "POST")))||
+     (!(strcmp(methodName.c_str(), "PUT")))||
+     (!(strcmp(methodName.c_str(), "PATCH")))||
+     (!(strcmp(methodName.c_str(), "DELETE")))) {
+
+    if((data != nullptr) && (prepareRequest(curlRequest, data,methodName) == false))
       goto safe_return;
   } else if(!(strcmp(curlRequest->method.c_str(),"GET"))) {
       // ResponseWrite callback and user data
