@@ -2,6 +2,27 @@
 
 React Native renderer based on [Skia](https://skia.org/)
 
+> [!IMPORTANT]
+> **This project is no longer maintained, and the `react-native-skia` npm package is not published from this repository.**
+>
+> This repository is an experimental React Native *renderer*: it replaces the platform UI layer (UIKit, Android views) and draws every React Native view with Skia, for platforms such as Linux and tvOS. It was never published to npm beyond a `0.0.1` placeholder.
+>
+> If you are looking to draw 2D graphics with Skia inside a regular React Native app on iOS, Android, macOS, or Web, you want [wcandillon/react-native-skia](https://github.com/wcandillon/react-native-skia) instead. That project is a library of Skia bindings and components (`<Canvas>`, shapes, shaders, images, text, etc.) that runs alongside the standard React Native renderer.
+>
+> The `react-native-skia` npm package name has been transferred to that project. Starting with version 2.15.0, it is published as [`react-native-skia`](https://www.npmjs.com/package/react-native-skia) (previously `@shopify/react-native-skia`):
+>
+> ```sh
+> yarn add react-native-skia
+> ```
+>
+> |                  | This repository                                   | [wcandillon/react-native-skia](https://github.com/wcandillon/react-native-skia) |
+> | :--------------- | :------------------------------------------------ | :------------------------------------------------------------------------------ |
+> | What it is       | A React Native renderer built on Skia             | A Skia graphics library for React Native apps                                   |
+> | How it is used   | Builds a standalone `ReactSkia` app with GN/Ninja | Installed from npm in any React Native app                                      |
+> | Platforms        | Linux, tvOS (experimental)                        | iOS, Android, macOS, Web                                                        |
+> | npm package      | Not published                                     | [`react-native-skia`](https://www.npmjs.com/package/react-native-skia)          |
+> | Status           | Unmaintained                                      | Actively maintained                                                             |
+
 ![Screenshot](https://pbs.twimg.com/media/Eey1WFdUMAE5qMF.png:small)
 
 ## Project State
